@@ -3,7 +3,6 @@
 - **ID:** ADR-0015
 - **Status:** Proposed
 - **Date:** 2026-05-16
-- **Author:** Romanchuk
 - **Project:** IndustryGrow
 - **Parent:** ADR-0001
 - **Companions:** ADR-0002 (rev 3), ADR-0003, ADR-0004 (rev 1)
