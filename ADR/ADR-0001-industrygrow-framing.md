@@ -1,7 +1,6 @@
 # ADR-0001: IndustryGrow — open-core cultivation platform built on IndustryFlow
 
 **Status:** Proposed (revised 2026-05-16)
-**Author:** Konstantin Chukissov
 **Project:** IndustryGrow
 **Core license:** AGPL-3.0-or-later
 **Supersedes:** ADR-0001 v1 (which framed this as a single deployment rather than a platform)
