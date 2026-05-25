@@ -71,17 +71,21 @@ populated-BOM, not by new designs.
 
 ## Architecture decision records
 
-ADRs are the source of truth for the design. Current set:
+ADRs are the source of truth for the design. Present in this repository:
 
+- **ADR-0001** — Project framing: open-core cultivation platform on IndustryFlow
 - **ADR-0002** (rev 3) — Field bus architecture
 - **ADR-0004** (rev 1) — Gateway host hardening & stateless-edge operation
 - **ADR-0014** — Sensor node taxonomy and module decomposition
 - **ADR-0015** — Gateway profile caching and local control loops
 - **ADR-0016** — Empirical survey and state-space modeling
 
-Planned / deferred: ADR-0001 (project framing), ADR-0003 (reference profile),
-ADR-0005 (DSDL types), ADR-0006 (mechanical/hydroponic), ADR-0007 (PKI),
-ADR-0009 (profile schema), ADR-0010 (commercial operations).
+**ADR-0003** (strawberry day-neutral reference profile) already exists and is
+referenced by the ADRs above, but is not yet mirrored into this repository.
+
+Planned / not yet written: ADR-0005 (DSDL types), ADR-0006 (mechanical/hydroponic),
+ADR-0007 (PKI), ADR-0008 (deployment topology), ADR-0009 (profile schema),
+ADR-0010 (commercial operations), ADR-IF-0001 (IndustryFlow `production_unit`).
 
 ## Licensing
 
