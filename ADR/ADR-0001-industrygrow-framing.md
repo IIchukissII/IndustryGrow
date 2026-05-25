@@ -37,7 +37,7 @@ IndustryGrow is an **open-core cultivation platform** with the following structu
    - **Predictive ML modules** — botrytis risk forecasting, yield prediction, transpiration-based optimization, cross-deployment learning, A/B-spectrum analysis.
    - **Advanced control modules** — Model Predictive Control for climate, adaptive nutrient dosing, autonomous spectrum optimization, autopilot for whole-cabinet operation.
 
-5. **Community-contributed content (open by default).** Cultivation profiles, nutrient recipe mixes, hardware mods, integration examples — published to a shared registry by community members. The registry pattern is "GitHub for cultivation know-how": anyone can fork, customize, and contribute back. The strawberry day-neutral profile (ADR-0006) is one seed entry; lettuce, basil, microgreens, and other profiles come from the community.
+5. **Community-contributed content (open by default).** Cultivation profiles, nutrient recipe mixes, hardware mods, integration examples — published to a shared registry by community members. The registry pattern is "GitHub for cultivation know-how": anyone can fork, customize, and contribute back. The strawberry day-neutral profile (ADR-0003) is one seed entry; lettuce, basil, microgreens, and other profiles come from the community.
 
 6. **First deployment: strawberry cabinet.** Continuous staggered cultivation, ~9 slots, 2-week cadence. Built from open-core artifacts only (no commercial modules) to validate the self-build path that defines IndustryGrow's accessibility.
 
@@ -82,18 +82,18 @@ IndustryGrow is an **open-core cultivation platform** with the following structu
 ## Open questions deferred to subsequent ADRs
 
 - **ADR-0002:** Field bus protocol, smart-node hardware (both grades), gateway architecture.
+- **ADR-0003:** Strawberry day-neutral cultivation profile (reference profile #1).
+- **ADR-0004:** Gateway host hardening, audit log, firmware signing.
+- **ADR-0005:** DSDL namespace structure and Subject-ID allocation.
+- **ADR-0006 (deferred):** Cabinet form factor, materials, mechanical decomposition.
+- **ADR-0007 (future):** PKI architecture — community-self-hosted CA pattern and commercial CA infrastructure.
+- **ADR-0008 (future):** Deployment topology and operational scale.
+- **ADR-0009 (future):** Cultivation profile schema, contribution workflow, registry design.
+- **ADR-0010 (future):** Hardware tiering — full specification of production-grade nodes.
+- **ADR-0011 (future):** Plugin architecture for commercial modules — interfaces, host pattern, isolation.
+- **ADR-0012 (future):** Entitlement and license verification.
+- **ADR-0013 (future):** Repository structure and licensing per artifact.
 - **ADR-IF-0001:** IndustryFlow data model extension — production_unit entity.
-- **ADR-0004:** DSDL namespace structure and Subject-ID allocation.
-- **ADR-0005 (deferred):** Cabinet form factor, materials, mechanical decomposition.
-- **ADR-0006:** Strawberry day-neutral cultivation profile (reference profile #1).
-- **ADR-0007:** Gateway host hardening, audit log, firmware signing.
-- **ADR-0008 (future):** PKI architecture — community-self-hosted CA pattern and commercial CA infrastructure.
-- **ADR-0009 (future):** Deployment topology and operational scale.
-- **ADR-0010 (future):** Cultivation profile schema, contribution workflow, registry design.
-- **ADR-0011 (future):** Hardware tiering — full specification of production-grade nodes.
-- **ADR-0012 (future):** Plugin architecture for commercial modules — interfaces, host pattern, isolation.
-- **ADR-0013 (future):** Entitlement and license verification.
-- **ADR-0014 (future):** Repository structure and licensing per artifact.
 
 ## References
 
