@@ -1,12 +1,15 @@
+
 # IndustryGrow
 
 **An open-core platform for instrumented, profile-driven crop cultivation that scales — on one architecture — from an apartment-sized cabinet to a several-hundred-square-metre commercial facility.**
 
----
+<table>
+<tr>
+<td width="300">
+  <img src="img/industrygrow-logo-preview.png" alt="IndustryGrow" />
+</td>
+<td>
 
-<img src="img/industrygrow-logo-preview.png" alt="IndustryGrow" width="1024" />
-
----
 ## Purpose
 
 IndustryGrow turns a growing space into a measured, controllable system. It provides the
@@ -18,6 +21,9 @@ The project is **open-core**: the same architecture serves community self-builde
 commercial managed deployments. Hardware designs and reference firmware are open; the
 defensible value is not the sensors (commodity) but the expertise to *identify* a deployment's
 dynamics and operate it efficiently afterward.
+</td>
+</tr>
+</table>
 
 ## Core concept
 
