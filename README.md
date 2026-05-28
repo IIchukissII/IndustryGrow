@@ -3,7 +3,8 @@
 **An open-core platform for instrumented, profile-driven crop cultivation that scales — on one architecture — from an apartment-sized cabinet to a several-hundred-square-metre commercial facility.**
 
 ---
-
+<img src="img/industrygrow-logo-preview.png" alt="IndustryGrow" width="128" />
+---
 ## Purpose
 
 IndustryGrow turns a growing space into a measured, controllable system. It provides the
