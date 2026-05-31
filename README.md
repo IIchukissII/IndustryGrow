@@ -102,6 +102,11 @@ ADR-0010 (commercial operations), ADR-IF-0001 (IndustryFlow `production_unit`).
 
 ## Licensing
 
-- Hardware designs (carrier + sensor modules): **CERN-OHL-S**
-- Reference firmware: **AGPL-3.0-or-later**
+Open-core; license per part of the repo — see [`LICENSE.md`](LICENSE.md) for the
+authoritative mapping, with full texts in [`LICENSES/`](LICENSES/).
+
+- Hardware designs in `store/` (carrier + sensor modules): **CERN-OHL-S-2.0**
+- ADRs & documentation (`ADR/`, `README`, `REGISTRY.md`): **CC-BY-SA-4.0**
+- Reference firmware (when added): **AGPL-3.0-or-later**
+- DSDL / protocol layer (when added): **Apache-2.0**
 - WeAct core board snapshot retained under its upstream open-hardware license
