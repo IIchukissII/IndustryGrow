@@ -488,7 +488,7 @@
     "pinned_symbol_libs": []
   },
   "meta": {
-    "filename": "carrier.kicad_pro",
+    "filename": "E0001-000001.kicad_pro",
     "version": 3
   },
   "net_settings": {
@@ -675,7 +675,7 @@
     "subpart_id_separator": 0,
     "top_level_sheets": [
       {
-        "filename": "carrier.kicad_sch",
+        "filename": "E0001-000001.kicad_sch",
         "name": "Stammblatt",
         "uuid": "e6bf351d-e9cb-40e2-a753-e88fd218a7be"
       }

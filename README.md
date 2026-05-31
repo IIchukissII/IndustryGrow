@@ -57,7 +57,10 @@ dynamics and operate it efficiently afterward.
 | Node firmware | Embedded C with libcanard |
 | Identity & security | Per-node ATECC608 hardware identity; signed firmware; trusted in-cabinet CAN domain |
 
-> Hardware design files in `carrier/` are authored in **KiCad 10** and will not open in earlier versions.
+> Hardware design files live in `store/` under the ADR-0017 identification scheme
+> (carrier = `E0001`, v0.0.1 → `E0001-000001.*`); see [`REGISTRY.md`](REGISTRY.md)
+> for the E-number map. They are authored in **KiCad 10** and will not open in
+> earlier versions.
 
 ### Sensor module catalog
 
@@ -91,6 +94,7 @@ ADRs are the source of truth for the design. Present in this repository:
 - **ADR-0014** — Sensor node taxonomy and module decomposition
 - **ADR-0015** — Gateway profile caching and local control loops
 - **ADR-0016** — Empirical survey and state-space modeling
+- **ADR-0017** — Component, document, and instance identification scheme
 
 Planned / not yet written: ADR-0005 (DSDL types), ADR-0006 (mechanical/hydroponic),
 ADR-0007 (PKI), ADR-0008 (deployment topology), ADR-0009 (profile schema),
