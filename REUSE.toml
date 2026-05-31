@@ -13,7 +13,7 @@ SPDX-License-Identifier = "CERN-OHL-S-2.0"
 # Project images/logos and this manifest itself (no inline-comment option for the
 # binary PNGs; kept uniform with the SVGs).
 [[annotations]]
-path = ["img/**", "REUSE.toml"]
+path = ["img/**", "REUSE.toml", ".gitignore"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 The IndustryGrow contributors"
 SPDX-License-Identifier = "CC-BY-SA-4.0"
