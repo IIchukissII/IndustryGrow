@@ -81,7 +81,7 @@ The separation is load-bearing for two reasons specific to IndustryGrow. ADR-001
    - **Layer** `L` — a single letter naming the document type (decision 9).
    - **Suffix** — a per-instance lifecycle-document tag appended in the production identifier (decisions 10–14).
 
-   Documents are stored flat, with the hierarchy carried entirely in the identifier, so the store can be filtered by identifier pattern (all documents of one module, all reports, all instances at a given position, and so on).
+   Documents are stored flat, with the hierarchy carried entirely in the identifier, so the store can be filtered by identifier pattern (all documents of one module, all reports, all instances at a given position, and so on). The store is realized as an object store, where this filtering is a key-prefix list (decision 15).
 
 2. **Two distinct instance histories, one of which this ADR governs.** Static, per-instance *documents* (test data, calibration, provisioning records) live in the document store and are addressable by suffix. *Operational/runtime events* (firmware-flash events, telemetry, control-decision audit, hash-chain) live in IndustryFlow's audit log per ADR-0004 rev 1 decisions 10 and 16. The two are not merged and not duplicated. Suffixes (decisions 10–14) address only the former.
 
@@ -121,6 +121,16 @@ The separation is load-bearing for two reasons specific to IndustryGrow. ADR-001
 
 14. **M03 probes are their own instances.** The pH electrode and EC cell are replaceable consumables with independent drift and replacement life, so each is its own E-number with its own serial and its own calibration history. The M03 board's calibration record references the paired probe serial, so the board+probe pairing and the probe's standalone history are both reconstructible.
 
+### Storage backend and object-store mapping
+
+15. **The document store is an object store; identifiers are object keys.** The flat layout (decision 1) is chosen for object storage (S3-compatible buckets), not a hierarchical filesystem. Each artifact is a single object whose key *is* its identifier (`E0001-000001-L.csv`, `E0001-000001-D-Top_Layer.gtl`, a `-CC-YYYYMMDD` calibration certificate, and so on); there are no container objects and no real directories.
+    - **Pattern queries are the store's native list operation.** "All documents of one module+version" is `ListObjectsV2(Prefix="E0001-000001-")`; "everything for module `E0001`" is `Prefix="E0001-"`; "every document of one instance" is `Prefix="E0001-000001-007"`. The identifier-pattern filtering of decision 1 *is* the bucket's prefix listing, executed server-side, with no separate index to build or keep consistent.
+    - **A hierarchy is synthesized on demand, never stored.** A `Delimiter` argument makes the store return grouped common-prefixes — a browsable virtual tree — without committing to one shape, so the same flat keyspace supports many groupings at once (by module, by version, by serial, by layer).
+    - **Object-store frictions are avoided.** No empty "folder" placeholder objects; re-versioning or relocating an instance never rewrites a subtree (there is none); and the per-instance immutability of QC and provisioning records maps cleanly onto object versioning / write-once policies.
+    - **Policy is expressed by prefix.** Lifecycle, retention, replication, and access rules attach to key prefixes, so per-module or per-instance policy (retain all `…-PR` provisioning records; restrict their read scope per decision 12) is stated directly, without a parallel directory-ACL scheme.
+
+    A git working copy or local checkout renders the store as a flat directory; that filesystem view is incidental. The canonical target is a prefix-queried object store, for which the flat, identifier-keyed layout is the idiomatic and performant shape — retrieval functionality, not visual layout, is the design concern.
+
 ## Alternatives considered
 
 **A. A flat identifier — a single serial namespace that does not separate type, instance, and position.** *Rejected:* cannot express that one design has many instances (ADR-0014) or that an instance moves between positions and deployments (ADR-0016) without overloading a single number, and loses the ability to address type-level documents and per-instance documents distinctly. The type/instance/position split is the whole point.
@@ -145,7 +155,7 @@ The separation is load-bearing for two reasons specific to IndustryGrow. ADR-001
 - Per-instance lifecycle documents follow the instance — calibration and provisioning history survive redeployment, which is precisely what the inventory model needs.
 - Clean boundary with IndustryFlow: the document store holds static documents, the platform holds operational events, with no duplicated forensic trail.
 - Cyphal/DSDL definitions fall naturally into the `I` layer; module BOMs into the `L` layer — no new artifact categories invented.
-- Flat storage with identifier-pattern filtering works directly on IndustryGrow artifacts.
+- Flat storage with identifier-pattern filtering works directly on IndustryGrow artifacts, and maps onto object storage natively — identifiers are object keys and pattern filters are prefix lists (decision 15), so the store needs neither a real hierarchy nor a separate index.
 
 ### Negative
 
@@ -175,6 +185,7 @@ The separation is load-bearing for two reasons specific to IndustryGrow. ADR-001
 - **Bare-PCB design artifact identification.** Whether the shared bare layout gets its own E-number or is tracked as a hardware-repo artifact under CERN-OHL-S.
 - **Identifier validation and parsing tooling.** Regexes and encoders implemented from the field formats in this ADR, including the full suffix set.
 - **Optional compact binary encoding** of identifiers for embedded/indexing use — out of scope now.
+- **Object-store deployment specifics (decision 15).** Bucket topology (single vs. per-deployment / per-tenant), region and replication, how object versioning interacts with the dated calibration suffix and the write-once QC/provisioning records, and prefix-scoped access-control granularity.
 - **Mechanical / pneumatic / fluidic module catalog.** E-numbers for enclosures, trays, plumbing, and actuator hardware are assigned when those modules are designed (ADR-0006 deferred; actuator taxonomy deferred per ADR-0014).
 
 ## References
