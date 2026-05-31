@@ -10537,7 +10537,7 @@
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
@@ -12659,7 +12659,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Capacitor_SMD:CP_Elec_4x5.4"
+		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric"
 			(at 60.6552 101.6 0)
 			(hide yes)
 			(show_name no)
@@ -13068,7 +13068,7 @@
 				(justify right)
 			)
 		)
-		(property "Value" "LED"
+		(property "Value" "CAN"
 			(at 125.73 115.8874 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -13161,7 +13161,7 @@
 				(justify right)
 			)
 		)
-		(property "Value" "LED"
+		(property "Value" "3.3V"
 			(at 115.57 115.8874 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -13411,7 +13411,7 @@
 				(justify right)
 			)
 		)
-		(property "Value" "LED"
+		(property "Value" "12V"
 			(at 104.14 115.8874 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -13654,7 +13654,7 @@
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
@@ -13776,7 +13776,7 @@
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
@@ -13862,7 +13862,7 @@
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
@@ -13975,7 +13975,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Capacitor_SMD:CP_Elec_6.3x7.7"
+		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric"
 			(at 101.2952 165.1 0)
 			(hide yes)
 			(show_name no)
@@ -14135,7 +14135,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Capacitor_SMD:CP_Elec_4x5.8"
+		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric"
 			(at 35.2552 161.29 0)
 			(hide yes)
 			(show_name no)
@@ -14189,7 +14189,7 @@
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
@@ -14686,7 +14686,7 @@
 				(justify right)
 			)
 		)
-		(property "Value" "LED"
+		(property "Value" "Status"
 			(at 138.43 115.8874 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -14762,7 +14762,7 @@
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
@@ -15109,7 +15109,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Capacitor_SMD:CP_Elec_6.3x7.7"
+		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric"
 			(at 108.9152 165.1 0)
 			(hide yes)
 			(show_name no)
@@ -15325,7 +15325,7 @@
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
