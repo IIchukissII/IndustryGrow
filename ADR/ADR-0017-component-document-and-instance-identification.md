@@ -37,8 +37,8 @@ The separation is load-bearing for two reasons specific to IndustryGrow. ADR-001
 
 1. **Three phase-specific identifier formats.**
    - Documentation (design artifacts, type-level): `Exxxx-VVVVVV-L`
-   - Production & QC (a manufactured instance): `Exxxx-VVVVVV-NNN[-suffix]`
-   - Integration (an instance installed in a machine): `GBOX_NNN-DDDDDD-Exxxx-VVVVVV-NNN`
+   - Production & QC (a manufactured instance): `Exxxx-VVVVVV-NNNNNN[-suffix]`
+   - Integration (an instance installed in a machine): `GBOX_NNNN-DDDDDD-Exxxx-VVVVVV-NNNNNN`
 
    Decoded:
 
@@ -51,21 +51,21 @@ The separation is load-bearing for two reasons specific to IndustryGrow. ADR-001
    └─ module, E + 4 digits
 
    Production & QC  (one manufactured instance)
-   Exxxx-VVVVVV-NNN-XX
-   │     │      │   │
-   │     │      │   └─ lifecycle suffix (QP, QR, CP, CC, PR)
-   │     │      └─ serial, 3 digits (per module + version)
+   Exxxx-VVVVVV-NNNNNN-XX
+   │     │      │      │
+   │     │      │      └─ lifecycle suffix (QP, QR, CP, CC, PR)
+   │     │      └─ serial, 6 digits (per module + version)
    │     └─ version, 6 digits
    └─ module, E + 4 digits
 
    Integration  (instance installed in a machine)
-   GBOX_NNN-DDDDDD-Exxxx-VVVVVV-NNN
-   │        │      │     │      │
-   │        │      │     │      └─ serial (from production)
-   │        │      │     └─ version, 6 digits
-   │        │      └─ module, E + 4 digits
-   │        └─ depth, 6 digits (position in machine)
-   └─ machine, GBOX + 3 digits
+   GBOX_NNNN-DDDDDD-Exxxx-VVVVVV-NNNNNN
+   │         │      │     │      │
+   │         │      │     │      └─ serial (from production)
+   │         │      │     └─ version, 6 digits
+   │         │      └─ module, E + 4 digits
+   │         └─ depth, 6 digits (position in machine)
+   └─ machine, GBOX + 4 digits
 
    Two encoded fields carry sub-structure:
    VVVVVV  =  major.minor.patch   (2 digits each)        e.g. v2.1.3 = 020103
@@ -76,7 +76,7 @@ The separation is load-bearing for two reasons specific to IndustryGrow. ADR-001
    Field definitions:
    - **Module** `Exxxx` — `E` plus four digits; identifies a buildable/documentable assembly (decision 3). An opaque key; meaning is held in the registry.
    - **Version** `VVVVVV` — six digits encoding semantic version `major.minor.patch`, two digits each (`1.0.0` → `010000`, `2.1.3` → `020103`). This is the version of the *design*, not of a populated configuration (see alternative D).
-   - **Serial** `NNN` — three digits, unique per module+version (`001`–`999`); on overflow the patch version is incremented to open a fresh serial range. Assigned in Production.
+   - **Serial** `NNNNNN` — six digits, unique per module+version (`000001`–`999999`). Assigned in Production. The width is sized to the largest declared deployment's lifetime install base of a single design+version — most acutely the universal carrier, which has one near-static version and therefore accumulates the most serials — so the range is not exhausted in practice. There is deliberately **no** overflow-into-version mechanism: bumping the patch when a range fills would leak instance *count* into the design *version*, the same corruption alternative D rejects, and would not even buy more headroom than simply widening the field (see decision 8 and alternative D).
    - **Depth** `DDDDDD` — six digits in three two-digit levels (main module / sub-module level 1 / sub-module level 2), encoding the position within the machine hierarchy. Position only; assigned at integration, never present in the production identifier (decision 7).
    - **Layer** `L` — a single letter naming the document type (decision 9).
    - **Suffix** — a per-instance lifecycle-document tag appended in the production identifier (decisions 10–14).
@@ -97,13 +97,13 @@ The separation is load-bearing for two reasons specific to IndustryGrow. ADR-001
 
 ### Machine designation and position
 
-6. **The cabinet machine (ADR-0001 decision 7) is designated `GBOX_NNN`** (Grow Box). The machine designation has the general form `<prefix>_NNN`; the `GBOX` prefix is specific to IndustryGrow grow-cabinet machines, leaving room for other machine families under their own prefixes should the scheme be reused elsewhere.
+6. **The cabinet machine (ADR-0001 decision 7) is designated `GBOX_NNNN`** (Grow Box). The machine designation has the general form `<prefix>_NNNN` — four digits, enumerating grow-cabinets across the product (a deployment-scaling field, sized like the serial against the largest declared deployment rather than a single apartment cabinet). The `GBOX` prefix is specific to IndustryGrow grow-cabinet machines, leaving room for other machine families under their own prefixes should the scheme be reused elsewhere.
 
-7. **The integration-phase depth code is the static twin of gateway-side position tagging.** The depth code encodes the same information the gateway resolves at runtime as `(module_class, node_role, zone)` and `production_unit` (ADR-0014 decision 7; ADR-IF-0001, planned). Position is assigned at integration and **never** appears in the production identifier. This preserves instance interchangeability (ADR-0014) and instance mobility between deployments (ADR-0016): the same `Exxxx-VVVVVV-NNN` can be installed at many different depth positions over its life.
+7. **The integration-phase depth code is the static twin of gateway-side position tagging.** The depth code encodes the same information the gateway resolves at runtime as `(module_class, node_role, zone)` and `production_unit` (ADR-0014 decision 7; ADR-IF-0001, planned). Position is assigned at integration and **never** appears in the production identifier. This preserves instance interchangeability (ADR-0014) and instance mobility between deployments (ADR-0016): the same `Exxxx-VVVVVV-NNNNNN` can be installed at many different depth positions over its life. The depth code's two-digit-per-level width (main `01`–`99`) is intentionally *not* widened with the serial and machine fields: depth is intra-machine, bounded by one cabinet's physical decomposition (~6 functional subsystems per ADR-0001 decision 7), not by deployment size. Scaling a commercial facility means more serials and more `GBOX` machines, each carrying its own depth space — never a deeper hierarchy inside one box. The sizing principle across the scheme is "size to the largest declared deployment," and for depth the largest single machine is already covered with wide margin.
 
 ### Instance identity
 
-8. **The serial number is the logistics instance key; the ATECC608 is the cryptographic instance identity.** The serial (three digits, unique per module+version, `001`–`999`, with a patch-version bump on overflow) is the human- and store-facing instance key. The durable cryptographic identity is the ATECC608 plus its provisioned certificate (ADR-0007). The two are bound to each other in the provisioning record (decision 12); no separate serial authority is invented. Serials are assigned in Production (Phase 2).
+8. **The serial number is the logistics instance key; the ATECC608 is the cryptographic instance identity.** The serial (six digits, unique per module+version, `000001`–`999999`, with no overflow-into-version — the field is widened instead, see decision 1 and alternative D) is the human- and store-facing instance key. The durable cryptographic identity is the ATECC608 plus its provisioned certificate (ADR-0007). The two are bound to each other in the provisioning record (decision 12); no separate serial authority is invented. Serials are assigned in Production (Phase 2).
 
 ### Document layers
 
@@ -117,14 +117,14 @@ The separation is load-bearing for two reasons specific to IndustryGrow. ADR-001
 
 12. **`-PR` (Provisioning Record).** Binds the ATECC608 to its issued certificate and holds the certificate metadata (ADR-0007) — the instance's "birth certificate." It contains the public material only; the private key never leaves the ATECC608. Restricted to engineering/quality access.
 
-13. **Suffixes attach to the instance identifier, never to the integration identifier.** Lifecycle documents key off `Exxxx-VVVVVV-NNN`, which is stable; the integration identifier merely records where the instance currently sits and changes when the instance is moved. This is mandatory under ADR-0016's inventory model: when a board is redeployed, its QP/QR/CP/CC/PR history follows its serial, and a recalibration at the new deployment adds a new dated `-CC` to the same serial — not a record on the new position.
+13. **Suffixes attach to the instance identifier, never to the integration identifier.** Lifecycle documents key off `Exxxx-VVVVVV-NNNNNN`, which is stable; the integration identifier merely records where the instance currently sits and changes when the instance is moved. This is mandatory under ADR-0016's inventory model: when a board is redeployed, its QP/QR/CP/CC/PR history follows its serial, and a recalibration at the new deployment adds a new dated `-CC` to the same serial — not a record on the new position.
 
 14. **M03 probes are their own instances.** The pH electrode and EC cell are replaceable consumables with independent drift and replacement life, so each is its own E-number with its own serial and its own calibration history. The M03 board's calibration record references the paired probe serial, so the board+probe pairing and the probe's standalone history are both reconstructible.
 
 ### Storage backend and object-store mapping
 
 15. **The document store is an object store; identifiers are object keys.** The flat layout (decision 1) is chosen for object storage (S3-compatible buckets), not a hierarchical filesystem. Each artifact is a single object whose key *is* its identifier (`E0001-000001-L.csv`, `E0001-000001-D-Top_Layer.gtl`, a `-CC-YYYYMMDD` calibration certificate, and so on); there are no container objects and no real directories.
-    - **Pattern queries are the store's native list operation.** "All documents of one module+version" is `ListObjectsV2(Prefix="E0001-000001-")`; "everything for module `E0001`" is `Prefix="E0001-"`; "every document of one instance" is `Prefix="E0001-000001-007"`. The identifier-pattern filtering of decision 1 *is* the bucket's prefix listing, executed server-side, with no separate index to build or keep consistent.
+    - **Pattern queries are the store's native list operation.** "All documents of one module+version" is `ListObjectsV2(Prefix="E0001-000001-")`; "everything for module `E0001`" is `Prefix="E0001-"`; "every document of one instance" is `Prefix="E0001-000001-000007"`. The identifier-pattern filtering of decision 1 *is* the bucket's prefix listing, executed server-side, with no separate index to build or keep consistent.
     - **A hierarchy is synthesized on demand, never stored.** A `Delimiter` argument makes the store return grouped common-prefixes — a browsable virtual tree — without committing to one shape, so the same flat keyspace supports many groupings at once (by module, by version, by serial, by layer).
     - **Object-store frictions are avoided.** No empty "folder" placeholder objects; re-versioning or relocating an instance never rewrites a subtree (there is none); and the per-instance immutability of QC and provisioning records maps cleanly onto object versioning / write-once policies.
     - **Policy is expressed by prefix.** Lifecycle, retention, replication, and access rules attach to key prefixes, so per-module or per-instance policy (retain all `…-PR` provisioning records; restrict their read scope per decision 12) is stated directly, without a parallel directory-ACL scheme.
@@ -139,7 +139,7 @@ The separation is load-bearing for two reasons specific to IndustryGrow. ADR-001
 
 **C. Bake position (zone/role/slot) into the part or serial number.** *Rejected:* breaks instance interchangeability (ADR-0014) and instance mobility (ADR-0016). Position belongs in the integration identifier / gateway tagging and is assigned at integration.
 
-**D. Treat each populated-BOM variant as a new Version.** *Rejected:* Version is semantic versioning of the *design*; folding a populate-variant into it corrupts version semantics and the rollback story. A distinct assembly E-number referencing the shared bare design (decision 4) is the correct home.
+**D. Treat each populated-BOM variant as a new Version.** *Rejected:* Version is semantic versioning of the *design*; folding a populate-variant into it corrupts version semantics and the rollback story. A distinct assembly E-number referencing the shared bare design (decision 4) is the correct home. The same reasoning forbids an overflow-into-version mechanism on the serial: incrementing the patch when a serial range fills would fold instance *count* into the design version — the identical corruption reached by a production route rather than a populate route, and it bites hardest on the universal carrier (one type, one near-static version, the most instances), where the patch-bump would be routine rather than an edge case. Widening dominates it on capacity too: a two-digit patch over 999 serials yields only ~10⁵ instances before the overflow must climb into the minor and major version as well, whereas a six-digit serial addresses ~10⁶ honestly and never touches the version at all. The serial is therefore widened (decision 1) rather than overflowed, so instance count never touches the version.
 
 **E. Record firmware/telemetry history as document-store suffixes.** *Rejected:* ADR-0004 rev 1 decisions 10 and 16 already route these to IndustryFlow's audit log. A parallel document record creates two sources of truth for the same events.
 
@@ -164,7 +164,7 @@ The separation is load-bearing for two reasons specific to IndustryGrow. ADR-001
 - **The assembly E-catalog grows with zone-specific populations** at medium and large scale (one assembly E per standard population). Manageable, but a real catalog-management surface — most acute exactly where ADR-0014's partial-BOM mechanism is most used.
 - **Calibration requires dating/sequencing discipline in the suffix** (decision 11) — a process requirement, not just a format choice, with a validity-period policy still to set.
 - **Treating M03 probes as their own instances** adds traceability bookkeeping for consumables; justified by their independent calibration and replacement life, but it is extra records.
-- **The integration identifier has no suffix slot by design.** Operators must understand that the durable document key is the instance (`Exxxx-VVVVVV-NNN`), not the current position — counterintuitive for anyone used to position-centric records.
+- **The integration identifier has no suffix slot by design.** Operators must understand that the durable document key is the instance (`Exxxx-VVVVVV-NNNNNN`), not the current position — counterintuitive for anyone used to position-centric records.
 
 ## Relationship to other ADRs
 

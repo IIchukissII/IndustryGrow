@@ -13,8 +13,8 @@ Identifier recap (ADR-0017):
 
 - **Documentation** (type-level): `Exxxx-VVVVVV-L` — `L` ∈ `S` Schema, `D` Drawing,
   `L` List/BOM, `P` Protocol, `M` Manual, `I` Interface.
-- **Production & QC** (one instance): `Exxxx-VVVVVV-NNN[-suffix]`.
-- **Integration** (installed): `GBOX_NNN-DDDDDD-Exxxx-VVVVVV-NNN`.
+- **Production & QC** (one instance): `Exxxx-VVVVVV-NNNNNN[-suffix]`.
+- **Integration** (installed): `GBOX_NNNN-DDDDDD-Exxxx-VVVVVV-NNNNNN`.
 - `VVVVVV` = `major.minor.patch`, two digits each (e.g. `v0.0.1` → `000001`).
 
 Documents are stored **flat** in `store/`; the hierarchy lives entirely in the
@@ -33,6 +33,6 @@ identifier, so the store is filtered by identifier pattern (e.g. all
 
 > Reserved per ADR-0017 but not yet present for `E0001`: `-S` (exported
 > schematic), `-P` (protocol), `-M` (manual), `-I` (interface / Cyphal DSDL),
-> and any production/QC instances (`Exxxx-VVVVVV-NNN`) with `-QP/-QR/-CP/-CC/-PR`
+> and any production/QC instances (`Exxxx-VVVVVV-NNNNNN`) with `-QP/-QR/-CP/-CC/-PR`
 > lifecycle suffixes. Sensor modules M01–M05 (ADR-0014) get their own E-numbers
 > when their designs are committed.
