@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+SPDX-License-Identifier: CC-BY-SA-4.0
+-->
+
 # Licensing
 
 IndustryGrow is an open-core project; different parts of the repository carry
@@ -23,8 +28,14 @@ Their license texts will be added to `LICENSES/` and mapped here when that code
 lands. The WeAct STM32F4 core board snapshot, if vendored, retains its upstream
 open-hardware license.
 
-## Note
+## SPDX / REUSE
 
-`SPDX-License-Identifier` headers are not yet embedded per-file; this document is
-the authoritative mapping. The hardware design files in `store/` are covered by
-`CERN-OHL-S-2.0` as a directory.
+Per-file SPDX information follows the [REUSE](https://reuse.software) specification:
+
+- Markdown documents carry inline `SPDX-FileCopyrightText` / `SPDX-License-Identifier`
+  headers (HTML comments).
+- Files that cannot carry a comment — the KiCad sources and generated fab outputs in
+  `store/`, and the images in `img/` — are annotated in [`REUSE.toml`](REUSE.toml).
+
+This document remains the human-readable summary; `REUSE.toml` plus the in-file
+headers are the machine-readable source of truth.

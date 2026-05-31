@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+SPDX-License-Identifier: CC-BY-SA-4.0
+-->
+
 # ADR-0003: Strawberry day-neutral cultivation profile (reference profile)
 
 - **ID:** ADR-0003

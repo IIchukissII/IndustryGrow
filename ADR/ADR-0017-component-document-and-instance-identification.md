@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+SPDX-License-Identifier: CC-BY-SA-4.0
+-->
+
 # ADR-0017: Component, document, and instance identification scheme
 
 - **ID:** ADR-0017

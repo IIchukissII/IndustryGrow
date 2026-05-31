@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+SPDX-License-Identifier: CC-BY-SA-4.0
+-->
+
 # ADR-0015: Gateway profile caching and local control loops
 
 - **ID:** ADR-0015

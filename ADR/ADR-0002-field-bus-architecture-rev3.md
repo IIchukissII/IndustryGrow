@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+SPDX-License-Identifier: CC-BY-SA-4.0
+-->
+
 # ADR-0002 (rev 3): Field bus architecture — Cyphal/CAN over WeAct STM32F4 core board on custom carrier PCB with stateless-edge Raspberry Pi gateway
 
 - **ID:** ADR-0002 (rev 3)

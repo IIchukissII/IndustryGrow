@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+SPDX-License-Identifier: CC-BY-SA-4.0
+-->
+
 # ADR-0016: Empirical survey, state-space modeling, and sensor density management
 
 - **ID:** ADR-0016

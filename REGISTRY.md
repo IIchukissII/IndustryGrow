@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+SPDX-License-Identifier: CC-BY-SA-4.0
+-->
+
 # Component registry (E-numbers)
 
 Canonical map of `Exxxx` module designations to their meaning, per
