@@ -6,6 +6,8 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 # IndustryGrow
 
+[![REUSE status](https://github.com/IIchukissII/IndustryGrow/actions/workflows/reuse.yml/badge.svg)](https://github.com/IIchukissII/IndustryGrow/actions/workflows/reuse.yml)
+
 **An open-core platform for instrumented, profile-driven crop cultivation that scales — on one architecture — from an apartment-sized cabinet to a several-hundred-square-metre commercial facility.**
 
 <table>
