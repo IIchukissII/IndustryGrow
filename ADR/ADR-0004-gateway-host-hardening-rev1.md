@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+SPDX-License-Identifier: CC-BY-SA-4.0
+-->
+
 # ADR-0004 (rev 1): Gateway host hardening, firmware signing, and stateless-edge operation
 
 - **ID:** ADR-0004 (rev 1)

@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+SPDX-License-Identifier: CC-BY-SA-4.0
+-->
+
 # ADR-0001: IndustryGrow — open-core cultivation platform built on IndustryFlow
 
 - **ID:** ADR-0001 (rev 1)
