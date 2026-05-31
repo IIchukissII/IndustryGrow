@@ -79,7 +79,7 @@ IndustryGrow is an **open-core cultivation platform** with the following structu
 - The author is the platform builder AND the first deployer. Bias toward "the platform supports my use case" is real. Mitigation: features needed only by my cabinet are flagged as such; post-deployment retrospectives are written as if by a third party.
 - IndustryFlow extensions required for IndustryGrow couple the platform's roadmap to this project's needs. Both projects share the author, which mitigates in practice but creates a conceptual single point of failure.
 
-## Open questions deferred to subsequent ADRs
+## Deferred decisions
 
 - **ADR-0002:** Field bus protocol, smart-node hardware (both grades), gateway architecture.
 - **ADR-0003:** Strawberry day-neutral cultivation profile (reference profile #1).
