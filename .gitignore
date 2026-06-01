@@ -1,2 +1,5 @@
 # Local Claude Code settings (per-user, not project content)
 .claude/
+
+# KiCad local-history auto-backups (editor artifact, not project content)
+store/.history/
