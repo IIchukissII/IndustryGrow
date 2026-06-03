@@ -10,11 +10,11 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Date:** 2026-05-16
 - **Project:** IndustryGrow
 - **Parent:** ADR-0001
-- **Companions:** ADR-0002 (rev 2), ADR-0003
+- **Companions:** ADR-0002 (rev 3), ADR-0003
 
 ## Context and problem
 
-ADR-0001 (decision 7) committed IndustryGrow to a data model where the cabinet `machine` decomposes into `modules` corresponding to functional subsystems (climate, lighting, irrigation, plant monitoring, pollination, power/safety). ADR-0002 (rev 2) committed to a unified compute platform: a WeAct STM32F4 core board (STM32F405RGT6) on a custom carrier PCB with a sensor-module header — one carrier design across the project, with the sensor module varying between node types.
+ADR-0001 (decision 7) committed IndustryGrow to a data model where the cabinet `machine` decomposes into `modules` corresponding to functional subsystems (climate, lighting, irrigation, plant monitoring, pollination, power/safety). ADR-0002 (rev 3) committed to a unified compute platform: a WeAct STM32F4 core board (STM32F405RGT6) on a custom carrier PCB with a sensor-module header — one carrier design across the project, with the sensor module varying between node types.
 
 What ADR-0002 leaves implicit is **how sensors group into modules**: which sensors live on which sensor module PCB, which physical Cyphal node implements which IndustryFlow module, and what the principle is for adding new sensor types. This ADR fills that gap and establishes the taxonomy that future cabinets and community-contributed deployments are expected to follow.
 
@@ -46,7 +46,7 @@ Zone count is not an architectural decision — it is a deployment-time choice m
 
 ## Decision
 
-1. **Principle: one Cyphal node per (functional subsystem × zone).** Each node is built from one carrier PCB (with a WeAct STM32F4 core board, per ADR-0002 rev 2) plus one sensor module specific to its subsystem. A functional subsystem in the cultivation profile (ADR-0003) maps to one Cyphal node-class. Each zone in which that subsystem is monitored maps to one node instance of that class. Apartment-scale deployments typically have one zone per subsystem (5 sensor nodes total in the seed cabinet); large-greenhouse deployments may have tens of zones (50+ instances of the same node-classes).
+1. **Principle: one Cyphal node per (functional subsystem × zone).** Each node is built from one carrier PCB (with a WeAct STM32F4 core board, per ADR-0002 rev 3) plus one sensor module specific to its subsystem. A functional subsystem in the cultivation profile (ADR-0003) maps to one Cyphal node-class. Each zone in which that subsystem is monitored maps to one node instance of that class. Apartment-scale deployments typically have one zone per subsystem (5 sensor nodes total in the seed cabinet); large-greenhouse deployments may have tens of zones (50+ instances of the same node-classes).
 
 2. **Designs few, instances many — across three dimensions.** Sensor module designs are reusable. **Instances of the same PCB design may vary in three independent dimensions:**
 
@@ -178,7 +178,7 @@ Zone count is not an architectural decision — it is a deployment-time choice m
 ## References
 
 - ADR-0001: IndustryGrow framing — functional subsystem = module; platform scales from apartment to commercial greenhouse.
-- ADR-0002 (rev 2): Field bus architecture — WeAct STM32F4 core board on carrier PCB.
+- ADR-0002 (rev 3): Field bus architecture — WeAct STM32F4 core board on carrier PCB.
 - ADR-0003: Strawberry day-neutral cultivation profile — defines what must be measured.
 - Sensirion SHT45, SCD41 datasheets.
 - Bosch BME688 datasheet.
