@@ -50,7 +50,7 @@ The smart-node side (carrier PCB, WeAct core board, F405/F412/F446 drop-in, ATEC
    - Termination jumper (120 Ω, populated only on the two physical bus ends)
    - Sensor-module header (pinout per ADR-0014)
    - CAN bus connectors (Molex Micro-Fit 3.0 4-pin, IN and OUT)
-   - Power input (12 V or 24 V via barrel jack; local LDO supplies 3.3 V to ATECC608, bus pull-ups, and the WeAct core board)
+   - Power input (12 V or 24 V via barrel jack; local TPS54302 buck supplies 3.3 V — the only on-carrier rail — to the ATECC608, bus pull-ups, and the WeAct core board)
    - Status LED for CAN activity
    - ESD protection on the CAN bus
 
@@ -77,7 +77,7 @@ The smart-node side (carrier PCB, WeAct core board, F405/F412/F446 drop-in, ATEC
    - Linear bus topology, no stars.
    - 120 Ω termination at the two physical endpoints of the bus only.
    - Shielded twisted pair (CAT6 STP is acceptable substrate). Shield grounded at one point near the gateway.
-   - Separate power rail (12 V or 24 V), per-node LDO. Bus pairs carry signal only, no power.
+   - Separate power rail (12 V or 24 V), per-node TPS54302 buck (steps the rail to 3.3 V). Bus pairs carry signal only, no power.
 
 9. **Domain mapping.** Each Cyphal node belongs to exactly one IndustryFlow `module` within the cabinet `machine`. Subject-IDs identify *what data*; Node-ID identifies *which physical node*; gateway resolves Node-ID → module assignment via configuration. Tagging by `production_unit_id` (slot) is applied at the gateway based on node-to-slot mapping, not encoded in the CAN frame.
 

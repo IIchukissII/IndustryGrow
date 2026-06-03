@@ -50,6 +50,8 @@ IndustryGrow is an **open-core cultivation platform** with the following structu
 
 8. **Field instrumentation via modular smart nodes** on a Cyphal/CAN bus, with phased hardware tiering (prototype-grade BluePill carriers for self-builders, production-grade STM32G4 PCBs for commercial deployments — both speak the same DSDL). Details in ADR-0002.
 
+   > **Amended by ADR-0002 rev 3 (2026-05-16):** the phased two-tier hardware model (BluePill prototype / STM32G4 production) was rejected in favour of a single uniform smart-node platform — a WeAct STM32F4 core board on one carrier PCB — across all deployment scales. Uniformity superseded tiering; see ADR-0002 rev 3 decision 2 and alternative A. The "both grades" wording in the deferred-decisions list below, and the hardware-tiering scope of the planned ADR-0010, are superseded accordingly.
+
 ## Alternatives considered
 
 **A. Stay personal / decorative.** A single strawberry cabinet, no platform ambition. *Rejected:* the architecture being designed already exceeds personal scope, the IndustryFlow validation goal demands a generalizable shape, and a second cabinet is in the planning horizon regardless.
@@ -94,7 +96,7 @@ IndustryGrow is an **open-core cultivation platform** with the following structu
 - **ADR-0007 (future):** PKI architecture — community-self-hosted CA pattern and commercial CA infrastructure.
 - **ADR-0008 (future):** Deployment topology and operational scale.
 - **ADR-0009 (future):** Cultivation profile schema, contribution workflow, registry design.
-- **ADR-0010 (future):** Hardware tiering — full specification of production-grade nodes.
+- **ADR-0010 (future):** ~~Hardware tiering — full specification of production-grade nodes.~~ Repurposed to commercial-operations / managed-deployment policy; the hardware-tiering premise was dropped by ADR-0002 rev 3 (uniform single-tier hardware). See ADR-0002 deferred list and README.
 - **ADR-0011 (future):** Plugin architecture for commercial modules — interfaces, host pattern, isolation.
 - **ADR-0012 (future):** Entitlement and license verification.
 - **ADR-0013 (future):** Repository structure and licensing per artifact.
