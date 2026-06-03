@@ -133,7 +133,7 @@ Every IndustryGrow deployment proceeds through three operational phases. Phases 
 
 - **Identification competence becomes a critical organizational capability.** Without skilled identification engineers, the platform's calibration service is undeliverable. This is a hiring concern and a training concern.
 - **Profile schema (ADR-0009) becomes more complex** — must accommodate model parameters in addition to operational setpoints. Care needed to keep the schema versionable and validatable.
-- **Gateway compute load increases.** Running a state estimator at 1 Hz on top of control loops is more than just protocol bridging. Pi 3B+ remains adequate for typical-size models but the headroom shrinks; commercial deployments with large models may want Pi 4 or beyond (consistent with ADR-0002 rev 4 upgrade path).
+- **Gateway compute load increases.** Running a state estimator at 1 Hz on top of control loops is more than just protocol bridging. Pi 3B+ remains adequate for typical-size models but the headroom shrinks; commercial deployments with large models may want Pi 4 or beyond (consistent with ADR-0002 rev 3 upgrade path).
 - **Customers without identification expertise** cannot operate the system in model-mode without platform support. This is fine commercially (it's the lock-in mechanism for the platform business) but means open-source community users may default to non-model rule-based operation.
 - **Re-identification scheduling adds operational complexity** — operators need to know when to invoke survey phase, kits need to be available, downtime needs to be planned. This is genuine operational overhead.
 

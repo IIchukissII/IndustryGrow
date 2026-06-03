@@ -88,13 +88,13 @@ Zone count is not an architectural decision — it is a deployment-time choice m
    **M05-SAFETY — power monitoring and safety interlocks.**
    - TI INA226 × N — bidirectional current/voltage sensing on heater, pumps, LED drivers, dosing peristaltics. I²C, addressable via address straps. INA226 must be on or very near the sensor module PCB; shunts connect via short kelvin-sense leads (typically ≤20 cm).
    - TI TMP117 — independent thermal safety (cabinet over-temperature cutoff). I²C, ±0.1 °C.
+     - *Refined by ADR-0018 decision 10:* the TMP117 provides the *reported* cabinet temperature; the MCU/bus-independent over-temperature **trip** is an analog thermistor/PT1000 + comparator driving relay-enable (able to sit on a long lead to the grow volume). The TMP117 is not the trip element.
    - Reed switch on cabinet door — GPIO, on a wire from the door to the module.
    - Leak-detection strip(s) — ADC channel, on a wire from the strip location to the module.
    - Apartment scale: one instance with sensors on short leads as needed (TMP117 lead to canopy, reed wire to door, leak wire under reservoir). Larger deployments: one instance per safety-critical zone or load cluster.
 
 5. **Sensor-module header — standardized signal allocation.** All sensor modules use the same physical header on the carrier PCB. The pinout exposes a superset of interfaces; modules use what they need:
-   - 3.3 V (sensor power)
-   - 5 V (for the few sensors that need it; LDO on carrier)
+   - 3.3 V (sensor power; the only on-carrier rail, from the carrier's TPS54302 buck)
    - GND × 2 (analog + digital separation where applicable)
    - I²C: SDA, SCL
    - SPI: MOSI, MISO, SCK, 2× CS
