@@ -137,7 +137,7 @@ The smart-node side (carrier PCB, WeAct core board, F405/F412/F446 drop-in, ATEC
 - **ADR-0004 (rev 1)** — Gateway host hardening, stateless-edge operation, firmware signing.
 - **ADR-0007** — PKI for gateway-to-IndustryFlow authentication, ATECC608 binding policy and provisioning workflow.
 - **ADR-0010** — Operational policy for commercial managed deployments: QA pipeline, supply chain control, lifecycle, warranty.
-- **ADR-0014** — Sensor node taxonomy (exists; references unchanged from rev 2).
+- **ADR-0014** — Sensor node taxonomy (exists; now cites rev 3, smart-node side unchanged).
 - **Carrier PCB schematic + gerbers + BOM** — published in hardware reference repository under CERN-OHL-S.
 - **WeAct core board snapshot** — schematic + gerbers retained at known-good version in hardware reference repository.
 - **IndustryFlow-side audit-trail schema** — touches platform roadmap, not this ADR.

@@ -135,7 +135,7 @@ The resolution is to stop conflating three distinct concerns. **Distribution, mo
 ## Deferred decisions
 
 - Phase 1 `+12 V` input fuse value (sized to the real, small sensor-side load). The `+24 V` power-section input fusing and per-actuator-branch protection (cartridge vs. PTC vs. eFuse; the ~6 A figure) move to the design of the power section / actuator nodes.
-- Reconciliation edits to ADR-0014 (M05) and the Phase 1 BOMs (`sensor-modules-phase1-bom.md` M05, `procurement-phase1-data-collection.md` M05).
+- Reconciliation edits to ADR-0014 (M05) and the planned Phase 1 BOMs (`sensor-modules-phase1-bom.md` M05, `procurement-phase1-data-collection.md` M05).
 - Board connector set (rail inputs, CAN, fan-out), field-lead terminals for TMP117/reed/leak, and the S0 input conditioning (pull-up, debounce) for the DIN meter.
 - Specific COTS kWh meter (single- vs three-phase) per deployment and its pulse constant (imp/kWh) chosen for adequate S0 time resolution at the expected load power — hardware procurement, not architecture.
 - The over-temperature trip implementation (thermistor/PT1000 + comparator → relay-enable) and where the relay-enable acts in the (deferred) actuator path.
@@ -148,7 +148,7 @@ The resolution is to stop conflating three distinct concerns. **Distribution, mo
 - ADR-0014: Sensor node taxonomy — M05-SAFETY, short-lead extension (decision 3), partial-BOM (decision 2), deferred actuator taxonomy (decision 9).
 - ADR-0015: Gateway profile and control loops — actuator commands via Cyphal, hardware safety interlocks (decision 11).
 - ADR-0017: Component/document identification — E-module scheme, universal-carrier no-variant principle.
-- `procurement-phase1-data-collection.md`, `sensor-modules-phase1-bom.md`.
+- `procurement-phase1-data-collection.md`, `sensor-modules-phase1-bom.md` (planned; not yet in repo).
 - Texas Instruments INA226 datasheet.
 - DIN EN 62053-31 — S0 pulse output for electricity meters.
 - Example COTS DIN kWh meters with S0 pulse output: Eastron SDM120 / SDM230 (single-phase), Eastron SDM630 (three-phase); commodity equivalents DDS238-series (single-phase), DTS238-series (three-phase). Meter is a swappable line item; the S0-counting contract is the commitment.
