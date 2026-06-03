@@ -87,6 +87,8 @@ This ADR commits to Architecture B and specifies the contract between gateway an
 
 11. **Hardware interlocks override any profile or control-loop output.** As specified in ADR-0014 M05-SAFETY: the TMP117 over-temperature sensor connects to a master relay (or an actuator-side hardware compare circuit, depending on actuator-taxonomy ADR) that cuts heater power if temperature exceeds a hard-coded threshold (e.g., 35 °C). This is independent of the profile, the control loop, the gateway, and the cloud. Even if all software is compromised or malfunctioning, the heater shuts off.
 
+    > **Refined by ADR-0018 decision 10:** the MCU/gateway/cloud-independent trip is implemented with an analog thermistor/PT1000 + comparator, not the I²C TMP117 (which provides the reported temperature only). The interlock *principle* of this decision is unchanged; only the trip's sensing element is specified differently.
+
     Similarly, leak detection (M05) triggers a hardware-mediated cutoff of pump power, independent of software.
 
     The profile defines *operating* parameters. Hardware interlocks define *survival* parameters. These two domains are deliberately non-overlapping.

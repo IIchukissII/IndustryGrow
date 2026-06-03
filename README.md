@@ -13,7 +13,10 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 <table>
 <tr>
 <td width="300">
-  <img src="img/industrygrow-logo-preview.png" alt="IndustryGrow" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="img/industrygrow-logo-mono-dark.svg" />
+    <img src="img/industrygrow-logo-mono-light.svg" alt="IndustryGrow" width="280" />
+  </picture>
 </td>
 <td>
 
@@ -102,6 +105,7 @@ ADRs are the source of truth for the design. Present in this repository:
 - **ADR-0015** — Gateway profile caching and local control loops
 - **ADR-0016** — Empirical survey and state-space modeling
 - **ADR-0017** — Component, document, and instance identification scheme
+- **ADR-0018** — Cabinet-level power distribution and consumption metering
 
 Planned / not yet written: ADR-0005 (DSDL types), ADR-0006 (mechanical/hydroponic),
 ADR-0007 (PKI), ADR-0008 (deployment topology), ADR-0009 (profile schema),
