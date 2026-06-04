@@ -2,7 +2,6 @@
 SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
-
 # Component registry (E-numbers)
 
 Canonical map of `Exxxx` module designations to their meaning, per
@@ -24,15 +23,19 @@ identifier, so the store is filtered by identifier pattern (e.g. all
 | E-number | Name | Discipline | Bare design | Notes |
 |----------|------|------------|-------------|-------|
 | `E0001`  | Carrier — universal node host board | Electrical | own layout | CAN transceiver, ATECC608, sensor-module header (ADR-0002 rev 3, ADR-0017 decision 4). One assembly; no real variant. |
+| `E0002`  | M05-SAFETY — cabinet power distribution + monitoring node | Electrical | own layout | 1× INA226 on the +12 V sensor bus; actuator energy via DIN kWh meter / S0; over-temp trip (NTC + comparator, MCU-independent), reed, leak (ADR-0018 rev 1, ADR-0014 M05). straps `0b101`. No switching, no isolation. |
 
 ## Active versions
 
 | Identifier base | Component | Version | Source project | Released documents |
 |-----------------|-----------|---------|----------------|--------------------|
 | `E0001-000001`  | Carrier   | v0.0.1  | `store/E0001-000001.kicad_{pro,prl,sch,pcb}` | `…-L.csv` (BOM), `…-D.png` (render), `…-D-pos.csv` (placement), `…-D-*.{gtl,gbl,gto,gbo,gts,gbs,gtp,gbp,gm1,drl}` (fab package) |
+| `E0002-000001`  | M05-SAFETY | v0.0.1 | (pending — layout not yet committed) | `…-L.md` (working design BOM); `…-L.csv` and fab package to follow at layout commit |
 
-> Reserved per ADR-0017 but not yet present for `E0001`: `-S` (exported
+> M05-SAFETY is registered at the BOM stage, ahead of layout commit; its design
+> documents (`-S`/`-D`/`…-L.csv` fab package) land when the KiCad project is committed.
+> Reserved per ADR-0017 but not yet present for `E0001`/`E0002`: `-S` (exported
 > schematic), `-P` (protocol), `-M` (manual), `-I` (interface / Cyphal DSDL),
 > and any production/QC instances (`Exxxx-VVVVVV-NNNNNN`) with `-QP/-QR/-CP/-CC/-PR`
-> lifecycle suffixes. Sensor modules M01–M05 (ADR-0014) get their own E-numbers
-> when their designs are committed.
+> lifecycle suffixes. Sensor modules M01–M04 (ADR-0014) get their own E-numbers
+> when their designs are committed. **Next free: `E0003`.**
