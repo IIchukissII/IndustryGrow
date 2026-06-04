@@ -87,6 +87,7 @@ Zone count is not an architectural decision — it is a deployment-time choice m
 
    **M05-SAFETY — power monitoring and safety interlocks.**
    - TI INA226 × N — bidirectional current/voltage sensing on heater, pumps, LED drivers, dosing peristaltics. I²C, addressable via address straps. INA226 must be on or very near the sensor module PCB; shunts connect via short kelvin-sense leads (typically ≤20 cm).
+     - *Refined by ADR-0018 (rev 1):* power monitoring is **not** per-load on the zone module. M05 is realized as the cabinet-level distribution + monitoring board, carrying a **single** INA226 on the `+12 V` sensor bus; per-load and per-section current monitoring are dropped. All actuator / high-power energy is captured by a COTS DIN kWh meter read over S0 — there is no actuator-side current monitor (no DC-actuator-aggregate INA, no per-actuator shunt). The energy meter feeds offline anomaly models, not control.
    - TI TMP117 — independent thermal safety (cabinet over-temperature cutoff). I²C, ±0.1 °C.
      - *Refined by ADR-0018 decision 10:* the TMP117 provides the *reported* cabinet temperature; the MCU/bus-independent over-temperature **trip** is an analog thermistor/PT1000 + comparator driving relay-enable (able to sit on a long lead to the grow volume). The TMP117 is not the trip element.
    - Reed switch on cabinet door — GPIO, on a wire from the door to the module.
