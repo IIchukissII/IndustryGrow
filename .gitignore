@@ -1,3 +1,6 @@
 
 # KiCad local-history auto-backups (editor artifact, not project content)
 store/.history/
+
+# KiCad editor lock files (created while a file is open)
+*.lck
