@@ -4,6 +4,10 @@
 	(generator_version "10.0")
 	(uuid "e6bf351d-e9cb-40e2-a753-e88fd218a7be")
 	(paper "A4")
+	(title_block
+		(title "carrier board")
+		(rev "000001")
+	)
 	(lib_symbols
 		(symbol "Connector:Conn_01x04_Pin"
 			(pin_names
