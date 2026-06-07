@@ -37,7 +37,7 @@ This ADR commits to Architecture B and specifies the contract between gateway an
 - **Plants do not wait.** Control must work during network outages.
 - **Single mutation channel.** All changes to system behavior must flow through one well-defined path (profile versioning), so they are auditable, signed, reversible.
 - **Cloud as observer + profile source, not commander.** The cloud's role is storage, history, ML/analytics, and profile distribution. Real-time control is local.
-- **Safety is separate from control.** Hardware interlocks (TMP117 → master relay per ADR-0014 M05) override profile-derived setpoints. The profile cannot disable safety; the cloud cannot disable safety; even a corrupted control loop cannot disable safety.
+- **Safety is separate from control.** Hardware interlocks (an analog over-temperature trip at the heating actuator, ADR-0018 decision 10) override profile-derived setpoints. The profile cannot disable safety; the cloud cannot disable safety; even a corrupted control loop cannot disable safety.
 - **Simplicity at the cloud-edge boundary.** No bidirectional real-time RPC, no streaming-command protocol, no "cloud sends, gateway acks". Just: profile version pulled by gateway; telemetry pushed by gateway.
 
 ## Decision
@@ -85,11 +85,11 @@ This ADR commits to Architecture B and specifies the contract between gateway an
 
 ### Hardware safety interlocks (carrying ADR-0014 forward)
 
-11. **Hardware interlocks override any profile or control-loop output.** As specified in ADR-0014 M05-SAFETY: the TMP117 over-temperature sensor connects to a master relay (or an actuator-side hardware compare circuit, depending on actuator-taxonomy ADR) that cuts heater power if temperature exceeds a hard-coded threshold (e.g., 35 °C). This is independent of the profile, the control loop, the gateway, and the cloud. Even if all software is compromised or malfunctioning, the heater shuts off.
+11. **Hardware interlocks override any profile or control-loop output, and they live at the actuator — not on M05.** The over-temperature cutoff is implemented at the heating-actuator node: an analog thermistor/PT1000 on a lead in the grow volume → comparator → that actuator's relay-enable, co-located with the element it cuts. It trips if the grow-volume temperature exceeds a hard-coded threshold (e.g., 35 °C), independently of the profile, the control loop, the gateway, and the cloud. Even if all software is compromised or malfunctioning, the heater shuts off. M05 is sense-only: it hosts no trip, no comparator, and no relay-enable (ADR-0018); it reports temperatures but switches nothing.
 
-    > **Refined by ADR-0018 decision 10:** the MCU/gateway/cloud-independent trip is implemented with an analog thermistor/PT1000 + comparator, not the I²C TMP117 (which provides the reported temperature only). The interlock *principle* of this decision is unchanged; only the trip's sensing element is specified differently.
+    > **Refined by ADR-0018 decision 10:** the MCU/gateway/cloud-independent trip is an analog thermistor/PT1000 + comparator (not the I²C TMP117, which is reported-temperature only), and it is located **at the heating actuator**, not on M05. The interlock *principle* — a hardware-independent over-temperature cutoff — is unchanged; what is specified differently is both the sensing element and the trip's location (actuator, per the sense/switch separation).
 
-    Similarly, leak detection (M05) triggers a hardware-mediated cutoff of pump power, independent of software.
+    Leak and door are **report/alert-only** on M05 — no automatic cutoff. M05 senses a leak on a lead to the reservoir/pump zone and a door-open on a GPIO, and reports/alerts; it switches nothing. Because a nutrient leak is a slow, non-fire failure (minutes–hours, not seconds), its response is software-mediated — the gateway commands the pump off over Cyphal — and does not require a hardware-independent interlock.
 
     The profile defines *operating* parameters. Hardware interlocks define *survival* parameters. These two domains are deliberately non-overlapping.
 
