@@ -47,8 +47,8 @@ dynamics and operate it efficiently afterward.
 - **Autonomous edge.** The gateway runs control loops *locally* against a cached profile.
   The cloud is an observer and profile source, never a real-time commander — plants keep
   growing through network outages.
-- **Safety is hardware, separate from control.** Hardware interlocks (over-temperature, leak)
-  cut power independently of any software. The profile defines *operating* parameters;
+- **Safety is hardware, separate from control.** The over-temperature interlock at the heating
+  actuator cuts power independently of any software. The profile defines *operating* parameters;
   hardware defines *survival* parameters. The two never overlap.
 - **Sensor density is temporal.** Dense coverage during an empirical *survey*, a reduced-order
   state-space model is *identified*, then most sensors return to inventory for the lean
@@ -83,7 +83,7 @@ populated-BOM, not by new designs.
 | M02-LIGHT | Photic environment | 11-channel spectral, UV-A |
 | M03-ANALYTICS | Hydroponic solution | pH, EC, solution temperature |
 | M04-PLANT | Plant-level | Canopy thermal imaging |
-| M05-SAFETY | Power & interlocks | Load current, over-temp cutoff, door, leak |
+| M05-SAFETY | Power & monitoring | +12 V bus current, reported cabinet temp, door, leak (report/alert) |
 
 ## Project status
 

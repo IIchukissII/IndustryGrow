@@ -23,7 +23,7 @@ identifier, so the store is filtered by identifier pattern (e.g. all
 | E-number | Name | Discipline | Bare design | Notes |
 |----------|------|------------|-------------|-------|
 | `E0001`  | Carrier — universal node host board | Electrical | own layout | CAN transceiver, ATECC608, sensor-module header (ADR-0002 rev 3, ADR-0017 decision 4). One assembly; no real variant. |
-| `E0002`  | M05-SAFETY — cabinet power distribution + monitoring node | Electrical | own layout | 1× INA226 on the +12 V sensor bus; actuator energy via DIN kWh meter / S0; over-temp trip (NTC + comparator, MCU-independent), reed, leak (ADR-0018 rev 1, ADR-0014 M05). straps `0b101`. No switching, no isolation. |
+| `E0002`  | M05-SAFETY — cabinet power distribution + monitoring node | Electrical | own layout | sense-only: 1× INA226 on the +12 V sensor bus; actuator energy via DIN kWh meter / S0; TMP117 reported cabinet temp; reed (door) and leak strip report/alert only (ADR-0018, ADR-0014 M05). The over-temp trip lives at the heating actuator, not M05 (ADR-0018 decision 10). straps `0b101`. No switching, no interlock, no isolation. |
 
 ## Active versions
 
