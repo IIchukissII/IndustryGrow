@@ -58,7 +58,7 @@ dynamics and operate it efficiently afterward.
 
 | Layer | Choice |
 |-------|--------|
-| Field bus | Cyphal application protocol over classic CAN, linear topology |
+| Field bus | Cyphal application protocol over classic CAN @ 500 kbit/s, linear topology |
 | Smart-node MCU | WeAct STM32F4 64-pin Core Board (STM32F405RGT6; F412/F446 drop-in) |
 | Node carrier PCB | Custom integration board: CAN transceiver, ATECC608 secure element, sensor-module header |
 | Gateway | Raspberry Pi (3B+ minimum, Pi 4/5 for higher traffic) + isolated 2-channel CAN HAT |
