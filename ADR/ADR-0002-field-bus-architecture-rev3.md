@@ -63,7 +63,7 @@ The smart-node side (carrier PCB, WeAct core board, F405/F412/F446 drop-in, ATEC
 5. **Firmware: static personality with modular driver structure.** Each node type ships its own firmware binary that knows its sensor module. Internally, sensor and actuator drivers conform to a common interface so that migration to dynamic personality (one firmware, type read via sensor-module strap pins) requires only an initialization-stage addition, not an architectural rewrite. Reference firmware under AGPL-3.0-or-later.
 
 6. **Gateway: Raspberry Pi with isolated 2-channel CAN HAT (reference).** Any Raspberry Pi model with SPI-accessible 40-pin GPIO header and supported SocketCAN MCP2515 driver works:
-   - **Minimum (apartment-scale): Raspberry Pi 3B+** with 1 GB RAM. Adequate for headless Pycyphal-asyncio gateway servicing one cabinet's 5–10 nodes at classic-CAN rates. Headless Pi OS Lite, no GUI, no local storage-heavy services.
+   - **Minimum (apartment-scale): Raspberry Pi 3B+** with 1 GB RAM. Adequate for headless Pycyphal-asyncio gateway servicing one cabinet's 5–10 nodes at the 500 kbit/s classic-CAN rate (decision 8). Headless Pi OS Lite, no GUI, no local storage-heavy services.
    - **Recommended (commercial / higher-traffic): Raspberry Pi 4 (2 GB+) or Pi 5 (4 GB+)** for headroom and NVMe-attached storage. Pi 5's PCIe NVMe slot is useful for production gateways that may host additional edge services in the future.
    - **Industrial enclosures (commercial managed deployments):** RevPi, Compulab, or equivalent — same SocketCAN + Pycyphal software stack, different mechanical/thermal envelope.
 
@@ -75,6 +75,7 @@ The smart-node side (carrier PCB, WeAct core board, F405/F412/F446 drop-in, ATEC
 
 8. **Physical layer:**
    - Linear bus topology, no stars.
+   - **Bus bit rate: 500 kbit/s (classic CAN).** A single fixed rate for all nodes and the gateway — no run-time negotiation. 500 kbit/s gives ample headroom for a cabinet's 5–10 nodes while keeping bus length generous (well over the ~100 m a classic-CAN bus at this rate supports, far beyond any cabinet/zone run). Higher rates (1 Mbit/s) shorten the maximum bus length and tighten transceiver/stub-length margins for no throughput need at this node count; lower rates waste headroom. CAN FD is out of scope (decision rejected in F).
    - 120 Ω termination at the two physical endpoints of the bus only.
    - Shielded twisted pair (CAT6 STP is acceptable substrate). Shield grounded at one point near the gateway.
    - Separate power rail (12 V or 24 V), per-node TPS54302 buck (steps the rail to 3.3 V). Bus pairs carry signal only, no power.
