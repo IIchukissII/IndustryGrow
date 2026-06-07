@@ -154,7 +154,7 @@ This ADR adds clarity to several existing decisions without changing them:
 - **ADR-0001 decision 4** (advanced control modules) — these modules are now explicitly **profile generators**, not command emitters. No structural change to ADR-0001 needed, but the operating model is sharpened.
 - **ADR-0004 rev 1** stateless-edge principle — profile cache is *configuration* state, which is permitted. *Operational* state (telemetry log) remains forbidden on gateway. The distinction is preserved.
 - **ADR-0002 rev 3 decision 6** (gateway service) — clarified that the gateway service does more than decode+forward: it also runs control loops. Pi 3B+ remains the minimum; control-loop CPU load is small (PID + lookup tables) and fits in 1 GB RAM with comfortable margin.
-- **ADR-0014 M05-SAFETY** — hardware interlocks remain the survival layer, independent of profile or control loops. This ADR explicitly affirms the boundary.
+- **ADR-0014 M05-SAFETY / ADR-0018** — the over-temperature hardware interlock remains the survival layer, independent of profile or control loops. It lives at the heating actuator (ADR-0018 decision 10), not on M05, which is sense-only. This ADR explicitly affirms the boundary.
 
 ## Deferred decisions
 
@@ -171,5 +171,5 @@ This ADR adds clarity to several existing decisions without changing them:
 - ADR-0002 (rev 3): Field bus architecture — gateway hardware and service.
 - ADR-0003: Strawberry day-neutral cultivation profile — reference profile content.
 - ADR-0004 (rev 1): Gateway host hardening — stateless-edge principle, distinction between configuration state (allowed) and operational state (not allowed).
-- ADR-0014: Sensor node taxonomy — M05-SAFETY hardware interlocks.
+- ADR-0014: Sensor node taxonomy — M05-SAFETY (sense-only); the over-temperature hardware interlock lives at the heating actuator per ADR-0018 decision 10.
 - `industryflow-platform-dependencies.md` (planned; not yet in repo) — tracking document for IndustryFlow-side work needed to support this ADR (profile distribution API, signature scheme, etc.).
