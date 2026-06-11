@@ -10,8 +10,8 @@ Identifiers are opaque by design — this registry holds the meaning.
 
 Identifier recap (ADR-0017):
 
-- **Documentation** (type-level): `Exxxx-VVVVVV-L` — `L` ∈ `S` Schema, `D` Drawing,
-  `L` List/BOM, `P` Protocol, `M` Manual, `I` Interface.
+- **Documentation** (type-level): `Exxxx-VVVVVV-L` — `L` is a document-layer letter;
+  see the code legend in ADR-0017 for the layer letters and lifecycle suffixes.
 - **Production & QC** (one instance): `Exxxx-VVVVVV-NNNNNN[-suffix]`.
 - **Integration** (installed): `GBOX_NNNN-DDDDDD-Exxxx-VVVVVV-NNNNNN`.
 - `VVVVVV` = `major.minor.patch`, two digits each (e.g. `v0.0.1` → `000001`).
