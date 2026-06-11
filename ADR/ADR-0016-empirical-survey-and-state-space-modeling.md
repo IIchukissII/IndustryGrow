@@ -97,13 +97,17 @@ Every IndustryGrow deployment proceeds through three operational phases. Phases 
 
 15. **Survey-as-a-service as a customer entry point.** New customers don't need to buy a full deployment to start. They can buy a survey of their existing facility, receive a calibrated model and recommendations, and decide downstream whether to invest in operating-phase sensors and control infrastructure. Lower friction to first revenue.
 
+### Emergent observables (forward direction)
+
+16. **Resource-flux accounting as an emergent observable (direction, not yet specified).** The same quasi-closed-chamber mass-balance behind zone-mean CO₂ also yields net carbon assimilation as a soft-sensor (decision 5), from the `dC/dt` transient after a light/ventilation step; its limiting unknown — the air-exchange rate — is already an identification-phase output (decision 2), so neither new hardware nor new survey machinery is required. Generalizes to resource-use efficiency (WUE/LUE/NUE) once Phase-2 flow/dosing counters exist. Recorded as a direction; implementation deferred.
+
 ## Non-goals explicitly captured
 
-16. **No claim that this is the only modeling approach.** Some operators will not want or need model-based estimation and will run IndustryGrow as a pure measurement + rule-based control system. The architecture supports both modes; this ADR specifies the **option**, not a mandate.
+17. **No claim that this is the only modeling approach.** Some operators will not want or need model-based estimation and will run IndustryGrow as a pure measurement + rule-based control system. The architecture supports both modes; this ADR specifies the **option**, not a mandate.
 
-17. **No specification of which state-space identification algorithm to use.** Subspace identification (N4SID, MOESP), prediction-error methods, grey-box methods — all are valid and the choice depends on data characteristics. This is an implementation concern, not an architectural one.
+18. **No specification of which state-space identification algorithm to use.** Subspace identification (N4SID, MOESP), prediction-error methods, grey-box methods — all are valid and the choice depends on data characteristics. This is an implementation concern, not an architectural one.
 
-18. **No on-gateway model identification in Phase 1.** Identification is off-line. The gateway hardware (Pi 3B+) is sized for inference only. On-gateway online identification may become relevant in future commercial gateway tiers but is out of scope here.
+19. **No on-gateway model identification in Phase 1.** Identification is off-line. The gateway hardware (Pi 3B+) is sized for inference only. On-gateway online identification may become relevant in future commercial gateway tiers but is out of scope here.
 
 ## Alternatives considered
 
