@@ -85,6 +85,24 @@ The separation is load-bearing for two reasons specific to IndustryGrow. ADR-001
 
 2. **Two distinct instance histories, one of which this ADR governs.** Static, per-instance *documents* (test data, calibration, provisioning records) live in the document store and are addressable by suffix. *Operational/runtime events* (firmware-flash events, telemetry, control-decision audit, hash-chain) live in IndustryFlow's audit log per ADR-0004 rev 1 decisions 10 and 16. The two are not merged and not duplicated. Suffixes (decisions 10–14) address only the former.
 
+### Code legend
+
+The single key to the trailing letter codes in an identifier: the **document-layer** letter in the type-level form `Exxxx-VVVVVV-L` (e.g. the `D` in `E0001-000001-D.png`, the `L` in `E0001-000001-L.csv`) and the **lifecycle suffix** in the instance form `Exxxx-VVVVVV-NNNNNN-XX`. This table is the one place the codes are expanded; the cited decisions hold the definitions and rules, not a second copy of the mapping. Both sets are extensible — add a code by appending a row here; suffix codes are two uppercase letters and must not collide with the layer letters.
+
+| Code | Meaning | Field | Defined in |
+|------|---------|-------|------------|
+| `S`   | Schema | document layer | decision 9 |
+| `D`   | Drawing | document layer | decision 9 |
+| `L`   | List / BOM | document layer | decision 9 |
+| `P`   | Protocol | document layer | decision 9 |
+| `M`   | Manual | document layer | decision 9 |
+| `I`   | Interface | document layer | decision 9 |
+| `-QP` | Quality Protocol | lifecycle suffix | decision 10 |
+| `-QR` | Quality Report | lifecycle suffix | decision 10 |
+| `-CP` | Calibration Protocol | lifecycle suffix | decision 11 |
+| `-CC` | Calibration Certificate | lifecycle suffix | decision 11 |
+| `-PR` | Provisioning Record | lifecycle suffix | decision 12 |
+
 ### Module designation (E-numbers)
 
 3. **An E-number identifies a buildable/documentable assembly.** The existing taxonomy maps directly: the carrier and each of M01–M05 are buildable assemblies and each receives an E-number. A **functional subsystem** (climate, lighting, irrigation, plant monitoring, pollination, power/safety per ADR-0001 decision 7) is *not* an E-number — it is a **position** in the machine, expressed as a depth code (decision 7). The WeAct STM32F4 core board is a COTS sub-component; it is either given its own E-number for traceability or tracked by vendor part number (deferred).
@@ -107,7 +125,7 @@ The separation is load-bearing for two reasons specific to IndustryGrow. ADR-001
 
 ### Document layers
 
-9. **Layer set `S` / `D` / `L` / `P` / `M` / `I`** — Schema, Drawing, List/BOM, Protocol, Manual, Interface. Two IndustryGrow-specific bindings: the **`I` (Interface)** layer carries Cyphal subject-ID assignments and DSDL `industryflow.greenhouse.*` type definitions (ADR-0002 rev 3 decision 1; ADR-0005, planned); the **`L` (List)** layer carries the per-module BOMs already drafted in the procurement and sensor-module documents.
+9. **Layer set `S` / `D` / `L` / `P` / `M` / `I`** — expanded in the code legend above. Two IndustryGrow-specific bindings: the **`I` (Interface)** layer carries Cyphal subject-ID assignments and DSDL `industryflow.greenhouse.*` type definitions (ADR-0002 rev 3 decision 1; ADR-0005, planned); the **`L` (List)** layer carries the per-module BOMs already drafted in the procurement and sensor-module documents.
 
 ### Suffixes (per-instance lifecycle documents)
 
