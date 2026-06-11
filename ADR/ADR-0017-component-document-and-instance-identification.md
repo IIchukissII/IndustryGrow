@@ -111,17 +111,15 @@ The separation is load-bearing for two reasons specific to IndustryGrow. ADR-001
 
 ### Suffixes (per-instance lifecycle documents)
 
-**Suffix register — canonical and extensible.** The table below is the authoritative suffix set. It is maintained in place: a new per-instance lifecycle-document type is added by appending a row here (a revision to this ADR), so the scheme can grow without reopening the prose. Decisions 10–14 give the rationale and the rules that govern the current rows.
+**Suffix legend.** Quick key to the suffix codes; definitions and rules live in the decisions cited — not repeated here. The set is extensible: a new suffix code (two uppercase letters, not colliding with the decision-9 layer letters) is added by appending a row.
 
-| Suffix | Document | Recurs? | Stored form | Definition |
-|--------|----------|---------|-------------|------------|
-| `-QP`  | Quality Protocol | No (write-once) | one document | Raw bring-up and functional-test data for the instance — DFU flash, bxCAN init, Cyphal heartbeat, sensor-presence probing, functional run; discipline-specific tests live inside (decision 10). |
-| `-QR`  | Quality Report | No (write-once) | one document | Evaluated result and acceptance derived from `-QP` (decision 10). |
-| `-CP`  | Calibration Protocol | Yes | dated/sequenced | Raw calibration points (decision 11). |
-| `-CC`  | Calibration Certificate | Yes | `-CC-YYYYMMDD` or `-CCnnn` | Resulting coefficients and validity period; a later calibration adds a new dated record, never overwrites (decision 11). |
-| `-PR`  | Provisioning Record | No (write-once) | one document, restricted | Binds the ATECC608 to its issued certificate — the instance "birth certificate"; public material only (decision 12). |
-
-Rules that apply to every row: suffixes attach to the instance identifier `Exxxx-VVVVVV-NNNNNN`, never to the integration identifier (decision 13); they address static documents only — operational/runtime events stay in IndustryFlow's audit log (decision 2). New suffix codes must stay two uppercase letters and must not collide with the document-layer letters of decision 9.
+| Suffix | Document | Defined in |
+|--------|----------|------------|
+| `-QP`  | Quality Protocol | decision 10 |
+| `-QR`  | Quality Report | decision 10 |
+| `-CP`  | Calibration Protocol | decision 11 |
+| `-CC`  | Calibration Certificate | decision 11 |
+| `-PR`  | Provisioning Record | decision 12 |
 
 10. **`-QP` / `-QR`.** `-QP` (Quality Protocol) is the raw bring-up and functional-test data for an instance (DFU flash, bxCAN init, Cyphal heartbeat, sensor-presence I²C probing, functional run against bench stimuli). `-QR` (Quality Report) is the evaluated result and acceptance. Discipline-specific test content (dimensional inspection for mechanical, leak/pressure test for pneumatic) lives *inside* the QP document; the suffix code stays generic. No `QP`-electrical / `QP`-pneumatic proliferation.
 
