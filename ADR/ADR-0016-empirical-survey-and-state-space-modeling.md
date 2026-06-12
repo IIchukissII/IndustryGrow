@@ -41,6 +41,17 @@ This ADR makes these decisions explicit and adds **state-space modeling and empi
 
 ## Decision
 
+### State-vector partition (clarifying note)
+
+The deployment state vector partitions by *whose concern* each variable is, and this partition — not the raw variable list — governs how each variable is treated:
+
+- **Biological subspace** — variables plant physiology responds to (leaf VPD, PPFD/spectrum/DLI, CO₂, root-zone temperature, EC/pH, air movement). These are the experiment's factors and the *only* variables that receive setpoints in the profile. Coupling among them is expected and is exactly what the state-space model exists to resolve: a correct model drives each to target through the shared, physically-coupled actuators.
+- **Apparatus subspace** — variables the *system* must keep within bounds to realize the biological setpoints and to keep measurement trustworthy (rail voltages, actuator duty, condensation, component temperatures, leak, energy). Observed and bounded/alarmed in software (cf. ADR-0018); they carry no setpoints and do not enter the cultivation hypothesis.
+
+Control objective: drive the biological subspace to profile setpoints while holding the apparatus subspace within tolerance.
+
+This partition sits *above* the hardware survival layer (ADR-0014 M05 interlocks), which is not a regulated subspace but an independent override floor (ADR-0015, "safety is separate from control"). Three layers, not two: biological (profile setpoints) / apparatus (software bounds) / survival (hardware interlocks).
+
 ### Lifecycle phases
 
 Every IndustryGrow deployment proceeds through three operational phases. Phases repeat — a deployment returns to identification when the environment changes materially (new equipment, modified geometry, seasonal change, new cultivar requirements).
