@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="492" viewBox="0 0 720 492" role="img" aria-label="Two identity trees joined at integration, per ADR-0017">
+  <title>ADR-0017 — two identity trees joined at integration</title>
+  <desc>Left: position tree rooted at the machine GBOX, with a depth path down to a position leaf. Right: type/instance tree rooted at the E-module, with version, serial and lifecycle suffix. A dashed integration edge joins the position leaf to a serial instance and is re-assigned when the instance moves.</desc>
+
+  <defs>
+    <marker id="ag" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#5F5E5A"/></marker>
+    <marker id="ac" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#D85A30"/></marker>
+  </defs>
+
+  <rect x="0.5" y="0.5" width="719" height="491" rx="10" fill="#FFFFFF" stroke="#E5E3DC"/>
+
+  <text x="360" y="30" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#2C2C2A">Two identity trees, joined only at integration</text>
+
+  <text x="180" y="62" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="600" fill="#2C2C2A">Position tree</text>
+  <text x="180" y="79" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#5F5E5A">rooted at the machine</text>
+  <text x="540" y="62" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="600" fill="#2C2C2A">Type / instance tree</text>
+  <text x="540" y="79" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#5F5E5A">rooted at the E-module</text>
+
+  <rect x="90" y="92" width="180" height="58" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1.6"/>
+  <text x="180" y="117" text-anchor="middle" font-family="Menlo, Consolas, monospace" font-size="14" font-weight="600" fill="#04342C">GBOX_NNNN</text>
+  <text x="180" y="136" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11.5" fill="#0F6E56">machine · root</text>
+  <line x1="180" y1="152" x2="180" y2="170" stroke="#5F5E5A" stroke-width="1.2" marker-end="url(#ag)"/>
+  <rect x="90" y="174" width="180" height="58" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1"/>
+  <text x="180" y="199" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="500" fill="#04342C">Main</text>
+  <text x="180" y="218" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11.5" fill="#0F6E56">subsystem · DD</text>
+  <line x1="180" y1="234" x2="180" y2="252" stroke="#5F5E5A" stroke-width="1.2" marker-end="url(#ag)"/>
+  <rect x="90" y="256" width="180" height="58" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1"/>
+  <text x="180" y="281" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="500" fill="#04342C">Sub-position 1</text>
+  <text x="180" y="300" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11.5" fill="#0F6E56">depth · DD</text>
+  <line x1="180" y1="316" x2="180" y2="334" stroke="#5F5E5A" stroke-width="1.2" marker-end="url(#ag)"/>
+  <rect x="90" y="338" width="180" height="58" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1"/>
+  <text x="180" y="363" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="500" fill="#04342C">Sub-position 2</text>
+  <text x="180" y="382" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11.5" fill="#0F6E56">position · leaf</text>
+
+  <rect x="450" y="92" width="180" height="58" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="1.6"/>
+  <text x="540" y="117" text-anchor="middle" font-family="Menlo, Consolas, monospace" font-size="14" font-weight="600" fill="#26215C">Exxxx</text>
+  <text x="540" y="136" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11.5" fill="#534AB7">module type · root</text>
+  <line x1="540" y1="152" x2="540" y2="170" stroke="#5F5E5A" stroke-width="1.2" marker-end="url(#ag)"/>
+  <rect x="450" y="174" width="180" height="58" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
+  <text x="540" y="199" text-anchor="middle" font-family="Menlo, Consolas, monospace" font-size="14" font-weight="600" fill="#26215C">VVVVVV</text>
+  <text x="540" y="218" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11.5" fill="#534AB7">design version</text>
+  <line x1="540" y1="234" x2="540" y2="252" stroke="#5F5E5A" stroke-width="1.2" marker-end="url(#ag)"/>
+  <rect x="450" y="256" width="180" height="58" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
+  <text x="540" y="281" text-anchor="middle" font-family="Menlo, Consolas, monospace" font-size="14" font-weight="600" fill="#26215C">NNNNNN</text>
+  <text x="540" y="300" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11.5" fill="#534AB7">serial · instance</text>
+  <line x1="540" y1="316" x2="540" y2="334" stroke="#5F5E5A" stroke-width="1.2" marker-end="url(#ag)"/>
+  <rect x="450" y="338" width="180" height="58" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
+  <text x="540" y="363" text-anchor="middle" font-family="Menlo, Consolas, monospace" font-size="14" font-weight="600" fill="#26215C">-XX</text>
+  <text x="540" y="382" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11.5" fill="#534AB7">lifecycle suffix</text>
+
+  <line x1="270" y1="367" x2="448" y2="285" stroke="#D85A30" stroke-width="1.3" stroke-dasharray="6 4" marker-end="url(#ac)"/>
+  <text x="360" y="300" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#993C1D">integration</text>
+  <text x="360" y="315" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#993C1D">re-assigned on move</text>
+
+  <line x1="40" y1="412" x2="680" y2="412" stroke="#E5E3DC" stroke-width="1"/>
+
+  <text x="70" y="434" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#2C2C2A">Documentation</text>
+  <text x="240" y="434" font-family="Menlo, Consolas, monospace" font-size="12.5" fill="#444441">Exxxx-VVVVVV-L</text>
+  <text x="70" y="456" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#2C2C2A">Production</text>
+  <text x="240" y="456" font-family="Menlo, Consolas, monospace" font-size="12.5" fill="#444441">Exxxx-VVVVVV-NNNNNN[-XX]</text>
+  <text x="70" y="478" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#2C2C2A">Integration</text>
+  <text x="240" y="478" font-family="Menlo, Consolas, monospace" font-size="12.5" fill="#444441">GBOX_NNNN-DDDDDD-Exxxx-VVVVVV-NNNNNN</text>
+</svg>

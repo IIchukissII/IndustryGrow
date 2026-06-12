@@ -33,6 +33,39 @@ The separation is load-bearing for two reasons specific to IndustryGrow. ADR-001
 
 ## Decision
 
+## Conceptual model (governing invariant)
+
+Identity has two orthogonal axes that never fuse:
+
+- **Identity axis** — *what a thing is, and which copy.* Rooted at the
+  E-module: `Exxxx → VVVVVV → NNNNNN`. Assigned at design / production.
+  Position-free.
+- **Position axis** — *where a thing physically sits.* Rooted at the machine:
+  `GBOX_NNNN → DDDDDD`. Assigned at integration. Identity-free.
+
+These two axes are the same model as the three separated coordinates named
+below (type, instance, position): the identity axis carries **type** and
+**instance** as its two levels; the position axis is the third coordinate.
+"Two axes" and "three separated coordinates" describe one structure.
+
+The axes meet only in the integration identifier
+`GBOX_NNNN-DDDDDD-Exxxx-VVVVVV-NNNNNN`, a *mutable cross-reference* re-assigned
+whenever an instance is moved, removed, or replaced. A serial never encodes
+position; a position never encodes identity.
+
+A third notion — the **document layer** (`S/D/L/P/M/I`) — is not an axis but a
+classifier on the identity axis (which artifact about a given identity); it
+never denotes nesting.
+
+Every numbered decision below is a consequence of this invariant. The rejected
+alternatives (flat hierarchical serial; position baked into serial) are exactly
+the collapse of these two axes into one, which the invariant forbids because
+instances are mobile and interchangeable (ADR-0014, ADR-0016).
+
+> Terminology for this ADR is governed by `GLOSSARY.md`.
+
+![Two identity trees joined at integration](./figures/adr0017-identity-trees.svg)
+
 ### Identifier formats
 
 1. **Three phase-specific identifier formats.**
@@ -77,8 +110,8 @@ The separation is load-bearing for two reasons specific to IndustryGrow. ADR-001
    - **Module** `Exxxx` — `E` plus four digits; identifies a buildable/documentable assembly (decision 3). An opaque key; meaning is held in the registry.
    - **Version** `VVVVVV` — six digits encoding semantic version `major.minor.patch`, two digits each (`1.0.0` → `010000`, `2.1.3` → `020103`). This is the version of the *design*, not of a populated configuration (see alternative D).
    - **Serial** `NNNNNN` — six digits, unique per module+version (`000001`–`999999`). Assigned in Production. The width is sized to the largest declared deployment's lifetime install base of a single design+version — most acutely the universal carrier, which has one near-static version and therefore accumulates the most serials — so the range is not exhausted in practice. There is deliberately **no** overflow-into-version mechanism: bumping the patch when a range fills would leak instance *count* into the design *version*, the same corruption alternative D rejects, and would not even buy more headroom than simply widening the field (see decision 8 and alternative D).
-   - **Depth** `DDDDDD` — six digits in three two-digit levels (main module / sub-module level 1 / sub-module level 2), encoding the position within the machine hierarchy. Position only; assigned at integration, never present in the production identifier (decision 7).
-   - **Layer** `L` — a single letter naming the document type (decision 9).
+   - **Depth** `DDDDDD` — six digits in three two-digit levels (main / sub-position 1 / sub-position 2), encoding the position within the machine hierarchy. Position only; assigned at integration, never present in the production identifier (decision 7).
+   - **Document layer** `L` — a single letter naming the document type (decision 9).
    - **Suffix** — a per-instance lifecycle-document tag appended in the production identifier (decisions 10–14).
 
    Documents are stored flat, with the hierarchy carried entirely in the identifier, so the store can be filtered by identifier pattern (all documents of one module, all reports, all instances at a given position, and so on). The store is realized as an object store, where this filtering is a key-prefix list (decision 15).
@@ -87,7 +120,7 @@ The separation is load-bearing for two reasons specific to IndustryGrow. ADR-001
 
 ### Code legend
 
-The single key to the trailing letter codes in an identifier: the **document-layer** letter in the type-level form `Exxxx-VVVVVV-L` (e.g. the `D` in `E0001-000001-D.png`, the `L` in `E0001-000001-L.csv`) and the **lifecycle suffix** in the instance form `Exxxx-VVVVVV-NNNNNN-XX`. This table is the one place the codes are expanded; the cited decisions hold the definitions and rules, not a second copy of the mapping. Both sets are extensible — add a code by appending a row here; suffix codes are two uppercase letters and must not collide with the layer letters.
+The single key to the trailing letter codes in an identifier: the **document-layer** letter in the type-level form `Exxxx-VVVVVV-L` (e.g. the `D` in `E0001-000001-D.png`, the `L` in `E0001-000001-L.csv`) and the **lifecycle suffix** in the instance form `Exxxx-VVVVVV-NNNNNN-XX`. This table is the one place the codes are expanded; the cited decisions hold the definitions and rules, not a second copy of the mapping. Both sets are extensible — add a code by appending a row here; suffix codes are two uppercase letters and must not collide with the document-layer letters.
 
 | Code | Meaning | Field | Defined in |
 |------|---------|-------|------------|
@@ -125,7 +158,7 @@ The single key to the trailing letter codes in an identifier: the **document-lay
 
 ### Document layers
 
-9. **Layer set `S` / `D` / `L` / `P` / `M` / `I`** — expanded in the code legend above. Two IndustryGrow-specific bindings: the **`I` (Interface)** layer carries Cyphal subject-ID assignments and DSDL `industryflow.greenhouse.*` type definitions (ADR-0002 rev 3 decision 1; ADR-0005, planned); the **`L` (List)** layer carries the per-module BOMs already drafted in the procurement and sensor-module documents.
+9. **Document-layer set `S` / `D` / `L` / `P` / `M` / `I`** — expanded in the code legend above. Two IndustryGrow-specific bindings: the **`I` (Interface)** document layer carries Cyphal subject-ID assignments and DSDL `industryflow.greenhouse.*` type definitions (ADR-0002 rev 3 decision 1; ADR-0005, planned); the **`L` (List)** document layer carries the per-module BOMs already drafted in the procurement and sensor-module documents.
 
 ### Suffixes (per-instance lifecycle documents)
 
@@ -143,7 +176,7 @@ The single key to the trailing letter codes in an identifier: the **document-lay
 
 15. **The document store is an object store; identifiers are object keys.** The flat layout (decision 1) is chosen for object storage (S3-compatible buckets), not a hierarchical filesystem. Each artifact is a single object whose key *is* its identifier (`E0001-000001-L.csv`, `E0001-000001-D-Top_Layer.gtl`, a `-CC-YYYYMMDD` calibration certificate, and so on); there are no container objects and no real directories.
     - **Pattern queries are the store's native list operation.** "All documents of one module+version" is `ListObjectsV2(Prefix="E0001-000001-")`; "everything for module `E0001`" is `Prefix="E0001-"`; "every document of one instance" is `Prefix="E0001-000001-000007"`. The identifier-pattern filtering of decision 1 *is* the bucket's prefix listing, executed server-side, with no separate index to build or keep consistent.
-    - **A hierarchy is synthesized on demand, never stored.** A `Delimiter` argument makes the store return grouped common-prefixes — a browsable virtual tree — without committing to one shape, so the same flat keyspace supports many groupings at once (by module, by version, by serial, by layer).
+    - **A hierarchy is synthesized on demand, never stored.** A `Delimiter` argument makes the store return grouped common-prefixes — a browsable virtual hierarchy — without committing to one shape, so the same flat keyspace supports many groupings at once (by module, by version, by serial, by document layer).
     - **Object-store frictions are avoided.** No empty "folder" placeholder objects; re-versioning or relocating an instance never rewrites a subtree (there is none); and the per-instance immutability of QC and provisioning records maps cleanly onto object versioning / write-once policies.
     - **Policy is expressed by prefix.** Lifecycle, retention, replication, and access rules attach to key prefixes, so per-module or per-instance policy (retain all `…-PR` provisioning records; restrict their read scope per decision 12) is stated directly, without a parallel directory-ACL scheme.
 
@@ -172,7 +205,7 @@ The single key to the trailing letter codes in an identifier: the **document-lay
 - Instance identity reuses hardware already populated on every carrier (ATECC608); no parallel serial-number authority to operate.
 - Per-instance lifecycle documents follow the instance — calibration and provisioning history survive redeployment, which is precisely what the inventory model needs.
 - Clean boundary with IndustryFlow: the document store holds static documents, the platform holds operational events, with no duplicated forensic trail.
-- Cyphal/DSDL definitions fall naturally into the `I` layer; module BOMs into the `L` layer — no new artifact categories invented.
+- Cyphal/DSDL definitions fall naturally into the `I` document layer; module BOMs into the `L` document layer — no new artifact categories invented.
 - Flat storage with identifier-pattern filtering works directly on IndustryGrow artifacts, and maps onto object storage natively — identifiers are object keys and pattern filters are prefix lists (decision 15), so the store needs neither a real hierarchy nor a separate index.
 
 ### Negative
@@ -187,7 +220,7 @@ The single key to the trailing letter codes in an identifier: the **document-lay
 ## Relationship to other ADRs
 
 - **ADR-0001** (machine/module data model) — the cabinet `machine` is the machine designation; functional subsystems are depth positions, not E-numbers.
-- **ADR-0002 (rev 3)** — carrier and M01–M05 are E-modules; the `I` layer carries the Cyphal/DSDL definitions named there.
+- **ADR-0002 (rev 3)** — carrier and M01–M05 are E-modules; the `I` document layer carries the Cyphal/DSDL definitions named there.
 - **ADR-0004 (rev 1)** — fixes the document-store / audit-log boundary; firmware and telemetry events stay platform-side and are not suffixes.
 - **ADR-0007 (planned)** — ATECC608 binding and certificate issuance are the `-PR` provisioning record and the cryptographic instance identity behind the serial.
 - **ADR-0014** — taxonomy reused as the E-vocabulary; partial-BOM realized as distinct assembly E-numbers over a shared bare design; gateway `(module_class, node_role, zone)` tagging is the integration-phase depth code.
