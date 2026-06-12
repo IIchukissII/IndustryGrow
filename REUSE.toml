@@ -17,3 +17,12 @@ path = ["img/**", "ADR/figures/**", "REUSE.toml", ".gitignore"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 The IndustryGrow contributors"
 SPDX-License-Identifier = "CC-BY-SA-4.0"
+
+# Cultivation profiles (JSON instances) — strict JSON has no comment syntax for an
+# inline SPDX header, so they are annotated here. Profiles are open by default
+# (CC-BY-SA 4.0) per ADR-0003.
+[[annotations]]
+path = "profiles/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 The IndustryGrow contributors"
+SPDX-License-Identifier = "CC-BY-SA-4.0"

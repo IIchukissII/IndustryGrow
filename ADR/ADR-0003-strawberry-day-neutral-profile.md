@@ -38,57 +38,51 @@ Profile schema, contribution workflow, registry mechanics, and versioning rules 
 
 ## Decision
 
+A deployment is **roots + leaves** — the IndustryGrow plant. **Roots** are the hardware/apparatus that realize cultivation (carrier and sensor modules per ADR-0002 / ADR-0014, power and metering per ADR-0018) — the *apparatus subspace* of ADR-0016. **Leaves** are the biological parameters the plant responds to — the *biological subspace* of ADR-0016. A cultivation profile **specifies the leaves and binds to — does not re-specify — the roots.**
+
+The concrete leaf values for this profile live in `profiles/strawberry-day-neutral-v1.json`, the single source of truth for setpoints (ADR-0000 dec 2; ADR-0015). This ADR records the *structure* of a day-neutral strawberry profile and the *decision behind each section*; it does not restate the values. Profile schema and registry mechanics are deferred to ADR-0009; the JSON is the reference instance that anticipates that schema.
+
 ### Profile metadata
 
 - **Crop:** *Fragaria × ananassa*, day-neutral varieties.
-- **Operating mode:** continuous staggered cultivation, 9-slot rolling pipeline, 2-week cadence.
-- **Profile version:** 1.0
-- **License:** CC-BY-SA 4.0 (Creative Commons, attribution + share-alike).
+- **Operating mode:** continuous staggered cultivation, multi-slot rolling pipeline (slot count, offset, and cadence in the profile instance).
+- **License:** CC-BY-SA 4.0 (open, community-contributable).
 - **Status:** reference profile; expected to be empirically refined through the first 1–2 cycles of operation.
 
 ### Variety
 
-1. **Day-neutral strawberry, primary cultivar: Albion.** Selected for flavour, fruit size, disease resistance, and well-documented behaviour under controlled environments.
-2. **Fallback cultivars (if Albion unavailable):** Seascape, San Andreas, Monterey, Portola — all day-neutral, comparable controlled-environment data.
+1. **A day-neutral cultivar with documented controlled-environment behaviour.** Day-neutral is required because the operating mode is cadence-driven rather than seasonal; selection weighs flavour, fruit size, and disease resistance.
+2. **Day-neutral fallback cultivars** for supply resilience, chosen for comparable controlled-environment data. (Cultivar names → profile instance.)
 
 ### Cycle structure
 
-3. **Per-plant cycle: 19 weeks total** = 6 weeks pre-fruit (vegetative + flowering) + 12 weeks productive fruiting + 1 week decline/replacement.
-4. **Slot rotation: 9 slots, offset by ~2 weeks each.** At steady state, 6 slots in fruiting, 3 in pre-fruit. Every 2 weeks, one slot completes its cycle and is replanted.
-5. **Source of new plants:** Internal propagation. 1–2 dedicated mother plants in a separate cooler zone produce runners (stolons), rooted in the propagation area before transplant.
+3. **A fixed per-plant cycle of vegetative → fruiting → decline.** (Phase durations → profile instance.)
+4. **A staggered multi-slot rolling pipeline,** offset so one slot completes its cycle and is replanted each cadence interval; steady-state allocation favours fruiting. (Slot count, offset, cadence, allocation → profile instance.)
+5. **New plants from internal propagation** — dedicated mother plants in a separate cooler zone produce runners (stolons), rooted before transplant.
 
-### Climate
+### Climate (leaves)
 
-6. **Air temperature setpoints:**
-   - Day (photoperiod active): 20 °C
-   - Night (photoperiod off): 14 °C
-   - The day/night differential is not cosmetic — without it, fruit accumulates less sugar.
-7. **Humidity:** Controlled via VPD, not RH directly.
-   - **Target VPD: 0.8–1.2 kPa** for both photoperiods.
-   - This range suppresses *Botrytis cinerea* while supporting healthy transpiration. VPD is the primary regulated parameter; RH is a derived consequence.
-8. **CO₂: ambient.** No enrichment in the initial build. Reserved for a profile variant if yield experiments justify it.
+6. **A day/night temperature differential, not a constant.** The diurnal drop is not cosmetic — without it, fruit accumulates less sugar. (Setpoints → profile instance.)
+7. **Humidity regulated by VPD, not RH.** VPD is the physically meaningful moisture-driving pressure and the primary regulated parameter; RH is a derived consequence. The band suppresses *Botrytis cinerea* while supporting healthy transpiration. (VPD band → profile instance.)
+8. **CO₂ runs at ambient** in the reference build; enrichment is a separate profile variant, not part of this baseline.
 
-### Light
+### Light (leaves)
 
-9. **Photoperiod: 16h on / 8h off.** Day-neutral varieties tolerate any photoperiod; 16h maximises daily light integral (DLI).
-10. **Sunrise/sunset emulation:** Intensity and spectrum ramp over 30 minutes at each photoperiod transition.
-11. **Spectrum, by plant phase:**
-    - *Vegetative:* warm white (~3500 K) + minor blue addition for compact growth.
-    - *Flowering and fruiting:* warm white + 660 nm red boost (drives flowering and fruit set via phytochrome) + 730 nm far-red trickle (improves fruit set) + UV-A 365–385 nm trace (stimulates flavonoid pathways → increases sugar and aroma).
-12. **DLI target: 17–20 mol·m⁻²·day⁻¹** at the canopy of fruiting plants.
+9. **A long photoperiod.** Day-neutral varieties tolerate any photoperiod; the long day maximises daily light integral (DLI). (Hours → profile instance.)
+10. **Ramped sunrise/sunset transitions** in intensity and spectrum at each photoperiod boundary. (Ramp duration → profile instance.)
+11. **A phase-dependent spectrum.** Vegetative spectrum favours compact growth; flowering/fruiting adds a red boost (flowering and fruit set via phytochrome), a far-red trickle (fruit set), and a UV-A trace (flavonoid pathways → sugar and aroma). (Spectral bands → profile instance.)
+12. **A DLI target at the canopy of fruiting plants.** (Target band → profile instance.)
 
-### Pollination
+### Pollination (leaves)
 
-13. **Mechanical pollination via dedicated low-speed fan** over the flowering zone. 60-second pulses every hour during photoperiod. No insect introduction. No manual brushing.
+13. **Mechanical pollination by airflow** over the flowering zone, pulsed during the photoperiod — no insect introduction, no manual brushing, consistent with the system's autonomy goal. (Pulse timing → profile instance.)
 
-### Nutrition
+### Nutrition (leaves; root-zone chemistry)
 
-14. **Method: hydroponic.** Specific topology (NFT, Dutch-bucket, hybrid) deferred to ADR-0006 once the cabinet mechanical decomposition is decided.
-15. **EC and pH targets by phase:**
-    - *Vegetative:* EC 1.2–1.4 mS/cm, pH 5.8–6.2, N-emphasised formulation.
-    - *Flowering and fruiting:* EC 1.6–1.8 mS/cm, pH 5.8–6.2, K-emphasised formulation with deliberate calcium loading.
-16. **Calcium prioritised** — deficiency causes tipburn and poor fruit quality. The flowering/fruiting recipe explicitly maintains Ca:K ratio above the typical leafy-greens hydroponic baseline.
-17. **Dosing approach:** Two-part A/B nutrient concentrate, peristaltic pumps, recipe switched per slot phase. Detailed mix specifications are a separate operational artifact (planned for the open recipe registry, see ADR-0009).
+14. **Hydroponic delivery,** chosen over substrate for the EC/pH control signal it exposes. Specific topology (NFT, Dutch-bucket, hybrid) deferred to ADR-0006 once the cabinet mechanical decomposition is decided.
+15. **Phase-dependent EC, pH, and formulation** — N-emphasis in vegetative, K-emphasis in flowering/fruiting. These are biological targets the plant responds to (leaves), not hardware. (Bands → profile instance.)
+16. **Calcium prioritised** — deficiency causes tipburn and poor fruit quality; the flowering/fruiting formulation holds Ca:K above the typical leafy-greens hydroponic baseline.
+17. **Dosing as a two-part A/B concentrate via peristaltic pumps** (the *roots* that deliver the leaf targets), switched per slot phase. Detailed mix specifications are deferred to the open recipe registry (ADR-0009).
 
 ## Relationship to other profiles
 
@@ -137,6 +131,7 @@ This profile is one entry in IndustryGrow's profile registry. The platform is cr
 
 ## References
 
+- `profiles/strawberry-day-neutral-v1.json`: the loadable profile instance — single source of truth for this profile's setpoints (leaves).
 - ADR-0001: IndustryGrow framing and community-contributed content model.
 - ADR-0002: Field bus (the actuators and sensors that enforce these parameters).
 - ADR-0009: Cultivation profile schema, contribution workflow, registry design.
