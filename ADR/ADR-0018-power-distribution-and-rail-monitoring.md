@@ -16,7 +16,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 ## Revision history
 
-- **rev 1 (2026-06-04)** — Collapsed DC current metering from the three-way split (`total` / `sensor-section` / `DC-actuator-aggregate`) to **a single INA226 on the +12 V sensor bus**. The +12 V SELV board carries sensors only, so `total` and `sensor-section` were the same measurement (differing only by the node's own single-node draw, already observable via the Cyphal heartbeat) — the split was spurious. **No actuator-side current monitor**: actuator and other high-power energy is captured entirely by the DIN kWh meter over S0; the `DC-actuator-aggregate` INA226 is **dropped, not deferred**. The energy meter feeds offline anomaly models and is not part of any control loop — control feedback runs through the environmental sensors (ADR-0015). Also dropped the mezzanine-inversion framing in decision 9: **M05 is an ordinary node** (carrier + M05 module via the standard header contract); which board physically mounts on which, and how the assembly is fixed, is a layout detail with no architectural significance. Affects decisions 5, 7, 8, 9, 11 and the corresponding driver, alternatives, and consequence text. Annotates ADR-0014 (M05) with an inline refinement note; the planned `procurement-phase1-data-collection.md` (M05) is to be reconciled to this complement when authored.
+- **rev 1 (2026-06-04)** — Collapsed DC current metering from the three-way split (`total` / `sensor-section` / `DC-actuator-aggregate`) to **a single INA226 on the +12 V sensor bus**. The +12 V SELV board carries sensors only, so `total` and `sensor-section` were the same measurement (differing only by the node's own single-node draw, already observable via the Cyphal heartbeat) — the split was spurious. **No actuator-side current monitor**: actuator and other high-power energy is captured entirely by the DIN kWh meter over S0; the `DC-actuator-aggregate` INA226 is **dropped, not deferred**. The energy meter feeds offline anomaly models and is not part of any control loop — control feedback runs through the environmental sensors (ADR-0015). Also dropped the mezzanine-inversion framing in decision 9: **M05 is an ordinary node** (carrier + M05 module via the standard header contract); which board physically mounts on which, and how the assembly is fixed, is a layout detail with no architectural significance. Affects decisions 5, 7, 8, 9, 11 and the corresponding driver, alternatives, and consequence text. Annotates ADR-0014 (M05) with an inline refinement note; the Phase 1 BOMs adopt this single-INA + S0-meter complement when authored.
 
 ## Context and problem
 
@@ -124,7 +124,7 @@ The resolution is to stop conflating three distinct concerns. **Distribution, mo
 
 ### Negative
 
-- **M05's realization diverged from the original ADR-0014 and the Phase 1 BOMs** (which placed INA226 + per-load terminal blocks on the per-zone module). Reconciled in rev 1: ADR-0014 (M05) annotated with an inline refinement note. The planned `procurement-phase1-data-collection.md` (M05) is not yet authored and will adopt this complement when written. The ADR remains the target; any future downstream override requires an explicit ADR revision.
+- **M05's realization diverged from the original ADR-0014 and the Phase 1 BOMs** (which placed INA226 + per-load terminal blocks on the per-zone module). Reconciled in rev 1: ADR-0014 (M05) annotated with an inline refinement note. The Phase 1 BOMs are not yet authored and will adopt this complement when written. The ADR remains the target; any future downstream override requires an explicit ADR revision.
 - Aggregate-only metering does not directly resolve which actuator misbehaved; localization relies on correlating aggregate power with the gateway's command state in software rather than reading it off a per-actuator monitor.
 - The AC path adds a COTS DIN kWh meter as a system component (procurement, cabinet space, S0 wiring), and S0 time-resolution is coarse for low-power loads — mitigated by choosing a meter with a high enough pulse constant (imp/kWh).
 - One more board class / E-module to design and maintain, though it is simple.
@@ -141,7 +141,7 @@ The resolution is to stop conflating three distinct concerns. **Distribution, mo
 ## Deferred decisions
 
 - Phase 1 `+12 V` input fuse value (sized to the real, small sensor-side load). The `+24 V` power-section input fusing and per-actuator-branch protection (cartridge vs. PTC vs. eFuse; the ~6 A figure) move to the design of the power section / actuator nodes.
-- Reconciliation of the planned Phase 1 BOMs to the rev-1 metering complement: ADR-0014 (M05) carries an inline refinement note (**done in rev 1**); the planned `procurement-phase1-data-collection.md` (M05) and `sensor-modules-phase1-bom.md` adopt the single-INA + S0-meter complement when authored.
+- Reconciliation of the Phase 1 BOMs to the rev-1 metering complement: ADR-0014 (M05) carries an inline refinement note (**done in rev 1**); the BOMs adopt the single-INA + S0-meter complement when authored.
 - Board connector set (rail inputs, CAN, fan-out), field-lead terminals for TMP117/reed/leak, and the S0 input conditioning (pull-up, debounce) for the DIN meter.
 - Specific COTS kWh meter (single- vs three-phase) per deployment and its pulse constant (imp/kWh) chosen for adequate S0 time resolution at the expected load power — hardware procurement, not architecture.
 - **Resolved (decision 10):** the over-temperature trip (thermistor/PT1000 + comparator → relay-enable) lives at the heating-actuator node, not on M05. Its detailed per-actuator realization — where exactly the relay-enable acts — is owned by the actuator-taxonomy ADR.
@@ -154,7 +154,6 @@ The resolution is to stop conflating three distinct concerns. **Distribution, mo
 - ADR-0014: Sensor node taxonomy — M05-SAFETY, short-lead extension (decision 3), partial-BOM (decision 2), deferred actuator taxonomy (decision 9).
 - ADR-0015: Gateway profile and control loops — actuator commands via Cyphal, hardware safety interlocks (decision 11).
 - ADR-0017: Component/document identification — E-module scheme, universal-carrier no-variant principle.
-- `procurement-phase1-data-collection.md`, `sensor-modules-phase1-bom.md` (planned; not yet in repo).
 - Texas Instruments INA226 datasheet.
 - DIN EN 62053-31 — S0 pulse output for electricity meters.
 - Example COTS DIN kWh meters with S0 pulse output: Eastron SDM120 / SDM230 (single-phase), Eastron SDM630 (three-phase); commodity equivalents DDS238-series (single-phase), DTS238-series (three-phase). Meter is a swappable line item; the S0-counting contract is the commitment.

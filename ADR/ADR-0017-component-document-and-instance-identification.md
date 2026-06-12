@@ -249,5 +249,4 @@ The single key to the trailing letter codes in an identifier: the **document-lay
 - ADR-0015: Gateway profile caching and local control loops — profile as single mutation channel.
 - ADR-0016: Empirical survey and state-space modeling — sensor-instance inventory and mobility.
 - ADR-IF-0001 (planned): `production_unit` entity on the IndustryFlow side.
-- `procurement-phase1-data-collection.md`, `sensor-modules-phase1-bom.md`, `carrier-pcb-pin-map.md` (planned operational artifacts; not yet in repo).
 - Microchip ATECC608 datasheet.
