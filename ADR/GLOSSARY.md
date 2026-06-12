@@ -69,14 +69,18 @@ Origin: ADR-0017 (decision 3).
 
 **Serial** `[F]` — the per-instance enumerator `NNNNNN` on the identity axis.
 Position-free by construction: a serial never encodes where an instance sits.
-Origin: ADR-0017 (decision 8).
+Origin: ADR-0017 (decision 1 for the `NNNNNN` field format; decision 8 for the
+instance-key role).
 
 **Depth** `[F]` — the position address `DDDDDD`: where a thing sits within a
-machine. Origin: ADR-0017 (decision 7).
+machine. Origin: ADR-0017 (decision 1 for the `DDDDDD` field format; decision 7
+for the position-tagging role).
 
 **Sub-position** `[F]` — a nesting tier within the position axis. The depth code
 has the tiers `main`, `sub-position 1`, `sub-position 2`. Never "sub-module": a
-sub-position carries no E-number. Origin: ADR-0017 (decisions 3, 7).
+sub-position carries no E-number. Origin: ADR-0017 (decision 1 for the tier
+format; decision 5 for the term and the unit-at-a-sub-position relationship;
+decisions 3 and 7 for why a position carries no E-number).
 
 **Machine** `[F]` — a deployed cabinet; the IndustryFlow `machine` entity,
 designated `GBOX_NNNN`; the root of the position axis. It *contains*
@@ -102,7 +106,9 @@ analogue of a document layer. Origin: ADR-0017 (decisions 10–14).
 **Integration identifier** `[F]` — the mutable cross-reference
 `GBOX_NNNN-DDDDDD-Exxxx-VVVVVV-NNNNNN` joining a position vertex (a slot or a
 node position) to an instance. Re-assigned whenever an instance is moved,
-removed, or replaced; no suffix slot by design. Origin: ADR-0017, ADR-0016.
+removed, or replaced; no suffix slot by design. Origin: ADR-0017 (decision 1 for
+the integration format; decision 13 for the mutable-cross-reference role),
+ADR-0016.
 
 ---
 
@@ -146,7 +152,7 @@ Never use "node" for a tree vertex — that is a *vertex* (Part 1).
 
 ---
 
-*Backref decision numbers verified against the live ADR-0017 text: dec. 3, 6, 7,
-8, 9, and 10–14 (and ADR-0001 dec 7 for `machine` / `production_unit`). The
-field-format tokens originate in ADR-0017 decision 1; the entries above cite the
-role-level decisions.*
+*Backref decision numbers verified against the live ADR-0017 text: dec. 1, 3, 5,
+6, 7, 8, 9, and 10–14 (and ADR-0001 dec 7 for `machine` / `production_unit`).
+Entries that name a field token cite both decision 1 (where the format is
+defined) and the role-level decision.*
