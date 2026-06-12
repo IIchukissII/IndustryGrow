@@ -146,6 +146,7 @@ Never use "node" for a tree vertex — that is a *vertex* (Part 1).
 
 ---
 
-*Backref decision numbers verified against the live ADR-0017 text
-(dec. 1, 3, 6, 7, 9, 11). Remaining suffix-set decisions to be confirmed when
-the rest of the ADR set is in scope.*
+*Backref decision numbers verified against the live ADR-0017 text: dec. 3, 6, 7,
+8, 9, and 10–14 (and ADR-0001 dec 7 for `machine` / `production_unit`). The
+field-format tokens originate in ADR-0017 decision 1; the entries above cite the
+role-level decisions.*
