@@ -12,6 +12,10 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Parent:** ADR-0001
 - **Supersedes:** ADR-0002 (rev 2, same date)
 
+## Revision history
+
+- **rev 3 (2026-05-16)** — Gateway side only: the rev-2 persistent SQLite local buffer becomes an in-memory ring buffer and the gateway hardware minimum drops to Raspberry Pi 3B+, following ADR-0004 rev 1's stateless-edge reframing. The smart-node side (carrier, WeAct core board, ATECC608, sensor-module header) is unchanged from rev 2. See decision 6, decision 8, and alternative J. Earlier revisions: rev 1 placed the MCU directly on the carrier (alternative D); rev 2 specified a Pi 5 with a persistent SQLite buffer (alternative J).
+
 ## Context and problem
 
 ADR-0001 committed IndustryGrow to an open-core model serving deployments from apartment cabinets to commercial facilities. This ADR decides *how* the field-level instrumentation works: which bus, which protocol, which hardware, which gateway, and where the security boundary sits.

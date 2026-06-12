@@ -13,6 +13,10 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Companions:** ADR-0002 (rev 3)
 - **Supersedes:** ADR-0004 (initial draft, same date)
 
+## Revision history
+
+- **rev 1 (2026-05-16)** — Reframed the gateway as a stateless edge. The initial draft's local hash-chained audit log (decisions 8–11) is removed in favour of an in-memory ring buffer plus an IndustryFlow-side audit trail; the firmware-signing decisions (12–16) are preserved with one adjustment. Rationale: the local-tamper threat model is unrealistic (a compromised gateway already streams false data live) and continuous SD-card logging is a write-amplification cost. See decisions 8–11 and alternative A.
+
 ## Context and problem
 
 ADR-0002 fixed the gateway (Raspberry Pi 3B+ / 4 / 5 in the reference configuration) as the security boundary between the trusted CAN domain inside the cabinet and the external network leading to IndustryFlow. ADR-0001 expanded the project's scope to a fleet model — community-self-hosted and commercial-managed deployments coexisting under one architecture.

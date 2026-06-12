@@ -3,12 +3,17 @@ SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
-# ADR-0001: IndustryGrow — open-core cultivation platform built on IndustryFlow
+# ADR-0001 (rev 1): IndustryGrow — open-core cultivation platform built on IndustryFlow
 
 - **ID:** ADR-0001 (rev 1)
 - **Status:** Proposed
 - **Date:** 2026-05-16
 - **Project:** IndustryGrow
+- **Supersedes:** ADR-0001 (initial draft, same date)
+
+## Revision history
+
+- **rev 1 (2026-05-16)** — Decision 8's phased two-tier hardware model (BluePill prototype / STM32G4 production) was superseded by ADR-0002 rev 3's single uniform smart-node platform; the supersession is recorded as an inline amendment note on decision 8, and the planned ADR-0010 (hardware tiering) was repurposed to commercial-operations / managed-deployment policy. No other decision changed.
 
 ## Context and problem
 

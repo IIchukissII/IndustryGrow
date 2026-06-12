@@ -172,4 +172,3 @@ This ADR adds clarity to several existing decisions without changing them:
 - ADR-0003: Strawberry day-neutral cultivation profile — reference profile content.
 - ADR-0004 (rev 1): Gateway host hardening — stateless-edge principle, distinction between configuration state (allowed) and operational state (not allowed).
 - ADR-0014: Sensor node taxonomy — M05-SAFETY (sense-only); the over-temperature hardware interlock lives at the heating actuator per ADR-0018 decision 10.
-- `industryflow-platform-dependencies.md` (planned; not yet in repo) — tracking document for IndustryFlow-side work needed to support this ADR (profile distribution API, signature scheme, etc.).

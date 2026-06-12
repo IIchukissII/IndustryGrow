@@ -13,7 +13,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 ## Context and problem
 
-IndustryGrow's reasoning is spread across many artifacts: ADRs, BOMs, schematics, pin-maps, a component/identifier registry, and cultivation profiles. Several existing ADRs already behave as if a documentation discipline is in force — ADR-0004 rev 1 moved the audit trail to IndustryFlow specifically to avoid a second record of the same events, and ADR-0017 rejects its alternatives E and F because they would create "two sources of truth" — but that discipline has never been written down. It is applied by habit, not by a rule a contributor could read, cite, or enforce in review.
+IndustryGrow's reasoning is spread across many artifacts: ADRs, BOMs, schematics, pin-maps, a component/identifier registry, and cultivation profiles. Several existing ADRs already behave as if a documentation discipline is in force — ADR-0004 rev 1 moved the audit trail to IndustryFlow specifically to avoid a second record of the same events, and ADR-0017 rejects its alternative E because it would create "two sources of truth" — but that discipline has never been written down. It is applied by habit, not by a rule a contributor could read, cite, or enforce in review.
 
 An unwritten discipline has two failure modes. A new contributor cannot infer it and will, in good faith, copy a value into a second document "for convenience." And the author cannot point to it when reviewing such a change, so the drift is caught by memory rather than by process. Both failures are the same underlying problem: a fact that lives in more than one place has more than one place to go wrong.
 
@@ -75,6 +75,6 @@ This ADR names the discipline the project already half-follows and makes it the 
 
 - ADR-0001: IndustryGrow framing — product, licensing, and data-model scope (distinct from this methodology root).
 - ADR-0004 (rev 1): Gateway host hardening — applies single-source-of-truth by moving the audit trail platform-side (decisions 10, 16; alternative A).
-- ADR-0017: Component, document, and instance identification — applies single-source-of-truth in its driver "do not duplicate the operational audit trail" and rejected alternatives E and F.
+- ADR-0017: Component, document, and instance identification — applies single-source-of-truth in its driver "do not duplicate the operational audit trail" and rejected alternative E.
 - M. Nygard, "Documenting Architecture Decisions" (2011) — the ADR practice this record formalizes for the project.
 - MADR (Markdown Any Decision Records) — format lineage for the ADR structure in use.

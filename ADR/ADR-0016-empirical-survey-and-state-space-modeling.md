@@ -14,7 +14,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 ## Context and problem
 
-ADR-0014 established that IndustryGrow scales by **multiplying instances** of a fixed set of sensor node classes across zones, and explicitly rejected sensor proliferation within a single zone (decision 7, alternative G). The reasoning given there was correct but incomplete: it said "once a single accurate sensor produces dense time-series data, modelling outperforms additional spatial sampling," but **did not specify what kind of modeling, when it happens, or what the relationship is between modeling and sensor density over the lifetime of a deployment**.
+ADR-0014 established that IndustryGrow scales by **multiplying instances** of a fixed set of sensor node classes across zones, and explicitly rejected sensor proliferation within a single zone (decisions 1–2, alternative G). The reasoning given there was correct but incomplete: it said "once a single accurate sensor produces dense time-series data, modelling outperforms additional spatial sampling," but **did not specify what kind of modeling, when it happens, or what the relationship is between modeling and sensor density over the lifetime of a deployment**.
 
 ADR-0015 specified that control loops live on the gateway and consume telemetry from sensor nodes. But it left implicit a more powerful possibility: that gateway-side software can not only **react** to telemetry, but also **estimate** state variables that are not directly measured. The control-loop runs against a state estimate that may be only partially observed by physical sensors.
 
@@ -76,7 +76,7 @@ Every IndustryGrow deployment proceeds through three operational phases. Phases 
    - Publishes estimated state values as Cyphal subjects on the same bus, using DSDL types like `industryflow.greenhouse.estimated_co2`, `industryflow.greenhouse.estimated_leaf_vpd`, etc.
    - Logs estimation residuals (difference between measured and predicted values for sensors that are present) as diagnostic publications
 
-5. **Estimated publications are first-class telemetry.** Any consumer (control loops on gateway, IndustryFlow ingestion, debug tools) treats estimated publications identically to measured publications. Subscribers do not need to know whether a value came from a physical sensor or from the estimator. This is the same principle as ADR-0014's "soft-sensor" pattern, formalized.
+5. **Estimated publications are first-class telemetry.** Any consumer (control loops on gateway, IndustryFlow ingestion, debug tools) treats estimated publications identically to measured publications. Subscribers do not need to know whether a value came from a physical sensor or from the estimator. This formalizes a soft-sensor pattern, extending the principle ADR-0014 invoked when it let modelling fill in spatial detail rather than adding sensors (decision-driver "Time-series + model over spatial redundancy"; alternative G).
 
 6. **Model parameters live in the profile.** The deployment's calibrated model (state-space matrices, Kalman gains, sensor placement information, identification metadata including when and how the model was calibrated) is serialized as part of the active profile per ADR-0015. Profile version changes when model changes; rollback is identical to rollback of operational setpoints.
 
@@ -122,7 +122,7 @@ Every IndustryGrow deployment proceeds through three operational phases. Phases 
 
 ## Alternatives considered
 
-**A. Sensor proliferation without modeling.** Dense sensor coverage permanently installed in every deployment. *Rejected:* contradicts ADR-0014 decision 7; expensive at scale; failure surface grows with sensor count; does not address temporal change (sensors still need to be calibrated themselves, replaced, and interpreted).
+**A. Sensor proliferation without modeling.** Dense sensor coverage permanently installed in every deployment. *Rejected:* contradicts ADR-0014 decision 1 and alternative G; expensive at scale; failure surface grows with sensor count; does not address temporal change (sensors still need to be calibrated themselves, replaced, and interpreted).
 
 **B. ML-first modeling as default.** Train a neural network on operational data; use it for state prediction. *Rejected as default* (still acceptable as fallback per decision 12): less interpretable, more data-hungry, regulatory friction in food applications, training infrastructure expensive, harder to debug when wrong.
 
@@ -165,7 +165,7 @@ Every IndustryGrow deployment proceeds through three operational phases. Phases 
 ## References
 
 - ADR-0001: IndustryGrow framing — platform-not-product orientation, scale-aware architecture.
-- ADR-0014: Sensor node taxonomy — multi-instance scaling, soft-sensor pattern.
+- ADR-0014: Sensor node taxonomy — multi-instance scaling; time-series-over-spatial-redundancy principle.
 - ADR-0015: Gateway profile caching and local control loops — profile as single mutation channel.
 - Ljung, L. "System Identification: Theory for the User" — canonical reference for state-space identification methodology.
 - Anderson, B.D.O., Moore, J.B. "Optimal Filtering" — Kalman filter foundations.

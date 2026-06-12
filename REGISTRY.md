@@ -30,10 +30,10 @@ identifier, so the store is filtered by identifier pattern (e.g. all
 | Identifier base | Component | Version | Source project | Released documents |
 |-----------------|-----------|---------|----------------|--------------------|
 | `E0001-000001`  | Carrier   | v0.0.1  | `store/E0001-000001.kicad_{pro,prl,sch,pcb}` | `…-L.csv` (BOM), `…-D.png` (render), `…-D-pos.csv` (placement), `…-D-*.{gtl,gbl,gto,gbo,gts,gbs,gtp,gbp,gm1,drl}` (fab package) |
-| `E0002-000001`  | M05-SAFETY | v0.0.1 | (pending — layout not yet committed) | `…-L.md` (working design BOM); `…-L.csv` and fab package to follow at layout commit |
+| `E0002-000001`  | M05-SAFETY | v0.0.1 | `store/E0002-000001.kicad_{pro,prl,sch,pcb}` | `…-D.png` (render); `…-L.csv` BOM and fab package to follow |
 
-> M05-SAFETY is registered at the BOM stage, ahead of layout commit; its design
-> documents (`-S`/`-D`/`…-L.csv` fab package) land when the KiCad project is committed.
+> M05-SAFETY's KiCad project and `-D` render are committed; its BOM (`…-L.csv`) and
+> the fab package (`-S` schematic export, gerbers/drill/placement) land at fab export.
 > Reserved per ADR-0017 but not yet present for `E0001`/`E0002`: `-S` (exported
 > schematic), `-P` (protocol), `-M` (manual), `-I` (interface / Cyphal DSDL),
 > and any production/QC instances (`Exxxx-VVVVVV-NNNNNN`) with `-QP/-QR/-CP/-CC/-PR`
