@@ -98,7 +98,6 @@
 		)
 		(capping no)
 		(filling no)
-		(zone_defaults)
 		(pcbplotparams
 			(layerselection 0x00000000_00000000_55555555_5755f5ff)
 			(plot_on_all_layers_selection 0x00000000_00000000_00000000_00000000)
@@ -593,7 +592,7 @@
 		)
 		(property "Value" "12V"
 			(at -1.0945 2.54 180)
-			(layer "F.Paste")
+			(layer "F.SilkS")
 			(uuid "fa1358ff-cd11-481e-afef-36cce9579cc6")
 			(effects
 				(font
@@ -2665,7 +2664,7 @@
 		)
 		(property "Value" "3.3V"
 			(at -1.0945 -2.794 180)
-			(layer "F.Paste")
+			(layer "F.SilkS")
 			(uuid "4be23ebd-7720-47bb-a0bb-0a632a7a862f")
 			(effects
 				(font
@@ -5202,7 +5201,7 @@
 		)
 		(property "Value" "Status"
 			(at -2.3265 0.079 180)
-			(layer "F.Paste")
+			(layer "F.SilkS")
 			(uuid "a95abf94-8a48-48df-95ab-3c0cf50a491c")
 			(effects
 				(font
@@ -7005,7 +7004,7 @@
 		)
 		(property "Value" "CAN"
 			(at -2.4535 0.079 180)
-			(layer "F.Paste")
+			(layer "F.SilkS")
 			(uuid "4499654f-106e-48a2-b59f-415c1e9541e7")
 			(effects
 				(font
@@ -14535,10 +14534,10 @@
 		(end 72.39 62.865)
 		(stroke
 			(width 0.1)
-			(type default)
+			(type solid)
 		)
 		(fill no)
-		(layer "F.Paste")
+		(layer "F.SilkS")
 		(uuid "b0f81005-e57e-40d1-88d0-7d1978ac39db")
 	)
 	(gr_rect
@@ -14620,7 +14619,7 @@
 	)
 	(gr_text "E0001 V00.00.01"
 		(at 58.674 58.928 0)
-		(layer "F.Paste")
+		(layer "F.SilkS")
 		(uuid "ad1f5118-6a91-4c1a-8883-aeb4223283a8")
 		(effects
 			(font
@@ -14632,7 +14631,7 @@
 	)
 	(gr_text "SN:"
 		(at 58.928 61.214 0)
-		(layer "F.Paste")
+		(layer "F.SilkS")
 		(uuid "977a8fe1-bf31-4c7e-9664-c13a95d984e4")
 		(effects
 			(font
@@ -23566,9 +23565,9 @@
 	)
 	(group ""
 		(uuid "3b66fdf3-f1e9-4c67-b860-3c3c57de8035")
-		(members "b375398e-b063-4546-92b1-ea3762ec5c93" "b4ca4283-0706-4bb7-909c-d49c2ba8157e"
-			"d6ba6a0a-6e70-4cff-84a8-853f3f0ae174" "d8bde886-72a5-4905-9790-f0471499868d"
-			"dfc9826f-334d-4236-b197-fd21b09cc350" "ecee52fe-dd7b-4b77-bd17-10e43acd7cac"
+		(members "b375398e-b063-4546-92b1-ea3762ec5c93" "d6ba6a0a-6e70-4cff-84a8-853f3f0ae174"
+			"d8bde886-72a5-4905-9790-f0471499868d" "dfc9826f-334d-4236-b197-fd21b09cc350"
+			"ecee52fe-dd7b-4b77-bd17-10e43acd7cac"
 		)
 	)
 	(embedded_fonts no)

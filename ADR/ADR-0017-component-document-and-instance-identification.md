@@ -43,11 +43,6 @@ Identity has two orthogonal axes that never fuse:
 - **Position axis** — *where a thing physically sits.* Rooted at the machine:
   `GBOX_NNNN → DDDDDD`. Assigned at integration. Identity-free.
 
-These two axes are the same model as the three separated coordinates named
-below (type, instance, position): the identity axis carries **type** and
-**instance** as its two levels; the position axis is the third coordinate.
-"Two axes" and "three separated coordinates" describe one structure.
-
 The axes meet only in the integration identifier
 `GBOX_NNNN-DDDDDD-Exxxx-VVVVVV-NNNNNN`, a *mutable cross-reference* re-assigned
 whenever an instance is moved, removed, or replaced. A serial never encodes
@@ -138,7 +133,7 @@ The single key to the trailing letter codes in an identifier: the **document-lay
 
 ### Module designation (E-numbers)
 
-3. **An E-number identifies a buildable/documentable assembly.** The existing taxonomy maps directly: the carrier and each of M01–M05 are buildable assemblies and each receives an E-number. A **functional subsystem** (climate, lighting, irrigation, plant monitoring, pollination, power/safety per ADR-0001 decision 7) is *not* an E-number — it is a **position** in the machine, expressed as a depth code (decision 7). The WeAct STM32F4 core board is a COTS sub-component; it is either given its own E-number for traceability or tracked by vendor part number (deferred).
+3. **An E-number identifies a buildable/documentable assembly.** The existing taxonomy maps directly: the carrier and each of M01–M05 are buildable assemblies and each receives an E-number. A **functional subsystem** (climate, lighting, irrigation, plant monitoring, pollination, power/safety per ADR-0001 decision 7) is *not* an E-number — it is a **position** in the machine, expressed as a depth code (decision 7). The WeAct STM32F4 core board is a purchased sub-component identified by an `SP` number, not an E-number (ADR-0019).
 
 4. **Bare-PCB design and populated assembly are distinguished.** One PCB *layout* is one bare-board design artifact; each standard *populated configuration* of that layout is an assembly E-number that references the shared bare design. This resolves the partial-BOM mechanism of ADR-0014 decision 2 without adding a variant field to the scheme:
    - **Carrier:** one bare design and effectively one assembly. Termination is jumper-selected and the power-input set is the only populate option, so the carrier is treated as a single assembly E-number — one type, one version, many serials, appearing at many depth positions. (This was the original motivating case: the carrier is universal precisely because it has no real variant.)
@@ -174,13 +169,7 @@ The single key to the trailing letter codes in an identifier: the **document-lay
 
 ### Storage backend and object-store mapping
 
-15. **The document store is an object store; identifiers are object keys.** The flat layout (decision 1) is chosen for object storage (S3-compatible buckets), not a hierarchical filesystem. Each artifact is a single object whose key *is* its identifier (`E0001-000001-L.csv`, `E0001-000001-D-Top_Layer.gtl`, a `-CC-YYYYMMDD` calibration certificate, and so on); there are no container objects and no real directories.
-    - **Pattern queries are the store's native list operation.** "All documents of one module+version" is `ListObjectsV2(Prefix="E0001-000001-")`; "everything for module `E0001`" is `Prefix="E0001-"`; "every document of one instance" is `Prefix="E0001-000001-000007"`. The identifier-pattern filtering of decision 1 *is* the bucket's prefix listing, executed server-side, with no separate index to build or keep consistent.
-    - **A hierarchy is synthesized on demand, never stored.** A `Delimiter` argument makes the store return grouped common-prefixes — a browsable virtual hierarchy — without committing to one shape, so the same flat keyspace supports many groupings at once (by module, by version, by serial, by document layer).
-    - **Object-store frictions are avoided.** No empty "folder" placeholder objects; re-versioning or relocating an instance never rewrites a subtree (there is none); and the per-instance immutability of QC and provisioning records maps cleanly onto object versioning / write-once policies.
-    - **Policy is expressed by prefix.** Lifecycle, retention, replication, and access rules attach to key prefixes, so per-module or per-instance policy (retain all `…-PR` provisioning records; restrict their read scope per decision 12) is stated directly, without a parallel directory-ACL scheme.
-
-    A git working copy or local checkout renders the store as a flat directory; that filesystem view is incidental. The canonical target is a prefix-queried object store, for which the flat, identifier-keyed layout is the idiomatic and performant shape — retrieval functionality, not visual layout, is the design concern.
+15. **The document store is an object store; identifiers are object keys.** The flat layout (decision 1) is chosen for object storage (S3-compatible buckets), not a hierarchical filesystem. Each artifact is a single object whose key *is* its identifier (`E0001-000001-L.csv`, `E0001-000001-D-Top_Layer.gtl`, a `-CC-YYYYMMDD` calibration certificate, and so on); there are no container objects and no real directories. The identifier-pattern filtering of decision 1 *is* the bucket's prefix listing (`ListObjectsV2(Prefix=…)`), executed server-side with no separate index to maintain. The object-store mechanics this enables — on-demand hierarchy synthesis via a delimiter, write-once / versioning for the immutable QC and provisioning records, and prefix-scoped retention and access policy — are deployment specifics (see Deferred decisions); a git checkout renders the same flat keyspace as a flat directory, which is incidental.
 
 ## Alternatives considered
 
@@ -190,7 +179,7 @@ The single key to the trailing letter codes in an identifier: the **document-lay
 
 **C. Bake position (zone/role/slot) into the part or serial number.** *Rejected:* breaks instance interchangeability (ADR-0014) and instance mobility (ADR-0016). Position belongs in the integration identifier / gateway tagging and is assigned at integration.
 
-**D. Treat each populated-BOM variant as a new Version.** *Rejected:* Version is semantic versioning of the *design*; folding a populate-variant into it corrupts version semantics and the rollback story. A distinct assembly E-number referencing the shared bare design (decision 4) is the correct home. The same reasoning forbids an overflow-into-version mechanism on the serial: incrementing the patch when a serial range fills would fold instance *count* into the design version — the identical corruption reached by a production route rather than a populate route, and it bites hardest on the universal carrier (one type, one near-static version, the most instances), where the patch-bump would be routine rather than an edge case. Widening dominates it on capacity too: a two-digit patch over 999 serials yields only ~10⁵ instances before the overflow must climb into the minor and major version as well, whereas a six-digit serial addresses ~10⁶ honestly and never touches the version at all. The serial is therefore widened (decision 1) rather than overflowed, so instance count never touches the version.
+**D. Treat each populated-BOM variant as a new Version.** *Rejected:* Version is semantic versioning of the *design*; folding a populate-variant into it corrupts version semantics and the rollback story. A distinct assembly E-number referencing the shared bare design (decision 4) is the correct home. The same reasoning forbids an overflow-into-version mechanism on the serial (decision 1, decision 8): a two-digit patch over 999 serials addresses only ~10⁵ instances before the overflow climbs into the minor and major version, whereas a six-digit serial addresses ~10⁶ honestly and never touches the version. The serial is widened, not overflowed.
 
 **E. Record firmware/telemetry history as document-store suffixes.** *Rejected:* ADR-0004 rev 1 decisions 10 and 16 already route these to IndustryFlow's audit log. A parallel document record creates two sources of truth for the same events.
 
@@ -231,8 +220,7 @@ The single key to the trailing letter codes in an identifier: the **document-lay
 ## Deferred decisions
 
 - **Calibration recurrence encoding.** Dated (`-CC-YYYYMMDD`) vs. sequenced (`-CCnnn`), and the calibration validity-period / re-calibration-interval policy.
-- **WeAct core board identification.** Own E-number for traceability vs. vendor-part-number tracking.
-- **Registry location and tooling.** Where the `Exxxx → meaning / discipline / bare-design` map lives (hardware reference repo, IndustryFlow, or a dedicated registry), and how it links to the document store.
+- **Registry and store location.** The scheme lives in two homes joined only at integration. The **type registry** (`Exxxx → meaning / discipline / bare-design`) and the type-level design documents are repo-side, public for open-core designs. The **instance and integration layer** — serials, ATECC bindings, the `-QP/-QR/-CP/-CC/-PR` records, and the integration identifier `GBOX_NNNN-DDDDDD-Exxxx-VVVVVV-NNNNNN` that joins the two trees — is production data created at assembly and lives platform-side (IndustryFlow / `production_unit`, ADR-IF-0001), off the public repo. The precise platform host and the type-registry tooling remain deferred to ADR-IF-0001 and Phase 2.
 - **Bare-PCB design artifact identification.** Whether the shared bare layout gets its own E-number or is tracked as a hardware-repo artifact under CERN-OHL-S.
 - **Identifier validation and parsing tooling.** Regexes and encoders implemented from the field formats in this ADR, including the full suffix set.
 - **Optional compact binary encoding** of identifiers for embedded/indexing use — out of scope now.
