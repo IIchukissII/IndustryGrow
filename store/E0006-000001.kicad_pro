@@ -488,7 +488,7 @@
     "pinned_symbol_libs": []
   },
   "meta": {
-    "filename": "E0002-000001.kicad_pro",
+    "filename": "E0006-000001.kicad_pro",
     "version": 3
   },
   "net_settings": {
@@ -643,7 +643,7 @@
     "subpart_id_separator": 0,
     "top_level_sheets": [
       {
-        "filename": "E0002-000001.kicad_sch",
+        "filename": "E0006-000001.kicad_sch",
         "name": "Root",
         "uuid": "05ff86a2-bfad-446c-a3c5-38b9f5c2eac9"
       }
