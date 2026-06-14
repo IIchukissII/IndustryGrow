@@ -4,3 +4,6 @@ store/.history/
 
 # KiCad editor lock files (created while a file is open)
 *.lck
+
+# QElectroTech backup files (editor artifact, not project content)
+*.qet.bak

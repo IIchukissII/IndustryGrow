@@ -33,6 +33,7 @@ Conventions:
 | `E0004` | M03-ANALYTICS sensor module | electrical (mixed-signal) | Module-ID strap `0b011`. Hydroponic solution: pH (LMP7721 front-end), EC (AD5933), DS18B20, ADuM isolation. |
 | `E0005` | M04-PLANT sensor module | electrical | Module-ID strap `0b100`. Plant-level: MLX90640 thermal imager. |
 | `E0006` | M05-SAFETY / cabinet distribution + monitoring board | electrical | Module-ID strap `0b101`. Sense-only. Single INA226 on the `+12 V` SELV bus, TMP117, reed, leak, on-board input fuse, DIN-meter S0 input (ADR-0018). |
+| `E0007` | Distribution case — cabinet enclosure + mains distribution wiring | electrical | The physical cabinet that houses the M05-SAFETY board (`E0006`) plus the DIN-rail purchased parts: energy meter (`SP0001`), mains MCB (`SP0002`), `+12 V` SELV supply (`SP0003`), and the gateway Raspberry Pi (`SP0004`). Mains infeed/protection, `+12 V` rail fan-out, and X2 field-wiring termination. Schematic `E0007-000001-S` (QElectroTech); see ADR-0018. |
 
 > E0002–E0006 are proposed in M01→M05 order; set them to the actual commit
 > order. The contiguity is incidental, not a reservation.
