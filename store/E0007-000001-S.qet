@@ -9,7 +9,7 @@
     </properties>
     <newdiagrams>
         <border cols="17" colsize="60" rows="8" displaycols="true" displayrows="true" rowsize="80"/>
-        <inset date="2026-06-14" title="" auto_page_num="" displayAt="bottom" filename="E0007-000001" author="" plant="" locmach="" indexrev="0.0.1" folio="%id/%total" version=""/>
+        <inset date="null" title="" auto_page_num="" displayAt="bottom" filename="E0007-000001" author="" plant="" locmach="" indexrev="0.0.1" folio="%id/%total" version=""/>
         <conductors num="_" conductor_color="" type="multi" displaytext="1" onetextperfolio="0" vertirotatetext="270" color2="#000000" horizrotatetext="0" bicolor="false" condsize="1" numsize="7" tension_protocol="" bus="" dash-size="1" conductor_section="" vertical-alignment="AlignRight" function="" horizontal-alignment="AlignBottom" text_color="#000000" cable="" formula=""/>
         <report label="%f-%l%c"/>
         <xrefs>
@@ -21,58 +21,17 @@
         <folio_autonums/>
         <element_autonums freeze_new_elements="false" current_autonum=""/>
     </newdiagrams>
-    <diagram colsize="60" indexrev="0.0.1" displaycols="true" plant="" locmach="" title="Power supply" rows="8" rowsize="80" height="660" filename="E0007-000001" order="1" date="2026-06-14" author="" version="0.100.0" freezeNewConductor="false" cols="17" displayAt="bottom" auto_page_num="Create an auto folio numbering" folio="%id/%total" displayrows="true" freezeNewElement="false">
+    <diagram colsize="60" indexrev="0.0.1" displaycols="true" plant="" locmach="" title="Power supply" rows="8" rowsize="80" height="660" filename="E0007-000001" order="1" date="null" author="" version="0.100.0" freezeNewConductor="false" cols="17" displayAt="bottom" auto_page_num="Create an auto folio numbering" folio="%id/%total" displayrows="true" freezeNewElement="false">
         <defaultconductor num="_" conductor_color="" type="multi" displaytext="1" vertirotatetext="270" onetextperfolio="0" color2="#000000" horizrotatetext="0" bicolor="false" condsize="1" numsize="7" tension_protocol="" bus="" dash-size="2" conductor_section="" vertical-alignment="AlignRight" function="" horizontal-alignment="AlignBottom" text_color="#000000" cable="" formula=""/>
         <elements>
-            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/02going_arrow.elmt" x="490" y="280" z="10" freezeLabel="false" prefix="" uuid="{740cbd4c-beea-491f-9935-23cc9c6d0af1}" orientation="0">
-                <terminals>
-                    <terminal x="-9" y="0" id="0" orientation="3"/>
-                </terminals>
-                <inputs/>
-                <links_uuids>
-                    <link_uuid uuid="{b2200004-0004-4004-8004-000000000004}"/>
-                </links_uuids>
-                <dynamic_texts>
-                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="6" y="-11.5" rotation="0" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{c2e097f6-4cd1-479d-8a61-dc61931fc21b}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
-                        <text>2-C9</text>
-                        <info_name>label</info_name>
-                    </dynamic_elmt_text>
-                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="0" y="0" rotation="0" font="Liberation Sans,9,-1,0,50,0,0,0,0,0,Regular" text_width="-1" uuid="{3af9bbe8-1dec-4e72-b11b-b50b7ea9df28}" keep_visual_rotation="true" text_from="UserText" Valignment="AlignTop">
-                        <text>-S0</text>
-                    </dynamic_elmt_text>
-                </dynamic_texts>
-                <texts_groups/>
-            </element>
-            <element type="embed://import/energie_counter.elmt" x="340" y="260" z="10" freezeLabel="false" prefix="" uuid="{c60d3f52-236c-4700-8308-8795e6102b25}" orientation="0">
-                <terminals>
-                    <terminal x="-20" y="-41" id="1" orientation="0"/>
-                    <terminal x="20" y="-41" id="2" orientation="0"/>
-                    <terminal x="40" y="-20" id="3" orientation="1"/>
-                    <terminal x="40" y="20" id="4" orientation="1"/>
-                    <terminal x="-20" y="40" id="5" orientation="2"/>
-                    <terminal x="20" y="40" id="6" orientation="2"/>
-                </terminals>
-                <inputs/>
-                <elementInformations>
-                    <elementInformation name="designation" show="1">SP0001</elementInformation>
-                    <elementInformation name="formula" show="1">P1</elementInformation>
-                    <elementInformation name="label" show="1">P1</elementInformation>
-                </elementInformations>
-                <dynamic_texts>
-                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="0" y="0" rotation="0" font="Liberation Sans,9,-1,0,50,0,0,0,0,0,Regular" text_width="-1" uuid="{2d4366a8-3324-4c8c-a611-4b1335387a45}" keep_visual_rotation="true" text_from="UserText" Valignment="AlignTop">
-                        <text>P1</text>
-                    </dynamic_elmt_text>
-                </dynamic_texts>
-                <texts_groups/>
-            </element>
             <element type="embed://import/10_electric/20_manufacturers_articles/gce/power-suply_12v.elmt" x="720" y="540" z="10" freezeLabel="false" prefix="" uuid="{a75e84bb-8467-44fc-813e-0eb3c5019bd2}" orientation="0">
                 <terminals>
-                    <terminal x="-79" y="-96" id="7" orientation="0"/>
-                    <terminal x="-59" y="-96" id="8" orientation="0"/>
-                    <terminal x="21" y="-96" id="9" orientation="0"/>
-                    <terminal x="41" y="-96" id="10" orientation="0"/>
-                    <terminal x="61" y="-96" id="11" orientation="0"/>
-                    <terminal x="81" y="-96" id="12" orientation="0"/>
+                    <terminal x="-79" y="-96" id="0" orientation="0"/>
+                    <terminal x="-59" y="-96" id="1" orientation="0"/>
+                    <terminal x="21" y="-96" id="2" orientation="0"/>
+                    <terminal x="41" y="-96" id="3" orientation="0"/>
+                    <terminal x="61" y="-96" id="4" orientation="0"/>
+                    <terminal x="81" y="-96" id="5" orientation="0"/>
                 </terminals>
                 <inputs/>
                 <elementInformations>
@@ -91,7 +50,7 @@
             </element>
             <element type="embed://import/10_electric/10_allpole/100_folio_referencing/01coming_arrow.elmt" x="90" y="170" z="10" freezeLabel="false" prefix="" uuid="{32844972-1044-4936-96c5-6b6d3ce80310}" orientation="3">
                 <terminals>
-                    <terminal x="9" y="0" id="13" orientation="1"/>
+                    <terminal x="9" y="0" id="6" orientation="1"/>
                 </terminals>
                 <inputs/>
                 <dynamic_texts>
@@ -105,22 +64,135 @@
                 </dynamic_texts>
                 <texts_groups/>
             </element>
-            <element type="embed://import/10_electric/10_allpole/130_terminals_terminal_strips/borne_continuite.elmt" x="210" y="130" z="10" freezeLabel="false" prefix="X" uuid="{b8a4e103-4bad-4bbb-b1fb-73926c221dee}" orientation="0">
+            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/02going_arrow.elmt" x="490" y="280" z="10" freezeLabel="false" prefix="" uuid="{740cbd4c-beea-491f-9935-23cc9c6d0af1}" orientation="0">
                 <terminals>
-                    <terminal x="0" y="-6" id="14" orientation="0"/>
-                    <terminal x="0" y="6" id="15" orientation="2"/>
+                    <terminal x="-9" y="0" id="7" orientation="3"/>
+                </terminals>
+                <inputs/>
+                <links_uuids>
+                    <link_uuid uuid="{b2200004-0004-4004-8004-000000000004}"/>
+                </links_uuids>
+                <dynamic_texts>
+                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="6" y="-11.5" rotation="0" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{c2e097f6-4cd1-479d-8a61-dc61931fc21b}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
+                        <text>2-C9</text>
+                        <info_name>label</info_name>
+                    </dynamic_elmt_text>
+                </dynamic_texts>
+                <texts_groups/>
+            </element>
+            <element type="embed://import/energie_counter.elmt" x="340" y="260" z="10" freezeLabel="false" prefix="" uuid="{c60d3f52-236c-4700-8308-8795e6102b25}" orientation="0">
+                <terminals>
+                    <terminal x="-20" y="-41" id="8" orientation="0"/>
+                    <terminal x="20" y="-41" id="9" orientation="0"/>
+                    <terminal x="40" y="-20" id="10" orientation="1"/>
+                    <terminal x="40" y="20" id="11" orientation="1"/>
+                    <terminal x="-20" y="40" id="12" orientation="2"/>
+                    <terminal x="20" y="40" id="13" orientation="2"/>
                 </terminals>
                 <inputs/>
                 <elementInformations>
-                    <elementInformation name="formula" show="1">X1.3</elementInformation>
-                    <elementInformation name="label" show="1">X1.3</elementInformation>
+                    <elementInformation name="designation" show="1">SP0001</elementInformation>
+                    <elementInformation name="formula" show="1">P1</elementInformation>
+                    <elementInformation name="label" show="1">P1</elementInformation>
+                </elementInformations>
+                <dynamic_texts>
+                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="0" y="0" rotation="0" font="Liberation Sans,9,-1,0,50,0,0,0,0,0,Regular" text_width="-1" uuid="{2d4366a8-3324-4c8c-a611-4b1335387a45}" keep_visual_rotation="true" text_from="UserText" Valignment="AlignTop">
+                        <text>P1</text>
+                    </dynamic_elmt_text>
+                </dynamic_texts>
+                <texts_groups/>
+            </element>
+            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/01coming_arrow.elmt" x="210" y="170" z="10" freezeLabel="false" prefix="" uuid="{c4a5840a-700a-41ff-b1eb-c760e5826261}" orientation="3">
+                <terminals>
+                    <terminal x="9" y="0" id="14" orientation="1"/>
+                </terminals>
+                <inputs/>
+                <dynamic_texts>
+                    <dynamic_elmt_text frame="false" Halignment="AlignRight" x="-12" y="-11.5" rotation="90" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{01f88e1f-4aa1-48f7-9ee9-d726b28e21b5}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
+                        <text></text>
+                        <info_name>label</info_name>
+                    </dynamic_elmt_text>
+                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="0" y="0" rotation="0" font="Liberation Sans,9,-1,0,50,0,0,0,0,0,Regular" text_width="-1" uuid="{e0fb8484-efde-4a12-b62e-d3f5d3ac7ae4}" keep_visual_rotation="true" text_from="UserText" Valignment="AlignTop">
+                        <text>PE</text>
+                    </dynamic_elmt_text>
+                </dynamic_texts>
+                <texts_groups/>
+            </element>
+            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/01coming_arrow.elmt" x="150" y="170" z="10" freezeLabel="false" prefix="" uuid="{b710f83c-0352-41b5-b116-78543cc36851}" orientation="3">
+                <terminals>
+                    <terminal x="9" y="0" id="15" orientation="1"/>
+                </terminals>
+                <inputs/>
+                <dynamic_texts>
+                    <dynamic_elmt_text frame="false" Halignment="AlignRight" x="-12" y="-11.5" rotation="90" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{01f88e1f-4aa1-48f7-9ee9-d726b28e21b5}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
+                        <text></text>
+                        <info_name>label</info_name>
+                    </dynamic_elmt_text>
+                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="0" y="0" rotation="0" font="Liberation Sans,9,-1,0,50,0,0,0,0,0,Regular" text_width="-1" uuid="{e0fb8484-efde-4a12-b62e-d3f5d3ac7ae4}" keep_visual_rotation="true" text_from="UserText" Valignment="AlignTop">
+                        <text>N</text>
+                    </dynamic_elmt_text>
+                </dynamic_texts>
+                <texts_groups/>
+            </element>
+            <element type="embed://import/10_electric/10_allpole/130_terminals_terminal_strips/borne_continuite.elmt" x="90" y="130" z="10" freezeLabel="false" prefix="X" uuid="{651cbf7d-9f00-4afb-be0f-f5190a6b2317}" orientation="0">
+                <terminals>
+                    <terminal x="0" y="-6" id="16" orientation="0"/>
+                    <terminal x="0" y="6" id="17" orientation="2"/>
+                </terminals>
+                <inputs/>
+                <elementInformations>
+                    <elementInformation name="formula" show="1">X1.1</elementInformation>
+                    <elementInformation name="label" show="1">X1.1</elementInformation>
                 </elementInformations>
                 <properties>
                     <element_type terminal_led="false" terminal_type="generic" terminal_function="generic"/>
                 </properties>
                 <dynamic_texts>
-                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="5" y="-18" rotation="0" font="Liberation Sans,10,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{59ed7794-d05e-42bc-a040-cf7d153b2daf}" keep_visual_rotation="false" text_from="ElementInfo" Valignment="AlignTop">
-                        <text>X1.3</text>
+                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="5" y="-18" rotation="0" font="Liberation Sans,10,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{d3c827f4-5654-4867-977e-961dd354374a}" keep_visual_rotation="false" text_from="ElementInfo" Valignment="AlignTop">
+                        <text>X1.1</text>
+                        <info_name>label</info_name>
+                    </dynamic_elmt_text>
+                </dynamic_texts>
+                <texts_groups/>
+            </element>
+            <element type="embed://import/10_electric/10_allpole/130_terminals_terminal_strips/borne_2.elmt" x="360" y="370" z="10" freezeLabel="false" prefix="X" uuid="{c8f37bce-8661-4ee6-9e8e-465ed48b1e9a}" orientation="0">
+                <terminals>
+                    <terminal x="0" y="-6" id="18" orientation="0"/>
+                    <terminal x="6" y="0" id="19" orientation="1"/>
+                    <terminal x="0" y="6" id="20" orientation="2"/>
+                </terminals>
+                <inputs/>
+                <elementInformations>
+                    <elementInformation name="formula" show="1">X1.6</elementInformation>
+                    <elementInformation name="label" show="1">X1.6</elementInformation>
+                </elementInformations>
+                <properties>
+                    <element_type terminal_led="false" terminal_type="generic" terminal_function="generic"/>
+                </properties>
+                <dynamic_texts>
+                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="0" y="30" rotation="270" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{512020c7-c77b-4c21-b86f-44ed282e7080}" keep_visual_rotation="false" text_from="ElementInfo" Valignment="AlignTop">
+                        <text>X1.6</text>
+                        <info_name>label</info_name>
+                    </dynamic_elmt_text>
+                </dynamic_texts>
+                <texts_groups/>
+            </element>
+            <element type="embed://import/10_electric/10_allpole/130_terminals_terminal_strips/borne_3.elmt" x="400" y="370" z="10" freezeLabel="false" prefix="X" uuid="{e09e1412-c57e-460b-9450-6b00de351aca}" orientation="3">
+                <terminals>
+                    <terminal x="0" y="-6" id="21" orientation="0"/>
+                    <terminal x="-6" y="0" id="22" orientation="3"/>
+                </terminals>
+                <inputs/>
+                <elementInformations>
+                    <elementInformation name="formula" show="1">X1.7</elementInformation>
+                    <elementInformation name="label" show="1">X1.7</elementInformation>
+                </elementInformations>
+                <properties>
+                    <element_type terminal_led="false" terminal_type="generic" terminal_function="generic"/>
+                </properties>
+                <dynamic_texts>
+                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="-30" y="0" rotation="0" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{8e33b7be-9411-4cd5-b679-22d3662f649f}" keep_visual_rotation="false" text_from="ElementInfo" Valignment="AlignTop">
+                        <text>X1.7</text>
                         <info_name>label</info_name>
                     </dynamic_elmt_text>
                 </dynamic_texts>
@@ -128,10 +200,10 @@
             </element>
             <element type="embed://import/10_electric/10_allpole/200_fuses_protective_gears/11_circuit_breakers/disjonct-m_2f.elmt" x="340" y="130" z="10" freezeLabel="false" prefix="F" uuid="{8ad851f4-daeb-4672-831c-42dba8338fe9}" orientation="0">
                 <terminals>
-                    <terminal x="-10" y="-26" id="16" orientation="0"/>
-                    <terminal x="10" y="-26" id="17" orientation="0"/>
-                    <terminal x="-10" y="16" id="18" orientation="2"/>
-                    <terminal x="10" y="16" id="19" orientation="2"/>
+                    <terminal x="-10" y="-26" id="23" orientation="0"/>
+                    <terminal x="10" y="-26" id="24" orientation="0"/>
+                    <terminal x="-10" y="16" id="25" orientation="2"/>
+                    <terminal x="10" y="16" id="26" orientation="2"/>
                 </terminals>
                 <inputs/>
                 <elementInformations>
@@ -154,8 +226,8 @@
             </element>
             <element type="embed://import/10_electric/10_allpole/130_terminals_terminal_strips/borne_continuite.elmt" x="150" y="130" z="10" freezeLabel="false" prefix="X" uuid="{7752fcb5-0ade-4682-ac92-6a8f0c686e5a}" orientation="0">
                 <terminals>
-                    <terminal x="0" y="-6" id="20" orientation="0"/>
-                    <terminal x="0" y="6" id="21" orientation="2"/>
+                    <terminal x="0" y="-6" id="27" orientation="0"/>
+                    <terminal x="0" y="6" id="28" orientation="2"/>
                 </terminals>
                 <inputs/>
                 <elementInformations>
@@ -173,28 +245,30 @@
                 </dynamic_texts>
                 <texts_groups/>
             </element>
-            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/02going_arrow.elmt" x="490" y="240" z="10" freezeLabel="false" prefix="" uuid="{bd611064-7e54-4e54-94a0-5dfaa05d1366}" orientation="0">
+            <element type="embed://import/10_electric/10_allpole/130_terminals_terminal_strips/borne_continuite.elmt" x="210" y="130" z="10" freezeLabel="false" prefix="X" uuid="{b8a4e103-4bad-4bbb-b1fb-73926c221dee}" orientation="0">
                 <terminals>
-                    <terminal x="-9" y="0" id="22" orientation="3"/>
+                    <terminal x="0" y="-6" id="29" orientation="0"/>
+                    <terminal x="0" y="6" id="30" orientation="2"/>
                 </terminals>
                 <inputs/>
-                <links_uuids>
-                    <link_uuid uuid="{b2200003-0003-4003-8003-000000000003}"/>
-                </links_uuids>
+                <elementInformations>
+                    <elementInformation name="formula" show="1">X1.3</elementInformation>
+                    <elementInformation name="label" show="1">X1.3</elementInformation>
+                </elementInformations>
+                <properties>
+                    <element_type terminal_led="false" terminal_type="generic" terminal_function="generic"/>
+                </properties>
                 <dynamic_texts>
-                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="6" y="-11.5" rotation="0" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{dbb8b67b-e7a0-41be-9327-09d84d6160dc}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
-                        <text>2-C8</text>
+                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="5" y="-18" rotation="0" font="Liberation Sans,10,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{59ed7794-d05e-42bc-a040-cf7d153b2daf}" keep_visual_rotation="false" text_from="ElementInfo" Valignment="AlignTop">
+                        <text>X1.3</text>
                         <info_name>label</info_name>
-                    </dynamic_elmt_text>
-                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="0" y="0" rotation="0" font="Liberation Sans,9,-1,0,50,0,0,0,0,0,Regular" text_width="-1" uuid="{4a832cfc-6a2b-4802-bc61-60e868ff9028}" keep_visual_rotation="true" text_from="UserText" Valignment="AlignTop">
-                        <text>+S0</text>
                     </dynamic_elmt_text>
                 </dynamic_texts>
                 <texts_groups/>
             </element>
             <element type="embed://import/10_electric/10_allpole/100_folio_referencing/02going_arrow.elmt" x="920" y="330" z="10" freezeLabel="false" prefix="" uuid="{9437331c-f829-44eb-a9b1-ab496fdac906}" orientation="0">
                 <terminals>
-                    <terminal x="-9" y="0" id="23" orientation="3"/>
+                    <terminal x="-9" y="0" id="31" orientation="3"/>
                 </terminals>
                 <inputs/>
                 <links_uuids>
@@ -210,7 +284,7 @@
             </element>
             <element type="embed://import/10_electric/10_allpole/100_folio_referencing/02going_arrow.elmt" x="920" y="370" z="10" freezeLabel="false" prefix="" uuid="{3b966891-63a3-44c6-8210-8aa5bed5811c}" orientation="0">
                 <terminals>
-                    <terminal x="-9" y="0" id="24" orientation="3"/>
+                    <terminal x="-9" y="0" id="32" orientation="3"/>
                 </terminals>
                 <inputs/>
                 <links_uuids>
@@ -224,118 +298,17 @@
                 </dynamic_texts>
                 <texts_groups/>
             </element>
-            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/01coming_arrow.elmt" x="150" y="170" z="10" freezeLabel="false" prefix="" uuid="{b710f83c-0352-41b5-b116-78543cc36851}" orientation="3">
+            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/02going_arrow.elmt" x="490" y="240" z="10" freezeLabel="false" prefix="" uuid="{bd611064-7e54-4e54-94a0-5dfaa05d1366}" orientation="0">
                 <terminals>
-                    <terminal x="9" y="0" id="25" orientation="1"/>
+                    <terminal x="-9" y="0" id="33" orientation="3"/>
                 </terminals>
                 <inputs/>
+                <links_uuids>
+                    <link_uuid uuid="{b2200003-0003-4003-8003-000000000003}"/>
+                </links_uuids>
                 <dynamic_texts>
-                    <dynamic_elmt_text frame="false" Halignment="AlignRight" x="-12" y="-11.5" rotation="90" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{01f88e1f-4aa1-48f7-9ee9-d726b28e21b5}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
-                        <text></text>
-                        <info_name>label</info_name>
-                    </dynamic_elmt_text>
-                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="0" y="0" rotation="0" font="Liberation Sans,9,-1,0,50,0,0,0,0,0,Regular" text_width="-1" uuid="{e0fb8484-efde-4a12-b62e-d3f5d3ac7ae4}" keep_visual_rotation="true" text_from="UserText" Valignment="AlignTop">
-                        <text>N</text>
-                    </dynamic_elmt_text>
-                </dynamic_texts>
-                <texts_groups/>
-            </element>
-            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/01coming_arrow.elmt" x="210" y="170" z="10" freezeLabel="false" prefix="" uuid="{c4a5840a-700a-41ff-b1eb-c760e5826261}" orientation="3">
-                <terminals>
-                    <terminal x="9" y="0" id="26" orientation="1"/>
-                </terminals>
-                <inputs/>
-                <dynamic_texts>
-                    <dynamic_elmt_text frame="false" Halignment="AlignRight" x="-12" y="-11.5" rotation="90" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{01f88e1f-4aa1-48f7-9ee9-d726b28e21b5}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
-                        <text></text>
-                        <info_name>label</info_name>
-                    </dynamic_elmt_text>
-                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="0" y="0" rotation="0" font="Liberation Sans,9,-1,0,50,0,0,0,0,0,Regular" text_width="-1" uuid="{e0fb8484-efde-4a12-b62e-d3f5d3ac7ae4}" keep_visual_rotation="true" text_from="UserText" Valignment="AlignTop">
-                        <text>PE</text>
-                    </dynamic_elmt_text>
-                </dynamic_texts>
-                <texts_groups/>
-            </element>
-            <element type="embed://import/10_electric/10_allpole/130_terminals_terminal_strips/borne_continuite.elmt" x="90" y="130" z="10" freezeLabel="false" prefix="X" uuid="{651cbf7d-9f00-4afb-be0f-f5190a6b2317}" orientation="0">
-                <terminals>
-                    <terminal x="0" y="-6" id="27" orientation="0"/>
-                    <terminal x="0" y="6" id="28" orientation="2"/>
-                </terminals>
-                <inputs/>
-                <elementInformations>
-                    <elementInformation name="formula" show="1">X1.1</elementInformation>
-                    <elementInformation name="label" show="1">X1.1</elementInformation>
-                </elementInformations>
-                <properties>
-                    <element_type terminal_led="false" terminal_type="generic" terminal_function="generic"/>
-                </properties>
-                <dynamic_texts>
-                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="5" y="-18" rotation="0" font="Liberation Sans,10,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{d3c827f4-5654-4867-977e-961dd354374a}" keep_visual_rotation="false" text_from="ElementInfo" Valignment="AlignTop">
-                        <text>X1.1</text>
-                        <info_name>label</info_name>
-                    </dynamic_elmt_text>
-                </dynamic_texts>
-                <texts_groups/>
-            </element>
-            <element type="embed://import/10_electric/10_allpole/130_terminals_terminal_strips/borne_3.elmt" x="280" y="370" z="10" freezeLabel="false" prefix="X" uuid="{423e5315-c944-49eb-afa0-a838e25bd002}" orientation="2">
-                <terminals>
-                    <terminal x="0" y="-6" id="29" orientation="0"/>
-                    <terminal x="-6" y="0" id="30" orientation="3"/>
-                </terminals>
-                <inputs/>
-                <elementInformations>
-                    <elementInformation name="formula" show="1">X1.4</elementInformation>
-                    <elementInformation name="label" show="1">X1.4</elementInformation>
-                </elementInformations>
-                <properties>
-                    <element_type terminal_led="false" terminal_type="generic" terminal_function="generic"/>
-                </properties>
-                <dynamic_texts>
-                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="3" y="-30" rotation="90" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{ac3cbf7d-4368-4e02-809e-d0f41686fb4e}" keep_visual_rotation="false" text_from="ElementInfo" Valignment="AlignTop">
-                        <text>X1.4</text>
-                        <info_name>label</info_name>
-                    </dynamic_elmt_text>
-                </dynamic_texts>
-                <texts_groups/>
-            </element>
-            <element type="embed://import/10_electric/10_allpole/130_terminals_terminal_strips/borne_3.elmt" x="400" y="370" z="10" freezeLabel="false" prefix="X" uuid="{e09e1412-c57e-460b-9450-6b00de351aca}" orientation="3">
-                <terminals>
-                    <terminal x="0" y="-6" id="31" orientation="0"/>
-                    <terminal x="-6" y="0" id="32" orientation="3"/>
-                </terminals>
-                <inputs/>
-                <elementInformations>
-                    <elementInformation name="formula" show="1">X1.7</elementInformation>
-                    <elementInformation name="label" show="1">X1.7</elementInformation>
-                </elementInformations>
-                <properties>
-                    <element_type terminal_led="false" terminal_type="generic" terminal_function="generic"/>
-                </properties>
-                <dynamic_texts>
-                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="-30" y="0" rotation="0" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{8e33b7be-9411-4cd5-b679-22d3662f649f}" keep_visual_rotation="false" text_from="ElementInfo" Valignment="AlignTop">
-                        <text>X1.7</text>
-                        <info_name>label</info_name>
-                    </dynamic_elmt_text>
-                </dynamic_texts>
-                <texts_groups/>
-            </element>
-            <element type="embed://import/10_electric/10_allpole/130_terminals_terminal_strips/borne_2.elmt" x="360" y="370" z="10" freezeLabel="false" prefix="X" uuid="{c8f37bce-8661-4ee6-9e8e-465ed48b1e9a}" orientation="0">
-                <terminals>
-                    <terminal x="0" y="-6" id="33" orientation="0"/>
-                    <terminal x="6" y="0" id="34" orientation="1"/>
-                    <terminal x="0" y="6" id="35" orientation="2"/>
-                </terminals>
-                <inputs/>
-                <elementInformations>
-                    <elementInformation name="formula" show="1">X1.6</elementInformation>
-                    <elementInformation name="label" show="1">X1.6</elementInformation>
-                </elementInformations>
-                <properties>
-                    <element_type terminal_led="false" terminal_type="generic" terminal_function="generic"/>
-                </properties>
-                <dynamic_texts>
-                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="0" y="30" rotation="270" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{512020c7-c77b-4c21-b86f-44ed282e7080}" keep_visual_rotation="false" text_from="ElementInfo" Valignment="AlignTop">
-                        <text>X1.6</text>
+                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="6" y="-11.5" rotation="0" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{dbb8b67b-e7a0-41be-9327-09d84d6160dc}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
+                        <text>2-C8</text>
                         <info_name>label</info_name>
                     </dynamic_elmt_text>
                 </dynamic_texts>
@@ -343,9 +316,9 @@
             </element>
             <element type="embed://import/10_electric/10_allpole/130_terminals_terminal_strips/borne_2.elmt" x="320" y="370" z="10" freezeLabel="false" prefix="X" uuid="{b72044f3-7d78-48ca-9128-2fbac0bc252b}" orientation="2">
                 <terminals>
-                    <terminal x="0" y="-6" id="36" orientation="0"/>
-                    <terminal x="6" y="0" id="37" orientation="1"/>
-                    <terminal x="0" y="6" id="38" orientation="2"/>
+                    <terminal x="0" y="-6" id="34" orientation="0"/>
+                    <terminal x="6" y="0" id="35" orientation="1"/>
+                    <terminal x="0" y="6" id="36" orientation="2"/>
                 </terminals>
                 <inputs/>
                 <elementInformations>
@@ -363,6 +336,27 @@
                 </dynamic_texts>
                 <texts_groups/>
             </element>
+            <element type="embed://import/10_electric/10_allpole/130_terminals_terminal_strips/borne_3.elmt" x="280" y="370" z="10" freezeLabel="false" prefix="X" uuid="{423e5315-c944-49eb-afa0-a838e25bd002}" orientation="2">
+                <terminals>
+                    <terminal x="0" y="-6" id="37" orientation="0"/>
+                    <terminal x="-6" y="0" id="38" orientation="3"/>
+                </terminals>
+                <inputs/>
+                <elementInformations>
+                    <elementInformation name="formula" show="1">X1.4</elementInformation>
+                    <elementInformation name="label" show="1">X1.4</elementInformation>
+                </elementInformations>
+                <properties>
+                    <element_type terminal_led="false" terminal_type="generic" terminal_function="generic"/>
+                </properties>
+                <dynamic_texts>
+                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="3" y="-30" rotation="90" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{ac3cbf7d-4368-4e02-809e-d0f41686fb4e}" keep_visual_rotation="false" text_from="ElementInfo" Valignment="AlignTop">
+                        <text>X1.4</text>
+                        <info_name>label</info_name>
+                    </dynamic_elmt_text>
+                </dynamic_texts>
+                <texts_groups/>
+            </element>
             <element type="embed://import/10_electric/10_allpole/500_home_installation/20_home_appliances/pc16pnt.elmt" x="340" y="510" z="10" freezeLabel="false" prefix="" uuid="{8edfb86c-dfdd-466c-8876-a56be1112964}" orientation="0">
                 <terminals>
                     <terminal x="-10" y="-16" id="39" orientation="0"/>
@@ -371,12 +365,12 @@
                 </terminals>
                 <inputs/>
                 <elementInformations>
-                    <elementInformation name="formula" show="1">S1</elementInformation>
-                    <elementInformation name="label" show="1">S1</elementInformation>
+                    <elementInformation name="formula" show="1">X3</elementInformation>
+                    <elementInformation name="label" show="1">X3</elementInformation>
                 </elementInformations>
                 <dynamic_texts>
                     <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="19.37" y="-19.7" rotation="0" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{99e23e1e-7661-470b-b0a1-604acf4c1df6}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
-                        <text>S1</text>
+                        <text>X3</text>
                         <info_name>label</info_name>
                     </dynamic_elmt_text>
                 </dynamic_texts>
@@ -385,6 +379,37 @@
         </elements>
         <conductors>
             <conductor num="+12V" conductor_color="" type="multi" element2_name="Going arrow" x="0" y="0" element2_linked="" displaytext="1" vertirotatetext="270" onetextperfolio="0" color2="#000000" horizrotatetext="0" element1_name="12V-Power-Suply" bicolor="false" element1="{a75e84bb-8467-44fc-813e-0eb3c5019bd2}" condsize="1" element2="{9437331c-f829-44eb-a9b1-ab496fdac906}" numsize="5" tension_protocol="" dash-size="2" bus="" freezeLabel="false" conductor_section="" vertical-alignment="AlignRight" terminal1="{1f5c10fc-1d70-8da9-4e51-c91981683741}" terminalname1="" terminal2="{975add6f-4ba5-44af-a4c0-e1f1c2024601}" terminalname2="1" element2_label="" element1_label="G1" function="" horizontal-alignment="AlignBottom" text_color="#000000" formula="+12V" cable="">
+                <sequentialNumbers/>
+            </conductor>
+            <conductor num="" conductor_color="" type="multi" element2_name="Terminal block" x="0" y="0" displaytext="1" vertirotatetext="270" onetextperfolio="0" color2="#000000" horizrotatetext="0" element1_name="Coming arrow" bicolor="false" element1="{32844972-1044-4936-96c5-6b6d3ce80310}" condsize="1" numsize="7" element2="{651cbf7d-9f00-4afb-be0f-f5190a6b2317}" tension_protocol="" dash-size="2" bus="" freezeLabel="false" conductor_section="" vertical-alignment="AlignRight" terminal1="{d7fd0bec-9f05-4651-a50b-29d7ffabeb41}" terminalname1="1" terminal2="{ce25d169-cbfd-4df9-8f1a-b808b4167e9d}" terminalname2="" element2_label="X1.1" element1_label="" function="" horizontal-alignment="AlignBottom" text_color="#000000" formula="" cable="">
+                <sequentialNumbers/>
+            </conductor>
+            <conductor num="-S0" conductor_color="" type="multi" element2_name="Going arrow" x="0" y="0" element2_linked="" displaytext="1" vertirotatetext="270" onetextperfolio="0" color2="#000000" horizrotatetext="0" element1_name="Energy_counter" bicolor="false" element1="{c60d3f52-236c-4700-8308-8795e6102b25}" condsize="1" element2="{740cbd4c-beea-491f-9935-23cc9c6d0af1}" numsize="5" tension_protocol="" dash-size="2" bus="" freezeLabel="false" conductor_section="" vertical-alignment="AlignRight" terminal1="{492fe760-3a76-4e46-b2bb-fb01ff855396}" terminalname1="21" terminal2="{975add6f-4ba5-44af-a4c0-e1f1c2024601}" terminalname2="1" element2_label="" element1_label="P1" function="" horizontal-alignment="AlignBottom" text_color="#000000" formula="-S0" cable="">
+                <sequentialNumbers/>
+            </conductor>
+            <conductor num="L" conductor_color="" type="multi" element2_name="12V-Power-Suply" x="0" y="0" displaytext="1" vertirotatetext="270" onetextperfolio="0" color2="#000000" horizrotatetext="0" element1_name="Terminal block" bicolor="false" element1="{423e5315-c944-49eb-afa0-a838e25bd002}" condsize="1" numsize="7" element2="{a75e84bb-8467-44fc-813e-0eb3c5019bd2}" tension_protocol="" dash-size="2" bus="" freezeLabel="false" conductor_section="" vertical-alignment="AlignRight" terminal1="{ff9a5c6d-aad1-4f96-af33-ce7d7141ea6e}" terminalname1="" terminal2="{c031c847-6fde-c227-30e5-da43898f13c6}" terminalname2="" element2_label="G1" element1_label="X1.4" function="" horizontal-alignment="AlignBottom" text_color="#000000" formula="L" cable="">
+                <segment orientation="vertical" length="10"/>
+                <segment orientation="vertical" length="30"/>
+                <segment orientation="horizontal" length="381"/>
+                <segment orientation="vertical" length="10"/>
+                <segment orientation="vertical" length="10"/>
+                <sequentialNumbers/>
+            </conductor>
+            <conductor num="" conductor_color="" type="multi" element2_name="Outlet 3 poles" x="0" y="0" displaytext="1" vertirotatetext="270" onetextperfolio="0" color2="#000000" horizrotatetext="0" element1_name="Terminal block" bicolor="false" element1="{b8a4e103-4bad-4bbb-b1fb-73926c221dee}" condsize="1" numsize="7" element2="{8edfb86c-dfdd-466c-8876-a56be1112964}" tension_protocol="" dash-size="2" bus="" freezeLabel="false" conductor_section="" vertical-alignment="AlignRight" terminal1="{396041da-b0d7-480a-8c0b-5bf2b1cca6f5}" terminalname1="" terminal2="{5e35d52e-4a3a-461c-a53f-9e6e6f684f4f}" terminalname2="" element2_label="X3" element1_label="X1.3" function="" horizontal-alignment="AlignBottom" text_color="#000000" formula="" cable="">
+                <segment orientation="horizontal" length="0"/>
+                <segment orientation="vertical" length="-10"/>
+                <segment orientation="horizontal" length="45"/>
+                <segment orientation="vertical" length="420"/>
+                <segment orientation="horizontal" length="85"/>
+                <segment orientation="horizontal" length="0"/>
+                <sequentialNumbers/>
+            </conductor>
+            <conductor num="N" conductor_color="" type="multi" element2_name="12V-Power-Suply" x="0" y="0" displaytext="1" vertirotatetext="270" onetextperfolio="0" color2="#000000" horizrotatetext="0" element1_name="Terminal block" bicolor="false" element1="{e09e1412-c57e-460b-9450-6b00de351aca}" condsize="1" numsize="7" element2="{a75e84bb-8467-44fc-813e-0eb3c5019bd2}" tension_protocol="" dash-size="2" bus="" freezeLabel="false" conductor_section="" vertical-alignment="AlignRight" terminal1="{7db142da-0a8e-4e3a-bc0f-0665b0f67786}" terminalname1="" terminal2="{0860bc21-59e4-0faf-8b0f-f4446840010e}" terminalname2="" element2_label="G1" element1_label="X1.7" function="" horizontal-alignment="AlignBottom" text_color="#000000" formula="N" cable="">
+                <segment orientation="vertical" length="10"/>
+                <segment orientation="vertical" length="10"/>
+                <segment orientation="horizontal" length="241"/>
+                <segment orientation="vertical" length="30"/>
+                <segment orientation="vertical" length="10"/>
                 <sequentialNumbers/>
             </conductor>
             <conductor num="+S0" conductor_color="" type="multi" element2_name="Going arrow" x="0" y="0" element2_linked="" displaytext="1" vertirotatetext="270" onetextperfolio="0" color2="#000000" horizrotatetext="0" element1_name="Energy_counter" bicolor="false" element1="{c60d3f52-236c-4700-8308-8795e6102b25}" condsize="1" element2="{bd611064-7e54-4e54-94a0-5dfaa05d1366}" numsize="5" tension_protocol="" dash-size="2" bus="" freezeLabel="false" conductor_section="" vertical-alignment="AlignRight" terminal1="{0a6e8838-fe66-4f69-9a5f-67724dc3338c}" terminalname1="22" terminal2="{975add6f-4ba5-44af-a4c0-e1f1c2024601}" terminalname2="1" element2_label="" element1_label="P1" function="" horizontal-alignment="AlignBottom" text_color="#000000" formula="+S0" cable="">
@@ -413,7 +438,7 @@
             <conductor num="" conductor_color="" type="multi" element2_name="Circuit-breaker" x="0" y="0" displaytext="1" vertirotatetext="270" onetextperfolio="0" color2="#000000" horizrotatetext="0" element1_name="Terminal block" bicolor="false" element1="{651cbf7d-9f00-4afb-be0f-f5190a6b2317}" condsize="1" numsize="7" element2="{8ad851f4-daeb-4672-831c-42dba8338fe9}" tension_protocol="" dash-size="2" bus="" freezeLabel="false" conductor_section="" vertical-alignment="AlignRight" terminal1="{396041da-b0d7-480a-8c0b-5bf2b1cca6f5}" terminalname1="" terminal2="{27193ed8-3067-4bbb-8e4b-8ef3817475c0}" terminalname2="IN.1" element2_label="F1" element1_label="X1.1" function="" horizontal-alignment="AlignBottom" text_color="#000000" formula="" cable="">
                 <sequentialNumbers/>
             </conductor>
-            <conductor num="L" conductor_color="" type="multi" element2_name="Outlet 3 poles" x="0" y="0" displaytext="1" vertirotatetext="270" onetextperfolio="0" color2="#000000" horizrotatetext="0" element1_name="Terminal block" bicolor="false" element1="{b72044f3-7d78-48ca-9128-2fbac0bc252b}" condsize="1" numsize="7" element2="{8edfb86c-dfdd-466c-8876-a56be1112964}" tension_protocol="" dash-size="2" bus="" freezeLabel="false" conductor_section="" vertical-alignment="AlignRight" terminal1="{323e68e1-514f-4e03-8ece-f22744a2d325}" terminalname1="" terminal2="{bc31bdbc-5454-48c5-b913-48b69c7be3f4}" terminalname2="" element2_label="S1" element1_label="X1.5" function="" horizontal-alignment="AlignBottom" text_color="#000000" formula="L" cable="">
+            <conductor num="L" conductor_color="" type="multi" element2_name="Outlet 3 poles" x="0" y="0" displaytext="1" vertirotatetext="270" onetextperfolio="0" color2="#000000" horizrotatetext="0" element1_name="Terminal block" bicolor="false" element1="{b72044f3-7d78-48ca-9128-2fbac0bc252b}" condsize="1" numsize="7" element2="{8edfb86c-dfdd-466c-8876-a56be1112964}" tension_protocol="" dash-size="2" bus="" freezeLabel="false" conductor_section="" vertical-alignment="AlignRight" terminal1="{323e68e1-514f-4e03-8ece-f22744a2d325}" terminalname1="" terminal2="{bc31bdbc-5454-48c5-b913-48b69c7be3f4}" terminalname2="" element2_label="X3" element1_label="X1.5" function="" horizontal-alignment="AlignBottom" text_color="#000000" formula="L" cable="">
                 <sequentialNumbers/>
             </conductor>
             <conductor num="N" conductor_color="" type="multi" element2_name="Terminal block" x="0" y="0" displaytext="1" vertirotatetext="270" onetextperfolio="0" color2="#000000" horizrotatetext="0" element1_name="Terminal block" bicolor="false" element1="{c8f37bce-8661-4ee6-9e8e-465ed48b1e9a}" condsize="1" numsize="7" element2="{e09e1412-c57e-460b-9450-6b00de351aca}" tension_protocol="" dash-size="2" bus="" freezeLabel="false" conductor_section="" vertical-alignment="AlignRight" terminal1="{a33d1699-88d4-4071-a651-977d380e6e8c}" terminalname1="" terminal2="{ff9a5c6d-aad1-4f96-af33-ce7d7141ea6e}" terminalname2="" element2_label="X1.7" element1_label="X1.6" function="" horizontal-alignment="AlignBottom" text_color="#000000" formula="N" cable="">
@@ -428,51 +453,65 @@
             <conductor num="N" conductor_color="" type="multi" element2_name="Energy_counter" x="0" y="0" displaytext="1" vertirotatetext="270" onetextperfolio="0" color2="#000000" horizrotatetext="0" element1_name="Terminal block" bicolor="false" element1="{c8f37bce-8661-4ee6-9e8e-465ed48b1e9a}" condsize="1" numsize="7" element2="{c60d3f52-236c-4700-8308-8795e6102b25}" tension_protocol="" dash-size="2" bus="" freezeLabel="false" conductor_section="" vertical-alignment="AlignRight" terminal1="{323e68e1-514f-4e03-8ece-f22744a2d325}" terminalname1="" terminal2="{92cb4ab0-1573-4a43-935f-ca2e71a9bd3c}" terminalname2="L" element2_label="P1" element1_label="X1.6" function="" horizontal-alignment="AlignBottom" text_color="#000000" formula="N" cable="">
                 <sequentialNumbers/>
             </conductor>
-            <conductor num="N" conductor_color="" type="multi" element2_name="Outlet 3 poles" x="0" y="0" displaytext="1" vertirotatetext="270" onetextperfolio="0" color2="#000000" horizrotatetext="0" element1_name="Terminal block" bicolor="false" element1="{c8f37bce-8661-4ee6-9e8e-465ed48b1e9a}" condsize="1" numsize="7" element2="{8edfb86c-dfdd-466c-8876-a56be1112964}" tension_protocol="" dash-size="2" bus="" freezeLabel="false" conductor_section="" vertical-alignment="AlignRight" terminal1="{c81262f0-711b-451d-a333-9039f4de25b6}" terminalname1="" terminal2="{a9072ac7-314d-444d-8aa8-40dc41ae277b}" terminalname2="" element2_label="S1" element1_label="X1.6" function="" horizontal-alignment="AlignBottom" text_color="#000000" formula="N" cable="">
+            <conductor num="N" conductor_color="" type="multi" element2_name="Outlet 3 poles" x="0" y="0" displaytext="1" vertirotatetext="270" onetextperfolio="0" color2="#000000" horizrotatetext="0" element1_name="Terminal block" bicolor="false" element1="{c8f37bce-8661-4ee6-9e8e-465ed48b1e9a}" condsize="1" numsize="7" element2="{8edfb86c-dfdd-466c-8876-a56be1112964}" tension_protocol="" dash-size="2" bus="" freezeLabel="false" conductor_section="" vertical-alignment="AlignRight" terminal1="{c81262f0-711b-451d-a333-9039f4de25b6}" terminalname1="" terminal2="{a9072ac7-314d-444d-8aa8-40dc41ae277b}" terminalname2="" element2_label="X3" element1_label="X1.6" function="" horizontal-alignment="AlignBottom" text_color="#000000" formula="N" cable="">
                 <sequentialNumbers/>
             </conductor>
             <conductor num="" conductor_color="" type="multi" element2_name="Terminal block" x="0" y="0" displaytext="1" vertirotatetext="270" onetextperfolio="0" color2="#000000" horizrotatetext="0" element1_name="Coming arrow" bicolor="false" element1="{b710f83c-0352-41b5-b116-78543cc36851}" condsize="1" numsize="7" element2="{7752fcb5-0ade-4682-ac92-6a8f0c686e5a}" tension_protocol="" dash-size="2" bus="" freezeLabel="false" conductor_section="" vertical-alignment="AlignRight" terminal1="{d7fd0bec-9f05-4651-a50b-29d7ffabeb41}" terminalname1="1" terminal2="{ce25d169-cbfd-4df9-8f1a-b808b4167e9d}" terminalname2="" element2_label="X1.2" element1_label="" function="" horizontal-alignment="AlignBottom" text_color="#000000" formula="" cable="">
                 <sequentialNumbers/>
             </conductor>
-            <conductor num="" conductor_color="" type="multi" element2_name="Terminal block" x="0" y="0" displaytext="1" vertirotatetext="270" onetextperfolio="0" color2="#000000" horizrotatetext="0" element1_name="Coming arrow" bicolor="false" element1="{32844972-1044-4936-96c5-6b6d3ce80310}" condsize="1" numsize="7" element2="{651cbf7d-9f00-4afb-be0f-f5190a6b2317}" tension_protocol="" dash-size="2" bus="" freezeLabel="false" conductor_section="" vertical-alignment="AlignRight" terminal1="{d7fd0bec-9f05-4651-a50b-29d7ffabeb41}" terminalname1="1" terminal2="{ce25d169-cbfd-4df9-8f1a-b808b4167e9d}" terminalname2="" element2_label="X1.1" element1_label="" function="" horizontal-alignment="AlignBottom" text_color="#000000" formula="" cable="">
-                <sequentialNumbers/>
-            </conductor>
-            <conductor num="-S0" conductor_color="" type="multi" element2_name="Going arrow" x="0" y="0" element2_linked="" displaytext="1" vertirotatetext="270" onetextperfolio="0" color2="#000000" horizrotatetext="0" element1_name="Energy_counter" bicolor="false" element1="{c60d3f52-236c-4700-8308-8795e6102b25}" condsize="1" element2="{740cbd4c-beea-491f-9935-23cc9c6d0af1}" numsize="5" tension_protocol="" dash-size="2" bus="" freezeLabel="false" conductor_section="" vertical-alignment="AlignRight" terminal1="{492fe760-3a76-4e46-b2bb-fb01ff855396}" terminalname1="21" terminal2="{975add6f-4ba5-44af-a4c0-e1f1c2024601}" terminalname2="1" element2_label="" element1_label="P1" function="" horizontal-alignment="AlignBottom" text_color="#000000" formula="-S0" cable="">
-                <sequentialNumbers/>
-            </conductor>
-            <conductor num="L" conductor_color="" type="multi" element2_name="12V-Power-Suply" x="0" y="0" displaytext="1" vertirotatetext="270" onetextperfolio="0" color2="#000000" horizrotatetext="0" element1_name="Terminal block" bicolor="false" element1="{423e5315-c944-49eb-afa0-a838e25bd002}" condsize="1" numsize="7" element2="{a75e84bb-8467-44fc-813e-0eb3c5019bd2}" tension_protocol="" dash-size="2" bus="" freezeLabel="false" conductor_section="" vertical-alignment="AlignRight" terminal1="{ff9a5c6d-aad1-4f96-af33-ce7d7141ea6e}" terminalname1="" terminal2="{c031c847-6fde-c227-30e5-da43898f13c6}" terminalname2="" element2_label="G1" element1_label="X1.4" function="" horizontal-alignment="AlignBottom" text_color="#000000" formula="L" cable="">
-                <segment orientation="vertical" length="10"/>
-                <segment orientation="vertical" length="30"/>
-                <segment orientation="horizontal" length="381"/>
-                <segment orientation="vertical" length="10"/>
-                <segment orientation="vertical" length="10"/>
-                <sequentialNumbers/>
-            </conductor>
-            <conductor num="N" conductor_color="" type="multi" element2_name="12V-Power-Suply" x="0" y="0" displaytext="1" vertirotatetext="270" onetextperfolio="0" color2="#000000" horizrotatetext="0" element1_name="Terminal block" bicolor="false" element1="{e09e1412-c57e-460b-9450-6b00de351aca}" condsize="1" numsize="7" element2="{a75e84bb-8467-44fc-813e-0eb3c5019bd2}" tension_protocol="" dash-size="2" bus="" freezeLabel="false" conductor_section="" vertical-alignment="AlignRight" terminal1="{7db142da-0a8e-4e3a-bc0f-0665b0f67786}" terminalname1="" terminal2="{0860bc21-59e4-0faf-8b0f-f4446840010e}" terminalname2="" element2_label="G1" element1_label="X1.7" function="" horizontal-alignment="AlignBottom" text_color="#000000" formula="N" cable="">
-                <segment orientation="vertical" length="10"/>
-                <segment orientation="vertical" length="10"/>
-                <segment orientation="horizontal" length="241"/>
-                <segment orientation="vertical" length="30"/>
-                <segment orientation="vertical" length="10"/>
-                <sequentialNumbers/>
-            </conductor>
-            <conductor num="" conductor_color="" type="multi" element2_name="Outlet 3 poles" x="0" y="0" displaytext="1" vertirotatetext="270" onetextperfolio="0" color2="#000000" horizrotatetext="0" element1_name="Terminal block" bicolor="false" element1="{b8a4e103-4bad-4bbb-b1fb-73926c221dee}" condsize="1" numsize="7" element2="{8edfb86c-dfdd-466c-8876-a56be1112964}" tension_protocol="" dash-size="2" bus="" freezeLabel="false" conductor_section="" vertical-alignment="AlignRight" terminal1="{396041da-b0d7-480a-8c0b-5bf2b1cca6f5}" terminalname1="" terminal2="{5e35d52e-4a3a-461c-a53f-9e6e6f684f4f}" terminalname2="" element2_label="S1" element1_label="X1.3" function="" horizontal-alignment="AlignBottom" text_color="#000000" formula="" cable="">
-                <segment orientation="horizontal" length="0"/>
-                <segment orientation="vertical" length="-10"/>
-                <segment orientation="horizontal" length="45"/>
-                <segment orientation="vertical" length="420"/>
-                <segment orientation="horizontal" length="85"/>
-                <segment orientation="horizontal" length="0"/>
-                <sequentialNumbers/>
-            </conductor>
         </conductors>
     </diagram>
-    <diagram colsize="60" indexrev="0.0.1" displaycols="true" plant="" locmach="" title="Termination block" rows="8" rowsize="80" height="660" filename="E0007-000001" order="2" date="2026-06-14" author="" version="0.100.0" freezeNewConductor="false" cols="17" displayAt="bottom" auto_page_num="Create an auto folio numbering" folio="%id/%total" displayrows="true" freezeNewElement="false">
+    <diagram colsize="60" indexrev="0.0.1" displaycols="true" plant="" locmach="" title="Termination block" rows="8" rowsize="80" height="660" filename="E0007-000001" order="2" date="null" author="" version="0.100.0" freezeNewConductor="false" cols="17" displayAt="bottom" auto_page_num="Create an auto folio numbering" folio="%id/%total" displayrows="true" freezeNewElement="false">
         <defaultconductor num="_" conductor_color="" type="multi" displaytext="1" vertirotatetext="270" onetextperfolio="0" color2="#000000" horizrotatetext="0" bicolor="false" condsize="1" numsize="7" tension_protocol="" bus="" dash-size="2" conductor_section="" vertical-alignment="AlignRight" function="" horizontal-alignment="AlignBottom" text_color="#000000" cable="" formula=""/>
         <elements>
+            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/02going_arrow.elmt" x="420" y="430" z="10" freezeLabel="false" prefix="" uuid="{66a0f0c5-142a-478d-9b4b-f1b434b15b6e}" orientation="1">
+                <terminals>
+                    <terminal x="-9" y="0" id="0" orientation="3"/>
+                </terminals>
+                <inputs/>
+                <dynamic_texts>
+                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="0" y="10" rotation="270" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{87ffea1a-1e4d-44d1-93b7-6bb6e0c73bf1}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
+                        <text></text>
+                        <info_name>label</info_name>
+                    </dynamic_elmt_text>
+                </dynamic_texts>
+                <texts_groups/>
+            </element>
+            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/02going_arrow.elmt" x="660" y="440" z="10" freezeLabel="false" prefix="" uuid="{91167fbc-084f-44b7-ad8d-beb9e8b1462d}" orientation="1">
+                <terminals>
+                    <terminal x="-9" y="0" id="1" orientation="3"/>
+                </terminals>
+                <inputs/>
+                <links_uuids>
+                    <link_uuid uuid="{aaa92284-0548-4c52-9f9e-4ba15e7e49b3}"/>
+                </links_uuids>
+                <dynamic_texts>
+                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="0" y="10" rotation="270" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{87ffea1a-1e4d-44d1-93b7-6bb6e0c73bf1}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
+                        <text>3-C9</text>
+                        <info_name>label</info_name>
+                    </dynamic_elmt_text>
+                </dynamic_texts>
+                <texts_groups/>
+            </element>
+            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/02going_arrow.elmt" x="540" y="430" z="10" freezeLabel="false" prefix="" uuid="{8ec767ee-8aaf-48c4-a0f4-0111086b0dec}" orientation="1">
+                <terminals>
+                    <terminal x="-9" y="0" id="2" orientation="3"/>
+                </terminals>
+                <inputs/>
+                <links_uuids>
+                    <link_uuid uuid="{d670bc7e-a817-4356-adce-a21407e000cf}"/>
+                </links_uuids>
+                <dynamic_texts>
+                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="0" y="10" rotation="270" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{87ffea1a-1e4d-44d1-93b7-6bb6e0c73bf1}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
+                        <text>3-C9</text>
+                        <info_name>label</info_name>
+                    </dynamic_elmt_text>
+                </dynamic_texts>
+                <texts_groups/>
+            </element>
             <element type="embed://import/10_electric/10_allpole/100_folio_referencing/01coming_arrow.elmt" x="250" y="200" z="10" freezeLabel="false" prefix="" uuid="{b2200001-0001-4001-8001-000000000001}" orientation="1">
                 <terminals>
-                    <terminal x="9" y="0" id="0" orientation="1"/>
+                    <terminal x="9" y="0" id="3" orientation="1"/>
                 </terminals>
                 <inputs/>
                 <links_uuids>
@@ -486,9 +525,31 @@
                 </dynamic_texts>
                 <texts_groups/>
             </element>
+            <element type="embed://import/10_electric/10_allpole/130_terminals_terminal_strips/borne_2.elmt" x="300" y="320" z="10" freezeLabel="false" prefix="X" uuid="{6a59404b-0946-488b-82ea-1f89582abb71}" orientation="0">
+                <terminals>
+                    <terminal x="0" y="-6" id="4" orientation="0"/>
+                    <terminal x="6" y="0" id="5" orientation="1"/>
+                    <terminal x="0" y="6" id="6" orientation="2"/>
+                </terminals>
+                <inputs/>
+                <elementInformations>
+                    <elementInformation name="formula" show="1">X2.2</elementInformation>
+                    <elementInformation name="label" show="1">X2.2</elementInformation>
+                </elementInformations>
+                <properties>
+                    <element_type terminal_led="false" terminal_type="generic" terminal_function="generic"/>
+                </properties>
+                <dynamic_texts>
+                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="22" y="1" rotation="90" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{07cdaef2-bcf7-49b6-a4e1-ab9d269ed289}" keep_visual_rotation="false" text_from="ElementInfo" Valignment="AlignTop">
+                        <text>X2.2</text>
+                        <info_name>label</info_name>
+                    </dynamic_elmt_text>
+                </dynamic_texts>
+                <texts_groups/>
+            </element>
             <element type="embed://import/10_electric/10_allpole/100_folio_referencing/01coming_arrow.elmt" x="300" y="200" z="10" freezeLabel="false" prefix="" uuid="{b2200002-0002-4002-8002-000000000002}" orientation="1">
                 <terminals>
-                    <terminal x="9" y="0" id="1" orientation="1"/>
+                    <terminal x="9" y="0" id="7" orientation="1"/>
                 </terminals>
                 <inputs/>
                 <links_uuids>
@@ -502,9 +563,30 @@
                 </dynamic_texts>
                 <texts_groups/>
             </element>
+            <element type="embed://import/10_electric/10_allpole/130_terminals_terminal_strips/borne_continuite.elmt" x="730" y="320" z="10" freezeLabel="false" prefix="X" uuid="{312f9d72-5f02-48af-a8ad-d90357b80612}" orientation="0">
+                <terminals>
+                    <terminal x="0" y="-6" id="8" orientation="0"/>
+                    <terminal x="0" y="6" id="9" orientation="2"/>
+                </terminals>
+                <inputs/>
+                <elementInformations>
+                    <elementInformation name="formula" show="1">X2.11</elementInformation>
+                    <elementInformation name="label" show="1">X2.11</elementInformation>
+                </elementInformations>
+                <properties>
+                    <element_type terminal_led="false" terminal_type="generic" terminal_function="generic"/>
+                </properties>
+                <dynamic_texts>
+                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="22" y="0" rotation="90" font="Liberation Sans,10,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{69c5778a-641f-40c5-bc97-0c08c343c866}" keep_visual_rotation="false" text_from="ElementInfo" Valignment="AlignTop">
+                        <text>X2.11</text>
+                        <info_name>label</info_name>
+                    </dynamic_elmt_text>
+                </dynamic_texts>
+                <texts_groups/>
+            </element>
             <element type="embed://import/10_electric/10_allpole/100_folio_referencing/01coming_arrow.elmt" x="500" y="200" z="10" freezeLabel="false" prefix="" uuid="{b2200003-0003-4003-8003-000000000003}" orientation="1">
                 <terminals>
-                    <terminal x="9" y="0" id="2" orientation="1"/>
+                    <terminal x="9" y="0" id="10" orientation="1"/>
                 </terminals>
                 <inputs/>
                 <links_uuids>
@@ -518,9 +600,30 @@
                 </dynamic_texts>
                 <texts_groups/>
             </element>
+            <element type="embed://import/10_electric/10_allpole/130_terminals_terminal_strips/borne_continuite.elmt" x="760" y="320" z="10" freezeLabel="false" prefix="X" uuid="{737d150b-5741-4f1d-8305-d33fc42a4a90}" orientation="0">
+                <terminals>
+                    <terminal x="0" y="-6" id="11" orientation="0"/>
+                    <terminal x="0" y="6" id="12" orientation="2"/>
+                </terminals>
+                <inputs/>
+                <elementInformations>
+                    <elementInformation name="formula" show="1">X2.12</elementInformation>
+                    <elementInformation name="label" show="1">X2.12</elementInformation>
+                </elementInformations>
+                <properties>
+                    <element_type terminal_led="false" terminal_type="generic" terminal_function="generic"/>
+                </properties>
+                <dynamic_texts>
+                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="22" y="0" rotation="90" font="Liberation Sans,10,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{69c5778a-641f-40c5-bc97-0c08c343c866}" keep_visual_rotation="false" text_from="ElementInfo" Valignment="AlignTop">
+                        <text>X2.12</text>
+                        <info_name>label</info_name>
+                    </dynamic_elmt_text>
+                </dynamic_texts>
+                <texts_groups/>
+            </element>
             <element type="embed://import/10_electric/10_allpole/100_folio_referencing/01coming_arrow.elmt" x="540" y="200" z="10" freezeLabel="false" prefix="" uuid="{b2200004-0004-4004-8004-000000000004}" orientation="1">
                 <terminals>
-                    <terminal x="9" y="0" id="3" orientation="1"/>
+                    <terminal x="9" y="0" id="13" orientation="1"/>
                 </terminals>
                 <inputs/>
                 <links_uuids>
@@ -536,8 +639,8 @@
             </element>
             <element type="embed://import/10_electric/10_allpole/130_terminals_terminal_strips/borne_continuite.elmt" x="250" y="320" z="10" freezeLabel="false" prefix="X" uuid="{8592a48a-3b32-47a9-b65f-2fa769ad0215}" orientation="0">
                 <terminals>
-                    <terminal x="0" y="-6" id="4" orientation="0"/>
-                    <terminal x="0" y="6" id="5" orientation="2"/>
+                    <terminal x="0" y="-6" id="14" orientation="0"/>
+                    <terminal x="0" y="6" id="15" orientation="2"/>
                 </terminals>
                 <inputs/>
                 <elementInformations>
@@ -557,8 +660,8 @@
             </element>
             <element type="embed://import/10_electric/10_allpole/130_terminals_terminal_strips/borne_continuite.elmt" x="660" y="320" z="10" freezeLabel="false" prefix="X" uuid="{64439425-36eb-4415-b537-aed14db983a9}" orientation="0">
                 <terminals>
-                    <terminal x="0" y="-6" id="6" orientation="0"/>
-                    <terminal x="0" y="6" id="7" orientation="2"/>
+                    <terminal x="0" y="-6" id="16" orientation="0"/>
+                    <terminal x="0" y="6" id="17" orientation="2"/>
                 </terminals>
                 <inputs/>
                 <elementInformations>
@@ -576,210 +679,65 @@
                 </dynamic_texts>
                 <texts_groups/>
             </element>
-            <element type="embed://import/10_electric/10_allpole/130_terminals_terminal_strips/borne_2.elmt" x="300" y="320" z="10" freezeLabel="false" prefix="X" uuid="{6a59404b-0946-488b-82ea-1f89582abb71}" orientation="0">
+            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/02going_arrow.elmt" x="250" y="430" z="10" freezeLabel="false" prefix="" uuid="{13d49c86-7905-4b9e-9e35-b492a0289d93}" orientation="1">
                 <terminals>
-                    <terminal x="0" y="-6" id="8" orientation="0"/>
-                    <terminal x="6" y="0" id="9" orientation="1"/>
-                    <terminal x="0" y="6" id="10" orientation="2"/>
-                </terminals>
-                <inputs/>
-                <elementInformations>
-                    <elementInformation name="formula" show="1">X2.2</elementInformation>
-                    <elementInformation name="label" show="1">X2.2</elementInformation>
-                </elementInformations>
-                <properties>
-                    <element_type terminal_led="false" terminal_type="generic" terminal_function="generic"/>
-                </properties>
-                <dynamic_texts>
-                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="22" y="1" rotation="90" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{07cdaef2-bcf7-49b6-a4e1-ab9d269ed289}" keep_visual_rotation="false" text_from="ElementInfo" Valignment="AlignTop">
-                        <text>X2.2</text>
-                        <info_name>label</info_name>
-                    </dynamic_elmt_text>
-                </dynamic_texts>
-                <texts_groups/>
-            </element>
-            <element type="embed://import/10_electric/10_allpole/130_terminals_terminal_strips/borne_continuite.elmt" x="730" y="320" z="10" freezeLabel="false" prefix="X" uuid="{312f9d72-5f02-48af-a8ad-d90357b80612}" orientation="0">
-                <terminals>
-                    <terminal x="0" y="-6" id="11" orientation="0"/>
-                    <terminal x="0" y="6" id="12" orientation="2"/>
-                </terminals>
-                <inputs/>
-                <elementInformations>
-                    <elementInformation name="formula" show="1">X2.11</elementInformation>
-                    <elementInformation name="label" show="1">X2.11</elementInformation>
-                </elementInformations>
-                <properties>
-                    <element_type terminal_led="false" terminal_type="generic" terminal_function="generic"/>
-                </properties>
-                <dynamic_texts>
-                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="22" y="0" rotation="90" font="Liberation Sans,10,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{69c5778a-641f-40c5-bc97-0c08c343c866}" keep_visual_rotation="false" text_from="ElementInfo" Valignment="AlignTop">
-                        <text>X2.11</text>
-                        <info_name>label</info_name>
-                    </dynamic_elmt_text>
-                </dynamic_texts>
-                <texts_groups/>
-            </element>
-            <element type="embed://import/10_electric/10_allpole/130_terminals_terminal_strips/borne_continuite.elmt" x="760" y="320" z="10" freezeLabel="false" prefix="X" uuid="{737d150b-5741-4f1d-8305-d33fc42a4a90}" orientation="0">
-                <terminals>
-                    <terminal x="0" y="-6" id="13" orientation="0"/>
-                    <terminal x="0" y="6" id="14" orientation="2"/>
-                </terminals>
-                <inputs/>
-                <elementInformations>
-                    <elementInformation name="formula" show="1">X2.12</elementInformation>
-                    <elementInformation name="label" show="1">X2.12</elementInformation>
-                </elementInformations>
-                <properties>
-                    <element_type terminal_led="false" terminal_type="generic" terminal_function="generic"/>
-                </properties>
-                <dynamic_texts>
-                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="22" y="0" rotation="90" font="Liberation Sans,10,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{69c5778a-641f-40c5-bc97-0c08c343c866}" keep_visual_rotation="false" text_from="ElementInfo" Valignment="AlignTop">
-                        <text>X2.12</text>
-                        <info_name>label</info_name>
-                    </dynamic_elmt_text>
-                </dynamic_texts>
-                <texts_groups/>
-            </element>
-            <element type="embed://import/10_electric/10_allpole/130_terminals_terminal_strips/borne_continuite.elmt" x="500" y="320" z="10" freezeLabel="false" prefix="X" uuid="{fc98a721-4e64-4c8c-bec3-f5f7048df509}" orientation="0">
-                <terminals>
-                    <terminal x="0" y="-6" id="15" orientation="0"/>
-                    <terminal x="0" y="6" id="16" orientation="2"/>
-                </terminals>
-                <inputs/>
-                <elementInformations>
-                    <elementInformation name="formula" show="1">X2.7</elementInformation>
-                    <elementInformation name="label" show="1">X2.7</elementInformation>
-                </elementInformations>
-                <properties>
-                    <element_type terminal_led="false" terminal_type="generic" terminal_function="generic"/>
-                </properties>
-                <dynamic_texts>
-                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="22" y="0" rotation="90" font="Liberation Sans,10,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{69c5778a-641f-40c5-bc97-0c08c343c866}" keep_visual_rotation="false" text_from="ElementInfo" Valignment="AlignTop">
-                        <text>X2.7</text>
-                        <info_name>label</info_name>
-                    </dynamic_elmt_text>
-                </dynamic_texts>
-                <texts_groups/>
-            </element>
-            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/02going_arrow.elmt" x="730" y="440" z="10" freezeLabel="false" prefix="" uuid="{28e04d65-abaa-4e80-a9dd-3236d7ba7e07}" orientation="1">
-                <terminals>
-                    <terminal x="-9" y="0" id="17" orientation="3"/>
+                    <terminal x="-9" y="0" id="18" orientation="3"/>
                 </terminals>
                 <inputs/>
                 <links_uuids>
-                    <link_uuid uuid="{e20c65fb-57f2-4de0-93f5-c4acc9ca2f6f}"/>
+                    <link_uuid uuid="{d3896237-6ad7-458e-b675-9b529b533c78}"/>
                 </links_uuids>
-                <elementInformations/>
                 <dynamic_texts>
                     <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="0" y="10" rotation="270" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{87ffea1a-1e4d-44d1-93b7-6bb6e0c73bf1}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
-                        <text>3-C10</text>
+                        <text>3-C7</text>
                         <info_name>label</info_name>
                     </dynamic_elmt_text>
                 </dynamic_texts>
                 <texts_groups/>
             </element>
-            <element type="embed://import/10_electric/10_allpole/130_terminals_terminal_strips/borne_3.elmt" x="460" y="320" z="10" freezeLabel="false" prefix="X" uuid="{1a1ba1c0-b379-45ff-975e-8b9091e031f5}" orientation="3">
+            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/01coming_arrow.elmt" x="760" y="200" z="10" freezeLabel="false" prefix="" uuid="{8aa29929-acde-44c8-a284-9fe4d3867c85}" orientation="1">
                 <terminals>
-                    <terminal x="0" y="-6" id="18" orientation="0"/>
-                    <terminal x="-6" y="0" id="19" orientation="3"/>
+                    <terminal x="9" y="0" id="19" orientation="1"/>
                 </terminals>
                 <inputs/>
-                <elementInformations>
-                    <elementInformation name="formula" show="1">X2.6</elementInformation>
-                    <elementInformation name="label" show="1">X2.6</elementInformation>
-                </elementInformations>
-                <properties>
-                    <element_type terminal_led="false" terminal_type="generic" terminal_function="generic"/>
-                </properties>
+                <links_uuids>
+                    <link_uuid uuid="{59327031-3a06-47d1-b779-e7466b7a5f44}"/>
+                </links_uuids>
                 <dynamic_texts>
-                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="-2" y="20" rotation="180" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{5e1e87b8-7f4c-459b-8862-d10031662706}" keep_visual_rotation="false" text_from="ElementInfo" Valignment="AlignTop">
-                        <text>X2.6</text>
+                    <dynamic_elmt_text frame="false" Halignment="AlignRight" x="-20" y="14" rotation="270" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{b2200004-0004-4004-8004-0000000000b4}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
+                        <text>4-C8</text>
                         <info_name>label</info_name>
                     </dynamic_elmt_text>
                 </dynamic_texts>
                 <texts_groups/>
             </element>
-            <element type="embed://import/10_electric/10_allpole/130_terminals_terminal_strips/borne_continuite.elmt" x="540" y="320" z="10" freezeLabel="false" prefix="X" uuid="{4201f57f-7eab-474e-bd7a-37fd92d5fb2c}" orientation="0">
+            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/02going_arrow.elmt" x="630" y="440" z="10" freezeLabel="false" prefix="" uuid="{bf93ab48-9de5-46ff-b3b7-aea24cde8a34}" orientation="1">
                 <terminals>
-                    <terminal x="0" y="-6" id="20" orientation="0"/>
-                    <terminal x="0" y="6" id="21" orientation="2"/>
+                    <terminal x="-9" y="0" id="20" orientation="3"/>
                 </terminals>
                 <inputs/>
-                <elementInformations>
-                    <elementInformation name="formula" show="1">X2.8</elementInformation>
-                    <elementInformation name="label" show="1">X2.8</elementInformation>
-                </elementInformations>
-                <properties>
-                    <element_type terminal_led="false" terminal_type="generic" terminal_function="generic"/>
-                </properties>
+                <links_uuids>
+                    <link_uuid uuid="{5a8d079a-d4a8-4bd5-95bd-67685ec85b45}"/>
+                </links_uuids>
                 <dynamic_texts>
-                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="22" y="0" rotation="90" font="Liberation Sans,10,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{69c5778a-641f-40c5-bc97-0c08c343c866}" keep_visual_rotation="false" text_from="ElementInfo" Valignment="AlignTop">
-                        <text>X2.8</text>
+                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="0" y="10" rotation="270" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{87ffea1a-1e4d-44d1-93b7-6bb6e0c73bf1}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
+                        <text>3-C8</text>
                         <info_name>label</info_name>
                     </dynamic_elmt_text>
                 </dynamic_texts>
                 <texts_groups/>
             </element>
-            <element type="embed://import/10_electric/10_allpole/130_terminals_terminal_strips/borne_continuite.elmt" x="630" y="320" z="10" freezeLabel="false" prefix="X" uuid="{da9261ef-a605-4c4e-b8fe-5d5936b5db8c}" orientation="0">
+            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/01coming_arrow.elmt" x="730" y="200" z="10" freezeLabel="false" prefix="" uuid="{8542fde2-18cd-4b0d-b380-9c6e4082819a}" orientation="1">
                 <terminals>
-                    <terminal x="0" y="-6" id="22" orientation="0"/>
-                    <terminal x="0" y="6" id="23" orientation="2"/>
+                    <terminal x="9" y="0" id="21" orientation="1"/>
                 </terminals>
                 <inputs/>
-                <elementInformations>
-                    <elementInformation name="formula" show="1">X2.9</elementInformation>
-                    <elementInformation name="label" show="1">X2.9</elementInformation>
-                </elementInformations>
-                <properties>
-                    <element_type terminal_led="false" terminal_type="generic" terminal_function="generic"/>
-                </properties>
+                <links_uuids>
+                    <link_uuid uuid="{71d15492-0759-4276-87fd-a630a8cdb08e}"/>
+                </links_uuids>
                 <dynamic_texts>
-                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="22" y="0" rotation="90" font="Liberation Sans,10,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{69c5778a-641f-40c5-bc97-0c08c343c866}" keep_visual_rotation="false" text_from="ElementInfo" Valignment="AlignTop">
-                        <text>X2.9</text>
-                        <info_name>label</info_name>
-                    </dynamic_elmt_text>
-                </dynamic_texts>
-                <texts_groups/>
-            </element>
-            <element type="embed://import/10_electric/10_allpole/130_terminals_terminal_strips/borne_2.elmt" x="420" y="320" z="10" freezeLabel="false" prefix="X" uuid="{99c3ecbe-7ee4-4b2f-b4aa-cd558ff0c798}" orientation="1">
-                <terminals>
-                    <terminal x="0" y="-6" id="24" orientation="0"/>
-                    <terminal x="6" y="0" id="25" orientation="1"/>
-                    <terminal x="0" y="6" id="26" orientation="2"/>
-                </terminals>
-                <inputs/>
-                <elementInformations>
-                    <elementInformation name="formula" show="1">X2.5</elementInformation>
-                    <elementInformation name="label" show="1">X2.5</elementInformation>
-                </elementInformations>
-                <properties>
-                    <element_type terminal_led="false" terminal_type="generic" terminal_function="generic"/>
-                </properties>
-                <dynamic_texts>
-                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="3" y="-24.5" rotation="0" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{9c4755cb-980b-4bd2-8aed-8dce923b8204}" keep_visual_rotation="false" text_from="ElementInfo" Valignment="AlignTop">
-                        <text>X2.5</text>
-                        <info_name>label</info_name>
-                    </dynamic_elmt_text>
-                </dynamic_texts>
-                <texts_groups/>
-            </element>
-            <element type="embed://import/10_electric/10_allpole/130_terminals_terminal_strips/borne_2.elmt" x="340" y="320" z="10" freezeLabel="false" prefix="X" uuid="{e0cafc7f-a14d-4799-a9fb-a5cef902dc58}" orientation="1">
-                <terminals>
-                    <terminal x="0" y="-6" id="27" orientation="0"/>
-                    <terminal x="6" y="0" id="28" orientation="1"/>
-                    <terminal x="0" y="6" id="29" orientation="2"/>
-                </terminals>
-                <inputs/>
-                <elementInformations>
-                    <elementInformation name="formula" show="1">X2.3</elementInformation>
-                    <elementInformation name="label" show="1">X2.3</elementInformation>
-                </elementInformations>
-                <properties>
-                    <element_type terminal_led="false" terminal_type="generic" terminal_function="generic"/>
-                </properties>
-                <dynamic_texts>
-                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="3" y="-24.5" rotation="0" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{11b1f967-4b5a-4082-bedc-503f677258cb}" keep_visual_rotation="false" text_from="ElementInfo" Valignment="AlignTop">
-                        <text>X2.3</text>
+                    <dynamic_elmt_text frame="false" Halignment="AlignRight" x="-20" y="14" rotation="270" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{b2200004-0004-4004-8004-0000000000b4}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
+                        <text>4-C7</text>
                         <info_name>label</info_name>
                     </dynamic_elmt_text>
                 </dynamic_texts>
@@ -787,9 +745,9 @@
             </element>
             <element type="embed://import/10_electric/10_allpole/130_terminals_terminal_strips/borne_2.elmt" x="380" y="320" z="10" freezeLabel="false" prefix="X" uuid="{42fb05ae-a9ba-45c7-b0dc-e29c50dc492f}" orientation="1">
                 <terminals>
-                    <terminal x="0" y="-6" id="30" orientation="0"/>
-                    <terminal x="6" y="0" id="31" orientation="1"/>
-                    <terminal x="0" y="6" id="32" orientation="2"/>
+                    <terminal x="0" y="-6" id="22" orientation="0"/>
+                    <terminal x="6" y="0" id="23" orientation="1"/>
+                    <terminal x="0" y="6" id="24" orientation="2"/>
                 </terminals>
                 <inputs/>
                 <elementInformations>
@@ -807,35 +765,206 @@
                 </dynamic_texts>
                 <texts_groups/>
             </element>
-            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/01coming_arrow.elmt" x="760" y="200" z="10" freezeLabel="false" prefix="" uuid="{8aa29929-acde-44c8-a284-9fe4d3867c85}" orientation="1">
+            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/02going_arrow.elmt" x="730" y="440" z="10" freezeLabel="false" prefix="" uuid="{28e04d65-abaa-4e80-a9dd-3236d7ba7e07}" orientation="1">
                 <terminals>
-                    <terminal x="9" y="0" id="33" orientation="1"/>
+                    <terminal x="-9" y="0" id="25" orientation="3"/>
                 </terminals>
                 <inputs/>
                 <links_uuids>
-                    <link_uuid uuid="{59327031-3a06-47d1-b779-e7466b7a5f44}"/>
+                    <link_uuid uuid="{e20c65fb-57f2-4de0-93f5-c4acc9ca2f6f}"/>
                 </links_uuids>
-                <elementInformations/>
                 <dynamic_texts>
-                    <dynamic_elmt_text frame="false" Halignment="AlignRight" x="-20" y="14" rotation="270" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{b2200004-0004-4004-8004-0000000000b4}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
-                        <text>4-C8</text>
+                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="0" y="10" rotation="270" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{87ffea1a-1e4d-44d1-93b7-6bb6e0c73bf1}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
+                        <text>3-C10</text>
                         <info_name>label</info_name>
                     </dynamic_elmt_text>
                 </dynamic_texts>
                 <texts_groups/>
             </element>
-            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/01coming_arrow.elmt" x="730" y="200" z="10" freezeLabel="false" prefix="" uuid="{8542fde2-18cd-4b0d-b380-9c6e4082819a}" orientation="1">
+            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/02going_arrow.elmt" x="380" y="430" z="10" freezeLabel="false" prefix="" uuid="{00797a8e-80c1-4714-b641-e76ff387df5d}" orientation="1">
                 <terminals>
-                    <terminal x="9" y="0" id="34" orientation="1"/>
+                    <terminal x="-9" y="0" id="26" orientation="3"/>
                 </terminals>
                 <inputs/>
                 <links_uuids>
-                    <link_uuid uuid="{71d15492-0759-4276-87fd-a630a8cdb08e}"/>
+                    <link_uuid uuid="{16a71e59-83d0-439c-b096-1500528bacb9}"/>
                 </links_uuids>
-                <elementInformations/>
                 <dynamic_texts>
-                    <dynamic_elmt_text frame="false" Halignment="AlignRight" x="-20" y="14" rotation="270" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{b2200004-0004-4004-8004-0000000000b4}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
-                        <text>4-C7</text>
+                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="0" y="10" rotation="270" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{87ffea1a-1e4d-44d1-93b7-6bb6e0c73bf1}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
+                        <text>3-C9</text>
+                        <info_name>label</info_name>
+                    </dynamic_elmt_text>
+                </dynamic_texts>
+                <texts_groups/>
+            </element>
+            <element type="embed://import/10_electric/10_allpole/130_terminals_terminal_strips/borne_continuite.elmt" x="540" y="320" z="10" freezeLabel="false" prefix="X" uuid="{4201f57f-7eab-474e-bd7a-37fd92d5fb2c}" orientation="0">
+                <terminals>
+                    <terminal x="0" y="-6" id="27" orientation="0"/>
+                    <terminal x="0" y="6" id="28" orientation="2"/>
+                </terminals>
+                <inputs/>
+                <elementInformations>
+                    <elementInformation name="formula" show="1">X2.8</elementInformation>
+                    <elementInformation name="label" show="1">X2.8</elementInformation>
+                </elementInformations>
+                <properties>
+                    <element_type terminal_led="false" terminal_type="generic" terminal_function="generic"/>
+                </properties>
+                <dynamic_texts>
+                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="22" y="0" rotation="90" font="Liberation Sans,10,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{69c5778a-641f-40c5-bc97-0c08c343c866}" keep_visual_rotation="false" text_from="ElementInfo" Valignment="AlignTop">
+                        <text>X2.8</text>
+                        <info_name>label</info_name>
+                    </dynamic_elmt_text>
+                </dynamic_texts>
+                <texts_groups/>
+            </element>
+            <element type="embed://import/10_electric/10_allpole/130_terminals_terminal_strips/borne_continuite.elmt" x="500" y="320" z="10" freezeLabel="false" prefix="X" uuid="{fc98a721-4e64-4c8c-bec3-f5f7048df509}" orientation="0">
+                <terminals>
+                    <terminal x="0" y="-6" id="29" orientation="0"/>
+                    <terminal x="0" y="6" id="30" orientation="2"/>
+                </terminals>
+                <inputs/>
+                <elementInformations>
+                    <elementInformation name="formula" show="1">X2.7</elementInformation>
+                    <elementInformation name="label" show="1">X2.7</elementInformation>
+                </elementInformations>
+                <properties>
+                    <element_type terminal_led="false" terminal_type="generic" terminal_function="generic"/>
+                </properties>
+                <dynamic_texts>
+                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="22" y="0" rotation="90" font="Liberation Sans,10,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{69c5778a-641f-40c5-bc97-0c08c343c866}" keep_visual_rotation="false" text_from="ElementInfo" Valignment="AlignTop">
+                        <text>X2.7</text>
+                        <info_name>label</info_name>
+                    </dynamic_elmt_text>
+                </dynamic_texts>
+                <texts_groups/>
+            </element>
+            <element type="embed://import/10_electric/10_allpole/130_terminals_terminal_strips/borne_continuite.elmt" x="630" y="320" z="10" freezeLabel="false" prefix="X" uuid="{da9261ef-a605-4c4e-b8fe-5d5936b5db8c}" orientation="0">
+                <terminals>
+                    <terminal x="0" y="-6" id="31" orientation="0"/>
+                    <terminal x="0" y="6" id="32" orientation="2"/>
+                </terminals>
+                <inputs/>
+                <elementInformations>
+                    <elementInformation name="formula" show="1">X2.9</elementInformation>
+                    <elementInformation name="label" show="1">X2.9</elementInformation>
+                </elementInformations>
+                <properties>
+                    <element_type terminal_led="false" terminal_type="generic" terminal_function="generic"/>
+                </properties>
+                <dynamic_texts>
+                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="22" y="0" rotation="90" font="Liberation Sans,10,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{69c5778a-641f-40c5-bc97-0c08c343c866}" keep_visual_rotation="false" text_from="ElementInfo" Valignment="AlignTop">
+                        <text>X2.9</text>
+                        <info_name>label</info_name>
+                    </dynamic_elmt_text>
+                </dynamic_texts>
+                <texts_groups/>
+            </element>
+            <element type="embed://import/10_electric/10_allpole/130_terminals_terminal_strips/borne_2.elmt" x="340" y="320" z="10" freezeLabel="false" prefix="X" uuid="{e0cafc7f-a14d-4799-a9fb-a5cef902dc58}" orientation="1">
+                <terminals>
+                    <terminal x="0" y="-6" id="33" orientation="0"/>
+                    <terminal x="6" y="0" id="34" orientation="1"/>
+                    <terminal x="0" y="6" id="35" orientation="2"/>
+                </terminals>
+                <inputs/>
+                <elementInformations>
+                    <elementInformation name="formula" show="1">X2.3</elementInformation>
+                    <elementInformation name="label" show="1">X2.3</elementInformation>
+                </elementInformations>
+                <properties>
+                    <element_type terminal_led="false" terminal_type="generic" terminal_function="generic"/>
+                </properties>
+                <dynamic_texts>
+                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="3" y="-24.5" rotation="0" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{11b1f967-4b5a-4082-bedc-503f677258cb}" keep_visual_rotation="false" text_from="ElementInfo" Valignment="AlignTop">
+                        <text>X2.3</text>
+                        <info_name>label</info_name>
+                    </dynamic_elmt_text>
+                </dynamic_texts>
+                <texts_groups/>
+            </element>
+            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/02going_arrow.elmt" x="760" y="440" z="10" freezeLabel="false" prefix="" uuid="{c189bbea-f92a-40b1-934b-d7be16442eb1}" orientation="1">
+                <terminals>
+                    <terminal x="-9" y="0" id="36" orientation="3"/>
+                </terminals>
+                <inputs/>
+                <links_uuids>
+                    <link_uuid uuid="{0e86bc31-531e-4db2-94e1-78d1aeebfa34}"/>
+                </links_uuids>
+                <dynamic_texts>
+                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="0" y="10" rotation="270" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{87ffea1a-1e4d-44d1-93b7-6bb6e0c73bf1}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
+                        <text>3-C10</text>
+                        <info_name>label</info_name>
+                    </dynamic_elmt_text>
+                </dynamic_texts>
+                <texts_groups/>
+            </element>
+            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/02going_arrow.elmt" x="340" y="430" z="10" freezeLabel="false" prefix="" uuid="{f989a638-75cc-4a9c-aba2-58e39cc6ce3a}" orientation="1">
+                <terminals>
+                    <terminal x="-9" y="0" id="37" orientation="3"/>
+                </terminals>
+                <inputs/>
+                <links_uuids>
+                    <link_uuid uuid="{cc6d015a-d62b-43bb-8e3b-007dc3db84da}"/>
+                </links_uuids>
+                <dynamic_texts>
+                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="0" y="10" rotation="270" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{87ffea1a-1e4d-44d1-93b7-6bb6e0c73bf1}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
+                        <text>3-C8</text>
+                        <info_name>label</info_name>
+                    </dynamic_elmt_text>
+                </dynamic_texts>
+                <texts_groups/>
+            </element>
+            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/02going_arrow.elmt" x="460" y="430" z="10" freezeLabel="false" prefix="" uuid="{45375bf0-80e5-40f4-aa53-4860f1af449f}" orientation="1">
+                <terminals>
+                    <terminal x="-9" y="0" id="38" orientation="3"/>
+                </terminals>
+                <inputs/>
+                <dynamic_texts>
+                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="0" y="10" rotation="270" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{87ffea1a-1e4d-44d1-93b7-6bb6e0c73bf1}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
+                        <text></text>
+                        <info_name>label</info_name>
+                    </dynamic_elmt_text>
+                </dynamic_texts>
+                <texts_groups/>
+            </element>
+            <element type="embed://import/10_electric/10_allpole/130_terminals_terminal_strips/borne_3.elmt" x="460" y="320" z="10" freezeLabel="false" prefix="X" uuid="{1a1ba1c0-b379-45ff-975e-8b9091e031f5}" orientation="3">
+                <terminals>
+                    <terminal x="0" y="-6" id="39" orientation="0"/>
+                    <terminal x="-6" y="0" id="40" orientation="3"/>
+                </terminals>
+                <inputs/>
+                <elementInformations>
+                    <elementInformation name="formula" show="1">X2.6</elementInformation>
+                    <elementInformation name="label" show="1">X2.6</elementInformation>
+                </elementInformations>
+                <properties>
+                    <element_type terminal_led="false" terminal_type="generic" terminal_function="generic"/>
+                </properties>
+                <dynamic_texts>
+                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="-2" y="20" rotation="180" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{5e1e87b8-7f4c-459b-8862-d10031662706}" keep_visual_rotation="false" text_from="ElementInfo" Valignment="AlignTop">
+                        <text>X2.6</text>
+                        <info_name>label</info_name>
+                    </dynamic_elmt_text>
+                </dynamic_texts>
+                <texts_groups/>
+            </element>
+            <element type="embed://import/10_electric/10_allpole/130_terminals_terminal_strips/borne_2.elmt" x="420" y="320" z="10" freezeLabel="false" prefix="X" uuid="{99c3ecbe-7ee4-4b2f-b4aa-cd558ff0c798}" orientation="1">
+                <terminals>
+                    <terminal x="0" y="-6" id="41" orientation="0"/>
+                    <terminal x="6" y="0" id="42" orientation="1"/>
+                    <terminal x="0" y="6" id="43" orientation="2"/>
+                </terminals>
+                <inputs/>
+                <elementInformations>
+                    <elementInformation name="formula" show="1">X2.5</elementInformation>
+                    <elementInformation name="label" show="1">X2.5</elementInformation>
+                </elementInformations>
+                <properties>
+                    <element_type terminal_led="false" terminal_type="generic" terminal_function="generic"/>
+                </properties>
+                <dynamic_texts>
+                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="3" y="-24.5" rotation="0" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{9c4755cb-980b-4bd2-8aed-8dce923b8204}" keep_visual_rotation="false" text_from="ElementInfo" Valignment="AlignTop">
+                        <text>X2.5</text>
                         <info_name>label</info_name>
                     </dynamic_elmt_text>
                 </dynamic_texts>
@@ -843,7 +972,7 @@
             </element>
             <element type="embed://import/10_electric/10_allpole/100_folio_referencing/02going_arrow.elmt" x="300" y="430" z="10" freezeLabel="false" prefix="" uuid="{965a43d1-ad13-4592-a5c7-e0af109cc971}" orientation="1">
                 <terminals>
-                    <terminal x="-9" y="0" id="35" orientation="3"/>
+                    <terminal x="-9" y="0" id="44" orientation="3"/>
                 </terminals>
                 <inputs/>
                 <links_uuids>
@@ -857,164 +986,17 @@
                 </dynamic_texts>
                 <texts_groups/>
             </element>
-            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/02going_arrow.elmt" x="380" y="430" z="10" freezeLabel="false" prefix="" uuid="{00797a8e-80c1-4714-b641-e76ff387df5d}" orientation="1">
-                <terminals>
-                    <terminal x="-9" y="0" id="36" orientation="3"/>
-                </terminals>
-                <inputs/>
-                <links_uuids>
-                    <link_uuid uuid="{16a71e59-83d0-439c-b096-1500528bacb9}"/>
-                </links_uuids>
-                <elementInformations/>
-                <dynamic_texts>
-                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="0" y="10" rotation="270" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{87ffea1a-1e4d-44d1-93b7-6bb6e0c73bf1}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
-                        <text>3-C9</text>
-                        <info_name>label</info_name>
-                    </dynamic_elmt_text>
-                </dynamic_texts>
-                <texts_groups/>
-            </element>
-            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/02going_arrow.elmt" x="250" y="430" z="10" freezeLabel="false" prefix="" uuid="{13d49c86-7905-4b9e-9e35-b492a0289d93}" orientation="1">
-                <terminals>
-                    <terminal x="-9" y="0" id="37" orientation="3"/>
-                </terminals>
-                <inputs/>
-                <links_uuids>
-                    <link_uuid uuid="{d3896237-6ad7-458e-b675-9b529b533c78}"/>
-                </links_uuids>
-                <dynamic_texts>
-                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="0" y="10" rotation="270" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{87ffea1a-1e4d-44d1-93b7-6bb6e0c73bf1}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
-                        <text>3-C7</text>
-                        <info_name>label</info_name>
-                    </dynamic_elmt_text>
-                </dynamic_texts>
-                <texts_groups/>
-            </element>
-            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/02going_arrow.elmt" x="760" y="440" z="10" freezeLabel="false" prefix="" uuid="{c189bbea-f92a-40b1-934b-d7be16442eb1}" orientation="1">
-                <terminals>
-                    <terminal x="-9" y="0" id="38" orientation="3"/>
-                </terminals>
-                <inputs/>
-                <links_uuids>
-                    <link_uuid uuid="{0e86bc31-531e-4db2-94e1-78d1aeebfa34}"/>
-                </links_uuids>
-                <elementInformations/>
-                <dynamic_texts>
-                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="0" y="10" rotation="270" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{87ffea1a-1e4d-44d1-93b7-6bb6e0c73bf1}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
-                        <text>3-C10</text>
-                        <info_name>label</info_name>
-                    </dynamic_elmt_text>
-                </dynamic_texts>
-                <texts_groups/>
-            </element>
-            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/02going_arrow.elmt" x="630" y="440" z="10" freezeLabel="false" prefix="" uuid="{bf93ab48-9de5-46ff-b3b7-aea24cde8a34}" orientation="1">
-                <terminals>
-                    <terminal x="-9" y="0" id="39" orientation="3"/>
-                </terminals>
-                <inputs/>
-                <links_uuids>
-                    <link_uuid uuid="{5a8d079a-d4a8-4bd5-95bd-67685ec85b45}"/>
-                </links_uuids>
-                <elementInformations/>
-                <dynamic_texts>
-                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="0" y="10" rotation="270" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{87ffea1a-1e4d-44d1-93b7-6bb6e0c73bf1}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
-                        <text>3-C8</text>
-                        <info_name>label</info_name>
-                    </dynamic_elmt_text>
-                </dynamic_texts>
-                <texts_groups/>
-            </element>
-            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/02going_arrow.elmt" x="340" y="430" z="10" freezeLabel="false" prefix="" uuid="{f989a638-75cc-4a9c-aba2-58e39cc6ce3a}" orientation="1">
-                <terminals>
-                    <terminal x="-9" y="0" id="40" orientation="3"/>
-                </terminals>
-                <inputs/>
-                <links_uuids>
-                    <link_uuid uuid="{cc6d015a-d62b-43bb-8e3b-007dc3db84da}"/>
-                </links_uuids>
-                <elementInformations/>
-                <dynamic_texts>
-                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="0" y="10" rotation="270" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{87ffea1a-1e4d-44d1-93b7-6bb6e0c73bf1}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
-                        <text>3-C8</text>
-                        <info_name>label</info_name>
-                    </dynamic_elmt_text>
-                </dynamic_texts>
-                <texts_groups/>
-            </element>
-            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/02going_arrow.elmt" x="460" y="430" z="10" freezeLabel="false" prefix="" uuid="{45375bf0-80e5-40f4-aa53-4860f1af449f}" orientation="1">
-                <terminals>
-                    <terminal x="-9" y="0" id="41" orientation="3"/>
-                </terminals>
-                <inputs/>
-                <elementInformations/>
-                <dynamic_texts>
-                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="0" y="10" rotation="270" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{87ffea1a-1e4d-44d1-93b7-6bb6e0c73bf1}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
-                        <text></text>
-                        <info_name>label</info_name>
-                    </dynamic_elmt_text>
-                </dynamic_texts>
-                <texts_groups/>
-            </element>
             <element type="embed://import/10_electric/10_allpole/100_folio_referencing/02going_arrow.elmt" x="500" y="430" z="10" freezeLabel="false" prefix="" uuid="{dc4740d4-f81c-4052-847b-3ad204de70e4}" orientation="1">
-                <terminals>
-                    <terminal x="-9" y="0" id="42" orientation="3"/>
-                </terminals>
-                <inputs/>
-                <links_uuids>
-                    <link_uuid uuid="{b0d37db3-999b-4bf2-b88f-9b2f47afc938}"/>
-                </links_uuids>
-                <elementInformations/>
-                <dynamic_texts>
-                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="0" y="10" rotation="270" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{87ffea1a-1e4d-44d1-93b7-6bb6e0c73bf1}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
-                        <text>3-C8</text>
-                        <info_name>label</info_name>
-                    </dynamic_elmt_text>
-                </dynamic_texts>
-                <texts_groups/>
-            </element>
-            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/02going_arrow.elmt" x="660" y="440" z="10" freezeLabel="false" prefix="" uuid="{91167fbc-084f-44b7-ad8d-beb9e8b1462d}" orientation="1">
-                <terminals>
-                    <terminal x="-9" y="0" id="43" orientation="3"/>
-                </terminals>
-                <inputs/>
-                <links_uuids>
-                    <link_uuid uuid="{aaa92284-0548-4c52-9f9e-4ba15e7e49b3}"/>
-                </links_uuids>
-                <elementInformations/>
-                <dynamic_texts>
-                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="0" y="10" rotation="270" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{87ffea1a-1e4d-44d1-93b7-6bb6e0c73bf1}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
-                        <text>3-C9</text>
-                        <info_name>label</info_name>
-                    </dynamic_elmt_text>
-                </dynamic_texts>
-                <texts_groups/>
-            </element>
-            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/02going_arrow.elmt" x="420" y="430" z="10" freezeLabel="false" prefix="" uuid="{66a0f0c5-142a-478d-9b4b-f1b434b15b6e}" orientation="1">
-                <terminals>
-                    <terminal x="-9" y="0" id="44" orientation="3"/>
-                </terminals>
-                <inputs/>
-                <elementInformations/>
-                <dynamic_texts>
-                    <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="0" y="10" rotation="270" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{87ffea1a-1e4d-44d1-93b7-6bb6e0c73bf1}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
-                        <text></text>
-                        <info_name>label</info_name>
-                    </dynamic_elmt_text>
-                </dynamic_texts>
-                <texts_groups/>
-            </element>
-            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/02going_arrow.elmt" x="540" y="430" z="10" freezeLabel="false" prefix="" uuid="{8ec767ee-8aaf-48c4-a0f4-0111086b0dec}" orientation="1">
                 <terminals>
                     <terminal x="-9" y="0" id="45" orientation="3"/>
                 </terminals>
                 <inputs/>
                 <links_uuids>
-                    <link_uuid uuid="{d670bc7e-a817-4356-adce-a21407e000cf}"/>
+                    <link_uuid uuid="{b0d37db3-999b-4bf2-b88f-9b2f47afc938}"/>
                 </links_uuids>
-                <elementInformations/>
                 <dynamic_texts>
                     <dynamic_elmt_text frame="false" Halignment="AlignLeft" x="0" y="10" rotation="270" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{87ffea1a-1e4d-44d1-93b7-6bb6e0c73bf1}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
-                        <text>3-C9</text>
+                        <text>3-C8</text>
                         <info_name>label</info_name>
                     </dynamic_elmt_text>
                 </dynamic_texts>
@@ -1090,86 +1072,34 @@
             </conductor>
         </conductors>
     </diagram>
-    <diagram colsize="60" indexrev="0.0.1" displaycols="true" plant="" locmach="" title="M05-SAFETY" rows="8" rowsize="80" height="660" filename="E0007-000001" order="3" date="2026-06-14" author="" version="0.100.0" freezeNewConductor="false" cols="17" displayAt="bottom" auto_page_num="Create an auto folio numbering" folio="%id/%total" displayrows="true" freezeNewElement="false">
+    <diagram colsize="60" indexrev="0.0.1" displaycols="true" plant="" locmach="" title="M05-SAFETY" rows="8" rowsize="80" height="660" filename="E0007-000001" order="3" date="null" author="" version="0.100.0" freezeNewConductor="false" cols="17" displayAt="bottom" auto_page_num="Create an auto folio numbering" folio="%id/%total" displayrows="true" freezeNewElement="false">
         <defaultconductor num="_" conductor_color="" type="multi" displaytext="1" vertirotatetext="270" onetextperfolio="0" color2="#000000" horizrotatetext="0" bicolor="false" condsize="1" numsize="7" tension_protocol="" bus="" dash-size="2" conductor_section="" vertical-alignment="AlignRight" function="" horizontal-alignment="AlignBottom" text_color="#000000" cable="" formula=""/>
         <elements>
-            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/01coming_arrow.elmt" x="600" y="240" z="10" freezeLabel="false" prefix="" uuid="{e20c65fb-57f2-4de0-93f5-c4acc9ca2f6f}" orientation="1">
-                <terminals>
-                    <terminal x="9" y="0" id="0" orientation="1"/>
-                </terminals>
-                <inputs/>
-                <links_uuids>
-                    <link_uuid uuid="{28e04d65-abaa-4e80-a9dd-3236d7ba7e07}"/>
-                </links_uuids>
-                <elementInformations/>
-                <dynamic_texts>
-                    <dynamic_elmt_text frame="false" Halignment="AlignRight" x="2" y="10" rotation="180" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{63bcfde9-08e2-41dd-88b5-0c9471e54988}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
-                        <text>2-F12</text>
-                        <info_name>label</info_name>
-                    </dynamic_elmt_text>
-                </dynamic_texts>
-                <texts_groups/>
-            </element>
-            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/01coming_arrow.elmt" x="440" y="240" z="10" freezeLabel="false" prefix="" uuid="{d3896237-6ad7-458e-b675-9b529b533c78}" orientation="1">
-                <terminals>
-                    <terminal x="9" y="0" id="1" orientation="1"/>
-                </terminals>
-                <inputs/>
-                <links_uuids>
-                    <link_uuid uuid="{13d49c86-7905-4b9e-9e35-b492a0289d93}"/>
-                </links_uuids>
-                <dynamic_texts>
-                    <dynamic_elmt_text frame="false" Halignment="AlignRight" x="0" y="10" rotation="180" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{63bcfde9-08e2-41dd-88b5-0c9471e54988}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
-                        <text>2-F4</text>
-                        <info_name>label</info_name>
-                    </dynamic_elmt_text>
-                </dynamic_texts>
-                <texts_groups/>
-            </element>
-            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/01coming_arrow.elmt" x="580" y="240" z="10" freezeLabel="false" prefix="" uuid="{0e86bc31-531e-4db2-94e1-78d1aeebfa34}" orientation="1">
-                <terminals>
-                    <terminal x="9" y="0" id="2" orientation="1"/>
-                </terminals>
-                <inputs/>
-                <links_uuids>
-                    <link_uuid uuid="{c189bbea-f92a-40b1-934b-d7be16442eb1}"/>
-                </links_uuids>
-                <elementInformations/>
-                <dynamic_texts>
-                    <dynamic_elmt_text frame="false" Halignment="AlignRight" x="2" y="10" rotation="180" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{63bcfde9-08e2-41dd-88b5-0c9471e54988}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
-                        <text>2-F13</text>
-                        <info_name>label</info_name>
-                    </dynamic_elmt_text>
-                </dynamic_texts>
-                <texts_groups/>
-            </element>
             <element type="embed://import/05-security.elmt" x="510" y="420" z="10" freezeLabel="false" prefix="" uuid="{b092dc58-0203-43db-b9b7-96abdfb8e26e}" orientation="0">
                 <terminals>
-                    <terminal x="-90" y="-66" id="3" orientation="0"/>
-                    <terminal x="-70" y="-66" id="4" orientation="0"/>
-                    <terminal x="-50" y="-66" id="5" orientation="0"/>
-                    <terminal x="-30" y="-66" id="6" orientation="0"/>
-                    <terminal x="-10" y="-66" id="7" orientation="0"/>
-                    <terminal x="10" y="-66" id="8" orientation="0"/>
-                    <terminal x="30" y="-66" id="9" orientation="0"/>
-                    <terminal x="50" y="-66" id="10" orientation="0"/>
-                    <terminal x="70" y="-66" id="11" orientation="0"/>
-                    <terminal x="90" y="-66" id="12" orientation="0"/>
+                    <terminal x="-90" y="-66" id="0" orientation="0"/>
+                    <terminal x="-70" y="-66" id="1" orientation="0"/>
+                    <terminal x="-50" y="-66" id="2" orientation="0"/>
+                    <terminal x="-30" y="-66" id="3" orientation="0"/>
+                    <terminal x="-10" y="-66" id="4" orientation="0"/>
+                    <terminal x="10" y="-66" id="5" orientation="0"/>
+                    <terminal x="30" y="-66" id="6" orientation="0"/>
+                    <terminal x="50" y="-66" id="7" orientation="0"/>
+                    <terminal x="70" y="-66" id="8" orientation="0"/>
+                    <terminal x="90" y="-66" id="9" orientation="0"/>
                 </terminals>
                 <inputs/>
-                <elementInformations/>
                 <dynamic_texts/>
                 <texts_groups/>
             </element>
             <element type="embed://import/10_electric/10_allpole/100_folio_referencing/01coming_arrow.elmt" x="480" y="240" z="10" freezeLabel="false" prefix="" uuid="{5a8d079a-d4a8-4bd5-95bd-67685ec85b45}" orientation="1">
                 <terminals>
-                    <terminal x="9" y="0" id="13" orientation="1"/>
+                    <terminal x="9" y="0" id="10" orientation="1"/>
                 </terminals>
                 <inputs/>
                 <links_uuids>
                     <link_uuid uuid="{bf93ab48-9de5-46ff-b3b7-aea24cde8a34}"/>
                 </links_uuids>
-                <elementInformations/>
                 <dynamic_texts>
                     <dynamic_elmt_text frame="false" Halignment="AlignRight" x="2" y="10" rotation="180" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{63bcfde9-08e2-41dd-88b5-0c9471e54988}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
                         <text>2-F11</text>
@@ -1178,32 +1108,14 @@
                 </dynamic_texts>
                 <texts_groups/>
             </element>
-            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/01coming_arrow.elmt" x="520" y="240" z="10" freezeLabel="false" prefix="" uuid="{d670bc7e-a817-4356-adce-a21407e000cf}" orientation="1">
-                <terminals>
-                    <terminal x="9" y="0" id="14" orientation="1"/>
-                </terminals>
-                <inputs/>
-                <links_uuids>
-                    <link_uuid uuid="{8ec767ee-8aaf-48c4-a0f4-0111086b0dec}"/>
-                </links_uuids>
-                <elementInformations/>
-                <dynamic_texts>
-                    <dynamic_elmt_text frame="false" Halignment="AlignRight" x="0" y="10" rotation="180" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{63bcfde9-08e2-41dd-88b5-0c9471e54988}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
-                        <text>2-F9</text>
-                        <info_name>label</info_name>
-                    </dynamic_elmt_text>
-                </dynamic_texts>
-                <texts_groups/>
-            </element>
             <element type="embed://import/10_electric/10_allpole/100_folio_referencing/01coming_arrow.elmt" x="460" y="240" z="10" freezeLabel="false" prefix="" uuid="{cc6d015a-d62b-43bb-8e3b-007dc3db84da}" orientation="1">
                 <terminals>
-                    <terminal x="9" y="0" id="15" orientation="1"/>
+                    <terminal x="9" y="0" id="11" orientation="1"/>
                 </terminals>
                 <inputs/>
                 <links_uuids>
                     <link_uuid uuid="{f989a638-75cc-4a9c-aba2-58e39cc6ce3a}"/>
                 </links_uuids>
-                <elementInformations/>
                 <dynamic_texts>
                     <dynamic_elmt_text frame="false" Halignment="AlignRight" x="0" y="10" rotation="180" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{63bcfde9-08e2-41dd-88b5-0c9471e54988}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
                         <text>2-F6</text>
@@ -1214,13 +1126,12 @@
             </element>
             <element type="embed://import/10_electric/10_allpole/100_folio_referencing/01coming_arrow.elmt" x="500" y="240" z="10" freezeLabel="false" prefix="" uuid="{b0d37db3-999b-4bf2-b88f-9b2f47afc938}" orientation="1">
                 <terminals>
-                    <terminal x="9" y="0" id="16" orientation="1"/>
+                    <terminal x="9" y="0" id="12" orientation="1"/>
                 </terminals>
                 <inputs/>
                 <links_uuids>
                     <link_uuid uuid="{dc4740d4-f81c-4052-847b-3ad204de70e4}"/>
                 </links_uuids>
-                <elementInformations/>
                 <dynamic_texts>
                     <dynamic_elmt_text frame="false" Halignment="AlignRight" x="0" y="10" rotation="180" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{63bcfde9-08e2-41dd-88b5-0c9471e54988}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
                         <text>2-F8</text>
@@ -1229,26 +1140,9 @@
                 </dynamic_texts>
                 <texts_groups/>
             </element>
-            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/01coming_arrow.elmt" x="540" y="240" z="10" freezeLabel="false" prefix="" uuid="{16a71e59-83d0-439c-b096-1500528bacb9}" orientation="1">
-                <terminals>
-                    <terminal x="9" y="0" id="17" orientation="1"/>
-                </terminals>
-                <inputs/>
-                <links_uuids>
-                    <link_uuid uuid="{00797a8e-80c1-4714-b641-e76ff387df5d}"/>
-                </links_uuids>
-                <elementInformations/>
-                <dynamic_texts>
-                    <dynamic_elmt_text frame="false" Halignment="AlignRight" x="0" y="10" rotation="180" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{63bcfde9-08e2-41dd-88b5-0c9471e54988}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
-                        <text>2-F6</text>
-                        <info_name>label</info_name>
-                    </dynamic_elmt_text>
-                </dynamic_texts>
-                <texts_groups/>
-            </element>
             <element type="embed://import/10_electric/10_allpole/100_folio_referencing/01coming_arrow.elmt" x="420" y="240" z="10" freezeLabel="false" prefix="" uuid="{00742bfc-78c2-4b49-8073-2e58b779c065}" orientation="1">
                 <terminals>
-                    <terminal x="9" y="0" id="18" orientation="1"/>
+                    <terminal x="9" y="0" id="13" orientation="1"/>
                 </terminals>
                 <inputs/>
                 <links_uuids>
@@ -1264,16 +1158,95 @@
             </element>
             <element type="embed://import/10_electric/10_allpole/100_folio_referencing/01coming_arrow.elmt" x="560" y="240" z="10" freezeLabel="false" prefix="" uuid="{aaa92284-0548-4c52-9f9e-4ba15e7e49b3}" orientation="1">
                 <terminals>
-                    <terminal x="9" y="0" id="19" orientation="1"/>
+                    <terminal x="9" y="0" id="14" orientation="1"/>
                 </terminals>
                 <inputs/>
                 <links_uuids>
                     <link_uuid uuid="{91167fbc-084f-44b7-ad8d-beb9e8b1462d}"/>
                 </links_uuids>
-                <elementInformations/>
                 <dynamic_texts>
                     <dynamic_elmt_text frame="false" Halignment="AlignRight" x="2" y="10" rotation="180" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{63bcfde9-08e2-41dd-88b5-0c9471e54988}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
                         <text>2-F11</text>
+                        <info_name>label</info_name>
+                    </dynamic_elmt_text>
+                </dynamic_texts>
+                <texts_groups/>
+            </element>
+            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/01coming_arrow.elmt" x="600" y="240" z="10" freezeLabel="false" prefix="" uuid="{e20c65fb-57f2-4de0-93f5-c4acc9ca2f6f}" orientation="1">
+                <terminals>
+                    <terminal x="9" y="0" id="15" orientation="1"/>
+                </terminals>
+                <inputs/>
+                <links_uuids>
+                    <link_uuid uuid="{28e04d65-abaa-4e80-a9dd-3236d7ba7e07}"/>
+                </links_uuids>
+                <dynamic_texts>
+                    <dynamic_elmt_text frame="false" Halignment="AlignRight" x="2" y="10" rotation="180" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{63bcfde9-08e2-41dd-88b5-0c9471e54988}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
+                        <text>2-F12</text>
+                        <info_name>label</info_name>
+                    </dynamic_elmt_text>
+                </dynamic_texts>
+                <texts_groups/>
+            </element>
+            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/01coming_arrow.elmt" x="580" y="240" z="10" freezeLabel="false" prefix="" uuid="{0e86bc31-531e-4db2-94e1-78d1aeebfa34}" orientation="1">
+                <terminals>
+                    <terminal x="9" y="0" id="16" orientation="1"/>
+                </terminals>
+                <inputs/>
+                <links_uuids>
+                    <link_uuid uuid="{c189bbea-f92a-40b1-934b-d7be16442eb1}"/>
+                </links_uuids>
+                <dynamic_texts>
+                    <dynamic_elmt_text frame="false" Halignment="AlignRight" x="2" y="10" rotation="180" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{63bcfde9-08e2-41dd-88b5-0c9471e54988}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
+                        <text>2-F13</text>
+                        <info_name>label</info_name>
+                    </dynamic_elmt_text>
+                </dynamic_texts>
+                <texts_groups/>
+            </element>
+            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/01coming_arrow.elmt" x="520" y="240" z="10" freezeLabel="false" prefix="" uuid="{d670bc7e-a817-4356-adce-a21407e000cf}" orientation="1">
+                <terminals>
+                    <terminal x="9" y="0" id="17" orientation="1"/>
+                </terminals>
+                <inputs/>
+                <links_uuids>
+                    <link_uuid uuid="{8ec767ee-8aaf-48c4-a0f4-0111086b0dec}"/>
+                </links_uuids>
+                <dynamic_texts>
+                    <dynamic_elmt_text frame="false" Halignment="AlignRight" x="0" y="10" rotation="180" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{63bcfde9-08e2-41dd-88b5-0c9471e54988}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
+                        <text>2-F9</text>
+                        <info_name>label</info_name>
+                    </dynamic_elmt_text>
+                </dynamic_texts>
+                <texts_groups/>
+            </element>
+            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/01coming_arrow.elmt" x="540" y="240" z="10" freezeLabel="false" prefix="" uuid="{16a71e59-83d0-439c-b096-1500528bacb9}" orientation="1">
+                <terminals>
+                    <terminal x="9" y="0" id="18" orientation="1"/>
+                </terminals>
+                <inputs/>
+                <links_uuids>
+                    <link_uuid uuid="{00797a8e-80c1-4714-b641-e76ff387df5d}"/>
+                </links_uuids>
+                <dynamic_texts>
+                    <dynamic_elmt_text frame="false" Halignment="AlignRight" x="0" y="10" rotation="180" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{63bcfde9-08e2-41dd-88b5-0c9471e54988}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
+                        <text>2-F6</text>
+                        <info_name>label</info_name>
+                    </dynamic_elmt_text>
+                </dynamic_texts>
+                <texts_groups/>
+            </element>
+            <element type="embed://import/10_electric/10_allpole/100_folio_referencing/01coming_arrow.elmt" x="440" y="240" z="10" freezeLabel="false" prefix="" uuid="{d3896237-6ad7-458e-b675-9b529b533c78}" orientation="1">
+                <terminals>
+                    <terminal x="9" y="0" id="19" orientation="1"/>
+                </terminals>
+                <inputs/>
+                <links_uuids>
+                    <link_uuid uuid="{13d49c86-7905-4b9e-9e35-b492a0289d93}"/>
+                </links_uuids>
+                <dynamic_texts>
+                    <dynamic_elmt_text frame="false" Halignment="AlignRight" x="0" y="10" rotation="180" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{63bcfde9-08e2-41dd-88b5-0c9471e54988}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
+                        <text>2-F4</text>
                         <info_name>label</info_name>
                     </dynamic_elmt_text>
                 </dynamic_texts>
@@ -1313,7 +1286,7 @@
             </conductor>
         </conductors>
     </diagram>
-    <diagram colsize="60" indexrev="0.0.1" displaycols="true" plant="" locmach="" title="Raspberry Pi " rows="8" rowsize="80" height="660" filename="E0007-000001" order="4" date="2026-06-14" author="" version="0.100.0" freezeNewConductor="false" cols="17" displayAt="bottom" auto_page_num="Create an auto folio numbering" folio="%id/%total" displayrows="true" freezeNewElement="false">
+    <diagram colsize="60" indexrev="0.0.1" displaycols="true" plant="" locmach="" title="Raspberry Pi " rows="8" rowsize="80" height="660" filename="E0007-000001" order="4" date="null" author="" version="0.100.0" freezeNewConductor="false" cols="17" displayAt="bottom" auto_page_num="Create an auto folio numbering" folio="%id/%total" displayrows="true" freezeNewElement="false">
         <defaultconductor num="_" conductor_color="" type="multi" displaytext="1" vertirotatetext="270" onetextperfolio="0" color2="#000000" horizrotatetext="0" bicolor="false" condsize="1" numsize="7" tension_protocol="" bus="" dash-size="2" conductor_section="" vertical-alignment="AlignRight" function="" horizontal-alignment="AlignBottom" text_color="#000000" cable="" formula=""/>
         <elements>
             <element type="embed://import/10_electric/10_allpole/100_folio_referencing/02going_arrow.elmt" x="440" y="200" z="10" freezeLabel="false" prefix="" uuid="{71d15492-0759-4276-87fd-a630a8cdb08e}" orientation="3">
@@ -1354,7 +1327,6 @@
                     <terminal x="-35" y="-51" id="3" orientation="0"/>
                 </terminals>
                 <inputs/>
-                <elementInformations/>
                 <dynamic_texts/>
                 <texts_groups/>
             </element>
@@ -1482,7 +1454,7 @@
                                     <kindInformations>
                                         <kindInformation name="type">protection</kindInformation>
                                     </kindInformations>
-                                    <informations>Author: The QElectroTech team
+                                    <informations>Author: The QElectroTech team&#xd;
 License: see http://qelectrotech.org/wiki/doc/elements_license</informations>
                                     <description>
                                         <line end1="none" end2="none" y1="-10" antialias="false" y2="-10" style="line-style:dashed;line-weight:thin;filling:none;color:black" x1="-12.5" length1="1.5" x2="7.5" length2="1.5"/>
@@ -1549,7 +1521,7 @@ License: see http://qelectrotech.org/wiki/doc/elements_license</informations>
                                     <name lang="pl">Wyjście adresowe</name>
                                     <name lang="ru">Следующая страница</name>
                                 </names>
-                                <informations>Author: The QElectroTech team
+                                <informations>Author: The QElectroTech team&#xd;
 License: see http://qelectrotech.org/wiki/doc/elements_license</informations>
                                 <description>
                                     <polygon y1="-4" antialias="true" y2="4" y3="0" style="line-style:normal;line-weight:normal;filling:none;color:black" x1="-9" x2="-9" x3="2"/>
@@ -1580,7 +1552,7 @@ License: see http://qelectrotech.org/wiki/doc/elements_license</informations>
                                     <name lang="pl">Wejście adresowe</name>
                                     <name lang="ru">Предыдущая страница</name>
                                 </names>
-                                <informations>Author: The QElectroTech team
+                                <informations>Author: The QElectroTech team&#xd;
 License: see http://qelectrotech.org/wiki/doc/elements_license</informations>
                                 <description>
                                     <polygon y1="-4" antialias="true" y2="4" y3="0" style="line-style:normal;line-weight:normal;filling:none;color:black" x1="-1" x2="-1" x3="9"/>
@@ -1635,7 +1607,7 @@ License: see http://qelectrotech.org/wiki/doc/elements_license</informations>
                                     <kindInformation name="type">generic</kindInformation>
                                     <kindInformation name="function">generic</kindInformation>
                                 </kindInformations>
-                                <informations>Author: The QElectroTech team
+                                <informations>Author: The QElectroTech team&#xd;
 License: see http://qelectrotech.org/wiki/doc/elements_license</informations>
                                 <description>
                                     <line end1="none" end2="none" y1="10" antialias="false" y2="3" style="line-style:normal;line-weight:normal;filling:none;color:black" x1="0" length1="1.5" x2="0" length2="1.5"/>
@@ -1674,7 +1646,7 @@ License: see http://qelectrotech.org/wiki/doc/elements_license</informations>
                                     <kindInformation name="type">generic</kindInformation>
                                     <kindInformation name="function">generic</kindInformation>
                                 </kindInformations>
-                                <informations>Author: The QElectroTech team
+                                <informations>Author: The QElectroTech team&#xd;
 License: see http://qelectrotech.org/wiki/doc/elements_license</informations>
                                 <description>
                                     <line end1="none" end2="none" y1="0" antialias="false" y2="0" style="line-style:normal;line-weight:normal;filling:none;color:black" x1="-3" length1="1.5" x2="-10" length2="1.5"/>
@@ -1715,7 +1687,7 @@ License: see http://qelectrotech.org/wiki/doc/elements_license</informations>
                                     <kindInformation name="type">generic</kindInformation>
                                     <kindInformation name="function">generic</kindInformation>
                                 </kindInformations>
-                                <informations>Author: The QElectroTech team
+                                <informations>Author: The QElectroTech team&#xd;
 License: see http://qelectrotech.org/wiki/doc/elements_license</informations>
                                 <description>
                                     <dynamic_text Halignment="AlignLeft" frame="false" x="5" y="-2.5" z="1" rotation="0" font="Liberation Sans,7,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{4fd10592-5123-45bd-8350-1728f89bcab3}" keep_visual_rotation="false" Valignment="AlignTop" text_from="UserText">
@@ -1755,7 +1727,7 @@ License: see http://qelectrotech.org/wiki/doc/elements_license</informations>
                                     <kindInformation name="type">generic</kindInformation>
                                     <kindInformation name="function">generic</kindInformation>
                                 </kindInformations>
-                                <informations>Author: The QElectroTech team
+                                <informations>Author: The QElectroTech team&#xd;
 License: see http://qelectrotech.org/wiki/doc/elements_license</informations>
                                 <description>
                                     <line end1="none" end2="none" y1="-10" antialias="false" y2="-3" style="line-style:normal;line-weight:normal;filling:none;color:black" x1="0" length1="1.5" x2="0" length2="1.5"/>
@@ -1817,8 +1789,8 @@ License: see http://qelectrotech.org/wiki/doc/elements_license</informations>
                                         <name lang="nl">Contact AC + aarde</name>
                                         <name lang="pl">Gniazdo wtyczkowe</name>
                                     </names>
-                                    <informations>S.defffaux
-Author: The QElectroTech team
+                                    <informations>S.defffaux&#xd;
+Author: The QElectroTech team&#xd;
 License: see http://qelectrotech.org/wiki/doc/elements_license</informations>
                                     <description>
                                         <dynamic_text Halignment="AlignLeft" frame="false" x="19.37" y="-19.7" z="1" rotation="0" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{9a66ab1b-c9d8-4de6-a786-a16ba182d28f}" Valignment="AlignTop" text_from="ElementInfo">
@@ -1884,7 +1856,7 @@ License: see http://qelectrotech.org/wiki/doc/elements_license</informations>
                                 <elementInformations>
                                     <elementInformation name="manufacturer" show="1">GCE Electronics</elementInformation>
                                 </elementInformations>
-                                <informations>Author: The QElectroTech team
+                                <informations>Author: The QElectroTech team&#xd;
 License: see http://qelectrotech.org/wiki/doc/elements_license</informations>
                                 <description>
                                     <rect ry="0" x="-99" y="-90" antialias="false" style="line-style:normal;line-weight:normal;filling:white;color:black" width="200" height="180" rx="0"/>
@@ -1983,24 +1955,24 @@ License: see http://qelectrotech.org/wiki/doc/elements_license</informations>
                                     <uuid uuid="{2e1bf34e-1509-8b82-6b7a-1e37282e66cb}"/>
                                     <names>
                                         <name lang="ca">Connexió, símbol general</name>
-                                        <name lang="cs">Spoj, např.:
-- vodič
-- kabel
-- vedení
+                                        <name lang="cs">Spoj, např.:&#xd;
+- vodič&#xd;
+- kabel&#xd;
+- vedení&#xd;
 - přenosová cesta</name>
-                                        <name lang="de">Verbindung, z.B.:
-- Leiter
-- Kabel
-- Leitung
+                                        <name lang="de">Verbindung, z.B.:&#xd;
+- Leiter&#xd;
+- Kabel&#xd;
+- Leitung&#xd;
 - Übertragungsweg</name>
                                         <name lang="en">Connection, general symbol</name>
-                                        <name lang="fr">Liaison, pour exemple:
-- conducteur
-- câble
-- ligne
+                                        <name lang="fr">Liaison, pour exemple:&#xd;
+- conducteur&#xd;
+- câble&#xd;
+- ligne&#xd;
 - ligne de propagation</name>
                                     </names>
-                                    <informations>Author: The QElectroTech team
+                                    <informations>Author: The QElectroTech team&#xd;
 License: see http://qelectrotech.org/wiki/doc/elements_license</informations>
                                     <description>
                                         <dynamic_text Halignment="AlignLeft" frame="false" x="5" y="2.5" z="1" rotation="0" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{870cf54f-2665-4ae9-bf06-6fdecf41b86c}" keep_visual_rotation="false" Valignment="AlignTop" text_from="ElementInfo">
