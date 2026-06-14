@@ -69,8 +69,9 @@ dynamics and operate it efficiently afterward.
 
 > Hardware design files live in `store/` under the ADR-0017 identification scheme
 > (carrier = `E0001`, v0.0.1 → `E0001-000001.*`); see [`REGISTRY.md`](REGISTRY.md)
-> for the E-number map. They are authored in **KiCad 10** and will not open in
-> earlier versions.
+> for the E-number map. PCBs are authored in **KiCad 10** (will not open in
+> earlier versions); cabinet distribution schematics (`.qet`, e.g. `E0007`) are
+> drawn in **QElectroTech**.
 
 ### Sensor module catalog
 
