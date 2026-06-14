@@ -3,14 +3,19 @@ SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
-# ADR-0014: Sensor node taxonomy and module decomposition
+# ADR-0014 (rev 1): Sensor node taxonomy and module decomposition
 
-- **ID:** ADR-0014
+- **ID:** ADR-0014 (rev 1)
 - **Status:** Proposed
-- **Date:** 2026-05-16
+- **Date:** 2026-05-16 (rev 1: 2026-06-14)
 - **Project:** IndustryGrow
 - **Parent:** ADR-0001
 - **Companions:** ADR-0002 (rev 3), ADR-0003
+- **Supersedes:** ADR-0014 (initial draft, 2026-05-16)
+
+## Revision history
+
+- **rev 1 (2026-06-14)** — Softened the M04-PLANT MLX90640 entry to separate delivered capability (canopy thermal field + on-node summary statistics) from per-leaf temperature for leaf-VPD, now marked deferred pending a canopy-segmentation pipeline and bounded by raw-frame radiometric accuracy. Corrects an over-claim that read leaf-VPD as a current capability and aligns with ADR-0016's state-estimation framing of leaf VPD. No decision changed; telemetry detail unchanged.
 
 ## Context and problem
 
@@ -81,7 +86,7 @@ Zone count is not an architectural decision — it is a deployment-time choice m
    - Sensors are co-located by physical necessity (all in or near the reservoir). One instance per hydroponic loop, regardless of deployment scale.
 
    **M04-PLANT — plant-level sensing.**
-   - Melexis MLX90640 — 32×24 thermal imager (768 pixels). I²C. Leaf-temperature distribution for leaf-VPD computation and early transpiration-anomaly detection.
+   - Melexis MLX90640 — 32×24 thermal imager (768 pixels). I²C. Delivers a canopy thermal field (temperature distribution) and on-node summary statistics, supporting early transpiration-anomaly detection. Per-leaf temperature for leaf-VPD computation is a deferred capability: it requires a canopy-segmentation pipeline that does not yet exist, and raw-frame radiometric accuracy (≈±1 °C, on an exponential saturation curve) makes leaf-VPD from raw frames unreliable until that pipeline lands.
    - On-node aggregation: summary statistics (mean canopy temperature, max/min, gradient, hotspot mask) at 1 Hz; full frames pushed at 5-minute intervals or on event/alarm via the Cyphal file transfer service.
    - Reserved space for future leaf-level sensors. Apartment scale: one per canopy area. Larger deployments: one per growing zone.
 

@@ -7,3 +7,6 @@ store/.history/
 
 # QElectroTech backup files (editor artifact, not project content)
 *.qet.bak
+
+# Draft ADRs (work-in-progress, not yet assigned a number)
+ADR-*DRAFT*.md
