@@ -3,14 +3,19 @@ SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
-# ADR-0016: Empirical survey, state-space modeling, and sensor density management
+# ADR-0016 (rev 1): Empirical survey, state-space modeling, and sensor density management
 
-- **ID:** ADR-0016
+- **ID:** ADR-0016 (rev 1)
 - **Status:** Proposed
-- **Date:** 2026-05-17
+- **Date:** 2026-05-17 (rev 1: 2026-06-14)
 - **Project:** IndustryGrow
 - **Parent:** ADR-0001
 - **Companions:** ADR-0014, ADR-0015
+- **Supersedes:** ADR-0016 (initial draft, 2026-05-17)
+
+## Revision history
+
+- **rev 1 (2026-06-14)** — Folded a directional note into the biological-subspace partition: leaf VPD depends on leaf temperature, reachable by two independent paths (radiometric per ADR-0014, and energy-balance estimation within this ADR's state-estimation mandate), whose divergence is diagnostic of transpiration state — marked "(direction, not yet specified)". Paired with ADR-0014 rev 1, which scopes the radiometric path as deferred. No decision changed.
 
 ## Context and problem
 
@@ -45,7 +50,7 @@ This ADR makes these decisions explicit and adds **state-space modeling and empi
 
 The deployment state vector partitions by *whose concern* each variable is, and this partition — not the raw variable list — governs how each variable is treated:
 
-- **Biological subspace** — variables plant physiology responds to (leaf VPD, PPFD/spectrum/DLI, CO₂, root-zone temperature, EC/pH, air movement). These are the experiment's factors and the *only* variables that receive setpoints in the profile. Coupling among them is expected and is exactly what the state-space model exists to resolve: a correct model drives each to target through the shared, physically-coupled actuators.
+- **Biological subspace** — variables plant physiology responds to (leaf VPD, PPFD/spectrum/DLI, CO₂, root-zone temperature, EC/pH, air movement). These are the experiment's factors and the *only* variables that receive setpoints in the profile. Coupling among them is expected and is exactly what the state-space model exists to resolve: a correct model drives each to target through the shared, physically-coupled actuators. Leaf VPD itself depends on leaf temperature, reachable by two independent paths — radiometric measurement (M04-PLANT MLX90640, per ADR-0014) and energy-balance estimation of an otherwise-unmeasured state variable (already within this ADR's state-estimation mandate) — whose divergence is itself diagnostic of transpiration state (direction, not yet specified).
 - **Apparatus subspace** — variables the *system* must keep within bounds to realize the biological setpoints and to keep measurement trustworthy (rail voltages, actuator duty, condensation, component temperatures, leak, energy). Observed and bounded/alarmed in software (cf. ADR-0018); they carry no setpoints and do not enter the cultivation hypothesis.
 
 Control objective: drive the biological subspace to profile setpoints while holding the apparatus subspace within tolerance.
