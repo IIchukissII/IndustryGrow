@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0019: Purchased-part (SP) identification
 
 - **ID:** ADR-0019
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-06-13
 - **Project:** IndustryGrow
 - **Parent:** ADR-0001

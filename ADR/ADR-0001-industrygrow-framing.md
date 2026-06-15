@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0001 (rev 1): IndustryGrow — open-core cultivation platform built on IndustryFlow
 
 - **ID:** ADR-0001 (rev 1)
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-05-16
 - **Project:** IndustryGrow
 - **Supersedes:** ADR-0001 (initial draft, same date)
