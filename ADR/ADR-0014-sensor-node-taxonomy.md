@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0014 (rev 1): Sensor node taxonomy and module decomposition
 
 - **ID:** ADR-0014 (rev 1)
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-05-16 (rev 1: 2026-06-14)
 - **Project:** IndustryGrow
 - **Parent:** ADR-0001

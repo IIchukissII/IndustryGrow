@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0002 (rev 3): Field bus architecture — Cyphal/CAN over WeAct STM32F4 core board on custom carrier PCB with stateless-edge Raspberry Pi gateway
 
 - **ID:** ADR-0002 (rev 3)
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-05-16
 - **Project:** IndustryGrow
 - **Parent:** ADR-0001

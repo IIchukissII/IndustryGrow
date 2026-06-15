@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0000: Decision records and the single-source-of-truth discipline
 
 - **ID:** ADR-0000
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-06-12
 - **Project:** IndustryGrow
 - **Parent:** — (root; this ADR governs the form of all other ADRs)
@@ -40,6 +40,8 @@ This ADR names the discipline the project already half-follows and makes it the 
 
 6. **The governance root is not mirrored into the ADRs it governs.** This ADR applies to every ADR by being the root; individual ADRs do not back-reference it in their metadata. Enumerating "governed by ADR-0000" in each ADR would be exactly the mirroring this ADR forbids. The relationship is inherited, not copied.
 
+7. **Status lifecycle and accepting authority.** An ADR is `Proposed` while under discussion, `Accepted` once the project **maintainers** judge the decision binding, and `Superseded` when a later revision or ADR replaces it (per decision 5). Acceptance records *agreement*, not implementation — IndustryGrow is pre-fabrication, so a decision is accepted when it is settled, not when it is built. The accepting authority is the project **maintainers**; acceptance is effected through the normal review-and-merge process by setting the `Status` field to `Accepted` (and, when a revision supersedes a prior record, setting that record to `Superseded`).
+
 ## Alternatives considered
 
 **A. Leave the discipline as unwritten convention.** *Rejected:* an unwritten rule cannot be cited in review, cannot be inferred by new contributors, and is enforced by the author's memory rather than by process — the failure mode that motivates this ADR.
@@ -66,7 +68,6 @@ This ADR names the discipline the project already half-follows and makes it the 
 
 ## Deferred decisions
 
-- **Status lifecycle.** All current ADRs are `Proposed`; the transitions `Proposed → Accepted → Superseded` and who effects them are not yet formalized.
 - **Cross-reference and duplication tooling.** A linter that flags a value duplicated across documents, or a checker that validates references resolve, is desirable but unspecified.
 - **The authoritative-home registry.** A concise map of which document owns which class of fact (values → BOM, pins → pin-map, identifiers → registry, rationale → ADR) could be maintained, but its location and format are open.
 - **ADR template.** A skeleton enforcing the section structure shared across the existing ADRs is implied but not yet written.

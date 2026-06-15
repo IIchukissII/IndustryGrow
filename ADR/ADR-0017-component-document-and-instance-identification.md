@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0017: Component, document, and instance identification scheme
 
 - **ID:** ADR-0017
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-05-31
 - **Project:** IndustryGrow
 - **Parent:** ADR-0001
