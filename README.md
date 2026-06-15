@@ -63,7 +63,7 @@ dynamics and operate it efficiently afterward.
 | Node carrier PCB | Custom integration board: CAN transceiver, ATECC608 secure element, sensor-module header |
 | Gateway | Raspberry Pi (3B+ minimum, Pi 4/5 for higher traffic) + isolated 2-channel CAN HAT |
 | Gateway software | Python / asyncio, SocketCAN + Pycyphal + Nunavut-generated DSDL bindings |
-| Cloud link | mTLS to IndustryFlow; gateway is a **stateless edge** (state in RAM, audit trail on platform) |
+| Cloud link | mTLS to IndustryFlow; gateway is a **stateless edge** in steady state (audit trail on platform). Pre-cloud, and for buffering/survey, it keeps a bounded local store per ADR-0020 |
 | Node firmware | Embedded C with libcanard |
 | Identity & security | Per-node ATECC608 hardware identity; signed firmware; trusted in-cabinet CAN domain |
 
@@ -94,19 +94,27 @@ populated-BOM, not by new designs.
 | Phase 2 | Cloud integration: mTLS ingestion, profile sync, audit trail | Blocked on IndustryFlow prerequisites |
 | Phase 3 | Community profile registry, predictive ML, multi-cabinet coordination | Planned |
 
+The dependency-ordered build sequence (14 stages, with the real cross-stage dependencies) lives in [`project/ROADMAP.md`](project/ROADMAP.md).
+
 ## Architecture decision records
 
 ADRs are the source of truth for the design. Present in this repository:
 
-- **ADR-0001** — Project framing: open-core cultivation platform on IndustryFlow
-- **ADR-0002** (rev 3) — Field bus architecture
-- **ADR-0003** — Strawberry day-neutral cultivation profile (reference profile)
-- **ADR-0004** (rev 1) — Gateway host hardening & stateless-edge operation
-- **ADR-0014** — Sensor node taxonomy and module decomposition
-- **ADR-0015** — Gateway profile caching and local control loops
-- **ADR-0016** — Empirical survey and state-space modeling
-- **ADR-0017** — Component, document, and instance identification scheme
-- **ADR-0018** — Cabinet-level power distribution and consumption metering
+- **ADR-0000** — Decision records and the single-source-of-truth discipline · *Accepted*
+- **ADR-0001** (rev 1) — Project framing: open-core cultivation platform on IndustryFlow · *Accepted*
+- **ADR-0002** (rev 3) — Field bus architecture · *Accepted*
+- **ADR-0003** — Strawberry day-neutral cultivation profile (reference profile) · *Proposed*
+- **ADR-0004** (rev 1) — Gateway host hardening & stateless-edge operation · *Proposed*
+- **ADR-0014** (rev 1) — Sensor node taxonomy and module decomposition · *Accepted*
+- **ADR-0015** — Gateway profile caching and local control loops · *Proposed*
+- **ADR-0016** (rev 1) — Empirical survey and state-space modeling · *Proposed*
+- **ADR-0017** — Component, document, and instance identification scheme · *Accepted*
+- **ADR-0018** (rev 1) — Cabinet-level power distribution and consumption metering · *Proposed*
+- **ADR-0019** — Purchased-part (SP) identification · *Accepted*
+- **ADR-0020** — Gateway persistence model (local store as lifecycle-dependent data sink) · *Proposed (draft)*
+
+Status follows the lifecycle in **ADR-0000** (decision 7); the project maintainers are
+the accepting authority.
 
 Planned / not yet written: ADR-0005 (DSDL types), ADR-0006 (mechanical/hydroponic),
 ADR-0007 (PKI), ADR-0008 (deployment topology), ADR-0009 (profile schema),
