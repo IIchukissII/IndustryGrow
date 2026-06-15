@@ -27,10 +27,10 @@ numbering — governs build order.**
 
 ![IndustryGrow roadmap dependency map](figures/industrygrow-roadmap-map.svg)
 
-> If the SVG does not render in your viewer, an identical raster is alongside it
-> (`industrygrow-roadmap-map.png`). The figure is generated from `gen_roadmap.py`;
-> coordinates, labels, palette, and ADR tags live at the top of that script —
-> edit there and regenerate, do not hand-edit the SVG.
+> The figure is generated from `gen_roadmap.py` (in `figures/`); coordinates,
+> labels, palette, and ADR tags live at the top of that script — edit there and
+> regenerate, do not hand-edit the SVG. For a raster fallback, render the SVG with
+> an SVG tool (e.g. `rsvg-convert` or Inkscape) into `figures/`.
 
 ## How to read the map
 
