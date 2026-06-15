@@ -104,9 +104,9 @@ ADRs are the source of truth for the design. Present in this repository:
 - **ADR-0001** (rev 1) — Project framing: open-core cultivation platform on IndustryFlow · *Accepted*
 - **ADR-0002** (rev 3) — Field bus architecture · *Accepted*
 - **ADR-0003** — Strawberry day-neutral cultivation profile (reference profile) · *Proposed*
-- **ADR-0004** (rev 1) — Gateway host hardening & stateless-edge operation · *Proposed*
+- **ADR-0004** (rev 1) — Gateway host hardening & stateless-edge operation · *Accepted*
 - **ADR-0014** (rev 1) — Sensor node taxonomy and module decomposition · *Accepted*
-- **ADR-0015** — Gateway profile caching and local control loops · *Proposed*
+- **ADR-0015** — Gateway profile caching and local control loops · *Accepted*
 - **ADR-0016** (rev 1) — Empirical survey and state-space modeling · *Proposed*
 - **ADR-0017** — Component, document, and instance identification scheme · *Accepted*
 - **ADR-0018** (rev 1) — Cabinet-level power distribution and consumption metering · *Proposed*
