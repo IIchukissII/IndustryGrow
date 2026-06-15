@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0015: Gateway profile caching and local control loops
 
 - **ID:** ADR-0015
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-05-16
 - **Project:** IndustryGrow
 - **Parent:** ADR-0001

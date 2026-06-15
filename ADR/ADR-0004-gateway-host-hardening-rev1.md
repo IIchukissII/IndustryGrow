@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0004 (rev 1): Gateway host hardening, firmware signing, and stateless-edge operation
 
 - **ID:** ADR-0004 (rev 1)
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-05-16
 - **Project:** IndustryGrow
 - **Parent:** ADR-0001
