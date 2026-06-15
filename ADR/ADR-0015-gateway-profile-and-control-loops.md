@@ -54,6 +54,8 @@ This ADR commits to Architecture B and specifies the contract between gateway an
 
 4. **Gateway holds the active profile in a local file** (e.g., `/etc/industrygrow/active-profile.json`). This file is read by the gateway's control loop on each iteration. The file is part of gateway configuration state (per ADR-0004 rev 1's stateless-edge principle, *configuration* state is allowed; *operational* state is not).
 
+   > **Amended by ADR-0020:** the *configuration-state-allowed / operational-state-forbidden* line is relaxed — a *bounded* operational buffer (store-and-forward telemetry, and pre-cloud survey capture) is now permitted on the gateway within ADR-0020's scope. `active-profile.json` and the rest of this decision are unchanged; operational state is now *bounded and permitted*, not *forbidden*.
+
 5. **Profile sync: pull from IndustryFlow.** Gateway polls IndustryFlow periodically (default: every 60 seconds, configurable) to check for new profile versions. When a new version is detected:
    - Gateway downloads the new profile document.
    - Verifies signature (per decision 7).
@@ -152,7 +154,7 @@ This ADR commits to Architecture B and specifies the contract between gateway an
 This ADR adds clarity to several existing decisions without changing them:
 
 - **ADR-0001 decision 4** (advanced control modules) — these modules are now explicitly **profile generators**, not command emitters. No structural change to ADR-0001 needed, but the operating model is sharpened.
-- **ADR-0004 rev 1** stateless-edge principle — profile cache is *configuration* state, which is permitted. *Operational* state (telemetry log) remains forbidden on gateway. The distinction is preserved.
+- **ADR-0004 rev 1** stateless-edge principle — profile cache is *configuration* state, which is permitted. Operational state was originally forbidden on the gateway; **ADR-0020 amends this** to permit a *bounded* operational buffer (store-and-forward telemetry + pre-cloud survey capture). The configuration-vs-operational distinction still holds — only its boundary moved.
 - **ADR-0002 rev 3 decision 6** (gateway service) — clarified that the gateway service does more than decode+forward: it also runs control loops. Pi 3B+ remains the minimum; control-loop CPU load is small (PID + lookup tables) and fits in 1 GB RAM with comfortable margin.
 - **ADR-0014 M05-SAFETY / ADR-0018** — the over-temperature hardware interlock remains the survival layer, independent of profile or control loops. It lives at the heating actuator (ADR-0018 decision 10), not on M05, which is sense-only. This ADR explicitly affirms the boundary.
 

@@ -11,12 +11,12 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Project:** IndustryGrow
 - **Parent:** ADR-0001
 - **Companions:** ADR-0002 (rev 3), ADR-0016 (rev 1), ADR-0018 (rev 1)
-- **Supersedes:** ADR-0004 (rev 1) decisions 8–11 and alternative D (partial)
+- **Supersedes:** ADR-0004 (rev 1) decisions 8–9 and alternative D (partial)
 - **Amends:** ADR-0015 decision 4 (configuration-vs-operational-state distinction)
 
 ## Revision history
 
-- **(2026-06-15)** — Supersedes ADR-0004 rev 1 decisions 8–11 (the stateless-edge runtime-state policy: no persistent telemetry log, RAM-only ring buffer) and its alternative D (persistent crash-safe local buffer, rejected there). **Substantive reason:** ADR-0004 rev 1 rejected a persistent local buffer on two independent grounds — SD-card write-amplification/endurance, and a threat-model argument. An external SSD/NVMe-class boot-and-data medium removes the **endurance** ground, which was load-bearing for that rejection. This legitimately reopens the local-storage decision **on the endurance axis only**; the threat-model reasoning is unchanged and the local tamper-evident audit log (ADR-0004 alternative A) **stays rejected** (see decision 9). Also **amends** ADR-0015's configuration-state-allowed / operational-state-forbidden distinction (its decision 4): a *bounded* operational buffer is now permitted within the scope below; previously all operational state on the gateway was forbidden.
+- **(2026-06-15)** — Supersedes ADR-0004 rev 1 decisions 8–9 (the RAM-only runtime-state policy: no persistent telemetry log, in-memory-only ring buffer) and its alternative D (persistent crash-safe local buffer, rejected there). The scope is exactly those two decisions plus alternative D: **decision 10 (platform-side hash chain) is retained and relied upon by this ADR, and decision 11 (system logs) is unaffected.** ADR-0004 rev 1 carries inline supersession notes at decisions 8–9 and alternative D pointing here (no ADR-0004 rev 2 — see Reviewer notes). **Substantive reason:** ADR-0004 rev 1 rejected a persistent local buffer on two independent grounds — SD-card write-amplification/endurance, and a threat-model argument. An external SSD/NVMe-class boot-and-data medium removes the **endurance** ground, which was load-bearing for that rejection. This legitimately reopens the local-storage decision **on the endurance axis only**; the threat-model reasoning is unchanged and the local tamper-evident audit log (ADR-0004 alternative A) **stays rejected** (see decision 9). Also **amends** ADR-0015's configuration-state-allowed / operational-state-forbidden distinction (its decision 4): a *bounded* operational buffer is now permitted within the scope below; previously all operational state on the gateway was forbidden.
 
 ## Context and problem
 
@@ -122,7 +122,7 @@ This ADR carries **decisions and rationale only**. On-disk formats, exact storag
 - ADR-0000: Decision records and single-source-of-truth discipline — SKUs/prices/formats live in the BOM, not here.
 - ADR-0001: IndustryGrow framing — open-core platform, roadmap stages.
 - ADR-0002 (rev 3): Field bus architecture — classic CAN, 500 kbit/s; telemetry volume context; on-node preprocessing.
-- ADR-0004 (rev 1): Gateway host hardening and stateless-edge operation — decisions 8–11 (superseded in part), decision 10 (platform-side hash chain, retained), decision 13 (firmware artifacts), alternatives A (audit log, stays rejected) and D (persistent buffer, endurance ground retired).
+- ADR-0004 (rev 1): Gateway host hardening and stateless-edge operation — decisions 8–9 (superseded on the endurance axis), decision 10 (platform-side hash chain, retained and relied upon), decision 11 (system logs, unaffected), decision 13 (firmware artifacts), alternatives A (audit log, stays rejected) and D (persistent buffer, endurance ground retired).
 - ADR-0007 (planned): PKI — ATECC-bound gateway identity.
 - ADR-0015: Gateway profile caching and local control loops — decision 4 (`active-profile.json`, configuration-vs-operational-state distinction, amended here), alternative D (RAM-only profile, rejected there).
 - ADR-0016 (rev 1): Empirical survey and state-space modeling — survey phase, sensor-density-as-temporal-variable, off-line identification.
@@ -141,6 +141,6 @@ Points marked `[PROPOSED — confirm]` or flagged for human resolution, gathered
 4. **"Best-effort buffer" semantics** (decision 3; Negative consequences). Not a numeric proposal but a definitional gap that must be closed before implementation, or replaceability (an ADR-0004 value) erodes silently. Flagged for explicit specification.
 5. **Encryption-at-rest** (Deferred decisions). Recommendation is "probably not" (low-sensitivity telemetry); flagged so the human confirms the omission deliberately.
 
-### Possible contradiction surfaced (not silently resolved)
+### Metadata / supersession convention (resolved 2026-06-15)
 
-- **Metadata `Supersedes` vs. house convention.** Existing ADRs use `Supersedes:` for *whole-ADR* supersession (e.g. ADR-0004 rev 1 supersedes its own initial draft). This ADR supersedes only **part** of ADR-0004 rev 1 (decisions 8–11 and alternative D), leaving the rest of ADR-0004 rev 1 in force. I expressed this as `Supersedes: ADR-0004 (rev 1) decisions 8–11 and alternative D (partial)` and added an `Amends: ADR-0015 decision 4` field (no prior ADR uses `Amends:`; ADR-0019 uses `Resolves:` and ADR-0018 uses `Relates to:`, so an extra field is in keeping with the flexible style, but the exact field name/format is a house-style call for the maintainer). Confirm whether partial supersession should instead trigger an ADR-0004 **rev 2** that removes decisions 8–11 in place, with this ADR merely referencing it — the cleaner convention if the project wants `Supersedes` to stay whole-ADR.
+- **Partial supersession is expressed by inline note, not an ADR-0004 rev 2.** ADR-0004 rev 1 now carries inline supersession notes at decisions 8–9 and alternative D pointing here; this ADR keeps the `Supersedes: … decisions 8–9 …` form and the `Amends: ADR-0015 decision 4` field. A rev 2 was rejected: it would restate this ADR's decision inside ADR-0004, violating single-source-of-truth (ADR-0000 decision 3), and most of ADR-0004 rev 1 (decisions 1–7, 10–17) remains in force. The supersession scope was also corrected from the originally-drafted *8–11* to *8–9* — decision 10 (platform-side hash chain) is retained and relied upon by this ADR, and decision 11 (system logs) is unaffected.
