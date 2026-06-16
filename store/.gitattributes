@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+# SPDX-License-Identifier: CC-BY-SA-4.0
+#
+# The store is a flat document keyspace (ADR-0017 d1/d15). Markdown documents that
+# live here (e.g. the M Manual SP0004-M-gateway-bringup.md) keep CRLF per the repo
+# doc convention. Scoped to *.md so CRLF never touches the binary / generated
+# hardware design files (gerbers, KiCad, drill, PNG), which git treats as binary.
+*.md text eol=crlf

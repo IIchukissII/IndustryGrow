@@ -1,0 +1,30 @@
+// SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+// SPDX-License-Identifier: CC-BY-SA-4.0
+//
+// Unattended security updates — ADR-0004 rev 1 decision 4.
+// Installed to /etc/apt/apt.conf.d/52-industrygrow-unattended-upgrades
+//
+// Security patches only. Automatic reboot is DISABLED by default: ADR-0004 d4
+// schedules the daily reboot "during photoperiod-off hours", which is UNDEFINED
+// pre-cultivation. provision.sh enables the reboot and sets the time ONLY if
+// IGROW_UNATTENDED_REBOOT_TIME is set in gateway.env. The time is NOT hardcoded.
+
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Download-Upgradeable-Packages "1";
+APT::Periodic::Unattended-Upgrade "1";
+APT::Periodic::AutocleanInterval "7";
+
+Unattended-Upgrade::Origins-Pattern {
+    "origin=Debian,codename=${distro_codename},label=Debian-Security";
+    "origin=Debian,codename=${distro_codename}-security,label=Debian-Security";
+    "origin=Raspbian,codename=${distro_codename},label=Raspbian";
+    "origin=Raspberry Pi Foundation,codename=${distro_codename}";
+};
+
+Unattended-Upgrade::Remove-Unused-Dependencies "true";
+
+// Reboot window — left disabled here; provision.sh rewrites these two lines from
+// IGROW_UNATTENDED_REBOOT_TIME (ADR-0004 d4, "photoperiod-off hours" = flagged
+// configurable, not a baked-in time).
+Unattended-Upgrade::Automatic-Reboot "false";
+// Unattended-Upgrade::Automatic-Reboot-Time "02:00";

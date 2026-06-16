@@ -48,6 +48,32 @@ Conventions:
 | `SP0004` | Gateway SBC — Raspberry Pi 3B+ / 4 / 5 class | yes (vendor serial / gateway identity) | The one SP part with per-instance identity: its vendor serial and the ATECC-bound gateway certificate are the instance key (ADR-0019 decision 2; ADR-0004 / ADR-0007). Specific model in the BOM. |
 | `SP0005` | STM32F405RGT6 core board (WeAct-class) | no | Hosted on every carrier (E0001). Resolves ADR-0017's WeAct deferred item (ADR-0019 decision 7). |
 
+### Document layers on the SP axis (naming convention)
+
+ADR-0017 decision 9 defines the document-layer letter set `S / D / L / P / M / I`,
+but its document-layer form `Exxxx-VVVVVV-L` is defined for **E-modules only**;
+ADR-0019 left SP document naming open. SP document files use:
+
+```
+SPxxxx-<layer>[-<slug>]        e.g.  SP0004-M-gateway-bringup   (Manual)
+                                      SP0004-L                   (gateway BOM)
+```
+
+- **`<layer>`** is one of `S/D/L/P/M/I` (ADR-0017 d9; `M` = Manual). The letters
+  are reused as-is; only the root differs (`SPxxxx` instead of `Exxxx`).
+- **No version field.** The supplier owns versioning, so an SP identifier carries
+  no `VVVVVV` (ADR-0019 decision 2): write `SP0004-M-…`, not `SP0004-VVVVVV-M`.
+- **Vendor variants are BOM lines, not identifiers.** Where a purchased part has
+  vendor versions (e.g. SP0004 = Raspberry Pi 3B+ / 4 / 5, ADR-0002 rev 3 d6),
+  the variant does **not** fork the SP number (ADR-0019 d2/d3): the chosen model
+  is a BOM line, and **one `M` Manual per SP spec** covers all variants, with
+  model-specific steps as sections. So there is no `SP0004-RPI5-M-…`.
+- **`<slug>`** is an optional kebab-case descriptor, mirroring the descriptive
+  suffix already used on E-documents (`E0001-000001-D-Top_Layer`).
+- This is a **naming convention recorded here** (the identifier-convention home),
+  not an ADR decision (maintainer call, 2026-06-16). Promote it to an ADR-0019
+  amendment if it ever needs to constrain downstream tooling (ADR-0000 d1).
+
 ## Governing ADRs
 
 - ADR-0017 — component / document / instance identification (E-numbers, two-axis model).

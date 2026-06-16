@@ -1,0 +1,84 @@
+# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+# SPDX-License-Identifier: CC-BY-SA-4.0
+#
+# IndustryGrow gateway service — Pycyphal/SocketCAN edge (ADR-0002 rev 3 d6).
+#
+# Runs as the dedicated unprivileged SYSTEM user `gateway` with a least-privilege
+# sandbox (ADR-0004 rev 1 decision 7). At bring-up it binds vcan0; for physical
+# hardware, change the interface in /etc/industrygrow/gateway.env (see Manual).
+#
+# NOTE — the ExecStart target is a BRING-UP SELF-TEST PLACEHOLDER, not the final
+# gateway application. The real Pycyphal service depends on the DSDL vocabulary
+# (ADR-0005, planned; roadmap stages 2+). The placeholder validates the service
+# user, this hardening sandbox, and the SocketCAN/pycyphal path on vcan0.
+
+[Unit]
+Description=IndustryGrow gateway (Pycyphal/SocketCAN edge) — ADR-0002/0004
+Documentation=https://github.com/IIchukissII/IndustryGrow
+After=network-online.target industrygrow-can.service
+Wants=network-online.target
+Requires=industrygrow-can.service
+
+[Service]
+Type=simple
+User=gateway
+Group=gateway
+
+EnvironmentFile=-/etc/industrygrow/gateway.env
+# /var/lib/industrygrow — created and owned by the service user. Holds the
+# monotonic batch sequence number (ADR-0004 rev 1 d10) and, only on an SSD/NVMe
+# medium, the bounded store-and-forward buffer (ADR-0020 d2/d10). On the SD
+# bring-up card the buffer stays disabled (ADR-0020 d10; ADR-0004 d8-9 RAM-only).
+StateDirectory=industrygrow
+StateDirectoryMode=0750
+
+ExecStart=/opt/industrygrow/venv/bin/python /opt/industrygrow/gateway_selftest.py --serve
+Restart=on-failure
+RestartSec=5
+
+# --- Resource limits (sized for the Pi 3B+ / 1 GB floor, ADR-0002 rev 3 d6) ---
+# The same unit runs on every gateway (uniformity, ADR-0002), so limits target the
+# smallest supported host, not the one it happens to run on. The dominant memory
+# consumer is the in-memory ring buffer (default 100 MB, ADR-0002 rev 3 d6 /
+# ADR-0004 rev 1 d9); MemoryHigh/Max leave headroom above it for the
+# Python/Pycyphal runtime while preventing the service from OOM-ing the host. CPU
+# is accounted but not capped — real-time CAN decoding must not be throttled.
+# Tunable per deployment (raise with the ring-buffer size) via a drop-in:
+#   sudo systemctl edit gateway-pycyphal.service
+MemoryAccounting=yes
+MemoryHigh=256M
+MemoryMax=384M
+TasksAccounting=yes
+TasksMax=64
+CPUAccounting=yes
+
+# --- Least-privilege hardening (ADR-0004 rev 1 decision 7) ---
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadOnlyPaths=/etc/industrygrow
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+RemoveIPC=yes
+SystemCallArchitectures=native
+# SocketCAN is reached through AF_CAN sockets bound to the interface, NOT through
+# a /dev character device — classic SocketCAN exposes none. CAN access is granted
+# here via RestrictAddressFamilies (AF_CAN); there is deliberately NO DeviceAllow=
+# for the CAN interface (it would be a no-op). PrivateDevices=yes above does not
+# block AF_CAN (a network family), so both vcan0 and a future can0 still work.
+# AF_UNIX/AF_INET are retained for journald and the future mTLS upload to
+# IndustryFlow. See the Manual's "SocketCAN vs DeviceAllow" note.
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_CAN
+
+[Install]
+WantedBy=multi-user.target
