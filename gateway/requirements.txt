@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+# SPDX-License-Identifier: CC-BY-SA-4.0
+#
+# Pinned Python dependencies for the gateway venv.
+#
+# PEP 668 (Trixie marks the system Python "externally managed"): these are
+# installed into a venv ONLY — provision.sh never uses --break-system-packages.
+#
+# Versions are pinned exactly. Hashes are intentionally NOT inlined here: the Pi
+# is arm64 and wheel hashes are per-platform, so a hashed lock is generated on the
+# target arch rather than committed for x86. To produce a --require-hashes lock:
+#     pip install pip-tools
+#     pip-compile --generate-hashes --output-file requirements.lock requirements.txt
+# then set IGROW_REQUIRE_HASHES=1 and point provision.sh at requirements.lock.
+#
+# Pin confirmed against PyPI on 2026-06-16 (latest 1.x = 1.27.0). Re-confirm the
+# latest audited 1.x at each bring-up:
+#     /opt/industrygrow/venv/bin/pip index versions pycyphal
+# pycyphal pulls its transitive deps (numpy, pyserial, nunavut, ...); the lock
+# above captures and hashes them. The placeholder self-test (gateway_selftest.py)
+# needs only `import pycyphal` plus stdlib AF_CAN sockets.
+pycyphal==1.27.0

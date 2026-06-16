@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+# SPDX-License-Identifier: CC-BY-SA-4.0
+#
+# SocketCAN interface bring-up. Brings up the interface named in
+# /etc/industrygrow/gateway.env (IGROW_CAN_IFACE): a virtual vcan0 for bring-up
+# validation (no bit rate), or a physical canN at the fixed 500 kbit/s classic-CAN
+# rate (IGROW_CAN_BITRATE; ADR-0002 rev 3 d8). The bit rate lives in one place
+# (gateway.env) and is applied here — never hardcoded per interface.
+#
+# Bring vcan0 up FIRST; the physical can0 path is the OPTIONAL later step (the
+# HAT + device-tree overlay must exist first — see the Manual).
+
+[Unit]
+Description=IndustryGrow SocketCAN interface bring-up (vcan0 validation / physical can per gateway.env, ADR-0002)
+Documentation=https://github.com/IIchukissII/IndustryGrow
+After=network-pre.target
+Wants=network-pre.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+EnvironmentFile=-/etc/industrygrow/gateway.env
+ExecStart=/bin/bash /opt/industrygrow/can-up.sh up
+ExecStop=/bin/bash /opt/industrygrow/can-up.sh down
+
+[Install]
+WantedBy=multi-user.target

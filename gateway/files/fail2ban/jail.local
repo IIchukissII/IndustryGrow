@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+# SPDX-License-Identifier: CC-BY-SA-4.0
+#
+# fail2ban — ADR-0004 rev 1 decision 3 (strict thresholds on SSH).
+# Installed to /etc/fail2ban/jail.local
+#
+# Trixie's fail2ban reads the systemd journal directly (no /var/log/auth.log
+# needed), which fits the journald-only logging posture (ADR-0004 rev 1 d11).
+
+[DEFAULT]
+backend         = systemd
+bantime         = 1h
+findtime        = 10m
+maxretry        = 3
+# Escalating bans for repeat offenders — strict per ADR-0004 d3.
+bantime.increment = true
+bantime.factor    = 2
+bantime.maxtime   = 1w
+
+[sshd]
+enabled  = true
+mode     = aggressive
+maxretry = 3
+bantime  = 1h

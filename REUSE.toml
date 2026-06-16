@@ -4,9 +4,16 @@ version = 1
 # and generated fabrication outputs (gerbers, drill, BOM, placement, render) —
 # cannot carry an inline SPDX comment (strict parsers / binary / generated), so
 # they are annotated here per the REUSE specification.
+#
+# precedence = "closest": a store file that DOES carry its own inline SPDX header
+# uses that header; only header-less files fall back to this CERN-OHL-S default.
+# This lets documentation-layer documents that also live flat in the store under
+# the ADR-0017 identifier scheme (e.g. the CC-BY-SA Manual SP0004-M-gateway-bringup.md,
+# ADR-0017 d9/d15) carry their own licence, while every hardware design file —
+# which cannot hold an inline header — stays CERN-OHL-S.
 [[annotations]]
 path = "store/**"
-precedence = "aggregate"
+precedence = "closest"
 SPDX-FileCopyrightText = "2026 The IndustryGrow contributors"
 SPDX-License-Identifier = "CERN-OHL-S-2.0"
 
