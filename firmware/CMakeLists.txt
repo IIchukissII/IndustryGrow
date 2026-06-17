@@ -30,19 +30,33 @@ endif()
 
 set(LINKER_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/ldscripts/STM32F405RGTx_FLASH.ld")
 
+set(LIBCANARD "${CMAKE_CURRENT_SOURCE_DIR}/third_party/libcanard")
+set(O1HEAP    "${CMAKE_CURRENT_SOURCE_DIR}/third_party/o1heap")
+
+# Nunavut-generated DSDL headers (header-only C) -> ${DSDL_GEN_DIR}.
+include(cmake/dsdl.cmake)
+
 add_executable(m05.elf
   src/main.c
   bsp/board.c
   src/platform/clock.c
   src/drivers/uart.c
   src/drivers/can.c
+  src/cyphal/cyphal.c
+  "${LIBCANARD}/libcanard/canard.c"
+  "${O1HEAP}/o1heap/o1heap.c"
   ${SYSTEM}
   ${STARTUP}
 )
 
+add_dependencies(m05.elf dsdl_generated)
+
 target_include_directories(m05.elf PRIVATE
   bsp
   src
+  "${LIBCANARD}/libcanard"
+  "${O1HEAP}/o1heap"
+  "${DSDL_GEN_DIR}"
   "${CMSIS_DEVICE}/Include"
   "${CMSIS_CORE}/CMSIS/Core/Include"
 )

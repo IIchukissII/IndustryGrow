@@ -125,6 +125,61 @@ int can_recv(uint16_t *id, uint8_t *data, uint8_t *len)
     return 1;
 }
 
+int can_send_ext(uint32_t ext_id, const uint8_t *data, uint8_t len)
+{
+    if (len > 8u) {
+        return -1;
+    }
+    if (!(CAN1->TSR & CAN_TSR_TME0)) {
+        return -2; /* no free mailbox */
+    }
+    uint32_t dl = 0u, dh = 0u;
+    for (uint8_t i = 0u; i < len; i++) {
+        if (i < 4u) {
+            dl |= (uint32_t)data[i] << (8u * i);
+        } else {
+            dh |= (uint32_t)data[i] << (8u * (i - 4u));
+        }
+    }
+    CAN1->sTxMailBox[0].TDTR = len;
+    CAN1->sTxMailBox[0].TDLR = dl;
+    CAN1->sTxMailBox[0].TDHR = dh;
+    /* EXID in bits[31:3], IDE=1, RTR=0, then request transmit. */
+    CAN1->sTxMailBox[0].TIR = (ext_id << 3u) | CAN_TI0R_IDE | CAN_TI0R_TXRQ;
+    return 0;
+}
+
+int can_recv_ext(uint32_t *ext_id, uint8_t *data, uint8_t *len)
+{
+    if (!(CAN1->RF0R & CAN_RF0R_FMP0)) {
+        return 0;
+    }
+    uint32_t rir = CAN1->sFIFOMailBox[0].RIR;
+    uint32_t rdt = CAN1->sFIFOMailBox[0].RDTR;
+    uint32_t dl = CAN1->sFIFOMailBox[0].RDLR;
+    uint32_t dh = CAN1->sFIFOMailBox[0].RDHR;
+    int is_ext = (rir & CAN_RI0R_IDE) ? 1 : 0;
+    uint8_t n = (uint8_t)(rdt & 0xFu);
+    if (n > 8u) {
+        n = 8u;
+    }
+    if (is_ext) {
+        if (ext_id) {
+            *ext_id = rir >> 3u; /* 29-bit EXID */
+        }
+        if (len) {
+            *len = n;
+        }
+        if (data) {
+            for (uint8_t i = 0u; i < n; i++) {
+                data[i] = (uint8_t)((i < 4u) ? (dl >> (8u * i)) : (dh >> (8u * (i - 4u))));
+            }
+        }
+    }
+    CAN1->RF0R |= CAN_RF0R_RFOM0; /* release entry regardless */
+    return is_ext;                /* 0 = not an extended (Cyphal) frame */
+}
+
 int can_selftest_loopback(void)
 {
     if (can_init(true) != 0) {

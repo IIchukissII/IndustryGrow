@@ -15,8 +15,13 @@
 
 #include "board.h"
 #include "clock.h"
+#include "cyphal/cyphal.h"
 #include "drivers/can.h"
 #include "drivers/uart.h"
+
+/* Static Node-ID for bring-up. ADR-0005 d6 makes this register-provisioned;
+ * a fixed default is fine on the closed cabinet bus until then. */
+#define IGROW_NODE_ID 96u
 
 int main(void)
 {
@@ -43,22 +48,20 @@ int main(void)
     uart_puts(rc == 0 ? "CAN loopback self-test OK\r\n"
                       : "CAN loopback self-test FAIL\r\n");
 
-    /* Re-init for the live bus; layer 2 hands this off to libcanard. */
+    /* Live bus + Cyphal node: publishes Heartbeat (1 Hz) and answers GetInfo,
+     * so the node enumerates on the gateway console (roadmap stage 1). */
     (void)can_init_normal();
+    cyphal_init(IGROW_NODE_ID);
+    uart_puts("cyphal up: node-id ");
+    uart_put_u32(IGROW_NODE_ID);
+    uart_puts(", Heartbeat + GetInfo live\r\n");
 
-    /* Idle: ~1 Hz status blink + mirror any RX activity onto the CAN LED. */
-    uint8_t buf[8];
-    uint16_t rid;
-    uint8_t rlen;
     uint32_t last = millis();
     for (;;) {
-        if (can_recv(&rid, buf, &rlen) == 1) {
-            board_led_can(true);
-        }
+        cyphal_spin();
         if ((millis() - last) >= 500u) {
             last = millis();
-            board_led_status_toggle();
-            board_led_can(false);
+            board_led_status_toggle(); /* liveness blink */
         }
     }
 }

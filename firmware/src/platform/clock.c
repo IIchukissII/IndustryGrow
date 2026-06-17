@@ -26,6 +26,19 @@ void delay_ms(uint32_t ms)
     }
 }
 
+uint64_t micros64(void)
+{
+    /* SysTick counts down from LOAD (= fck/1000 - 1) to 0 once per ms.
+     * Read ms and VAL coherently against a tick landing in between. */
+    uint32_t ms, val;
+    do {
+        ms = s_ms;
+        val = SysTick->VAL;
+    } while (ms != s_ms);
+    uint32_t ticks_into_ms = SysTick->LOAD - val;
+    return (uint64_t)ms * 1000u + (ticks_into_ms / (SystemCoreClock / 1000000u));
+}
+
 void clock_init(void)
 {
     /* 1. Start HSE (8 MHz crystal on the WeAct board). */

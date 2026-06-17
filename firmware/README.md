@@ -10,16 +10,20 @@ one carrier (`E0001`), one MCU family (STM32F405RGT6 on the WeAct STM32F4 64-Pin
 Core Board, ADR-0002 rev 3); the sensor-module personality varies per node type
 (ADR-0002 decision 5). The first node brought up is **M05-SAFETY** (`E0006`).
 
-> **Status: bring-up, layer 1 landed.** Built incrementally so each step is
+> **Status: bring-up, layers 1–2 landed.** Built incrementally so each step is
 > reviewable and compilable on real hardware:
-> - **Layer 1 (here):** board + clock (168 MHz) + debug UART + module-ID strap
->   self-check + bxCAN raw 500 kbit/s with an internal-loopback self-test. No
->   Cyphal yet; depends only on CMSIS.
-> - **Layer 2 (next):** libcanard + o1heap + Nunavut codegen + the node skeleton
->   (Heartbeat + GetInfo + register) so the node enumerates on the gateway.
+> - **Layer 1:** board + clock (168 MHz) + debug UART + module-ID strap
+>   self-check + bxCAN raw 500 kbit/s with an internal-loopback self-test.
+>   Depends only on CMSIS.
+> - **Layer 2 (here):** libcanard (v3) + o1heap + Nunavut codegen + the node
+>   skeleton — publishes `uavcan.node.Heartbeat` at 1 Hz and answers
+>   `uavcan.node.GetInfo`, so the node **enumerates on the gateway**.
+> - **Next:** `register` Access/List + `ExecuteCommand` to complete the ADR-0005
+>   d5 skeleton, then the M05 sensor publications (task #4).
 >
 > Firmware **sources** are `AGPL-3.0-or-later` (ADR-0002 decision 5); this
-> document is `CC-BY-SA-4.0`. Not yet compiled/flashed here — that's bench-side.
+> document is `CC-BY-SA-4.0`. Not yet compiled/flashed here — that's bench-side;
+> `nnvg` (Nunavut) and the submodules from `tools/bootstrap.sh` are required.
 
 ## What the firmware is
 

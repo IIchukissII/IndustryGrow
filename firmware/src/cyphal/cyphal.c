@@ -1,0 +1,198 @@
+/*
+ * SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
+/*
+ * Cyphal node skeleton. Targets the libcanard v3 API (canardInit(alloc,free) +
+ * canardTxInit(capacity,mtu)); if a different libcanard major is pulled, the
+ * handful of calls here are where the API delta shows up. DSDL types are
+ * Nunavut-generated from public_regulated_data_types into the build tree
+ * (see firmware/cmake/dsdl.cmake) — generated code is not vendored (ADR-0005 d10).
+ */
+
+#include "cyphal.h"
+
+#include "canard.h"
+#include "o1heap.h"
+
+#include "uavcan/node/Heartbeat_1_0.h"
+#include "uavcan/node/GetInfo_1_0.h"
+
+#include "clock.h"
+#include "drivers/can.h"
+
+#include <string.h>
+
+/* --- memory: a fixed o1heap arena feeds libcanard's allocator --- */
+#define CYPHAL_HEAP_SIZE 4096u
+#define CYPHAL_TX_QUEUE_CAP 24u
+
+static uint8_t s_arena[CYPHAL_HEAP_SIZE] __attribute__((aligned(O1HEAP_ALIGNMENT)));
+static O1HeapInstance *s_heap;
+
+static CanardInstance s_canard;
+static CanardTxQueue s_txq;
+static CanardRxSubscription s_getinfo_sub;
+
+static uint8_t s_hb_tid;       /* heartbeat transfer-id (5-bit, wraps) */
+static uint64_t s_start_us;    /* for uptime */
+static uint64_t s_next_hb_us;  /* next heartbeat deadline */
+
+static void *mem_alloc(CanardInstance *ins, size_t amount)
+{
+    return o1heapAllocate((O1HeapInstance *)ins->user_reference, amount);
+}
+
+static void mem_free(CanardInstance *ins, void *pointer)
+{
+    o1heapFree((O1HeapInstance *)ins->user_reference, pointer);
+}
+
+/* STM32F405 96-bit unique device ID -> 16-byte Cyphal unique_id (zero-padded). */
+static void read_unique_id(uint8_t out[16])
+{
+    const volatile uint32_t *uid = (const volatile uint32_t *)0x1FFF7A10u;
+    memset(out, 0, 16);
+    for (int i = 0; i < 3; i++) {
+        uint32_t w = uid[i];
+        out[i * 4 + 0] = (uint8_t)(w);
+        out[i * 4 + 1] = (uint8_t)(w >> 8);
+        out[i * 4 + 2] = (uint8_t)(w >> 16);
+        out[i * 4 + 3] = (uint8_t)(w >> 24);
+    }
+}
+
+void cyphal_init(uint8_t node_id)
+{
+    s_heap = o1heapInit(s_arena, sizeof(s_arena));
+
+    s_canard = canardInit(&mem_alloc, &mem_free);
+    s_canard.user_reference = s_heap;
+    s_canard.node_id = node_id;
+
+    s_txq = canardTxInit(CYPHAL_TX_QUEUE_CAP, CANARD_MTU_CAN_CLASSIC);
+
+    (void)canardRxSubscribe(&s_canard,
+                            CanardTransferKindRequest,
+                            uavcan_node_GetInfo_1_0_FIXED_PORT_ID_,
+                            uavcan_node_GetInfo_Request_1_0_EXTENT_BYTES_,
+                            CANARD_DEFAULT_TRANSFER_ID_TIMEOUT_USEC,
+                            &s_getinfo_sub);
+
+    s_start_us = micros64();
+    s_next_hb_us = s_start_us + 1000000u;
+}
+
+static void tx_push(const CanardTransferMetadata *meta, size_t size, const void *payload)
+{
+    (void)canardTxPush(&s_txq, &s_canard, micros64() + 1000000u, meta, size, payload);
+}
+
+static void publish_heartbeat(void)
+{
+    uavcan_node_Heartbeat_1_0 hb;
+    hb.uptime = (uint32_t)((micros64() - s_start_us) / 1000000u);
+    hb.health.value = uavcan_node_Health_1_0_NOMINAL;
+    hb.mode.value = uavcan_node_Mode_1_0_OPERATIONAL;
+    hb.vendor_specific_status_code = 0u;
+
+    uint8_t buf[uavcan_node_Heartbeat_1_0_SERIALIZATION_BUFFER_SIZE_BYTES_];
+    size_t sz = sizeof(buf);
+    if (uavcan_node_Heartbeat_1_0_serialize_(&hb, buf, &sz) < 0) {
+        return;
+    }
+    const CanardTransferMetadata meta = {
+        .priority = CanardPriorityNominal,
+        .transfer_kind = CanardTransferKindMessage,
+        .port_id = uavcan_node_Heartbeat_1_0_FIXED_PORT_ID_,
+        .remote_node_id = CANARD_NODE_ID_UNSET,
+        .transfer_id = s_hb_tid,
+    };
+    tx_push(&meta, sz, buf);
+    s_hb_tid = (uint8_t)((s_hb_tid + 1u) & CANARD_TRANSFER_ID_MAX);
+}
+
+static void handle_getinfo(const CanardRxTransfer *req)
+{
+    uavcan_node_GetInfo_Response_1_0 resp;
+    memset(&resp, 0, sizeof(resp));
+
+    resp.protocol_version.major = 1; /* Cyphal v1 */
+    resp.protocol_version.minor = 0;
+    resp.hardware_version.major = 1; /* carrier E0001 */
+    resp.hardware_version.minor = 0;
+    resp.software_version.major = 0; /* this firmware */
+    resp.software_version.minor = 1;
+    resp.software_vcs_revision_id = 0u;
+    read_unique_id(resp.unique_id);
+
+    static const char name[] = "org.industrygrow.node.m05";
+    resp.name.count = sizeof(name) - 1u;
+    memcpy(resp.name.elements, name, resp.name.count);
+
+    uint8_t buf[uavcan_node_GetInfo_Response_1_0_SERIALIZATION_BUFFER_SIZE_BYTES_];
+    size_t sz = sizeof(buf);
+    if (uavcan_node_GetInfo_Response_1_0_serialize_(&resp, buf, &sz) < 0) {
+        return;
+    }
+    const CanardTransferMetadata meta = {
+        .priority = req->metadata.priority,
+        .transfer_kind = CanardTransferKindResponse,
+        .port_id = uavcan_node_GetInfo_1_0_FIXED_PORT_ID_,
+        .remote_node_id = req->metadata.remote_node_id,
+        .transfer_id = req->metadata.transfer_id,
+    };
+    tx_push(&meta, sz, buf);
+}
+
+static void flush_tx(void)
+{
+    const uint64_t now = micros64();
+    for (const CanardTxQueueItem *ti = NULL; (ti = canardTxPeek(&s_txq)) != NULL;) {
+        if ((ti->tx_deadline_usec != 0u) && (now > ti->tx_deadline_usec)) {
+            s_canard.memory_free(&s_canard, canardTxPop(&s_txq, ti)); /* expired */
+            continue;
+        }
+        if (can_send_ext(ti->frame.extended_can_id,
+                         (const uint8_t *)ti->frame.payload,
+                         (uint8_t)ti->frame.payload_size) == 0) {
+            s_canard.memory_free(&s_canard, canardTxPop(&s_txq, ti));
+        } else {
+            break; /* all TX mailboxes busy; try again next spin */
+        }
+    }
+}
+
+static void pump_rx(void)
+{
+    uint32_t eid;
+    uint8_t data[8];
+    uint8_t len;
+    while (can_recv_ext(&eid, data, &len) == 1) {
+        const CanardFrame frame = {
+            .extended_can_id = eid,
+            .payload_size = len,
+            .payload = data,
+        };
+        CanardRxTransfer transfer;
+        const int8_t r = canardRxAccept(&s_canard, micros64(), &frame, 0, &transfer, NULL);
+        if (r == 1) {
+            if ((transfer.metadata.transfer_kind == CanardTransferKindRequest) &&
+                (transfer.metadata.port_id == uavcan_node_GetInfo_1_0_FIXED_PORT_ID_)) {
+                handle_getinfo(&transfer);
+            }
+            s_canard.memory_free(&s_canard, transfer.payload);
+        }
+    }
+}
+
+void cyphal_spin(void)
+{
+    if (micros64() >= s_next_hb_us) {
+        s_next_hb_us += 1000000u;
+        publish_heartbeat();
+    }
+    flush_tx();
+    pump_rx();
+}

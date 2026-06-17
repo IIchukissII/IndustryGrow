@@ -21,8 +21,11 @@ add https://github.com/ARM-software/CMSIS_5.git           firmware/third_party/c
 # ST CMSIS device pack for STM32F4 (stm32f405xx.h, system + gcc startup)
 add https://github.com/STMicroelectronics/cmsis_device_f4.git firmware/third_party/cmsis_device_f4 v2.6.10
 
-# Cyphal stack (used from layer 2 onward)
-add https://github.com/OpenCyphal/libcanard.git          firmware/third_party/libcanard        v4.0.0
+# Cyphal stack (used from layer 2 onward).
+# libcanard pinned to v3.x: cyphal.c targets the canardTxInit/canardRxAccept
+# API of that major. libcanard v4 reworked the memory-resource API — if you
+# bump to v4, update src/cyphal/cyphal.c accordingly.
+add https://github.com/OpenCyphal/libcanard.git          firmware/third_party/libcanard        v3.0.0
 add https://github.com/pavel-kirienko/o1heap.git         firmware/third_party/o1heap            2.0.0
 add https://github.com/OpenCyphal/public_regulated_data_types.git \
                                                           firmware/third_party/public_regulated_data_types  1.10.0

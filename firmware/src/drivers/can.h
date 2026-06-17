@@ -25,6 +25,13 @@ int can_send(uint16_t id, const uint8_t *data, uint8_t len);
 /* Non-blocking receive from FIFO0. Returns 1 if a frame was read, else 0. */
 int can_recv(uint16_t *id, uint8_t *data, uint8_t *len);
 
+/* Cyphal uses extended 29-bit identifiers. Same mailbox/FIFO0 path as the
+ * standard-id helpers above, with IDE set. Returns: send 0 if queued; recv 1
+ * if an extended frame was read, 0 if none. (A received standard frame is
+ * dropped by can_recv_ext as not-for-Cyphal.) */
+int can_send_ext(uint32_t ext_id, const uint8_t *data, uint8_t len);
+int can_recv_ext(uint32_t *ext_id, uint8_t *data, uint8_t *len);
+
 /* Internal-loopback round trip of one frame; 0 = peripheral + timing OK. */
 int can_selftest_loopback(void);
 

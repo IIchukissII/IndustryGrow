@@ -15,4 +15,8 @@ void clock_init(void);
 uint32_t millis(void);
 void delay_ms(uint32_t ms);
 
+/* Monotonic 64-bit microsecond clock (SysTick-derived). Used for libcanard
+ * transfer-id timeouts and TX deadlines. */
+uint64_t micros64(void);
+
 #endif /* IGROW_PLATFORM_CLOCK_H */
