@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0005: DSDL foundation — the `industryflow.greenhouse` type vocabulary, standard-type reuse, and port-ID allocation
 
 - **ID:** ADR-0005
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-06-17
 - **Project:** IndustryGrow
 - **Parent:** ADR-0001
@@ -46,9 +46,9 @@ A note on scope. This ADR is the **foundation and the worked first example (M05-
    - bus current → `uavcan.si.sample.electric_current.Scalar` (ampere)
    - bus power → `uavcan.si.sample.power.Scalar` (watt)
    - cabinet/enclosure temperature → `uavcan.si.sample.temperature.Scalar` (kelvin)
-   - accumulated actuator energy (S0 pulse integral) → `uavcan.si.sample.energy.Scalar` (joule)
+   - accumulated actuator energy (S0 pulse integral) → a project type in **watt-hours (Wh)** under `industryflow.greenhouse` (see below), *not* the standard joule sample
 
-   SI base units on the wire (kelvin, joule) are deliberate: unit conversion for human display is a gateway/platform concern, not a node concern, and keeping the wire in SI removes a class of unit-mismatch bugs.
+   Instantaneous/rate quantities stay in SI sample types (volt, ampere, watt, kelvin): unit conversion for human display is a gateway/platform concern, not a node concern, and keeping these in SI removes a class of unit-mismatch bugs. **Accumulated energy is the one deliberate exception — it is published in watt-hours, not joules.** The S0 meter contract (ADR-0018 decision 5) is defined in imp/kWh, so the node's pulse integral is naturally and losslessly a count of Wh (or a meter-defined fraction of a kWh); re-expressing it in joules would impose a 3600× scaling that buys nothing for a quantity that meters, tariffs, and operators all read in Wh/kWh. Because the standard `uavcan.si.sample.energy.Scalar` is joule-denominated by definition, Wh cannot honestly ride it — so accumulated energy is a small project type (a genuine gap under decision 2), carrying the Wh value plus a timestamp.
 
 4. **Discrete safety signals are project types under `industryflow.greenhouse.safety`, not raw bits.** Door (reed) and leak (strip) are *report/alert* signals (ADR-0018 decisions 10/11), and a bare `uavcan.primitive.scalar.Bit` would strip the semantics an alerting gateway needs (which signal, asserted/clear, and a self-test/validity flag distinguishing "dry" from "sensor not excited this cycle"). The project therefore mints minimal status types here. Their concrete fields and their numeric port-IDs are the *what* and live in the DSDL files and the subject-ID map (ADR-0000 decision 2); this ADR fixes only *that* they are small project types carrying state + validity + timestamp, and *why* (semantics a raw bit loses), not their byte layout. Crucially these types carry **no command or actuation field** — M05 switches nothing (ADR-0018 decision 9), and the response to a leak is a gateway-issued pump command over the normal control path (ADR-0015), not a field on this message.
 
@@ -89,7 +89,7 @@ A note on scope. This ADR is the **foundation and the worked first example (M05-
 ### Positive
 
 - The roadmap stage-2 blocker is cleared: firmware and gateway have an agreed, compilable vocabulary, and the gateway placeholder can become the real Pycyphal application.
-- Reuse-first keeps the project's owned type surface small — for M05, essentially the standard SI samples plus two tiny `safety` status types — minimizing maintenance and maximizing tool interoperability.
+- Reuse-first keeps the project's owned type surface small — for M05, essentially the standard SI samples plus two tiny `safety` status types and one Wh energy type — minimizing maintenance and maximizing tool interoperability.
 - One DSDL tree compiled into both sides makes wire compatibility a build-time property, not a runtime hope; pinning the upstream set and Nunavut makes it reproducible.
 - Register-configured port-IDs with baked defaults give a node that "just works" on the closed bus while remaining reconfigurable by the gateway without reflashing — the same image serves every instance.
 - Class-generic types plus gateway-side role/zone tagging preserve the one-architecture-all-scales promise: scale is instances and configuration, never new types.
