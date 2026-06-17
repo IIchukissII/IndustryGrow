@@ -114,11 +114,24 @@ cmake --build firmware/build
 # flash: ST-Link (openocd / st-flash) or WeAct USB DFU (dfu-util)
 ```
 
-## Open setup choices (will proceed on the defaults unless redirected)
+## Release artifacts (`store/`)
 
-- **Dependency vendoring:** git submodules pinned to tags (vs. CMake `FetchContent`).
-  Submodules keep the exact upstream commit auditable in-tree; default = submodules.
-- **Flash tool:** documented for both ST-Link and USB DFU; no single one is forced.
+`firmware/tools/release.sh` builds the image and publishes it into `store/` under
+the ADR-0017 **`F` (Firmware)** document layer (see `REGISTRY.md`):
+
+```
+store/E0006-000001-F.hex       # built image
+store/E0006-000001-F-src.zip   # source snapshot of firmware/ at HEAD
+```
+
+Filed under **`E0006`** (the M05 module defines the node personality), licensed
+AGPL-3.0-or-later (annotated in `REUSE.toml`). The local `firmware/build*/` tree
+stays git-ignored; only these released artifacts are committed.
+
+## Flash tool
+
+Documented for both ST-Link (`openocd` / `st-flash`) and WeAct USB DFU
+(`dfu-util`) — CAN1 was kept off the USB pins so DFU stays available.
 
 ## References
 
