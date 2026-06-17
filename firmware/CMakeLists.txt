@@ -36,14 +36,25 @@ set(O1HEAP    "${CMAKE_CURRENT_SOURCE_DIR}/third_party/o1heap")
 # Nunavut-generated DSDL headers (header-only C) -> ${DSDL_GEN_DIR}.
 include(cmake/dsdl.cmake)
 
+# common/ = shared node skeleton + HW drivers (identical for every node type);
+# nodes/<type>/ = the per-node personality (ADR-0002 d5). This image is M05.
 add_executable(m05.elf
-  src/main.c
-  bsp/board.c
-  src/platform/clock.c
-  src/drivers/uart.c
-  src/drivers/can.c
-  src/cyphal/cyphal.c
-  src/cyphal/registers.c
+  # --- node personality: M05-SAFETY ---
+  nodes/m05_safety/main.c
+  nodes/m05_safety/sensors.c
+  nodes/m05_safety/drivers/ina226.c
+  nodes/m05_safety/drivers/tmp117.c
+  nodes/m05_safety/drivers/s0.c
+  nodes/m05_safety/drivers/leak.c
+  # --- common: shared across all node types ---
+  common/bsp/board.c
+  common/platform/clock.c
+  common/drivers/uart.c
+  common/drivers/can.c
+  common/drivers/i2c.c
+  common/cyphal/cyphal.c
+  common/cyphal/registers.c
+  # --- vendored runtimes + device support ---
   "${LIBCANARD}/libcanard/canard.c"
   "${O1HEAP}/o1heap/o1heap.c"
   ${SYSTEM}
@@ -53,8 +64,12 @@ add_executable(m05.elf
 add_dependencies(m05.elf dsdl_generated)
 
 target_include_directories(m05.elf PRIVATE
-  bsp
-  src
+  common/bsp
+  common/platform
+  common/drivers
+  common/cyphal
+  nodes/m05_safety
+  nodes/m05_safety/drivers
   "${LIBCANARD}/libcanard"
   "${O1HEAP}/o1heap"
   "${DSDL_GEN_DIR}"

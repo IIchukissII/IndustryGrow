@@ -15,9 +15,10 @@
 
 #include "board.h"
 #include "clock.h"
-#include "cyphal/cyphal.h"
-#include "drivers/can.h"
-#include "drivers/uart.h"
+#include "cyphal.h"
+#include "can.h"
+#include "uart.h"
+#include "sensors.h"
 
 /* Static Node-ID for bring-up. ADR-0005 d6 makes this register-provisioned;
  * a fixed default is fine on the closed cabinet bus until then. */
@@ -52,13 +53,15 @@ int main(void)
      * so the node enumerates on the gateway console (roadmap stage 1). */
     (void)can_init_normal();
     cyphal_init(IGROW_NODE_ID);
+    sensors_init(); /* M05 personality: probe + publish the sensor set */
     uart_puts("cyphal up: node-id ");
     uart_put_u32(IGROW_NODE_ID);
-    uart_puts(", Heartbeat + GetInfo live\r\n");
+    uart_puts(", M05 telemetry live\r\n");
 
     uint32_t last = millis();
     for (;;) {
-        cyphal_spin();
+        sensors_spin(); /* queue sensor telemetry ... */
+        cyphal_spin();  /* ... and flush TX + service RX */
         if ((millis() - last) >= 500u) {
             last = millis();
             board_led_status_toggle(); /* liveness blink */

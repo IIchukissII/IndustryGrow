@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+# Reservoir/pump-zone leak-strip state. Report/alert only; the response is a
+# gateway-issued pump-off command over the normal control path, never a field
+# here (ADR-0018 d11, ADR-0005 d4). The electrode is impulse-excited only during
+# a sample (anti-electrolysis), so `valid` reflects that the sample was driven.
+uavcan.time.SynchronizedTimestamp.1.0 timestamp
+bool wet       # true  = conductive liquid bridging the electrodes
+bool valid     # true  = electrode excited this cycle, reading trustworthy
+@extent 16 * 8

@@ -25,7 +25,9 @@ set(DSDL_STAMP "${DSDL_GEN_DIR}/.stamp")
 
 # Standard uavcan namespace (Heartbeat, GetInfo, register, si/sample, ...).
 # The project industryflow.greenhouse namespace (ADR-0005) is generated too once
-# its types are used (layer 3 / sensor publications); it depends on uavcan.
+# its types are used. The project industryflow.greenhouse namespace (ADR-0005:
+# safety DoorStatus/LeakStatus/EnergyWh) is generated in a second pass that
+# looks up uavcan for its dependencies (e.g. uavcan.time.SynchronizedTimestamp).
 add_custom_command(
   OUTPUT "${DSDL_STAMP}"
   COMMAND "${CMAKE_COMMAND}" -E make_directory "${DSDL_GEN_DIR}"
@@ -34,8 +36,13 @@ add_custom_command(
           --outdir "${DSDL_GEN_DIR}"
           --lookup-dir "${PUBLIC_TYPES}/uavcan"
           "${PUBLIC_TYPES}/uavcan"
+  COMMAND "${NNVG}" --target-language c --target-endianness little
+          --enable-serialization-asserts
+          --outdir "${DSDL_GEN_DIR}"
+          --lookup-dir "${PUBLIC_TYPES}/uavcan"
+          "${PROJECT_DSDL}/industryflow"
   COMMAND "${CMAKE_COMMAND}" -E touch "${DSDL_STAMP}"
-  COMMENT "Nunavut: generating C bindings from DSDL"
+  COMMENT "Nunavut: generating C bindings from DSDL (uavcan + industryflow)"
   VERBATIM
 )
 

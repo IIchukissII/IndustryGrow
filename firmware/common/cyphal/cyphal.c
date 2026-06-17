@@ -25,7 +25,7 @@
 #include "registers.h"
 #include "board.h" /* CMSIS: NVIC_SystemReset */
 #include "clock.h"
-#include "drivers/can.h"
+#include "can.h"
 
 #include <string.h>
 
@@ -116,6 +116,20 @@ void cyphal_init(uint8_t node_id)
 static void tx_push(const CanardTransferMetadata *meta, size_t size, const void *payload)
 {
     (void)canardTxPush(&s_txq, &s_canard, micros64() + 1000000u, meta, size, payload);
+}
+
+void cyphal_publish(uint16_t subject_id, uint8_t *transfer_id,
+                    const uint8_t *payload, size_t size)
+{
+    const CanardTransferMetadata meta = {
+        .priority = CanardPriorityNominal,
+        .transfer_kind = CanardTransferKindMessage,
+        .port_id = (CanardPortID)subject_id,
+        .remote_node_id = CANARD_NODE_ID_UNSET,
+        .transfer_id = *transfer_id,
+    };
+    tx_push(&meta, size, payload);
+    *transfer_id = (uint8_t)((*transfer_id + 1u) & CANARD_TRANSFER_ID_MAX);
 }
 
 static void publish_heartbeat(void)

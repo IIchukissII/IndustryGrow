@@ -10,22 +10,23 @@ one carrier (`E0001`), one MCU family (STM32F405RGT6 on the WeAct STM32F4 64-Pin
 Core Board, ADR-0002 rev 3); the sensor-module personality varies per node type
 (ADR-0002 decision 5). The first node brought up is **M05-SAFETY** (`E0006`).
 
-> **Status: bring-up, layers 1–2 landed.** Built incrementally so each step is
-> reviewable and compilable on real hardware:
-> - **Layer 1:** board + clock (168 MHz) + debug UART + module-ID strap
->   self-check + bxCAN raw 500 kbit/s with an internal-loopback self-test.
->   Depends only on CMSIS.
-> - **Layer 2 (here):** libcanard (v3) + o1heap + Nunavut codegen + the node
->   skeleton — publishes `uavcan.node.Heartbeat` at 1 Hz and answers
->   `uavcan.node.GetInfo`, so the node **enumerates on the gateway**.
->   The full ADR-0005 d5 skeleton is present: `register` Access/List (RAM-backed
->   store) and `ExecuteCommand` (RESTART) alongside Heartbeat + GetInfo.
-> - **Next:** the M05 sensor publications (task #4) — INA226/TMP117/reed/leak/S0
->   with I²C presence-probing and the `industryflow.greenhouse.safety` types.
+> **Status: M05 firmware feature-complete (uncompiled).** Built incrementally:
+> - **Skeleton:** clock (168 MHz), debug UART, module-ID strap self-check, bxCAN
+>   500 kbit/s; libcanard (v3) + o1heap + Nunavut; the full ADR-0005 d5 node
+>   skeleton — `Heartbeat`, `GetInfo`, `register` Access/List, `ExecuteCommand`
+>   — so the node **enumerates and is configurable on the gateway**.
+> - **M05 personality:** INA226 (bus V/I/P), TMP117 (cabinet temp), reed (door),
+>   leak (ADC, gated-excitation), S0 pulse → Wh energy; I²C presence-probing
+>   with 60 s re-probe (ADR-0014 d8); published on the standard SI sample types
+>   and the project `industryflow.greenhouse.safety` types (ADR-0005).
+> - **Next:** flash on the WeAct board (once PCBs exist), wire the sensor
+>   subject-IDs to `uavcan.pub.*.id` registers (ADR-0005 d7), and the gated leak
+>   excitation pin once it is added to the E0006 net/pin map.
 >
 > Firmware **sources** are `AGPL-3.0-or-later` (ADR-0002 decision 5); this
-> document is `CC-BY-SA-4.0`. Not yet compiled/flashed here — that's bench-side;
-> `nnvg` (Nunavut) and the submodules from `tools/bootstrap.sh` are required.
+> document is `CC-BY-SA-4.0`. **Not yet compiled/flashed** — PCBs aren't fabbed;
+> first build needs `nnvg` (Nunavut) and the submodules from `tools/bootstrap.sh`,
+> and is the moment the generated-DSDL API names get verified.
 
 ## What the firmware is
 
@@ -52,28 +53,30 @@ A Cyphal/CAN node. Application protocol and wire vocabulary are fixed elsewhere:
 | Compiler / build | `arm-none-eabi-gcc` + **CMake** (no IDE lock-in, CI-friendly) |
 | Dependency vendoring | **git submodules**, pinned to tags (`firmware/tools/bootstrap.sh`) |
 
-## Planned layout
+## Layout
+
+One codebase, one carrier, personality per node type (ADR-0002 d5): `common/` is
+shared by every node; `nodes/<type>/` is the per-node personality. This image is
+M05-SAFETY; M01–M04 become sibling `nodes/` later.
 
 ```
 firmware/
-├── README.md                 ← this file
-├── CMakeLists.txt            ← top-level build (host + cross)
-├── cmake/
-│   ├── arm-none-eabi.cmake   ← cross toolchain file
-│   └── dsdl.cmake            ← Nunavut codegen integration
-├── ldscripts/STM32F405RG.ld  ← linker script (1 MB flash / 192 KB RAM)
-├── bsp/                       ← board support: pin map from E0001-000001-D-pinmap
-│   ├── board.h               ← pin defines (CAN1 PB8/PB9, I2C1 PB6/7, straps PA5/6/7, …)
-│   └── board.c
-├── src/
-│   ├── main.c                ← bring-up app
-│   ├── cyphal/               ← libcanard glue: heartbeat, GetInfo, register, port allocation
-│   ├── drivers/              ← bxCAN, I2C, ADC, GPIO, timer (S0), UART (debug) via LL
-│   └── platform/             ← clock, SysTick, fault handlers, retarget
-├── dsdl/industryflow/greenhouse/
-│   └── safety/               ← project types: DoorStatus, LeakStatus, EnergyWh (ADR-0005)
-├── third_party/              ← submodules: libcanard, o1heap, public_regulated_data_types
-└── tools/                    ← flash + vcan helpers
+├── README.md  CMakeLists.txt
+├── cmake/      arm-none-eabi.cmake (toolchain) · dsdl.cmake (Nunavut codegen)
+├── ldscripts/  STM32F405RGTx_FLASH.ld
+├── common/                       ← shared across all node types
+│   ├── bsp/        board.{h,c}    ← carrier E0001 pins (from E0001-000001-D-pinmap)
+│   ├── platform/   clock.{h,c}    ← 168 MHz clock, SysTick, micros
+│   ├── drivers/    can i2c uart   ← bxCAN, I2C1, debug UART (register-level)
+│   └── cyphal/     cyphal registers ← node skeleton: Heartbeat/GetInfo/register/ExecuteCommand
+├── nodes/
+│   └── m05_safety/               ← the M05 personality
+│       ├── main.c                ← clock → strap self-check → CAN test → node + sensors
+│       ├── sensors.{h,c}         ← presence-probe + publish the M05 set
+│       └── drivers/  ina226 tmp117 s0 leak
+├── dsdl/industryflow/greenhouse/safety/   ← DoorStatus, LeakStatus, EnergyWh (ADR-0005)
+├── third_party/                  ← submodules: libcanard, o1heap, cmsis*, regulated types
+└── tools/                        ← bootstrap.sh (fetch + pin submodules)
 ```
 
 ## Bring-up milestone (roadmap stage 1)
