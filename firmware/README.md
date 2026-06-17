@@ -18,8 +18,10 @@ Core Board, ADR-0002 rev 3); the sensor-module personality varies per node type
 > - **Layer 2 (here):** libcanard (v3) + o1heap + Nunavut codegen + the node
 >   skeleton — publishes `uavcan.node.Heartbeat` at 1 Hz and answers
 >   `uavcan.node.GetInfo`, so the node **enumerates on the gateway**.
-> - **Next:** `register` Access/List + `ExecuteCommand` to complete the ADR-0005
->   d5 skeleton, then the M05 sensor publications (task #4).
+>   The full ADR-0005 d5 skeleton is present: `register` Access/List (RAM-backed
+>   store) and `ExecuteCommand` (RESTART) alongside Heartbeat + GetInfo.
+> - **Next:** the M05 sensor publications (task #4) — INA226/TMP117/reed/leak/S0
+>   with I²C presence-probing and the `industryflow.greenhouse.safety` types.
 >
 > Firmware **sources** are `AGPL-3.0-or-later` (ADR-0002 decision 5); this
 > document is `CC-BY-SA-4.0`. Not yet compiled/flashed here — that's bench-side;

@@ -18,7 +18,12 @@
 
 #include "uavcan/node/Heartbeat_1_0.h"
 #include "uavcan/node/GetInfo_1_0.h"
+#include "uavcan/node/ExecuteCommand_1_0.h"
+#include "uavcan/_register/Access_1_0.h" /* namespace stropped: register -> _register */
+#include "uavcan/_register/List_1_0.h"
 
+#include "registers.h"
+#include "board.h" /* CMSIS: NVIC_SystemReset */
 #include "clock.h"
 #include "drivers/can.h"
 
@@ -34,6 +39,10 @@ static O1HeapInstance *s_heap;
 static CanardInstance s_canard;
 static CanardTxQueue s_txq;
 static CanardRxSubscription s_getinfo_sub;
+static CanardRxSubscription s_access_sub;
+static CanardRxSubscription s_list_sub;
+static CanardRxSubscription s_execcmd_sub;
+static bool s_pending_reset; /* set by ExecuteCommand RESTART, acted on after TX flush */
 
 static uint8_t s_hb_tid;       /* heartbeat transfer-id (5-bit, wraps) */
 static uint64_t s_start_us;    /* for uptime */
@@ -79,6 +88,26 @@ void cyphal_init(uint8_t node_id)
                             uavcan_node_GetInfo_Request_1_0_EXTENT_BYTES_,
                             CANARD_DEFAULT_TRANSFER_ID_TIMEOUT_USEC,
                             &s_getinfo_sub);
+    (void)canardRxSubscribe(&s_canard,
+                            CanardTransferKindRequest,
+                            uavcan_register_Access_1_0_FIXED_PORT_ID_,
+                            uavcan_register_Access_Request_1_0_EXTENT_BYTES_,
+                            CANARD_DEFAULT_TRANSFER_ID_TIMEOUT_USEC,
+                            &s_access_sub);
+    (void)canardRxSubscribe(&s_canard,
+                            CanardTransferKindRequest,
+                            uavcan_register_List_1_0_FIXED_PORT_ID_,
+                            uavcan_register_List_Request_1_0_EXTENT_BYTES_,
+                            CANARD_DEFAULT_TRANSFER_ID_TIMEOUT_USEC,
+                            &s_list_sub);
+    (void)canardRxSubscribe(&s_canard,
+                            CanardTransferKindRequest,
+                            uavcan_node_ExecuteCommand_1_0_FIXED_PORT_ID_,
+                            uavcan_node_ExecuteCommand_Request_1_0_EXTENT_BYTES_,
+                            CANARD_DEFAULT_TRANSFER_ID_TIMEOUT_USEC,
+                            &s_execcmd_sub);
+
+    registers_init(node_id);
 
     s_start_us = micros64();
     s_next_hb_us = s_start_us + 1000000u;
@@ -146,6 +175,81 @@ static void handle_getinfo(const CanardRxTransfer *req)
     tx_push(&meta, sz, buf);
 }
 
+static void respond(const CanardRxTransfer *req, CanardPortID port,
+                    const void *buf, size_t sz)
+{
+    const CanardTransferMetadata meta = {
+        .priority = req->metadata.priority,
+        .transfer_kind = CanardTransferKindResponse,
+        .port_id = port,
+        .remote_node_id = req->metadata.remote_node_id,
+        .transfer_id = req->metadata.transfer_id,
+    };
+    tx_push(&meta, sz, buf);
+}
+
+static void handle_access(const CanardRxTransfer *req)
+{
+    uavcan_register_Access_Request_1_0 rq;
+    size_t in_sz = req->payload_size;
+    if (uavcan_register_Access_Request_1_0_deserialize_(&rq, (const uint8_t *)req->payload, &in_sz) < 0) {
+        return;
+    }
+    uavcan_register_Access_Response_1_0 resp;
+    memset(&resp, 0, sizeof(resp));
+    bool mut = false, per = false;
+    registers_access(&rq.name, &rq.value, &resp.value, &mut, &per);
+    resp._mutable = mut; /* nunavut strops the C++ keyword 'mutable' */
+    resp.persistent = per;
+    resp.timestamp.microsecond = micros64();
+
+    uint8_t buf[uavcan_register_Access_Response_1_0_SERIALIZATION_BUFFER_SIZE_BYTES_];
+    size_t sz = sizeof(buf);
+    if (uavcan_register_Access_Response_1_0_serialize_(&resp, buf, &sz) >= 0) {
+        respond(req, uavcan_register_Access_1_0_FIXED_PORT_ID_, buf, sz);
+    }
+}
+
+static void handle_list(const CanardRxTransfer *req)
+{
+    uavcan_register_List_Request_1_0 rq;
+    size_t in_sz = req->payload_size;
+    if (uavcan_register_List_Request_1_0_deserialize_(&rq, (const uint8_t *)req->payload, &in_sz) < 0) {
+        return;
+    }
+    uavcan_register_List_Response_1_0 resp;
+    memset(&resp, 0, sizeof(resp));
+    registers_name_at(rq.index, &resp.name);
+
+    uint8_t buf[uavcan_register_List_Response_1_0_SERIALIZATION_BUFFER_SIZE_BYTES_];
+    size_t sz = sizeof(buf);
+    if (uavcan_register_List_Response_1_0_serialize_(&resp, buf, &sz) >= 0) {
+        respond(req, uavcan_register_List_1_0_FIXED_PORT_ID_, buf, sz);
+    }
+}
+
+static void handle_execcmd(const CanardRxTransfer *req)
+{
+    uavcan_node_ExecuteCommand_Request_1_0 rq;
+    size_t in_sz = req->payload_size;
+    if (uavcan_node_ExecuteCommand_Request_1_0_deserialize_(&rq, (const uint8_t *)req->payload, &in_sz) < 0) {
+        return;
+    }
+    uavcan_node_ExecuteCommand_Response_1_0 resp;
+    memset(&resp, 0, sizeof(resp));
+    if (rq.command == uavcan_node_ExecuteCommand_Request_1_0_COMMAND_RESTART) {
+        resp.status = uavcan_node_ExecuteCommand_Response_1_0_STATUS_SUCCESS;
+        s_pending_reset = true; /* reset after the response is flushed */
+    } else {
+        resp.status = uavcan_node_ExecuteCommand_Response_1_0_STATUS_BAD_COMMAND;
+    }
+    uint8_t buf[uavcan_node_ExecuteCommand_Response_1_0_SERIALIZATION_BUFFER_SIZE_BYTES_];
+    size_t sz = sizeof(buf);
+    if (uavcan_node_ExecuteCommand_Response_1_0_serialize_(&resp, buf, &sz) >= 0) {
+        respond(req, uavcan_node_ExecuteCommand_1_0_FIXED_PORT_ID_, buf, sz);
+    }
+}
+
 static void flush_tx(void)
 {
     const uint64_t now = micros64();
@@ -178,9 +282,23 @@ static void pump_rx(void)
         CanardRxTransfer transfer;
         const int8_t r = canardRxAccept(&s_canard, micros64(), &frame, 0, &transfer, NULL);
         if (r == 1) {
-            if ((transfer.metadata.transfer_kind == CanardTransferKindRequest) &&
-                (transfer.metadata.port_id == uavcan_node_GetInfo_1_0_FIXED_PORT_ID_)) {
-                handle_getinfo(&transfer);
+            if (transfer.metadata.transfer_kind == CanardTransferKindRequest) {
+                switch (transfer.metadata.port_id) {
+                case uavcan_node_GetInfo_1_0_FIXED_PORT_ID_:
+                    handle_getinfo(&transfer);
+                    break;
+                case uavcan_register_Access_1_0_FIXED_PORT_ID_:
+                    handle_access(&transfer);
+                    break;
+                case uavcan_register_List_1_0_FIXED_PORT_ID_:
+                    handle_list(&transfer);
+                    break;
+                case uavcan_node_ExecuteCommand_1_0_FIXED_PORT_ID_:
+                    handle_execcmd(&transfer);
+                    break;
+                default:
+                    break;
+                }
             }
             s_canard.memory_free(&s_canard, transfer.payload);
         }
@@ -195,4 +313,9 @@ void cyphal_spin(void)
     }
     flush_tx();
     pump_rx();
+
+    /* Honour an ExecuteCommand RESTART once its response has been flushed. */
+    if (s_pending_reset && (canardTxPeek(&s_txq) == NULL)) {
+        NVIC_SystemReset();
+    }
 }

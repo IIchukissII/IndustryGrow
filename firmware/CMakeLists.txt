@@ -43,6 +43,7 @@ add_executable(m05.elf
   src/drivers/uart.c
   src/drivers/can.c
   src/cyphal/cyphal.c
+  src/cyphal/registers.c
   "${LIBCANARD}/libcanard/canard.c"
   "${O1HEAP}/o1heap/o1heap.c"
   ${SYSTEM}
