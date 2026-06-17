@@ -19,9 +19,9 @@
 #include "uavcan/si/sample/electric_current/Scalar_1_0.h"
 #include "uavcan/si/sample/power/Scalar_1_0.h"
 #include "uavcan/si/sample/temperature/Scalar_1_0.h"
+#include "uavcan/si/sample/energy/Scalar_1_0.h"
 #include "industryflow/greenhouse/safety/DoorStatus_1_0.h"
 #include "industryflow/greenhouse/safety/LeakStatus_1_0.h"
-#include "industryflow/greenhouse/safety/EnergyWh_1_0.h"
 
 /* Default subject-IDs (unregulated range). ADR-0005 d7: these should be
  * register-configurable (uavcan.pub.<name>.id) with these as defaults; baked
@@ -152,12 +152,12 @@ static void pub_leak(void)
 
 static void pub_energy(void)
 {
-    industryflow_greenhouse_safety_EnergyWh_1_0 m = {0};
+    uavcan_si_sample_energy_Scalar_1_0 m = {0};
     m.timestamp.microsecond = now_ts();
-    m.watt_hours = s0_energy_wh();
-    uint8_t b[industryflow_greenhouse_safety_EnergyWh_1_0_SERIALIZATION_BUFFER_SIZE_BYTES_];
+    m.joule = s0_energy_joule();
+    uint8_t b[uavcan_si_sample_energy_Scalar_1_0_SERIALIZATION_BUFFER_SIZE_BYTES_];
     size_t sz = sizeof(b);
-    if (industryflow_greenhouse_safety_EnergyWh_1_0_serialize_(&m, b, &sz) >= 0) {
+    if (uavcan_si_sample_energy_Scalar_1_0_serialize_(&m, b, &sz) >= 0) {
         cyphal_publish(SUBJ_ENERGY, &tid_energy, b, sz);
     }
 }

@@ -16,7 +16,7 @@ Core Board, ADR-0002 rev 3); the sensor-module personality varies per node type
 >   skeleton — `Heartbeat`, `GetInfo`, `register` Access/List, `ExecuteCommand`
 >   — so the node **enumerates and is configurable on the gateway**.
 > - **M05 personality:** INA226 (bus V/I/P), TMP117 (cabinet temp), reed (door),
->   leak (ADC, gated-excitation), S0 pulse → Wh energy; I²C presence-probing
+>   leak (ADC, gated-excitation), S0 pulse → joule energy; I²C presence-probing
 >   with 60 s re-probe (ADR-0014 d8); published on the standard SI sample types
 >   and the project `industryflow.greenhouse.safety` types (ADR-0005).
 > - **Next:** flash on the WeAct board (once PCBs exist), wire the sensor
@@ -35,7 +35,7 @@ A Cyphal/CAN node. Application protocol and wire vocabulary are fixed elsewhere:
 - **Bus** — classic CAN, **500 kbit/s**, linear, Node-ID static/provisioned (ADR-0002 d8; ADR-0005 d6).
 - **Vocabulary** — DSDL: the OpenCyphal standard `uavcan.*` set plus the project
   `industryflow.greenhouse.*` types, per **ADR-0005**. Physical quantities ride
-  `uavcan.si.sample.*` (SI units); accumulated S0 energy is **Wh** (ADR-0005 d3);
+  `uavcan.si.sample.*` (SI units); accumulated S0 energy is **joule** (ADR-0005 rev 1 d3);
   door/leak are minimal `safety` status types with no command field (M05 is
   sense-only, ADR-0018 d9).
 - **Identity** — module class is read from the ID straps at boot (ADR-0014 d6/d8);
@@ -74,7 +74,7 @@ firmware/
 │       ├── main.c                ← clock → strap self-check → CAN test → node + sensors
 │       ├── sensors.{h,c}         ← presence-probe + publish the M05 set
 │       └── drivers/  ina226 tmp117 s0 leak
-├── dsdl/industryflow/greenhouse/safety/   ← DoorStatus, LeakStatus, EnergyWh (ADR-0005)
+├── dsdl/industryflow/greenhouse/safety/   ← DoorStatus, LeakStatus (Apache-2.0; energy uses standard uavcan.si.sample.energy)
 ├── third_party/                  ← submodules: libcanard, o1heap, cmsis*, regulated types
 └── tools/                        ← bootstrap.sh (fetch + pin submodules)
 ```
@@ -136,7 +136,7 @@ Documented for both ST-Link (`openocd` / `st-flash`) and WeAct USB DFU
 ## References
 
 - ADR-0002 rev 3 — field bus (Cyphal/CAN, MCU, carrier, 500 kbit/s).
-- ADR-0005 — DSDL foundation (vocabulary, Wh energy, node skeleton, port-IDs).
+- ADR-0005 (rev 1) — DSDL foundation (vocabulary, joule energy, node skeleton, port-IDs).
 - ADR-0014 — sensor-node taxonomy (module straps, presence-probing, gateway tagging).
 - ADR-0018 — M05 sense-only; door/leak report-only; S0 energy.
 - `store/E0001-000001-D-pinmap.md` — carrier pin map (the BSP source of truth).

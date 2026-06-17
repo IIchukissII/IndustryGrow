@@ -9,8 +9,9 @@
 #define S0_PIN 12u /* PB12 = GPIO_4 */
 
 /* Meter pulse constant (imp/kWh). Per-deployment (ADR-0018); should become a
- * register (ADR-0005 d7). 1000 imp/kWh -> 1 Wh per pulse. */
+ * register (ADR-0005 d7). 1000 imp/kWh -> 3600 J (1 Wh) per pulse. */
 #define S0_IMP_PER_KWH 1000.0f
+#define S0_JOULE_PER_KWH 3600000.0f
 
 static volatile uint32_t s_pulses;
 
@@ -48,7 +49,7 @@ uint32_t s0_pulses(void)
     return s_pulses;
 }
 
-float s0_energy_wh(void)
+float s0_energy_joule(void)
 {
-    return (float)s_pulses * (1000.0f / S0_IMP_PER_KWH);
+    return (float)s_pulses * (S0_JOULE_PER_KWH / S0_IMP_PER_KWH);
 }
