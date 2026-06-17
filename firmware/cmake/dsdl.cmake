@@ -26,7 +26,7 @@ set(DSDL_STAMP "${DSDL_GEN_DIR}/.stamp")
 # Standard uavcan namespace (Heartbeat, GetInfo, register, si/sample, ...).
 # The project industryflow.greenhouse namespace (ADR-0005) is generated too once
 # its types are used. The project industryflow.greenhouse namespace (ADR-0005:
-# safety DoorStatus/LeakStatus/EnergyWh) is generated in a second pass that
+# safety DoorStatus/LeakStatus) is generated in a second pass that
 # looks up uavcan for its dependencies (e.g. uavcan.time.SynchronizedTimestamp).
 add_custom_command(
   OUTPUT "${DSDL_STAMP}"

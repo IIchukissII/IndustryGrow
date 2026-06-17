@@ -53,7 +53,7 @@ experiments require operator-controllable actuators.
 | # | Stage | Depends on | Governing ADR(s) | Outcome |
 |---|-------|------------|------------------|---------|
 | 1 | CAN bring-up | — (root) | ADR-0002, ADR-0004, ADR-0017 | Nodes enumerate on the gateway console |
-| 2 | DSDL foundation | 1 | ADR-0005 \* | Stable wire vocabulary for the whole system |
+| 2 | DSDL foundation | 1 | ADR-0005 | Stable wire vocabulary for the whole system |
 | 3 | Sensor MVP | 2 | ADR-0014 | Live telemetry from the first sensor node |
 | 4 | Sensor platform | 3 | ADR-0014, ADR-0018 | Full cabinet telemetry (M01–M05) — **end of Phase 1** |
 | 5 | Actuator layer | 4 | ADR-0018 (d10 interlock) | Environment can be driven; HW thermal cutoff + watchdog |
@@ -104,9 +104,9 @@ straddles stages 6 and 11.
 
 ## Notes and unfinished decisions
 
-- ADR-0005 (DSDL) and ADR-0009 (profile schema) are referenced here but were not
-  present in the audited project copy; they must exist before stages 2 and 9
-  respectively.
+- ADR-0005 (DSDL) now exists and is **Accepted (rev 1)** — it grounds stage 2.
+  ADR-0009 (profile schema) is still referenced but not yet written; it must
+  exist before stage 9.
 - Gateway/host OTA and container delivery (stage 13) are not covered by any ADR.
   ADR-0004 covers only CAN-node firmware update and OS security patches, not
   application-level OTA.
@@ -135,7 +135,7 @@ the gate is passed.
 - ADR-0002 — field-bus architecture (Cyphal/CAN, gateway).
 - ADR-0003 — strawberry day-neutral reference profile.
 - ADR-0004 — gateway host hardening, stateless-edge operation.
-- ADR-0005 — DSDL foundation *(referenced; not yet audited)*.
+- ADR-0005 (rev 1) — DSDL foundation *(Accepted)*.
 - ADR-0007 — PKI, gateway identity, provisioning.
 - ADR-0009 — profile schema *(deferred; not yet audited)*.
 - ADR-0014 — sensor node taxonomy (M01–M05).
