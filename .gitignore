@@ -14,3 +14,10 @@ ADR-*DRAFT*.md
 # Python bytecode (e.g. from compiling the gateway/ self-test locally)
 __pycache__/
 *.pyc
+
+# Firmware build artifacts (CMake build trees, Nunavut-generated code, binaries)
+firmware/build*/
+firmware/**/build*/
+*.elf
+*.o
+*.d
