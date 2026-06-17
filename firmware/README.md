@@ -10,10 +10,16 @@ one carrier (`E0001`), one MCU family (STM32F405RGT6 on the WeAct STM32F4 64-Pin
 Core Board, ADR-0002 rev 3); the sensor-module personality varies per node type
 (ADR-0002 decision 5). The first node brought up is **M05-SAFETY** (`E0006`).
 
-> **Status: scaffold.** This tree is being built incrementally. The build system
-> and STM32 sources land in steps so each is reviewable and compilable on real
-> hardware; the bring-up milestone (below) comes first. Firmware **sources** are
-> `AGPL-3.0-or-later` (ADR-0002 decision 5); this document is `CC-BY-SA-4.0`.
+> **Status: bring-up, layer 1 landed.** Built incrementally so each step is
+> reviewable and compilable on real hardware:
+> - **Layer 1 (here):** board + clock (168 MHz) + debug UART + module-ID strap
+>   self-check + bxCAN raw 500 kbit/s with an internal-loopback self-test. No
+>   Cyphal yet; depends only on CMSIS.
+> - **Layer 2 (next):** libcanard + o1heap + Nunavut codegen + the node skeleton
+>   (Heartbeat + GetInfo + register) so the node enumerates on the gateway.
+>
+> Firmware **sources** are `AGPL-3.0-or-later` (ADR-0002 decision 5); this
+> document is `CC-BY-SA-4.0`. Not yet compiled/flashed here — that's bench-side.
 
 ## What the firmware is
 
@@ -36,9 +42,9 @@ A Cyphal/CAN node. Application protocol and wire vocabulary are fixed elsewhere:
 | Allocator | [o1heap](https://github.com/pavel-kirienko/o1heap) (MIT) |
 | DSDL → C | [Nunavut](https://github.com/OpenCyphal/nunavut) (pinned via pip), run at build time; generated code **not** vendored (ADR-0005 d10) |
 | Standard types | [public_regulated_data_types](https://github.com/OpenCyphal/public_regulated_data_types), pinned |
-| MCU peripherals | STM32 **LL/HAL** (CubeMX-class init, hand-trimmed) |
+| MCU peripherals | CMSIS device headers + **register-level init** (the LL layer, hand-written — keeps the bring-up self-contained and free of a vendored HAL tree; LL/HAL drivers can be layered in later if a peripheral warrants it) |
 | Compiler / build | `arm-none-eabi-gcc` + **CMake** (no IDE lock-in, CI-friendly) |
-| Dependency vendoring | **git submodules**, pinned to tags (proposed — see *Open setup choices*) |
+| Dependency vendoring | **git submodules**, pinned to tags (`firmware/tools/bootstrap.sh`) |
 
 ## Planned layout
 
