@@ -104,9 +104,9 @@ straddles stages 6 and 11.
 
 ## Notes and unfinished decisions
 
-- ADR-0005 (DSDL) and ADR-0009 (profile schema) are referenced here but were not
-  present in the audited project copy; they must exist before stages 2 and 9
-  respectively.
+- ADR-0005 (DSDL) is now drafted (Proposed); ADR-0009 (profile schema) is still
+  referenced but not yet present and must exist before stage 9. Stage 2 rests on
+  ADR-0005.
 - Gateway/host OTA and container delivery (stage 13) are not covered by any ADR.
   ADR-0004 covers only CAN-node firmware update and OS security patches, not
   application-level OTA.
@@ -135,7 +135,7 @@ the gate is passed.
 - ADR-0002 — field-bus architecture (Cyphal/CAN, gateway).
 - ADR-0003 — strawberry day-neutral reference profile.
 - ADR-0004 — gateway host hardening, stateless-edge operation.
-- ADR-0005 — DSDL foundation *(referenced; not yet audited)*.
+- ADR-0005 — DSDL foundation *(Proposed)*.
 - ADR-0007 — PKI, gateway identity, provisioning.
 - ADR-0009 — profile schema *(deferred; not yet audited)*.
 - ADR-0014 — sensor node taxonomy (M01–M05).
