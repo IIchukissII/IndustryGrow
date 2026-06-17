@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+# Accumulated actuator/high-power energy from the DIN meter's S0 pulse integral.
+# Published in watt-hours, not joules (ADR-0005 d3): the meter is defined in
+# imp/kWh, so the pulse count is naturally a Wh total. Monotonic across runs is
+# NOT guaranteed yet (no persistence) — resets to 0 on reboot for now.
+uavcan.time.SynchronizedTimestamp.1.0 timestamp
+float32 watt_hours
+@extent 16 * 8

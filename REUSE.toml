@@ -17,6 +17,17 @@ precedence = "closest"
 SPDX-FileCopyrightText = "2026 The IndustryGrow contributors"
 SPDX-License-Identifier = "CERN-OHL-S-2.0"
 
+# Firmware release artifacts (ADR-0017 'F' layer; see REGISTRY.md) are reference
+# firmware under AGPL-3.0-or-later (ADR-0002 d5), NOT the CERN-OHL-S hardware
+# default above. The .hex/.zip are binary and carry no inline header, so the
+# F-layer paths are annotated here and override the store/** default. (Added at
+# build time by firmware/tools/release.sh; this rule waits for them.)
+[[annotations]]
+path = ["store/E0006-*-F.hex", "store/E0006-*-F-src.zip"]
+precedence = "override"
+SPDX-FileCopyrightText = "2026 The IndustryGrow contributors"
+SPDX-License-Identifier = "AGPL-3.0-or-later"
+
 # Project images/logos, ADR figures, the roadmap figure, and this manifest itself
 # (no inline-comment option for the binary PNGs; SVGs kept uniform with them).
 [[annotations]]

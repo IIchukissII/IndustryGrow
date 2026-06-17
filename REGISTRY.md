@@ -74,6 +74,29 @@ SPxxxx-<layer>[-<slug>]        e.g.  SP0004-M-gateway-bringup   (Manual)
   not an ADR decision (maintainer call, 2026-06-16). Promote it to an ADR-0019
   amendment if it ever needs to constrain downstream tooling (ADR-0000 d1).
 
+### Firmware document layer `F` (E-modules)
+
+ADR-0017 decision 9 fixes the E-document layer set `S / D / L / P / M / I`. It has
+no letter for a built **firmware** artifact, but the M05-SAFETY node ships one
+(reference firmware, AGPL-3.0-or-later per ADR-0002 d5). We extend the set with:
+
+```
+Exxxx-VVVVVV-F[.hex|-src.zip]   e.g.  E0006-000001-F.hex   (built image)
+                                      E0006-000001-F-src.zip (source snapshot)
+```
+
+- **`F` = Firmware** — the built image and its source snapshot for the node whose
+  *personality* the module defines. The M05 firmware is filed under **`E0006`**
+  (the M05-SAFETY module), not the carrier `E0001` (which hosts every node type).
+- **`VVVVVV` is the firmware version**, independent of the E0006 *board* design
+  version — a firmware release bumps `F`'s version without re-spinning the PCB.
+- The artifacts are produced by `firmware/tools/release.sh` and licensed
+  AGPL-3.0-or-later (annotated in `REUSE.toml`, overriding the CERN-OHL-S
+  `store/**` hardware default).
+- This is a **maintainer-call naming convention recorded here** (maintainer call,
+  2026-06-17), like the SP convention above — promote it to an **ADR-0017
+  amendment** if it needs to constrain downstream tooling (ADR-0000 d1).
+
 ## Governing ADRs
 
 - ADR-0017 — component / document / instance identification (E-numbers, two-axis model).

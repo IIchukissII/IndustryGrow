@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+# Cabinet door reed-switch state. Report/alert only — M05 is sense-only and this
+# carries no command field (ADR-0018 d9/d11, ADR-0005 d4).
+uavcan.time.SynchronizedTimestamp.1.0 timestamp
+bool engaged   # true  = door closed / reed engaged
+bool valid     # true  = reading trustworthy (input configured, not in fault)
+@extent 16 * 8
