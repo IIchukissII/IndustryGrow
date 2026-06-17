@@ -5,6 +5,10 @@ store/.history/
 # KiCad editor lock files (created while a file is open)
 *.lck
 
+# KiCad working-session project-local files (e.g. E0006-000001_work.kicad_prl) —
+# editor state, not project content; the canonical *.kicad_prl stays tracked.
+*_work.kicad_prl
+
 # QElectroTech backup files (editor artifact, not project content)
 *.qet.bak
 
