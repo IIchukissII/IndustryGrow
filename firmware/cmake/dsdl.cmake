@@ -32,12 +32,10 @@ add_custom_command(
   OUTPUT "${DSDL_STAMP}"
   COMMAND "${CMAKE_COMMAND}" -E make_directory "${DSDL_GEN_DIR}"
   COMMAND "${NNVG}" --target-language c --target-endianness little
-          --enable-serialization-asserts
           --outdir "${DSDL_GEN_DIR}"
           --lookup-dir "${PUBLIC_TYPES}/uavcan"
           "${PUBLIC_TYPES}/uavcan"
   COMMAND "${NNVG}" --target-language c --target-endianness little
-          --enable-serialization-asserts
           --outdir "${DSDL_GEN_DIR}"
           --lookup-dir "${PUBLIC_TYPES}/uavcan"
           "${PROJECT_DSDL}/industryflow"
