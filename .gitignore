@@ -25,3 +25,10 @@ firmware/**/build*/
 *.elf
 *.o
 *.d
+
+# STM32CubeIDE / Eclipse project files (IDE state, not project content — the
+# firmware is canonically CMake + arm-none-eabi-gcc; "no IDE lock-in", README).
+.project
+.cproject
+.settings/
+.cache/

@@ -25,10 +25,11 @@ add https://github.com/STMicroelectronics/cmsis_device_f4.git firmware/third_par
 # libcanard pinned to v3.x: cyphal.c targets the canardTxInit/canardRxAccept
 # API of that major. libcanard v4 reworked the memory-resource API — if you
 # bump to v4, update src/cyphal/cyphal.c accordingly.
-add https://github.com/OpenCyphal/libcanard.git          firmware/third_party/libcanard        v3.0.0
+add https://github.com/OpenCyphal/libcanard.git          firmware/third_party/libcanard        3.0.0
 add https://github.com/pavel-kirienko/o1heap.git         firmware/third_party/o1heap            2.0.0
+# public_regulated_data_types publishes no release tags; pin to a commit.
 add https://github.com/OpenCyphal/public_regulated_data_types.git \
-                                                          firmware/third_party/public_regulated_data_types  1.10.0
+                                                          firmware/third_party/public_regulated_data_types  a229bb78e76c48a3082be163bc240b2c13ff2d89
 
 git submodule update --init --recursive
 echo "bootstrap: submodules ready under firmware/third_party/"
