@@ -10,23 +10,30 @@ one carrier (`E0001`), one MCU family (STM32F405RGT6 on the WeAct STM32F4 64-Pin
 Core Board, ADR-0002 rev 3); the sensor-module personality varies per node type
 (ADR-0002 decision 5). The first node brought up is **M05-SAFETY** (`E0006`).
 
-> **Status: M05 firmware feature-complete (uncompiled).** Built incrementally:
+> **Status: M05 firmware compiles, flashes, and passes layer-1 bring-up on a bare
+> WeAct F405.** Built incrementally:
 > - **Skeleton:** clock (168 MHz), debug UART, module-ID strap self-check, bxCAN
 >   500 kbit/s; libcanard (v3) + o1heap + Nunavut; the full ADR-0005 d5 node
 >   skeleton — `Heartbeat`, `GetInfo`, `register` Access/List, `ExecuteCommand`
->   — so the node **enumerates and is configurable on the gateway**.
+>   — so the node is built to **enumerate and be configurable on the gateway**.
 > - **M05 personality:** INA226 (bus V/I/P), TMP117 (cabinet temp), reed (door),
 >   leak (ADC, gated-excitation), S0 pulse → joule energy; I²C presence-probing
 >   with 60 s re-probe (ADR-0014 d8); published on the standard SI sample types
 >   and the project `industryflow.greenhouse.safety` types (ADR-0005).
-> - **Next:** flash on the WeAct board (once PCBs exist), wire the sensor
->   subject-IDs to `uavcan.pub.*.id` registers (ADR-0005 d7), and the gated leak
->   excitation pin once it is added to the E0006 net/pin map.
+> - **Verified on hardware (bare WeAct F405, ST-Link V3):** 168 MHz clock,
+>   module-ID strap self-check (correctly flags the `0b000` no-carrier mismatch),
+>   **bxCAN loopback self-test**, and the libcanard node coming up — all confirmed
+>   over the USART1 debug log. The released image is `store/E0006-000001-F.hex`.
+> - **Next (needs the carrier PCB):** bus-level CAN **enumeration on the gateway**
+>   (the bare WeAct has no transceiver) and live **sensor readings** — the I²C
+>   sensors, reed, leak, and S0 are authored against the datasheets but not yet
+>   bench-checked. Then wire the sensor subject-IDs to `uavcan.pub.*.id` registers
+>   (ADR-0005 d7) and the gated leak excitation pin once it is in the E0006 net/pin map.
 >
 > Firmware **sources** are `AGPL-3.0-or-later` (ADR-0002 decision 5); this
-> document is `CC-BY-SA-4.0`. **Not yet compiled/flashed** — PCBs aren't fabbed;
-> first build needs `nnvg` (Nunavut) and the submodules from `tools/bootstrap.sh`,
-> and is the moment the generated-DSDL API names get verified.
+> document is `CC-BY-SA-4.0`. First build needs `nnvg` (Nunavut) and the submodules
+> from `tools/bootstrap.sh`; cross-build with `arm-none-eabi-gcc` + CMake/Ninja, or
+> import the CMake project into STM32CubeIDE.
 
 ## What the firmware is
 
@@ -101,7 +108,7 @@ and flash the WeAct board; confirm the node appears via the gateway (`yakut`/
 `pycyphal`). USB DFU stays available for flashing because CAN1 was placed on
 PB8/PB9, off the USB pins (pin-map note 5).
 
-## Build & flash (once sources land)
+## Build & flash
 
 ```sh
 # host / vcan build for protocol bring-up without hardware
