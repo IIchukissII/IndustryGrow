@@ -3,9 +3,10 @@
 # SPDX-License-Identifier: CC-BY-SA-4.0
 """Bring-up self-test PLACEHOLDER for the IndustryGrow gateway service.
 
-This is NOT the final Pycyphal gateway application. The real service depends on
-the DSDL vocabulary (ADR-0005, planned; roadmap stages 2+) and the control/upload
-logic (ADR-0015, ADR-0004 rev 1 d10). This placeholder exists so the systemd unit
+This is NOT the final Pycyphal gateway application. The real service consumes the
+DSDL vocabulary (now defined — ADR-0005, Accepted) and the control/upload logic
+(ADR-0015, ADR-0004 rev 1 d10); building it out is roadmap stages 2+. This
+placeholder exists so the systemd unit
 `gateway-pycyphal.service` has something genuine to run during bring-up, proving:
 
   1. the venv and `pycyphal` import work under the unprivileged `gateway` user;

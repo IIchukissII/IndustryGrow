@@ -8,9 +8,10 @@
 # hardware, change the interface in /etc/industrygrow/gateway.env (see Manual).
 #
 # NOTE — the ExecStart target is a BRING-UP SELF-TEST PLACEHOLDER, not the final
-# gateway application. The real Pycyphal service depends on the DSDL vocabulary
-# (ADR-0005, planned; roadmap stages 2+). The placeholder validates the service
-# user, this hardening sandbox, and the SocketCAN/pycyphal path on vcan0.
+# gateway application. The real Pycyphal service consumes the DSDL vocabulary
+# (now defined — ADR-0005, Accepted); building it out is roadmap stages 2+. The
+# placeholder validates the service user, this hardening sandbox, and the
+# SocketCAN/pycyphal path on vcan0.
 
 [Unit]
 Description=IndustryGrow gateway (Pycyphal/SocketCAN edge) — ADR-0002/0004
