@@ -4,7 +4,7 @@
  */
 
 #include "i2c.h"
-#include "board.h"
+#include "e0001.h"
 
 #define I2C_TMO 100000u
 

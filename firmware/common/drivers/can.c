@@ -4,7 +4,7 @@
  */
 
 #include "can.h"
-#include "board.h"
+#include "e0001.h"
 
 /* Bit-timing fields for 500 kbit/s at APB1 = 42 MHz (see can.h). */
 #define CAN_BRP 6u
@@ -17,14 +17,14 @@ static void can_gpio_init(void)
     RCC->AHB1ENR |= RCC_AHB1ENR_GPIOBEN;
     (void)RCC->AHB1ENR;
 
-    const uint32_t rx = BRD_CAN_RX_PIN, tx = BRD_CAN_TX_PIN; /* 8, 9 */
-    BRD_CAN_GPIO->MODER &= ~((3u << (rx * 2u)) | (3u << (tx * 2u)));
-    BRD_CAN_GPIO->MODER |= (2u << (rx * 2u)) | (2u << (tx * 2u)); /* AF */
+    const uint32_t rx = E0001_CAN_RX_PIN, tx = E0001_CAN_TX_PIN; /* 8, 9 */
+    E0001_CAN_GPIO->MODER &= ~((3u << (rx * 2u)) | (3u << (tx * 2u)));
+    E0001_CAN_GPIO->MODER |= (2u << (rx * 2u)) | (2u << (tx * 2u)); /* AF */
     /* High speed, push-pull; pull-up on RX is harmless and helps when idle. */
-    BRD_CAN_GPIO->OSPEEDR |= (3u << (rx * 2u)) | (3u << (tx * 2u));
-    BRD_CAN_GPIO->AFR[1] &= ~((0xFu << ((rx - 8u) * 4u)) | (0xFu << ((tx - 8u) * 4u)));
-    BRD_CAN_GPIO->AFR[1] |= (BRD_CAN_AF << ((rx - 8u) * 4u)) |
-                            (BRD_CAN_AF << ((tx - 8u) * 4u));
+    E0001_CAN_GPIO->OSPEEDR |= (3u << (rx * 2u)) | (3u << (tx * 2u));
+    E0001_CAN_GPIO->AFR[1] &= ~((0xFu << ((rx - 8u) * 4u)) | (0xFu << ((tx - 8u) * 4u)));
+    E0001_CAN_GPIO->AFR[1] |= (E0001_CAN_AF << ((rx - 8u) * 4u)) |
+                            (E0001_CAN_AF << ((tx - 8u) * 4u));
 }
 
 int can_init(bool loopback)

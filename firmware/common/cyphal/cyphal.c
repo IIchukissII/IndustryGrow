@@ -23,7 +23,7 @@
 #include "uavcan/_register/List_1_0.h"
 
 #include "registers.h"
-#include "board.h" /* CMSIS: NVIC_SystemReset */
+#include "e0001.h" /* CMSIS: NVIC_SystemReset */
 #include "clock.h"
 #include "can.h"
 

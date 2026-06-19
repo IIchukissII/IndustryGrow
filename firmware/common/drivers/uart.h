@@ -7,7 +7,7 @@
 
 #include <stdint.h>
 
-/* Debug console on USART1 (PA9/PA10, AF7), 8N1 at BRD_DBG_BAUD. Bench only. */
+/* Debug console on USART1 (PA9/PA10, AF7), 8N1 at E0001_DBG_BAUD. Bench only. */
 void uart_init(void);
 void uart_putc(char c);
 void uart_puts(const char *s);

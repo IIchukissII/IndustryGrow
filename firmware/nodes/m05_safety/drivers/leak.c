@@ -4,7 +4,7 @@
  */
 
 #include "leak.h"
-#include "board.h"
+#include "e0001.h"
 #include "clock.h"
 
 #define LEAK_ADC_CH 14u /* PC4 = ADC1_IN14 */

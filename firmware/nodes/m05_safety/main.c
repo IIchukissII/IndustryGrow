@@ -13,7 +13,8 @@
  * gateway. See firmware/README.md for the milestone definition.
  */
 
-#include "board.h"
+#include "e0001.h"
+#include "module_id.h"
 #include "clock.h"
 #include "cyphal.h"
 #include "can.h"
@@ -27,22 +28,22 @@
 int main(void)
 {
     clock_init();
-    board_init();
+    e0001_init();
     uart_init();
 
     uart_puts("\r\nIndustryGrow M05-SAFETY bring-up (layer 1)\r\n");
 
     /* Module-ID strap self-check (ADR-0014 d6). */
-    uint8_t id = board_read_module_id();
+    uint8_t id = e0001_read_module_id();
     uart_puts("module-id strap = 0b");
     uart_put_bin3(id);
-    bool is_m05 = (id == BRD_MODULE_ID_M05);
+    bool is_m05 = (id == M05_MODULE_ID);
     uart_puts(is_m05 ? " -> M05-SAFETY OK\r\n"
                      : " -> MISMATCH (expected 0b101)\r\n");
     /* NOTE: STRAP_1 (PA6, bit 1) is unrouted to the MCU on E0001-000001 and
      * reads the pull-down 0. For M05 (0b101) bit 1 is 0, so this passes; it is
-     * NOT a true read of bit 1. Tracked carrier fix — see board.h / pin map. */
-    board_led_status(is_m05);
+     * NOT a true read of bit 1. Tracked carrier fix — see e0001.h / pin map. */
+    e0001_led_status(is_m05);
 
     /* bxCAN peripheral + 500 kbit/s bit-timing self-test (internal loopback). */
     int rc = can_selftest_loopback();
@@ -64,7 +65,7 @@ int main(void)
         cyphal_spin();  /* ... and flush TX + service RX */
         if ((millis() - last) >= 500u) {
             last = millis();
-            board_led_status_toggle(); /* liveness blink */
+            e0001_led_status_toggle(); /* liveness blink */
         }
     }
 }

@@ -4,7 +4,7 @@
  */
 
 #include "uart.h"
-#include "board.h"
+#include "e0001.h"
 
 void uart_init(void)
 {
@@ -13,23 +13,23 @@ void uart_init(void)
     (void)RCC->APB2ENR;
 
     /* PA9/PA10 to alternate function 7 (USART1). */
-    const uint32_t tx = BRD_DBG_TX_PIN, rx = BRD_DBG_RX_PIN;
-    BRD_DBG_GPIO->MODER &= ~((3u << (tx * 2u)) | (3u << (rx * 2u)));
-    BRD_DBG_GPIO->MODER |= (2u << (tx * 2u)) | (2u << (rx * 2u)); /* AF mode */
-    BRD_DBG_GPIO->AFR[1] &= ~((0xFu << ((tx - 8u) * 4u)) | (0xFu << ((rx - 8u) * 4u)));
-    BRD_DBG_GPIO->AFR[1] |= (BRD_DBG_AF << ((tx - 8u) * 4u)) |
-                            (BRD_DBG_AF << ((rx - 8u) * 4u));
+    const uint32_t tx = E0001_DBG_TX_PIN, rx = E0001_DBG_RX_PIN;
+    E0001_DBG_GPIO->MODER &= ~((3u << (tx * 2u)) | (3u << (rx * 2u)));
+    E0001_DBG_GPIO->MODER |= (2u << (tx * 2u)) | (2u << (rx * 2u)); /* AF mode */
+    E0001_DBG_GPIO->AFR[1] &= ~((0xFu << ((tx - 8u) * 4u)) | (0xFu << ((rx - 8u) * 4u)));
+    E0001_DBG_GPIO->AFR[1] |= (E0001_DBG_AF << ((tx - 8u) * 4u)) |
+                            (E0001_DBG_AF << ((rx - 8u) * 4u));
 
     /* APB2 = 84 MHz; BRR = fck / baud (16x oversampling). */
-    BRD_DBG_UART->BRR = (84000000u + (BRD_DBG_BAUD / 2u)) / BRD_DBG_BAUD;
-    BRD_DBG_UART->CR1 = USART_CR1_UE | USART_CR1_TE | USART_CR1_RE;
+    E0001_DBG_UART->BRR = (84000000u + (E0001_DBG_BAUD / 2u)) / E0001_DBG_BAUD;
+    E0001_DBG_UART->CR1 = USART_CR1_UE | USART_CR1_TE | USART_CR1_RE;
 }
 
 void uart_putc(char c)
 {
-    while (!(BRD_DBG_UART->SR & USART_SR_TXE)) {
+    while (!(E0001_DBG_UART->SR & USART_SR_TXE)) {
     }
-    BRD_DBG_UART->DR = (uint8_t)c;
+    E0001_DBG_UART->DR = (uint8_t)c;
 }
 
 void uart_puts(const char *s)
