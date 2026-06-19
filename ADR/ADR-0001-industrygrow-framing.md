@@ -98,7 +98,7 @@ IndustryGrow is an **open-core cultivation platform** with the following structu
 - **ADR-0004:** Gateway host hardening, audit log, firmware signing.
 - **ADR-0005:** DSDL namespace structure and Subject-ID allocation.
 - **ADR-0006 (deferred):** Cabinet form factor, materials, mechanical decomposition.
-- **ADR-0007 (future):** PKI architecture — community-self-hosted CA pattern and commercial CA infrastructure.
+- **ADR-0007:** PKI architecture — community-self-hosted CA pattern and commercial CA infrastructure.
 - **ADR-0008 (future):** Deployment topology and operational scale.
 - **ADR-0009 (future):** Cultivation profile schema, contribution workflow, registry design.
 - **ADR-0010 (future):** ~~Hardware tiering — full specification of production-grade nodes.~~ Repurposed to commercial-operations / managed-deployment policy; the hardware-tiering premise was dropped by ADR-0002 rev 3 (uniform single-tier hardware). See ADR-0002 deferred list and README.
