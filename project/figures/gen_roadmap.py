@@ -90,7 +90,7 @@ titles = {
  5:["Actuator","layer"], 6:["Gateway","MVP"], 7:["Survey","mode"], 8:["Modeling"],
  9:["Profile","system"], 10:["First","cultivation"], 11:["Cloud","integration"],
  12:["Multi-","cabinet"], 13:["Commercial","ready"], 14:["IndustryGrow","v1.0"]}
-tags = {1:"ADR-0002·04·17",2:"ADR-0005 *",3:"ADR-0014",4:"ADR-0014·18",5:"ADR-0018 d10",
+tags = {1:"ADR-0002·04·17",2:"ADR-0005",3:"ADR-0014",4:"ADR-0014·18",5:"ADR-0018 d10",
  6:"ADR-0015",7:"ADR-0016·20",8:"ADR-0016",9:"ADR-0009 *",10:"ADR-0003",11:"ADR-0004·07·20",
  12:"ADR-0001",13:"OTA: no ADR",14:"exit gate"}
 # risk discs: node -> (num, colour). GREEN = resolved; RED/AMBER = still open.
@@ -199,7 +199,7 @@ for i,(num,col,head,lines) in enumerate(cards):
 # footnote
 fy = PN_T + 36 + 150 + 26
 add(f'<text class="mono" x="40" y="{fy}" font-size="11.5" fill="{SLATE}">'
-    f'* ADR-0005 (DSDL) and ADR-0009 (profile schema) are referenced but not yet audited — must exist before #2 and #9.'
+    f'* ADR-0009 (profile schema) is referenced but not yet written — must exist before #9 (ADR-0005, DSDL, is now Accepted).'
     f'  —  #14 gate also pulls from #10 (one full cycle) and #11 (mTLS, survives net loss + reboot).</text>')
 
 add('</svg>')
