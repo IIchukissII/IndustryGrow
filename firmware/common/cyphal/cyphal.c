@@ -24,6 +24,7 @@
 
 #include "registers.h"
 #include "e0001.h" /* CMSIS: NVIC_SystemReset */
+#include "atecc608.h"
 #include "clock.h"
 #include "can.h"
 
@@ -58,11 +59,21 @@ static void mem_free(CanardInstance *ins, void *pointer)
     o1heapFree((O1HeapInstance *)ins->user_reference, pointer);
 }
 
-/* STM32F405 96-bit unique device ID -> 16-byte Cyphal unique_id (zero-padded). */
+/* 16-byte Cyphal unique_id. Per ADR-0007 the carrier's ATECC608 is the node's
+ * hardware-identity anchor, so its 9-byte serial is the preferred source (left-
+ * justified, zero-padded). When the secure element is absent (bare WeAct / no
+ * carrier) fall back to the STM32F405 96-bit factory UID. atecc608_init() must
+ * have run first. */
 static void read_unique_id(uint8_t out[16])
 {
-    const volatile uint32_t *uid = (const volatile uint32_t *)0x1FFF7A10u;
     memset(out, 0, 16);
+
+    if (atecc608_present()) {
+        memcpy(out, atecc608_serial(), ATECC608_SERIAL_LEN);
+        return;
+    }
+
+    const volatile uint32_t *uid = (const volatile uint32_t *)0x1FFF7A10u;
     for (int i = 0; i < 3; i++) {
         uint32_t w = uid[i];
         out[i * 4 + 0] = (uint8_t)(w);

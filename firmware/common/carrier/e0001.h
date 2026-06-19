@@ -56,11 +56,12 @@
 #define E0001_MODULE_ID_READABLE_MASK 0x5u /* bits 0 and 2 (bit 1 unreadable) */
 
 /* --- Secure element / node identity IC: ATECC608 on I2C2 (PB10 = SCL,
- * PB11 = SDA), per the pin map and ADR-0007 (PKI). This is the carrier's
- * per-instance cryptographic identity anchor — a PARENT responsibility, not the
- * child module's. NOT YET WIRED UP IN FIRMWARE: I2C2 and an ATECC driver are a
- * tracked seam to add at the carrier level (no I2C2 init exists today). When
- * implemented it lives here / in a sibling common/carrier unit, never per-node. */
+ * PB11 = SDA), per the pin map and ADR-0007. This is the carrier's per-instance
+ * identity anchor — a PARENT responsibility, not the child module's. The driver
+ * lives in the sibling carrier unit common/carrier/atecc608.{h,c}: it reads the
+ * device serial (the identity anchor) and feeds the Cyphal node unique-id.
+ * Crypto, key generation and provisioning are deferred to Production / a
+ * manufacturing document (ADR-0007 d6/d9); the firmware does identity only. */
 #define E0001_SECURE_I2C        I2C2
 #define E0001_SECURE_GPIO       GPIOB
 #define E0001_SECURE_SCL_PIN    10u

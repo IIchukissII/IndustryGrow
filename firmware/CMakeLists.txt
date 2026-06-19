@@ -48,6 +48,7 @@ add_executable(m05.elf
   nodes/m05_safety/drivers/leak.c
   # --- common: shared across all node types ---
   common/carrier/e0001.c
+  common/carrier/atecc608.c
   common/platform/clock.c
   common/drivers/uart.c
   common/drivers/can.c
