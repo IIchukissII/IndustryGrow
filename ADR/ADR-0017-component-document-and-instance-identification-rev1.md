@@ -3,14 +3,27 @@ SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
-# ADR-0017: Component, document, and instance identification scheme
+# ADR-0017 (rev 1): Component, document, and instance identification scheme
 
-- **ID:** ADR-0017
+- **ID:** ADR-0017 (rev 1)
 - **Status:** Accepted
-- **Date:** 2026-05-31
+- **Date:** 2026-06-19
 - **Project:** IndustryGrow
 - **Parent:** ADR-0001
-- **Companions:** ADR-0002 (rev 3), ADR-0004 (rev 1), ADR-0007 (planned), ADR-0014, ADR-0015, ADR-0016
+- **Companions:** ADR-0002 (rev 3), ADR-0004 (rev 1), ADR-0007, ADR-0014, ADR-0015, ADR-0016
+- **Supersedes:** ADR-0017 (initial, 2026-05-31)
+
+## Revision history
+
+- **rev 1 (2026-06-19)** — Adopts the firmware document layer `F` into the scheme
+  (previously a maintainer-call extension recorded only in `REGISTRY.md`) and
+  **roots it on the carrier `E0001`, not the node module**. The firmware is one
+  codebase shared by every node type (ADR-0002 d5), selected at runtime by the
+  module-ID strap; its version tracks that single carrier-level codebase, so
+  filing it per-module (the prior `E0006-…-F` convention) would force one shared
+  code change to bump the `F` version of every module — a count-into-identity
+  leak. Adds decision 16 and alternative G. Also refreshes companion references:
+  ADR-0005 and ADR-0007 are now Accepted (were "planned").
 
 ## Context and problem
 
@@ -20,7 +33,7 @@ The existing ADRs supply a taxonomy — module classes M01–M05, module-ID stra
 
 This ADR specifies a hierarchical identification scheme for IndustryGrow. Its organizing principle is the separation of three things the project needs kept apart: the **type** (a module designation plus a version), the **instance** (a serial number), and the **position in the machine** (a hierarchical depth code). The scheme uses phase-specific identifier formats so that an artifact's identifier reflects where it is in its lifecycle, and it reserves a suffix slot for per-instance lifecycle documents.
 
-The separation is load-bearing for two reasons specific to IndustryGrow. ADR-0014 requires that one design be instantiated many times (designs few, instances many); ADR-0016 requires that an individual instance physically move between positions and deployments while keeping its identity and history. An identifier that fused type with position, or instance with position, would break both. This ADR also fixes the bindings that connect the scheme to the rest of the architecture: the instance serial to the ATECC608 hardware identity (ADR-0007), the document interface layer to Cyphal/DSDL (ADR-0002/0005), the integration-phase depth code to the gateway's runtime position tagging (ADR-0014 decision 7), and the suffix set to IndustryGrow's actual per-instance documents — together with the boundary between those documents and IndustryFlow's operational audit log (ADR-0004 rev 1).
+The separation is load-bearing for two reasons specific to IndustryGrow. ADR-0014 requires that one design be instantiated many times (designs few, instances many); ADR-0016 requires that an individual instance physically move between positions and deployments while keeping its identity and history. An identifier that fused type with position, or instance with position, would break both. This ADR also fixes the bindings that connect the scheme to the rest of the architecture: the instance serial to the ATECC608 hardware identity (ADR-0007), the document interface layer to Cyphal/DSDL (ADR-0002/0005), the integration-phase depth code to the gateway's runtime position tagging (ADR-0014 decision 7), and the suffix set to IndustryGrow's actual per-instance documents — together with the boundary between those documents and IndustryFlow's operational audit log (ADR-0004 rev 1). Rev 1 adds one further binding: the firmware document layer to the single shared codebase that runs on the carrier, so firmware identity follows the carrier (`E0001`), not the node personality (decision 16).
 
 ## Decision drivers
 
@@ -48,9 +61,9 @@ The axes meet only in the integration identifier
 whenever an instance is moved, removed, or replaced. A serial never encodes
 position; a position never encodes identity.
 
-A third notion — the **document layer** (`S/D/L/P/M/I`) — is not an axis but a
-classifier on the identity axis (which artifact about a given identity); it
-never denotes nesting.
+A third notion — the **document layer** (`S/D/L/P/M/I`, plus `F` for firmware,
+decision 16) — is not an axis but a classifier on the identity axis (which
+artifact about a given identity); it never denotes nesting.
 
 Every numbered decision below is a consequence of this invariant. The rejected
 alternatives (flat hierarchical serial; position baked into serial) are exactly
@@ -125,6 +138,7 @@ The single key to the trailing letter codes in an identifier: the **document-lay
 | `P`   | Protocol | document layer | decision 9 |
 | `M`   | Manual | document layer | decision 9 |
 | `I`   | Interface | document layer | decision 9 |
+| `F`   | Firmware (built image + source snapshot) | document layer | decision 16 |
 | `-QP` | Quality Protocol | lifecycle suffix | decision 10 |
 | `-QR` | Quality Report | lifecycle suffix | decision 10 |
 | `-CP` | Calibration Protocol | lifecycle suffix | decision 11 |
@@ -153,7 +167,7 @@ The single key to the trailing letter codes in an identifier: the **document-lay
 
 ### Document layers
 
-9. **Document-layer set `S` / `D` / `L` / `P` / `M` / `I`** — expanded in the code legend above. Two IndustryGrow-specific bindings: the **`I` (Interface)** document layer carries Cyphal subject-ID assignments and DSDL `industryflow.greenhouse.*` type definitions (ADR-0002 rev 3 decision 1; ADR-0005, planned); the **`L` (List)** document layer carries the per-module BOMs already drafted in the procurement and sensor-module documents.
+9. **Document-layer set `S` / `D` / `L` / `P` / `M` / `I`** — expanded in the code legend above. Two IndustryGrow-specific bindings: the **`I` (Interface)** document layer carries Cyphal subject-ID assignments and DSDL `industryflow.greenhouse.*` type definitions (ADR-0002 rev 3 decision 1; ADR-0005); the **`L` (List)** document layer carries the per-module BOMs already drafted in the procurement and sensor-module documents. **Rev 1** extends the set with **`F` (Firmware)** — the built node image and its source snapshot — whose carrier-rooted addressing is decision 16.
 
 ### Suffixes (per-instance lifecycle documents)
 
@@ -171,6 +185,10 @@ The single key to the trailing letter codes in an identifier: the **document-lay
 
 15. **The document store is an object store; identifiers are object keys.** The flat layout (decision 1) is chosen for object storage (S3-compatible buckets), not a hierarchical filesystem. Each artifact is a single object whose key *is* its identifier (`E0001-000001-L.csv`, `E0001-000001-D-Top_Layer.gtl`, a `-CC-YYYYMMDD` calibration certificate, and so on); there are no container objects and no real directories. The identifier-pattern filtering of decision 1 *is* the bucket's prefix listing (`ListObjectsV2(Prefix=…)`), executed server-side with no separate index to maintain. The object-store mechanics this enables — on-demand hierarchy synthesis via a delimiter, write-once / versioning for the immutable QC and provisioning records, and prefix-scoped retention and access policy — are deployment specifics (see Deferred decisions); a git checkout renders the same flat keyspace as a flat directory, which is incidental.
 
+### Firmware document layer
+
+16. **The firmware document layer `F` roots on the carrier (`E0001`), not the node module.** The node firmware is a single codebase (`firmware/`) shared by every node type — `common/` is the carrier support, `nodes/<type>/` are personalities selected at runtime by the module-ID strap (decision 7; ADR-0014 d6). The personality is a hardware/runtime attribute, not a separate codebase, so the firmware's `F` version tracks the one carrier-level codebase: `E0001-VVVVVV-F[.hex|-src.zip]`. `VVVVVV` is the firmware (codebase) version, independent of the `E0001` *board* design version — a firmware release bumps `F` without re-spinning the carrier PCB. Filing the firmware per-module (e.g. `E0006-…-F`) would make a single change to shared code bump the `F` version of every module that runs it, leaking a code-change count into N module identities — the same corruption decision 8 and alternative D forbid for serial-into-version. If per-type binaries are ever built from this one codebase they are build *variants* of the same versioned source (`E0001-VVVVVV-F-<type>`), not separate `F` roots. The `F` artifacts are reference firmware licensed AGPL-3.0-or-later (ADR-0002 d5), overriding the CERN-OHL-S `store/**` hardware default (`REUSE.toml`). The concrete file-naming form is recorded in `REGISTRY.md` (the *what*); this decision is the *why* and the root.
+
 ## Alternatives considered
 
 **A. A flat identifier — a single serial namespace that does not separate type, instance, and position.** *Rejected:* cannot express that one design has many instances (ADR-0014) or that an instance moves between positions and deployments (ADR-0016) without overloading a single number, and loses the ability to address type-level documents and per-instance documents distinctly. The type/instance/position split is the whole point.
@@ -184,6 +202,8 @@ The single key to the trailing letter codes in an identifier: the **document-lay
 **E. Record firmware/telemetry history as document-store suffixes.** *Rejected:* ADR-0004 rev 1 decisions 10 and 16 already route these to IndustryFlow's audit log. A parallel document record creates two sources of truth for the same events.
 
 **F. Issue a fresh serial when a board moves to a new deployment.** *Rejected:* the serial is the durable instance key bound to the ATECC608; mobility (ADR-0016) must preserve instance history. A move produces a new integration record and (typically) a new dated calibration record on the *same* serial.
+
+**G. File firmware per node module (`E000x-F`), under the module whose personality it runs.** The initial convention (a maintainer call recorded in `REGISTRY.md`, 2026-06-17): the M05 image filed under `E0006`. *Rejected on rev 1:* it conflates the built binary with the codebase. The firmware is one shared tree (`firmware/`) selected at runtime by the module-ID strap, so rooting `F` per-module means a single change to shared code bumps the `F` version of every module that embeds it — the same count-into-identity leak that decision 8 and alternative D reject for serial-into-version. The carrier (`E0001`) is the single codebase's hardware home and the constant across node types, so `F` roots there (decision 16); per-type images, if ever built, are version *variants* of that one root, not new roots.
 
 ## Consequences
 
@@ -211,7 +231,7 @@ The single key to the trailing letter codes in an identifier: the **document-lay
 - **ADR-0001** (machine/module data model) — the cabinet `machine` is the machine designation; functional subsystems are depth positions, not E-numbers.
 - **ADR-0002 (rev 3)** — carrier and M01–M05 are E-modules; the `I` document layer carries the Cyphal/DSDL definitions named there.
 - **ADR-0004 (rev 1)** — fixes the document-store / audit-log boundary; firmware and telemetry events stay platform-side and are not suffixes.
-- **ADR-0007 (planned)** — ATECC608 binding and certificate issuance are the `-PR` provisioning record and the cryptographic instance identity behind the serial.
+- **ADR-0007** — ATECC608 binding and certificate issuance are the `-PR` provisioning record and the cryptographic instance identity behind the serial.
 - **ADR-0014** — taxonomy reused as the E-vocabulary; partial-BOM realized as distinct assembly E-numbers over a shared bare design; gateway `(module_class, node_role, zone)` tagging is the integration-phase depth code.
 - **ADR-0015** — the deployment profile is not a stored document under this scheme; profile content (including model parameters) is profile-versioned, not suffix-addressed.
 - **ADR-0016** — inventory mobility is the reason suffixes are instance-keyed not position-keyed; deployment-level model calibration is profile-versioned, distinct from the `-CP`/`-CC` per-instance sensor calibration.
@@ -232,7 +252,7 @@ The single key to the trailing letter codes in an identifier: the **document-lay
 - ADR-0001: IndustryGrow framing — machine/module data model.
 - ADR-0002 (rev 3): Field bus architecture — carrier, M01–M05, ATECC608, Cyphal/DSDL.
 - ADR-0004 (rev 1): Gateway host hardening and stateless-edge operation — IndustryFlow audit log, firmware events.
-- ADR-0007 (planned): PKI architecture — ATECC608 binding, certificate provisioning.
+- ADR-0007: PKI, hardware identity, provisioning — ATECC608 binding, certificate provisioning.
 - ADR-0014: Sensor node taxonomy — module classes, module-ID straps, partial-BOM, gateway role/zone tagging.
 - ADR-0015: Gateway profile caching and local control loops — profile as single mutation channel.
 - ADR-0016: Empirical survey and state-space modeling — sensor-instance inventory and mobility.

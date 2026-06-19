@@ -2,17 +2,18 @@
 # SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
-# Build the M05 image and publish the release artifacts into store/ under the
-# ADR-0017 'F' (Firmware) document layer:
-#   store/E0006-000001-F.hex       built image
-#   store/E0006-000001-F-src.zip   source snapshot (firmware/ tree at HEAD)
+# Build the node image and publish the release artifacts into store/ under the
+# ADR-0017 (rev 1) 'F' (Firmware) document layer, rooted on the carrier E0001
+# (one shared codebase across node types; decision 16):
+#   store/E0001-000001-F.hex       built image
+#   store/E0001-000001-F-src.zip   source snapshot (firmware/ tree at HEAD)
 #
-# VVVVVV here is the FIRMWARE version (independent of the E0006 board design
-# version); bump FW_VER on a firmware release. Run from anywhere in the repo.
+# VVVVVV here is the FIRMWARE (codebase) version (independent of the E0001 carrier
+# board design version); bump FW_VER on a firmware release. Run from anywhere.
 set -eu
 
 FW_VER="000001"
-ART="E0006-${FW_VER}-F"
+ART="E0001-${FW_VER}-F"
 
 ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT"

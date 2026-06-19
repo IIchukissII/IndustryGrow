@@ -23,7 +23,7 @@ SPDX-License-Identifier = "CERN-OHL-S-2.0"
 # F-layer paths are annotated here and override the store/** default. (Added at
 # build time by firmware/tools/release.sh; this rule waits for them.)
 [[annotations]]
-path = ["store/E0006-*-F.hex", "store/E0006-*-F-src.zip"]
+path = ["store/E0001-*-F.hex", "store/E0001-*-F-src.zip"]
 precedence = "override"
 SPDX-FileCopyrightText = "2026 The IndustryGrow contributors"
 SPDX-License-Identifier = "AGPL-3.0-or-later"
