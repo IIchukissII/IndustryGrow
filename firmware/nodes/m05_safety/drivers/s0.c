@@ -4,7 +4,7 @@
  */
 
 #include "s0.h"
-#include "board.h"
+#include "e0001.h"
 
 #define S0_PIN 12u /* PB12 = GPIO_4 */
 

@@ -47,7 +47,7 @@ add_executable(m05.elf
   nodes/m05_safety/drivers/s0.c
   nodes/m05_safety/drivers/leak.c
   # --- common: shared across all node types ---
-  common/bsp/board.c
+  common/carrier/e0001.c
   common/platform/clock.c
   common/drivers/uart.c
   common/drivers/can.c
@@ -64,7 +64,7 @@ add_executable(m05.elf
 add_dependencies(m05.elf dsdl_generated)
 
 target_include_directories(m05.elf PRIVATE
-  common/bsp
+  common/carrier
   common/platform
   common/drivers
   common/cyphal

@@ -62,9 +62,12 @@ A Cyphal/CAN node. Application protocol and wire vocabulary are fixed elsewhere:
 
 ## Layout
 
-One codebase, one carrier, personality per node type (ADR-0002 d5): `common/` is
-shared by every node; `nodes/<type>/` is the per-node personality. This image is
-M05-SAFETY; M01–M04 become sibling `nodes/` later.
+One codebase, one carrier, personality per node type (ADR-0002 d5). The **carrier
+E0001 is the parent**: `common/carrier/` owns the bus, LEDs, MCU socket and node
+identity (module-ID straps + the ATECC608 secure element) shared by every node.
+A **node `nodes/<type>/` is a child** of E0001 — it asserts a module-ID strap
+pattern and adds its sensor personality, nothing more. This image is M05-SAFETY;
+M01–M04 become sibling `nodes/` later, each reusing the same carrier unit.
 
 ```
 firmware/
@@ -72,13 +75,15 @@ firmware/
 ├── cmake/      arm-none-eabi.cmake (toolchain) · dsdl.cmake (Nunavut codegen)
 ├── ldscripts/  STM32F405RGTx_FLASH.ld
 ├── common/                       ← shared across all node types
-│   ├── bsp/        board.{h,c}    ← carrier E0001 pins (from E0001-000001-D-pinmap)
-│   ├── platform/   clock.{h,c}    ← 168 MHz clock, SysTick, micros
+│   ├── carrier/    e0001.{h,c}    ← the E0001 carrier (PARENT): pins, LEDs, straps,
+│   │                                ATECC608/identity seam (from E0001-000001-D-pinmap)
+│   ├── platform/   clock.{h,c}    ← 168 MHz clock, SysTick, micros (SoC, below the carrier)
 │   ├── drivers/    can i2c uart   ← bxCAN, I2C1, debug UART (register-level)
 │   └── cyphal/     cyphal registers ← node skeleton: Heartbeat/GetInfo/register/ExecuteCommand
 ├── nodes/
-│   └── m05_safety/               ← the M05 personality
+│   └── m05_safety/               ← the M05 personality (CHILD of E0001)
 │       ├── main.c                ← clock → strap self-check → CAN test → node + sensors
+│       ├── module_id.h           ← M05's own module-ID strap pattern (0b101)
 │       ├── sensors.{h,c}         ← presence-probe + publish the M05 set
 │       └── drivers/  ina226 tmp117 s0 leak
 ├── dsdl/industryflow/greenhouse/safety/   ← DoorStatus, LeakStatus (Apache-2.0; energy uses standard uavcan.si.sample.energy)

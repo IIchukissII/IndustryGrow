@@ -5,7 +5,7 @@
 
 #include "sensors.h"
 
-#include "board.h"
+#include "e0001.h"
 #include "clock.h"
 #include "cyphal.h"
 #include "i2c.h"
@@ -63,7 +63,7 @@ void sensors_init(void)
     s0_init();
     leak_init();
 
-    /* Reed (PA15) input, pull-up; GPIOA clock already on from board_init(). */
+    /* Reed (PA15) input, pull-up; GPIOA clock already on from e0001_init(). */
     GPIOA->MODER &= ~(3u << (REED_PIN * 2u));
     GPIOA->PUPDR &= ~(3u << (REED_PIN * 2u));
     GPIOA->PUPDR |= (1u << (REED_PIN * 2u));
