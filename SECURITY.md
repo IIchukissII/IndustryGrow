@@ -63,7 +63,7 @@ The security architecture is described in the Architecture Decision Records
   firmware signing, and the gateway↔IndustryFlow trust boundary.
 - **ADR-0002 (rev 3)** — field bus architecture and the per-node ATECC608 secure
   element.
-- **ADR-0007 (planned)** — PKI: ATECC608 binding, certificate provisioning, and
+- **ADR-0007** — PKI: ATECC608 binding, certificate provisioning, and
   gateway-to-platform authentication.
 
 In-scope: the hardware designs, reference firmware, gateway software, and
