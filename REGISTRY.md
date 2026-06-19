@@ -76,30 +76,34 @@ SPxxxx-<layer>[-<slug>]        e.g.  SP0004-M-gateway-bringup   (Manual)
 
 ### Firmware document layer `F` (E-modules)
 
-ADR-0017 decision 9 fixes the E-document layer set `S / D / L / P / M / I`. It has
-no letter for a built **firmware** artifact, but the M05-SAFETY node ships one
-(reference firmware, AGPL-3.0-or-later per ADR-0002 d5). We extend the set with:
+ADR-0017 decision 9 fixes the document-layer set `S / D / L / P / M / I`;
+**ADR-0017 rev 1 (decision 16) adds `F` (Firmware)** for the built node image and
+its source snapshot. The firmware is one codebase shared by every node type, so
+`F` roots on the **carrier `E0001`**, not any one node module — the *why* is
+decision 16 / alternative G; this registry records the *what*:
 
 ```
-Exxxx-VVVVVV-F[.hex|-src.zip]   e.g.  E0006-000001-F.hex   (built image)
-                                      E0006-000001-F-src.zip (source snapshot)
+E0001-VVVVVV-F[.hex|-src.zip]   e.g.  E0001-000001-F.hex   (built image)
+                                      E0001-000001-F-src.zip (source snapshot)
 ```
 
-- **`F` = Firmware** — the built image and its source snapshot for the node whose
-  *personality* the module defines. The M05 firmware is filed under **`E0006`**
-  (the M05-SAFETY module), not the carrier `E0001` (which hosts every node type).
-- **`VVVVVV` is the firmware version**, independent of the E0006 *board* design
-  version — a firmware release bumps `F`'s version without re-spinning the PCB.
+- **`F` = Firmware** — the built image and its source snapshot for the shared node
+  codebase. Filed under **`E0001`** (the universal carrier whose one codebase every
+  node runs, the personality selected at runtime by the module-ID strap), **not** a
+  node module — filing per-module would bump N module `F`-versions for one
+  shared-code change (ADR-0017 rev 1, alternative G).
+- **`VVVVVV` is the firmware (codebase) version**, independent of the `E0001`
+  *board* design version — a firmware release bumps `F`'s version without
+  re-spinning the carrier PCB.
+- If per-type binaries are ever built from the one codebase they are version
+  *variants* (`E0001-VVVVVV-F-<type>`), not separate `F` roots (decision 16).
 - The artifacts are produced by `firmware/tools/release.sh` and licensed
   AGPL-3.0-or-later (annotated in `REUSE.toml`, overriding the CERN-OHL-S
   `store/**` hardware default).
-- This is a **maintainer-call naming convention recorded here** (maintainer call,
-  2026-06-17), like the SP convention above — promote it to an **ADR-0017
-  amendment** if it needs to constrain downstream tooling (ADR-0000 d1).
 
 ## Governing ADRs
 
-- ADR-0017 — component / document / instance identification (E-numbers, two-axis model).
+- ADR-0017 (rev 1) — component / document / instance identification (E-numbers, two-axis model; firmware `F` layer rooted on the carrier E0001, decision 16).
 - ADR-0019 — purchased-part (SP) identification.
 - ADR-0000 — single source of truth; vendor SKU and price live in the BOM, not here.
 - ADR-0014 — sensor-module taxonomy (module-ID straps, M01–M05).

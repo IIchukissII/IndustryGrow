@@ -28,7 +28,7 @@ Core Board, ADR-0002 rev 3); the sensor-module personality varies per node type
 > - **Verified on hardware (bare WeAct F405, ST-Link V3):** 168 MHz clock,
 >   module-ID strap self-check (correctly flags the `0b000` no-carrier mismatch),
 >   **bxCAN loopback self-test**, and the libcanard node coming up — all confirmed
->   over the USART1 debug log. The released image is `store/E0006-000001-F.hex`.
+>   over the USART1 debug log. The released image is `store/E0001-000001-F.hex`.
 > - **Next (needs the carrier PCB):** bus-level CAN **enumeration on the gateway**
 >   (the bare WeAct has no transceiver) and live **sensor readings** — the I²C
 >   sensors, reed, leak, S0, and the **ATECC608 identity read** are authored against
@@ -137,16 +137,18 @@ cmake --build firmware/build
 ## Release artifacts (`store/`)
 
 `firmware/tools/release.sh` builds the image and publishes it into `store/` under
-the ADR-0017 **`F` (Firmware)** document layer (see `REGISTRY.md`):
+the ADR-0017 (rev 1) **`F` (Firmware)** document layer (see `REGISTRY.md`):
 
 ```
-store/E0006-000001-F.hex       # built image
-store/E0006-000001-F-src.zip   # source snapshot of firmware/ at HEAD
+store/E0001-000001-F.hex       # built image
+store/E0001-000001-F-src.zip   # source snapshot of firmware/ at HEAD
 ```
 
-Filed under **`E0006`** (the M05 module defines the node personality), licensed
-AGPL-3.0-or-later (annotated in `REUSE.toml`). The local `firmware/build*/` tree
-stays git-ignored; only these released artifacts are committed.
+Filed under **`E0001`** (the carrier whose one codebase every node runs; the
+personality is strap-selected at runtime, so firmware identity follows the
+carrier, not the module — ADR-0017 rev 1 d16), licensed AGPL-3.0-or-later
+(annotated in `REUSE.toml`). The local `firmware/build*/` tree stays git-ignored;
+only these released artifacts are committed.
 
 ## Flash tool
 
