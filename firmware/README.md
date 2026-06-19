@@ -20,15 +20,21 @@ Core Board, ADR-0002 rev 3); the sensor-module personality varies per node type
 >   leak (ADC, gated-excitation), S0 pulse → joule energy; I²C presence-probing
 >   with 60 s re-probe (ADR-0014 d8); published on the standard SI sample types
 >   and the project `industryflow.greenhouse.safety` types (ADR-0005).
+> - **Carrier identity (ADR-0007):** the ATECC608 secure element on I²C2 is read
+>   at boot for its 9-byte serial, which becomes the Cyphal node `unique_id`
+>   (falling back to the STM32 factory UID when absent). Identity/provenance only
+>   — no crypto, key generation, or provisioning (those are Production/Phase-2 per
+>   ADR-0007 d6/d9); the node secure element is not a CAN-bus credential (d5).
 > - **Verified on hardware (bare WeAct F405, ST-Link V3):** 168 MHz clock,
 >   module-ID strap self-check (correctly flags the `0b000` no-carrier mismatch),
 >   **bxCAN loopback self-test**, and the libcanard node coming up — all confirmed
 >   over the USART1 debug log. The released image is `store/E0006-000001-F.hex`.
 > - **Next (needs the carrier PCB):** bus-level CAN **enumeration on the gateway**
 >   (the bare WeAct has no transceiver) and live **sensor readings** — the I²C
->   sensors, reed, leak, and S0 are authored against the datasheets but not yet
->   bench-checked. Then wire the sensor subject-IDs to `uavcan.pub.*.id` registers
->   (ADR-0005 d7) and the gated leak excitation pin once it is in the E0006 net/pin map.
+>   sensors, reed, leak, S0, and the **ATECC608 identity read** are authored against
+>   the datasheets but not yet bench-checked. Then wire the sensor subject-IDs to
+>   `uavcan.pub.*.id` registers (ADR-0005 d7) and the gated leak excitation pin
+>   once it is in the E0006 net/pin map.
 >
 > Firmware **sources** are `AGPL-3.0-or-later` (ADR-0002 decision 5); this
 > document is `CC-BY-SA-4.0`. First build needs `nnvg` (Nunavut) and the submodules
@@ -45,8 +51,11 @@ A Cyphal/CAN node. Application protocol and wire vocabulary are fixed elsewhere:
   `uavcan.si.sample.*` (SI units); accumulated S0 energy is **joule** (ADR-0005 rev 1 d3);
   door/leak are minimal `safety` status types with no command field (M05 is
   sense-only, ADR-0018 d9).
-- **Identity** — module class is read from the ID straps at boot (ADR-0014 d6/d8);
-  role/zone are *not* in firmware, they are gateway-side tags (ADR-0014 d7).
+- **Identity** — module *class* is read from the ID straps at boot (ADR-0014 d6/d8);
+  the carrier's ATECC608 secure element supplies the *instance* identity — its
+  serial becomes the Cyphal node `unique_id` (ADR-0007), with the STM32 factory
+  UID as fallback. Role/zone are *not* in firmware, they are gateway-side tags
+  (ADR-0014 d7).
 
 ## Toolchain (decided)
 
@@ -149,5 +158,6 @@ Documented for both ST-Link (`openocd` / `st-flash`) and WeAct USB DFU
 - ADR-0002 rev 3 — field bus (Cyphal/CAN, MCU, carrier, 500 kbit/s).
 - ADR-0005 (rev 1) — DSDL foundation (vocabulary, joule energy, node skeleton, port-IDs).
 - ADR-0014 — sensor-node taxonomy (module straps, presence-probing, gateway tagging).
+- ADR-0007 — PKI, hardware identity, provisioning (ATECC608 as the identity anchor).
 - ADR-0018 — M05 sense-only; door/leak report-only; S0 energy.
 - `store/E0001-000001-D-pinmap.md` — carrier pin map (the BSP source of truth).
