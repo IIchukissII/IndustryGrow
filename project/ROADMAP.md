@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # IndustryGrow — implementation roadmap
 
 - **Status:** Living document
-- **Date:** 2026-06-15
+- **Date:** 2026-06-19
 - **Project:** IndustryGrow
 - **Parent:** ADR-0001
 - **Companions:** ADR-0002, ADR-0004, ADR-0014, ADR-0015, ADR-0016, ADR-0018, ADR-0020
@@ -104,6 +104,16 @@ straddles stages 6 and 11.
 
 ## Notes and unfinished decisions
 
+- **Firmware for stage 1 is built and ahead of the boards.** The node firmware
+  compiles, flashes, and passes **layer-1** bring-up on a bare WeAct F405 —
+  168 MHz clock, module-ID strap self-check, bxCAN loopback, and the libcanard
+  node skeleton (ADR-0005 d5: Heartbeat / GetInfo / register / ExecuteCommand)
+  coming up — with the M05-SAFETY sensor personality and the ATECC608
+  carrier-identity read (ADR-0007) implemented. Stage 1's *outcome* — nodes
+  **enumerating on the gateway** — is not yet reached: the bare WeAct has no CAN
+  transceiver, so it waits on the carrier PCB. Released image: the carrier-rooted
+  `store/E0001-000001-F` (ADR-0017 rev 1). This is the firmware half of the
+  procurement long pole below — code waiting on boards.
 - ADR-0005 (DSDL) now exists and is **Accepted (rev 1)** — it grounds stage 2.
   ADR-0009 (profile schema) is still referenced but not yet written; it must
   exist before stage 9.
@@ -136,7 +146,7 @@ the gate is passed.
 - ADR-0003 — strawberry day-neutral reference profile.
 - ADR-0004 — gateway host hardening, stateless-edge operation.
 - ADR-0005 (rev 1) — DSDL foundation *(Accepted)*.
-- ADR-0007 — PKI, gateway identity, provisioning.
+- ADR-0007 — PKI, hardware identity, provisioning *(Accepted)*.
 - ADR-0009 — profile schema *(deferred; not yet audited)*.
 - ADR-0014 — sensor node taxonomy (M01–M05).
 - ADR-0015 — gateway profile caching and local control loops.
