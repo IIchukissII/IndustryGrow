@@ -107,19 +107,18 @@ standard node skeleton (ADR-0005 d5), no sensor publications yet:
    assumed. Status LED on **PA1** signals identity OK / mismatch.
 5. Optional debug log over **USART1 (PA9/PA10)**.
 
-**Verification path:** build for host first and run libcanard over **SocketCAN
-`vcan0`** (mirrors the gateway self-test already in `gateway/`), then cross-compile
-and flash the WeAct board; confirm the node appears via the gateway (`yakut`/
-`pycyphal`). USB DFU stays available for flashing because CAN1 was placed on
-PB8/PB9, off the USB pins (pin-map note 5).
+**Verification path:** cross-compile, flash the WeAct board over its ST-Link
+debug header (`openocd` / `st-flash`), and watch the **USART1 layer-1 bring-up
+log** — the 168 MHz clock, the module-ID strap self-check, and the bxCAN
+internal-loopback self-test all report there (all confirmed on a bare WeAct
+F405). Bus-level **enumeration on the gateway** (`yakut` / `pycyphal`) follows
+once the carrier PCB provides a CAN transceiver — the bare WeAct has none. USB
+DFU stays available for flashing because CAN1 was placed on PB8/PB9, off the USB
+pins (pin-map note 5).
 
 ## Build & flash
 
 ```sh
-# host / vcan build for protocol bring-up without hardware
-cmake -S firmware -B firmware/build-host -DIGROW_TARGET=host
-cmake --build firmware/build-host
-
 # cross build for the WeAct STM32F405 board
 cmake -S firmware -B firmware/build -DCMAKE_TOOLCHAIN_FILE=firmware/cmake/arm-none-eabi.cmake
 cmake --build firmware/build
