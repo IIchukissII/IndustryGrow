@@ -123,7 +123,7 @@ This ADR carries **decisions and rationale only**. On-disk formats, exact storag
 - ADR-0001: IndustryGrow framing — open-core platform, roadmap stages.
 - ADR-0002 (rev 3): Field bus architecture — classic CAN, 500 kbit/s; telemetry volume context; on-node preprocessing.
 - ADR-0004 (rev 1): Gateway host hardening and stateless-edge operation — decisions 8–9 (superseded on the endurance axis), decision 10 (platform-side hash chain, retained and relied upon), decision 11 (system logs, unaffected), decision 13 (firmware artifacts), alternatives A (audit log, stays rejected) and D (persistent buffer, endurance ground retired).
-- ADR-0007 (planned): PKI — ATECC-bound gateway identity.
+- ADR-0007: PKI — ATECC-bound gateway identity.
 - ADR-0015: Gateway profile caching and local control loops — decision 4 (`active-profile.json`, configuration-vs-operational-state distinction, amended here), alternative D (RAM-only profile, rejected there).
 - ADR-0016 (rev 1): Empirical survey and state-space modeling — survey phase, sensor-density-as-temporal-variable, off-line identification.
 - ADR-0018 (rev 1): Cabinet power distribution — +12 V SELV supply (SP0003), sensor-bus INA226 metering.

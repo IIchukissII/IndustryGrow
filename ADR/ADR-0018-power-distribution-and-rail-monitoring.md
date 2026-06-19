@@ -12,7 +12,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Parent:** ADR-0001
 - **Companions:** ADR-0002 (rev 3), ADR-0014, ADR-0015
 - **Supersedes:** ADR-0018 (initial draft, 2026-06-03)
-- **Relates to:** ADR-0017 (E-module identification), ADR-0007 (planned, PKI), actuator-taxonomy ADR (deferred per ADR-0014 decision 9)
+- **Relates to:** ADR-0017 (E-module identification), ADR-0007 (PKI), actuator-taxonomy ADR (deferred per ADR-0014 decision 9)
 
 ## Revision history
 
