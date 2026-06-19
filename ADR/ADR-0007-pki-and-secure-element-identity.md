@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0007: PKI, hardware identity, and provisioning
 
 - **ID:** ADR-0007
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-06-19
 - **Project:** IndustryGrow
 - **Parent:** ADR-0001
