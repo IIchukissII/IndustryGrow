@@ -106,6 +106,7 @@ ADRs are the source of truth for the design. Present in this repository:
 - **ADR-0003** — Strawberry day-neutral cultivation profile (reference profile) · *Proposed*
 - **ADR-0004** (rev 1) — Gateway host hardening & stateless-edge operation · *Accepted*
 - **ADR-0005** (rev 1) — DSDL foundation: `industryflow.greenhouse` vocabulary, standard-type reuse, port-ID allocation · *Accepted*
+- **ADR-0007** — PKI, hardware identity, and provisioning (ATECC608 secure element) · *Accepted*
 - **ADR-0014** (rev 1) — Sensor node taxonomy and module decomposition · *Accepted*
 - **ADR-0015** — Gateway profile caching and local control loops · *Accepted*
 - **ADR-0016** (rev 1) — Empirical survey and state-space modeling · *Proposed*
@@ -117,9 +118,9 @@ ADRs are the source of truth for the design. Present in this repository:
 Status follows the lifecycle in **ADR-0000** (decision 7); the project maintainers are
 the accepting authority.
 
-Planned / not yet written: ADR-0006 (mechanical/hydroponic), ADR-0007 (PKI),
-ADR-0008 (deployment topology), ADR-0009 (profile schema), ADR-0010 (commercial
-operations), ADR-IF-0001 (IndustryFlow `production_unit`).
+Planned / not yet written: ADR-0006 (mechanical/hydroponic), ADR-0008 (deployment
+topology), ADR-0009 (profile schema), ADR-0010 (commercial operations),
+ADR-IF-0001 (IndustryFlow `production_unit`).
 
 ## Licensing
 
