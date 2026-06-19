@@ -14,12 +14,21 @@
  */
 
 #include "e0001.h"
+#include "atecc608.h"
 #include "module_id.h"
 #include "clock.h"
 #include "cyphal.h"
 #include "can.h"
 #include "uart.h"
 #include "sensors.h"
+
+/* Print a byte as two uppercase hex digits over the debug UART. */
+static void put_hex8(uint8_t b)
+{
+    static const char hex[] = "0123456789ABCDEF";
+    uart_putc(hex[b >> 4]);
+    uart_putc(hex[b & 0xFu]);
+}
 
 /* Static Node-ID for bring-up. ADR-0005 d6 makes this register-provisioned;
  * a fixed default is fine on the closed cabinet bus until then. */
@@ -49,6 +58,22 @@ int main(void)
     int rc = can_selftest_loopback();
     uart_puts(rc == 0 ? "CAN loopback self-test OK\r\n"
                       : "CAN loopback self-test FAIL\r\n");
+
+    /* Carrier identity IC: probe the ATECC608 on I2C2 (ADR-0007 identity anchor).
+     * Its 9-byte serial becomes the Cyphal node unique-id; absent on a bare WeAct
+     * (no carrier), in which case the STM32 factory UID is used instead. */
+    atecc608_init();
+    uart_puts("ATECC608 carrier ID (I2C2): ");
+    if (atecc608_present()) {
+        const uint8_t *sn = atecc608_serial();
+        uart_puts("present, SN=");
+        for (unsigned i = 0; i < ATECC608_SERIAL_LEN; i++) {
+            put_hex8(sn[i]);
+        }
+        uart_puts(" -> node unique-id\r\n");
+    } else {
+        uart_puts("absent -> STM32 factory UID\r\n");
+    }
 
     /* Live bus + Cyphal node: publishes Heartbeat (1 Hz) and answers GetInfo,
      * so the node enumerates on the gateway console (roadmap stage 1). */
