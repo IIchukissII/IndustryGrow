@@ -121,7 +121,10 @@ y = C x + D u + v          (sparse measurement)
 ```
 
 where `x ∈ ℝⁿ` is the (reduced) field state, `u` the actuator vector, `w` the
-boundary/forcing terms, `y` the sparse sensor outputs, and `v`, `w` noise.
+boundary/forcing terms, `y` the sparse sensor outputs, and `v`, `w` noise. The
+estimator (L2, L4) runs in discrete time on the zero-order-hold–sampled model —
+`A_d = e^{AΔt}`, `B_d` the matching input matrix, `C` and `D` unchanged;
+discrete-time quantities carry the `d` subscript below.
 
 **L1 — survey & identification design.** Sensor placement and excitation are an
 optimal-experiment-design problem: choose inputs `u(t)` and the output map `C` to
@@ -139,15 +142,17 @@ everything."
 **L2 — field estimation (ROM + observer).** The full PDE field is projected onto a
 reduced basis (POD / balanced truncation) to get the tractable `n`-state model
 above, then reconstructed from sparse `y` by an observer. The steady-state Kalman
-gain solves the algebraic Riccati equation:
+gain (with process- and measurement-noise covariances `Q`, `R`) solves the
+algebraic Riccati equation:
 
 ```
-P = A P Aᵀ + Q − A P Cᵀ (C P Cᵀ + R)⁻¹ C P Aᵀ
-L = A P Cᵀ (C P Cᵀ + R)⁻¹
-x̂_{k+1} = A x̂_k + B u_k + L (y_k − C x̂_k)
+P = A_d P A_dᵀ + Q − A_d P Cᵀ (C P Cᵀ + R)⁻¹ C P A_dᵀ
+L = A_d P Cᵀ (C P Cᵀ + R)⁻¹
+x̂_{k+1} = A_d x̂_k + B_d u_k + L (y_k − C x̂_k)
 ```
 
-Reconstruction is well-posed iff the observability matrix has full rank — the
+Reconstruction is well-posed iff the observability matrix of the pair `(A, C)` has
+full rank (preserved by `(A_d, C)` under non-pathological sampling) — the
 control-theoretic restatement of ADR-0016's "minimum sensor placement"
 (decision 2):
 
@@ -168,10 +173,12 @@ Model-based decoupling/feedforward (LQR, then MPC for the commercial control mod
 of ADR-0001) minimizes
 
 ```
-J = Σ_k ( xₖᵀ Q xₖ + uₖᵀ R uₖ )
+J = Σ_k ( xₖᵀ Q_c xₖ + uₖᵀ R_c uₖ )
 ```
 
-subject to the plant model and the apparatus-subspace bounds of ADR-0016.
+subject to the plant model and the apparatus-subspace bounds of ADR-0016, with
+state/input weights `Q_c`, `R_c` — distinct objects from the noise covariances
+`Q`, `R` above.
 
 **L4 — residual-based fault detection.** The observer innovation is already
 computed:
@@ -188,8 +195,10 @@ formal content of ADR-0016 decision 7, at near-zero marginal cost.
 **L5 — crop-response identification.** Slow biological response is a grey-box
 input–output model identified across the staggered slots. With `m` slots offset by
 the cadence `τ`, the slots form a parallel, time-shifted experimental design; the
-effective sample rate of the cycle-bound learning loop improves ~`m`× over a
-single-slot experiment — the formal basis for "cadence-as-DoE."
+effective sample rate of the cycle-bound learning loop improves up to `m`× over a
+single-slot experiment — the formal basis for "cadence-as-DoE." The `m`× ceiling
+assumes slot independence (no shared confounder, low common-mode variance); that
+independence is itself a hypothesis L5 (and L7) must test, not assume.
 
 **L6 — two-level integration.** Validity of the two-level (biological / climate)
 split rests on singular-perturbation theory: with slow states `x_s` and fast
