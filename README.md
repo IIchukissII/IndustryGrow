@@ -10,6 +10,8 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 **An open-core platform for instrumented, profile-driven crop cultivation that scales — on one architecture — from an apartment-sized cabinet to a several-hundred-square-metre commercial facility.**
 
+> **Start here → [Motivation](MOTIVATION.md).** The gap this project is built to close, stated plainly.
+
 <table>
 <tr>
 <td width="300">
@@ -95,6 +97,15 @@ populated-BOM, not by new designs.
 | Phase 3 | Community profile registry, predictive ML, multi-cabinet coordination | Planned |
 
 The dependency-ordered build sequence (14 stages, with the real cross-stage dependencies) lives in [`project/ROADMAP.md`](project/ROADMAP.md).
+
+## Documentation
+
+| Read | For |
+|------|-----|
+| [`MOTIVATION.md`](MOTIVATION.md) | **Why** — the gap IndustryGrow is built to close |
+| [`project/ROADMAP.md`](project/ROADMAP.md) | **When** — the dependency-ordered build sequence |
+| [Architecture decision records](#architecture-decision-records) | **How** — the design decisions, the source of truth |
+| [`REGISTRY.md`](REGISTRY.md) | The hardware E-number / instance map |
 
 ## Architecture decision records
 
