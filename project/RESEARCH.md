@@ -193,7 +193,12 @@ its envelope signals model drift, equipment fault, or stale calibration — the
 formal content of ADR-0016 decision 7, at near-zero marginal cost.
 
 **L5 — crop-response identification.** Slow biological response is a grey-box
-input–output model identified across the staggered slots. With `m` slots offset by
+input–output model identified across the staggered slots. The response being
+identified is not only growth and yield but **quality** — measurable proxies
+(Brix, sugar–acid ratio, titratable acidity, volatile aroma profile, firmness)
+standing in for flavor, whose final judgment stays subjective and is validated by
+hedonic panel rather than by the model. Flavor thus enters as an objective the
+profile *weights* (L6), never as a property the model asserts. With `m` slots offset by
 the cadence `τ`, the slots form a parallel, time-shifted experimental design; the
 effective sample rate of the cycle-bound learning loop improves up to `m`× over a
 single-slot experiment — the formal basis for "cadence-as-DoE." The `m`× ceiling
@@ -211,6 +216,21 @@ states `x_f`,
 the timescale separation holds while `ε` (ratio of climate to biological time
 constants) is small; it degrades exactly where fast biology (minutes) couples into
 the climate loop — the contingency noted below.
+
+The slow objective the upper level pursues is itself multi-criteria — yield,
+energy, and quality traded against one another. It **maximizes** a value
+functional (not the regulator cost `J` of L3, which is minimized):
+
+```
+J_bio = w_y · yield + w_q · quality(Brix, acid, aroma, …) − w_e · energy
+```
+
+The weights `w` — above all the quality weight `w_q`, which encodes an inherently
+subjective preference — are set in the cultivation profile (ADR-0015), not in the
+model. This is deliberate: the model stays objective (it identifies the
+environment→response map), and every subjective choice is quarantined to the
+single mutation channel built to carry human intent. *Grow-by-objective* is
+precisely the act of choosing these weights.
 
 **L7 — scale & transfer.** Transfer is a model-validity question across domains: a
 model identified on deployment A retains predictive power on B only if the dominant

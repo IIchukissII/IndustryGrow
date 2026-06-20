@@ -65,6 +65,11 @@ inside a versioned profile. The contribution is integration and method, not
 novelty in any single component. One architecture and one data vocabulary place
 every discipline on a common substrate, so their joins can be built and studied.
 
+What an identified model makes possible is choice. Flavor, nutrition, variety —
+values an industrial supply chain optimizes away for yield and shelf life —
+become targets a profile can set, not fixed properties of the plant. The
+instrument does not decide what is worth growing; it makes the decision available.
+
 The same architecture serves three horizons. The cabinet proves the method. The
 deployment turns it into practice. The city is the far reading — distributed
 cultivation as a managed utility, modular units sharing a common library of
