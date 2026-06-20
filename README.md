@@ -103,6 +103,7 @@ The dependency-ordered build sequence (14 stages, with the real cross-stage depe
 | Read | For |
 |------|-----|
 | [`MOTIVATION.md`](MOTIVATION.md) | **Why** — the gap IndustryGrow is built to close |
+| [`project/RESEARCH.md`](project/RESEARCH.md) | **What's open** — the research directions (L1–L7) the gap opens |
 | [`project/ROADMAP.md`](project/ROADMAP.md) | **When** — the dependency-ordered build sequence |
 | [Architecture decision records](#architecture-decision-records) | **How** — the design decisions, the source of truth |
 | [`REGISTRY.md`](REGISTRY.md) | The hardware E-number / instance map |
