@@ -101,9 +101,50 @@ E0001-VVVVVV-F[.hex|-src.zip]   e.g.  E0001-000001-F.hex   (built image)
   AGPL-3.0-or-later (annotated in `REUSE.toml`, overriding the CERN-OHL-S
   `store/**` hardware default).
 
+## Blocked / superseded versions
+
+Per ADR-0017 decision 17, **withdrawn design artifacts** — *blocked* (defective) or
+*superseded* (replaced) — are archived as a single object `Exxxx-VVVVVV-{BLOCKED,SUPERSEDED}.zip`
+and their loose per-file objects removed. Withdrawal is scoped to the defect: when only one
+production stage is bad (e.g. the layout), the still-valid sources stay loose. The status token
+lives in the object key (the *what-status*); this table is the human-readable *why* and the exact
+file boundary (ADR-0000 d2). This is the one place a *version* is named in this registry — an
+explicit exception to the type-level rule above, because a withdrawal is a published fact about
+that version (ADR-0017 d17); live versions and serials otherwise remain off this registry.
+
+| Version | Status | Archive object | Scope & reason |
+|---------|--------|----------------|----------------|
+| `E0001-000001` (carrier v0.0.1) | `BLOCKED` | `E0001-000001-BLOCKED.zip` | **Layout only.** The PCB **mirrors the WeAct core-board socket footprint** — reverses the pin order on the sockets, so every WeAct signal lands on the wrong net; the board as laid out is unbuildable. The archive holds the defective layout (`.kicad_pcb`) and every fabrication output derived from it (gerbers, drills, placement `-D-pos`, render `-D.png`). Pre-fabrication: no instances were ever built. |
+
+> **Kept loose** (still valid, the basis for the corrected relayout `E0001-000002`): the
+> **schematic** `E0001-000001.kicad_sch` and its project files (`.kicad_pro`, `.kicad_prl`), the
+> **BOM** `E0001-000001-L.csv`, and the **pin map** `E0001-000001-D-pinmap.md`. The carrier's
+> **firmware** (`E0001-000001-F.hex`, `E0001-000001-F-src.zip`) is also **not** blocked — the `F`
+> layer is the independently-versioned shared codebase rooted on the carrier (ADR-0017 d16), not
+> the board design, so it stays loose despite sharing the `E0001-000001` prefix.
+
+### Procedure — archiving withdrawn artifacts
+
+1. **Confirm the withdrawal and its scope.** Decide the status (`BLOCKED` = defective, must never
+   be used; `SUPERSEDED` = replaced by a newer version, no defect) and which artifacts are actually
+   dead. Localize to the defect: if only the layout is wrong, keep the schematic, BOM, and pin map
+   loose as the basis for the relayout. **Close any editor** holding the files first (a KiCad
+   session leaves `~*.lck` lock files — archiving while open risks the editor rewriting them).
+2. **Bundle the withdrawn artifacts** into `Exxxx-VVVVVV-<STATUS>.zip` — for a bad layout, the
+   layout source (`.kicad_pcb`) and every generated fabrication output (gerbers, drills, placement
+   `-D-pos`, render `-D.png`). **Exclude** the firmware `-F.*` objects (a separate axis,
+   ADR-0017 d16) and any still-valid sources you are keeping loose.
+3. **`git rm` the loose per-file objects** now inside the archive, leaving the one `.zip` plus the
+   objects you kept loose.
+4. **Record it** by adding a row to the table above with the scope and concrete reason.
+5. **Licensing.** The `.zip` is hardware design content, so it is covered by the `store/**`
+   CERN-OHL-S default in `REUSE.toml` (it does not match the `-F-src.zip` AGPL override) — no
+   `REUSE.toml` change is needed.
+6. **Ship** via branch → PR; the maintainer accepts (ADR-0000 d7).
+
 ## Governing ADRs
 
-- ADR-0017 (rev 1) — component / document / instance identification (E-numbers, two-axis model; firmware `F` layer rooted on the carrier E0001, decision 16).
+- ADR-0017 (rev 1) — component / document / instance identification (E-numbers, two-axis model; firmware `F` layer rooted on the carrier E0001, decision 16; withdrawn-version archival, decision 17).
 - ADR-0019 — purchased-part (SP) identification.
 - ADR-0000 — single source of truth; vendor SKU and price live in the BOM, not here.
 - ADR-0014 — sensor-module taxonomy (module-ID straps, M01–M05).
