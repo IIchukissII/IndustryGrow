@@ -240,7 +240,7 @@
       "internal_id": "",
       "mfg": "",
       "mpn": "",
-      "sch_revision": "000001"
+      "sch_revision": "000002"
     },
     "layer_pairs": [],
     "layer_presets": [],
@@ -488,7 +488,7 @@
     "pinned_symbol_libs": []
   },
   "meta": {
-    "filename": "E0001-000001.kicad_pro",
+    "filename": "E0001-000002.kicad_pro",
     "version": 3
   },
   "net_settings": {
@@ -523,7 +523,7 @@
   "pcbnew": {
     "last_paths": {
       "idf": "",
-      "netlist": "",
+      "netlist": "./",
       "plot": "production/",
       "specctra_dsn": "",
       "vrml": ""
@@ -675,12 +675,12 @@
     "subpart_id_separator": 0,
     "top_level_sheets": [
       {
-        "filename": "E0001-000001.kicad_sch",
+        "filename": "E0001-000002.kicad_sch",
         "name": "Stammblatt",
         "uuid": "e6bf351d-e9cb-40e2-a753-e88fd218a7be"
       }
     ],
-    "used_designators": "",
+    "used_designators": "#PWR16,#PWR18",
     "variants": []
   },
   "sheets": [
