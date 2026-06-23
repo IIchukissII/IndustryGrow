@@ -112,16 +112,27 @@ file boundary (ADR-0000 d2). This is the one place a *version* is named in this 
 explicit exception to the type-level rule above, because a withdrawal is a published fact about
 that version (ADR-0017 d17); live versions and serials otherwise remain off this registry.
 
+> **Reissue is the other half of supersession.** A successor version reissues the **full** face
+> set under its own identifier — schematic, BOM, pin map, layout, and fabrication outputs — even
+> for faces byte-identical to the prior version (only the embedded version field differs). Each
+> artifact's object key *is* its full identifier (ADR-0017 decision 15: one object per identifier),
+> so versions never share a face by reference; the superseded version's now-stale loose faces are
+> then archived as below. (Example: `E0001-000002` reissues `-L.csv` and `-D-pinmap.md`
+> byte-for-byte from `000001`, whose loose faces move into `E0001-000001-SUPERSEDED.zip`.)
+
 | Version | Status | Archive object | Scope & reason |
 |---------|--------|----------------|----------------|
 | `E0001-000001` (carrier v0.0.1) | `BLOCKED` | `E0001-000001-BLOCKED.zip` | **Layout only.** The PCB **mirrors the WeAct core-board socket footprint** — reverses the pin order on the sockets, so every WeAct signal lands on the wrong net; the board as laid out is unbuildable. The archive holds the defective layout (`.kicad_pcb`) and every fabrication output derived from it (gerbers, drills, placement `-D-pos`, render `-D.png`). Pre-fabrication: no instances were ever built. |
+| `E0001-000001` (carrier v0.0.1) | `SUPERSEDED` | `E0001-000001-SUPERSEDED.zip` | **Sources, by the relayout `E0001-000002`.** The v0.0.1 design faces kept loose after the layout was `BLOCKED` — schematic (`.kicad_sch`), project files (`.kicad_pro`, `.kicad_prl`), BOM (`-L.csv`), and pin map (`-D-pinmap.md`) — are replaced by `E0001-000002`, which reissues the full face set. No defect: the relayout corrects the mirrored footprint that blocked the v0.0.1 *layout*; these sources were always valid. The firmware `-F.*` objects stay loose (independent axis, ADR-0017 d16). |
 
-> **Kept loose** (still valid, the basis for the corrected relayout `E0001-000002`): the
-> **schematic** `E0001-000001.kicad_sch` and its project files (`.kicad_pro`, `.kicad_prl`), the
-> **BOM** `E0001-000001-L.csv`, and the **pin map** `E0001-000001-D-pinmap.md`. The carrier's
-> **firmware** (`E0001-000001-F.hex`, `E0001-000001-F-src.zip`) is also **not** blocked — the `F`
-> layer is the independently-versioned shared codebase rooted on the carrier (ADR-0017 d16), not
-> the board design, so it stays loose despite sharing the `E0001-000001` prefix.
+> **Was kept loose** while the relayout was in progress (the basis for the corrected
+> `E0001-000002`): the **schematic** `E0001-000001.kicad_sch` and its project files
+> (`.kicad_pro`, `.kicad_prl`), the **BOM** `E0001-000001-L.csv`, and the **pin map**
+> `E0001-000001-D-pinmap.md`. With `E0001-000002` released these are now **superseded** and
+> archived in `E0001-000001-SUPERSEDED.zip` (row above). The carrier's **firmware**
+> (`E0001-000001-F.hex`, `E0001-000001-F-src.zip`) is **not** withdrawn — the `F` layer is the
+> independently-versioned shared codebase rooted on the carrier (ADR-0017 d16), not the board
+> design, so it **stays loose** despite sharing the `E0001-000001` prefix.
 
 ### Procedure — archiving withdrawn artifacts
 
