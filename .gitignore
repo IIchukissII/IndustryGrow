@@ -1,0 +1,34 @@
+
+# KiCad local-history auto-backups (editor artifact, not project content)
+store/.history/
+
+# KiCad editor lock files (created while a file is open)
+*.lck
+
+# KiCad working-session project-local files (e.g. E0006-000001_work.kicad_prl) —
+# editor state, not project content; the canonical *.kicad_prl stays tracked.
+*_work.kicad_prl
+
+# QElectroTech backup files (editor artifact, not project content)
+*.qet.bak
+
+# Draft ADRs (work-in-progress, not yet assigned a number)
+ADR-*DRAFT*.md
+
+# Python bytecode (e.g. from compiling the gateway/ self-test locally)
+__pycache__/
+*.pyc
+
+# Firmware build artifacts (CMake build trees, Nunavut-generated code, binaries)
+firmware/build*/
+firmware/**/build*/
+*.elf
+*.o
+*.d
+
+# STM32CubeIDE / Eclipse project files (IDE state, not project content — the
+# firmware is canonically CMake + arm-none-eabi-gcc; "no IDE lock-in", README).
+.project
+.cproject
+.settings/
+.cache/

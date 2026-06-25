@@ -1,0 +1,57 @@
+#!/usr/sbin/nft -f
+# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+# SPDX-License-Identifier: CC-BY-SA-4.0
+#
+# Gateway firewall — ADR-0004 rev 1 decisions 5 and 6.
+# Rendered by provision.sh (the two `define` lines below are substituted from
+# /etc/industrygrow/gateway.env) and installed as /etc/nftables.conf.
+#
+# INBOUND: default-deny, except SSH on the LAN interface only. The gateway is not
+#   a server to the LAN (ADR-0004 rev 1 decision 6: no service exposed to the LAN).
+#
+# OUTBOUND: OPEN at bring-up. ADR-0004 rev 1 decision 5 ("outbound to IndustryFlow
+#   only") is the PRODUCTION / roadmap-stage-11 target. IndustryFlow does not exist
+#   yet (ADR-0020 context), and apt/pip need egress to provision. Locking egress to
+#   a non-existent endpoint now would break bring-up. The production lock-down is
+#   marked below; it is NOT enabled by this automation.
+
+flush ruleset
+
+define LAN_IFACE = "eth0"
+define SSH_PORT = 22
+
+table inet industrygrow {
+    chain input {
+        type filter hook input priority 0; policy drop;
+
+        ct state established,related accept
+        ct state invalid drop
+        iif "lo" accept
+
+        # ICMP / ICMPv6 — keep diagnostics and PMTUD working.
+        ip protocol icmp accept
+        ip6 nexthdr ipv6-icmp accept
+
+        # SSH on the LAN interface only (bring-up posture; ADR-0004 d2/d6).
+        # Production posture (ADR-0004 d2) keeps sshd OFF by default — see Manual.
+        iifname $LAN_IFACE tcp dport $SSH_PORT ct state new accept
+    }
+
+    chain forward {
+        type filter hook forward priority 0; policy drop;
+    }
+
+    chain output {
+        # BRING-UP: egress open (apt/pip/DNS/NTP need it).
+        type filter hook output priority 0; policy accept;
+
+        # ===== PRODUCTION TARGET (ADR-0004 rev 1 decision 5, roadmap stage 11) =====
+        # When IndustryFlow exists, flip `policy accept` -> `policy drop` and allow
+        # only the minimum egress, e.g.:
+        #     ct state established,related accept
+        #     oif "lo" accept
+        #     udp dport 53 accept                       # DNS
+        #     ip daddr <industryflow-ip> tcp dport 443 accept   # mTLS upload
+        # DO NOT enable now: no endpoint exists and provisioning needs egress.
+    }
+}

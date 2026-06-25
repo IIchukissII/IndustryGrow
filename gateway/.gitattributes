@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+# SPDX-License-Identifier: CC-BY-SA-4.0
+#
+# LINE-ENDING POLICY for gateway/ (see the Manual's "Line-ending conflict" flag).
+#
+# The repo-wide CRLF output convention applies to Windows-facing DOCS only. Every
+# artifact in this directory that is executed or parsed ON THE PI must be LF: CRLF
+# breaks shebang lines (`/bin/bash^M: bad interpreter`), systemd unit parsing,
+# nftables, the apt/sshd/journald conf parsers, and Python. These are pinned LF so
+# git checkout never converts them, regardless of a contributor's core.autocrlf.
+
+*.sh                                  text eol=lf
+*.service                             text eol=lf
+*.nft                                 text eol=lf
+*.conf                                text eol=lf
+*.py                                  text eol=lf
+*.env                                 text eol=lf
+*.example                             text eol=lf
+requirements.txt                      text eol=lf
+requirements.lock                     text eol=lf
+jail.local                            text eol=lf
+52-industrygrow-unattended-upgrades   text eol=lf
+
+# Windows-facing artifacts keep the repo CRLF convention.
+*.md                                  text eol=crlf
+*.ps1                                 text eol=crlf

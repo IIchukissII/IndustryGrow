@@ -1,0 +1,176 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2040 860" font-family="Helvetica Neue, Arial, sans-serif">
+<defs>
+<marker id="ah-g" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 L3,5 Z" fill="#2E6B4F"/></marker>
+<marker id="ah-r" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 L3,5 Z" fill="#B23A2E"/></marker>
+<marker id="ah-a" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 L3,5 Z" fill="#C2871F"/></marker>
+<marker id="ah-b" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 L3,5 Z" fill="#2F5E8C"/></marker>
+<marker id="ah-k" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 L3,5 Z" fill="#5B6B63"/></marker>
+</defs>
+<style>.disp{font-weight:700}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}text{fill:#16201B}</style>
+<rect x="0" y="0" width="2040" height="860" fill="#F4F6F5"/>
+<rect x="36"   y="124" width="549"   height="346" fill="#E6EFE8"  rx="6"/>
+<rect x="585" y="124" width="840" height="346" fill="#EFEDE6" />
+<rect x="1425" y="124" width="579" height="346" fill="#EAEDF0" rx="6"/>
+<text class="mono" x="48" y="146" font-size="13" letter-spacing="1.5" fill="#5B6B63">PHASE 1 — DATA COLLECTION ONLY</text>
+<text class="mono" x="597" y="146" font-size="13" letter-spacing="1.5" fill="#5B6B63">PHASE 2 — EDGE AUTONOMY</text>
+<text class="mono" x="1437" y="146" font-size="13" letter-spacing="1.5" fill="#5B6B63">PHASE 2 — CLOUD · SCALE · COMMERCIAL</text>
+<line x1="585" y1="124" x2="585" y2="470" stroke="#16201B" stroke-width="2.6"/>
+<text class="mono disp" x="585" y="492" font-size="12" text-anchor="middle" fill="#16201B">first actuator = phase change · survey #7 is already Phase 2</text>
+<line x1="1425" y1="124" x2="1425" y2="470" stroke="#5B6B63" stroke-width="1.4" stroke-dasharray="5 5"/>
+<text class="disp" x="40" y="48" font-size="30" letter-spacing="-0.3">IndustryGrow — roadmap as a dependency map</text>
+<text class="mono" x="40" y="74" font-size="14" fill="#5B6B63">14 typed stages · the map shows real dependencies, not the listed order · v0.1</text>
+<line x1="1180" y1="40" x2="1310" y2="40" stroke="#2E6B4F" stroke-width="2.4" marker-end="url(#ah-g)"/>
+<text class="mono" x="1330" y="45" font-size="12.5">sequential dependency</text>
+<line x1="1180" y1="66" x2="1310" y2="66" stroke="#B23A2E" stroke-width="2.6" stroke-dasharray="7 5" marker-end="url(#ah-r)"/>
+<text class="mono" x="1330" y="71" font-size="12.5">hidden dep — needed earlier than scheduled</text>
+<line x1="1180" y1="92" x2="1310" y2="92" stroke="#C2871F" stroke-width="2.6" stroke-dasharray="7 5" marker-end="url(#ah-a)"/>
+<text class="mono" x="1330" y="97" font-size="12.5">refinement — provisional → final</text>
+<rect x="1180" y="110" width="22" height="14" fill="#2F5E8C" opacity="0.85" rx="2"/>
+<text class="mono" x="1330" y="122" font-size="12.5">external system (IndustryFlow)</text>
+<rect x="37" y="261" width="116" height="78" rx="9" fill="#FFFFFF" stroke="#16201B" stroke-width="1.4"/>
+<circle cx="37" cy="300" r="14" fill="#16201B"/>
+<text class="mono disp" x="37" y="304" font-size="13" text-anchor="middle" fill="#F4F6F5">1</text>
+<text class="disp" x="101" y="296" font-size="13.5" text-anchor="middle">CAN</text>
+<text class="disp" x="101" y="315" font-size="13.5" text-anchor="middle">bring-up</text>
+<text class="mono" x="95" y="357" font-size="11" text-anchor="middle" fill="#5B6B63">ADR-0002·04·17</text>
+<rect x="177" y="261" width="116" height="78" rx="9" fill="#FFFFFF" stroke="#16201B" stroke-width="1.4"/>
+<circle cx="177" cy="300" r="14" fill="#16201B"/>
+<text class="mono disp" x="177" y="304" font-size="13" text-anchor="middle" fill="#F4F6F5">2</text>
+<text class="disp" x="241" y="296" font-size="13.5" text-anchor="middle">DSDL</text>
+<text class="disp" x="241" y="315" font-size="13.5" text-anchor="middle">foundation</text>
+<text class="mono" x="235" y="357" font-size="11" text-anchor="middle" fill="#5B6B63">ADR-0005</text>
+<rect x="317" y="261" width="116" height="78" rx="9" fill="#FFFFFF" stroke="#16201B" stroke-width="1.4"/>
+<circle cx="317" cy="300" r="14" fill="#16201B"/>
+<text class="mono disp" x="317" y="304" font-size="13" text-anchor="middle" fill="#F4F6F5">3</text>
+<text class="disp" x="381" y="296" font-size="13.5" text-anchor="middle">Sensor</text>
+<text class="disp" x="381" y="315" font-size="13.5" text-anchor="middle">MVP</text>
+<text class="mono" x="375" y="357" font-size="11" text-anchor="middle" fill="#5B6B63">ADR-0014</text>
+<rect x="457" y="261" width="116" height="78" rx="9" fill="#FFFFFF" stroke="#16201B" stroke-width="1.4"/>
+<circle cx="457" cy="300" r="14" fill="#16201B"/>
+<text class="mono disp" x="457" y="304" font-size="13" text-anchor="middle" fill="#F4F6F5">4</text>
+<text class="disp" x="521" y="296" font-size="13.5" text-anchor="middle">Sensor</text>
+<text class="disp" x="521" y="315" font-size="13.5" text-anchor="middle">platform</text>
+<text class="mono" x="515" y="357" font-size="11" text-anchor="middle" fill="#5B6B63">ADR-0014·18</text>
+<rect x="597" y="261" width="116" height="78" rx="9" fill="#FFFFFF" stroke="#16201B" stroke-width="1.4"/>
+<circle cx="597" cy="300" r="14" fill="#16201B"/>
+<text class="mono disp" x="597" y="304" font-size="13" text-anchor="middle" fill="#F4F6F5">5</text>
+<text class="disp" x="661" y="296" font-size="13.5" text-anchor="middle">Actuator</text>
+<text class="disp" x="661" y="315" font-size="13.5" text-anchor="middle">layer</text>
+<text class="mono" x="655" y="357" font-size="11" text-anchor="middle" fill="#5B6B63">ADR-0018 d10</text>
+<rect x="737" y="261" width="116" height="78" rx="9" fill="#FFFFFF" stroke="#16201B" stroke-width="1.4"/>
+<circle cx="737" cy="300" r="14" fill="#16201B"/>
+<text class="mono disp" x="737" y="304" font-size="13" text-anchor="middle" fill="#F4F6F5">6</text>
+<text class="disp" x="801" y="296" font-size="13.5" text-anchor="middle">Gateway</text>
+<text class="disp" x="801" y="315" font-size="13.5" text-anchor="middle">MVP</text>
+<text class="mono" x="795" y="357" font-size="11" text-anchor="middle" fill="#5B6B63">ADR-0015</text>
+<circle cx="849" cy="265" r="11" fill="#C2871F" stroke="#F4F6F5" stroke-width="1.5"/>
+<text class="mono disp" x="849" y="269" font-size="12" text-anchor="middle" fill="#fff">1</text>
+<rect x="877" y="261" width="116" height="78" rx="9" fill="#FFFFFF" stroke="#16201B" stroke-width="1.4"/>
+<circle cx="877" cy="300" r="14" fill="#16201B"/>
+<text class="mono disp" x="877" y="304" font-size="13" text-anchor="middle" fill="#F4F6F5">7</text>
+<text class="disp" x="941" y="296" font-size="13.5" text-anchor="middle">Survey</text>
+<text class="disp" x="941" y="315" font-size="13.5" text-anchor="middle">mode</text>
+<text class="mono" x="935" y="357" font-size="11" text-anchor="middle" fill="#5B6B63">ADR-0016·20</text>
+<circle cx="989" cy="265" r="11" fill="#2E6B4F" stroke="#F4F6F5" stroke-width="1.5"/>
+<text class="mono disp" x="989" y="269" font-size="12" text-anchor="middle" fill="#fff">2</text>
+<rect x="1017" y="261" width="116" height="78" rx="9" fill="#FFFFFF" stroke="#16201B" stroke-width="1.4"/>
+<circle cx="1017" cy="300" r="14" fill="#16201B"/>
+<text class="mono disp" x="1017" y="304" font-size="13" text-anchor="middle" fill="#F4F6F5">8</text>
+<text class="disp" x="1081" y="305" font-size="14.5" text-anchor="middle">Modeling</text>
+<text class="mono" x="1075" y="357" font-size="11" text-anchor="middle" fill="#5B6B63">ADR-0016</text>
+<rect x="1157" y="261" width="116" height="78" rx="9" fill="#FFFFFF" stroke="#16201B" stroke-width="1.4"/>
+<circle cx="1157" cy="300" r="14" fill="#16201B"/>
+<text class="mono disp" x="1157" y="304" font-size="13" text-anchor="middle" fill="#F4F6F5">9</text>
+<text class="disp" x="1221" y="296" font-size="13.5" text-anchor="middle">Profile</text>
+<text class="disp" x="1221" y="315" font-size="13.5" text-anchor="middle">system</text>
+<text class="mono" x="1215" y="357" font-size="11" text-anchor="middle" fill="#5B6B63">ADR-0009 *</text>
+<circle cx="1269" cy="265" r="11" fill="#B23A2E" stroke="#F4F6F5" stroke-width="1.5"/>
+<text class="mono disp" x="1269" y="269" font-size="12" text-anchor="middle" fill="#fff">3</text>
+<rect x="1297" y="261" width="116" height="78" rx="9" fill="#FFFFFF" stroke="#16201B" stroke-width="1.4"/>
+<circle cx="1297" cy="300" r="14" fill="#16201B"/>
+<text class="mono disp" x="1297" y="304" font-size="13" text-anchor="middle" fill="#F4F6F5">10</text>
+<text class="disp" x="1361" y="296" font-size="13.5" text-anchor="middle">First</text>
+<text class="disp" x="1361" y="315" font-size="13.5" text-anchor="middle">cultivation</text>
+<text class="mono" x="1355" y="357" font-size="11" text-anchor="middle" fill="#5B6B63">ADR-0003</text>
+<rect x="1437" y="261" width="116" height="78" rx="9" fill="#FFFFFF" stroke="#16201B" stroke-width="1.4"/>
+<circle cx="1437" cy="300" r="14" fill="#16201B"/>
+<text class="mono disp" x="1437" y="304" font-size="13" text-anchor="middle" fill="#F4F6F5">11</text>
+<text class="disp" x="1501" y="296" font-size="13.5" text-anchor="middle">Cloud</text>
+<text class="disp" x="1501" y="315" font-size="13.5" text-anchor="middle">integration</text>
+<text class="mono" x="1495" y="357" font-size="11" text-anchor="middle" fill="#5B6B63">ADR-0004·07·20</text>
+<rect x="1577" y="261" width="116" height="78" rx="9" fill="#FFFFFF" stroke="#16201B" stroke-width="1.4"/>
+<circle cx="1577" cy="300" r="14" fill="#16201B"/>
+<text class="mono disp" x="1577" y="304" font-size="13" text-anchor="middle" fill="#F4F6F5">12</text>
+<text class="disp" x="1641" y="296" font-size="13.5" text-anchor="middle">Multi-</text>
+<text class="disp" x="1641" y="315" font-size="13.5" text-anchor="middle">cabinet</text>
+<text class="mono" x="1635" y="357" font-size="11" text-anchor="middle" fill="#5B6B63">ADR-0001</text>
+<rect x="1717" y="261" width="116" height="78" rx="9" fill="#FFFFFF" stroke="#16201B" stroke-width="1.4"/>
+<circle cx="1717" cy="300" r="14" fill="#16201B"/>
+<text class="mono disp" x="1717" y="304" font-size="13" text-anchor="middle" fill="#F4F6F5">13</text>
+<text class="disp" x="1781" y="296" font-size="13.5" text-anchor="middle">Commercial</text>
+<text class="disp" x="1781" y="315" font-size="13.5" text-anchor="middle">ready</text>
+<text class="mono" x="1775" y="357" font-size="11" text-anchor="middle" fill="#5B6B63">OTA: no ADR</text>
+<rect x="1857" y="261" width="116" height="78" rx="9" fill="#FFFFFF" stroke="#16201B" stroke-width="1.4"/>
+<circle cx="1857" cy="300" r="14" fill="#16201B"/>
+<text class="mono disp" x="1857" y="304" font-size="13" text-anchor="middle" fill="#F4F6F5">14</text>
+<text class="disp" x="1921" y="296" font-size="13.5" text-anchor="middle">IndustryGrow</text>
+<text class="disp" x="1921" y="315" font-size="13.5" text-anchor="middle">v1.0</text>
+<text class="mono" x="1915" y="357" font-size="11" text-anchor="middle" fill="#5B6B63">exit gate</text>
+<line x1="153" y1="300" x2="176" y2="300" stroke="#2E6B4F" stroke-width="1.9" marker-end="url(#ah-g)"/>
+<line x1="293" y1="300" x2="316" y2="300" stroke="#2E6B4F" stroke-width="1.9" marker-end="url(#ah-g)"/>
+<line x1="433" y1="300" x2="456" y2="300" stroke="#2E6B4F" stroke-width="1.9" marker-end="url(#ah-g)"/>
+<line x1="573" y1="300" x2="596" y2="300" stroke="#2E6B4F" stroke-width="1.9" marker-end="url(#ah-g)"/>
+<line x1="713" y1="300" x2="736" y2="300" stroke="#2E6B4F" stroke-width="1.9" marker-end="url(#ah-g)"/>
+<line x1="993" y1="300" x2="1016" y2="300" stroke="#2E6B4F" stroke-width="1.9" marker-end="url(#ah-g)"/>
+<line x1="1133" y1="300" x2="1156" y2="300" stroke="#2E6B4F" stroke-width="1.9" marker-end="url(#ah-g)"/>
+<line x1="1273" y1="300" x2="1296" y2="300" stroke="#2E6B4F" stroke-width="1.9" marker-end="url(#ah-g)"/>
+<line x1="1553" y1="300" x2="1576" y2="300" stroke="#2E6B4F" stroke-width="1.9" marker-end="url(#ah-g)"/>
+<line x1="1693" y1="300" x2="1716" y2="300" stroke="#2E6B4F" stroke-width="1.9" marker-end="url(#ah-g)"/>
+<line x1="1833" y1="300" x2="1856" y2="300" stroke="#2E6B4F" stroke-width="1.9" marker-end="url(#ah-g)"/>
+<path d="M 655 261 Q 795.0 247 935 261" fill="none" stroke="#2E6B4F" stroke-width="1.9" marker-end="url(#ah-g)"/>
+<text class="mono" x="795.0" y="243" font-size="10.5" text-anchor="middle" fill="#2E6B4F">survey path (open-loop)</text>
+<path d="M 795 261 Q 1075.0 232 1355 261" fill="none" stroke="#2E6B4F" stroke-width="1.9" stroke-dasharray="2 4" marker-end="url(#ah-g)"/>
+<text class="mono" x="1075.0" y="228" font-size="10.5" text-anchor="middle" fill="#2E6B4F">rule-based control loops</text>
+<path d="M 1355 261 Q 1635.0 216 1915 261" fill="none" stroke="#2E6B4F" stroke-width="1.9" stroke-dasharray="2 4" marker-end="url(#ah-g)"/>
+<text class="mono" x="1635.0" y="212" font-size="10.5" text-anchor="middle" fill="#2E6B4F">≥ 1 full cultivation cycle</text>
+<circle cx="1495" cy="339" r="3.4" fill="#B23A2E"/>
+<path d="M 1495 339 Q 1355.0 402 1215 339" fill="none" stroke="#B23A2E" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#ah-r)"/>
+<text class="mono disp" x="1425.0" y="399" font-size="11" text-anchor="middle" fill="#B23A2E">signed / versioned / rollback profile</text>
+<circle cx="1075" cy="339" r="3.4" fill="#C2871F"/>
+<path d="M 1075 339 Q 935.0 398 795 339" fill="none" stroke="#C2871F" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#ah-a)"/>
+<text class="mono disp" x="935.0" y="395" font-size="11" text-anchor="middle" fill="#C2871F">model refines the loops</text>
+<rect x="1636" y="360" width="360" height="70" rx="7" fill="#2F5E8C" opacity="0.92"/>
+<text class="disp" x="1650" y="384" font-size="13.5" fill="#fff">IndustryFlow — external platform work</text>
+<text class="mono" x="1650" y="405" font-size="11" fill="#EAF0F6">mTLS endpoint · production_unit model</text>
+<text class="mono" x="1650" y="421" font-size="11" fill="#EAF0F6">profile distribution API · audit-trail schema</text>
+<path d="M 1636 378 Q 1585 354 1525 341" fill="none" stroke="#2F5E8C" stroke-width="2.2" marker-end="url(#ah-b)"/>
+<line x1="40" y1="500" x2="2000" y2="500" stroke="#5B6B63" stroke-width="1" stroke-dasharray="3 4"/>
+<text class="mono disp" x="40" y="524" font-size="13" letter-spacing="1.5" fill="#16201B">STRUCTURAL RISKS  ·  #2 RESOLVED BY ADR-0020</text>
+<rect x="40.0" y="536" width="637.3333333333334" height="150" rx="8" fill="#FCFDFC" stroke="#C2871F" stroke-width="1.4"/>
+<rect x="40.0" y="536" width="6" height="150" rx="3" fill="#C2871F"/>
+<circle cx="70.0" cy="562" r="12" fill="#C2871F"/>
+<text class="mono disp" x="70.0" y="566" font-size="13" text-anchor="middle" fill="#fff">1</text>
+<text class="disp" x="92.0" y="567" font-size="15">Provisional control</text>
+<text class="mono" x="58.0" y="592" font-size="11.5" fill="#16201B">Loops at #7 are rule-based (ADR-0015 d8); proper tuning</text>
+<text class="mono" x="58.0" y="610" font-size="11.5" fill="#16201B">needs the model from #8. Survey #7 runs open-loop and does</text>
+<text class="mono" x="58.0" y="628" font-size="11.5" fill="#16201B">NOT need #6.  Natural order: #5→#7→#8→#6/#9→#10.</text>
+<rect x="701.3333333333334" y="536" width="637.3333333333334" height="150" rx="8" fill="#FCFDFC" stroke="#2E6B4F" stroke-width="1.4"/>
+<rect x="701.3333333333334" y="536" width="6" height="150" rx="3" fill="#2E6B4F"/>
+<circle cx="731.3333333333334" cy="562" r="12" fill="#2E6B4F"/>
+<text class="mono disp" x="731.3333333333334" y="566" font-size="13" text-anchor="middle" fill="#fff">2</text>
+<text class="disp" x="753.3333333333334" y="567" font-size="15">Persistence — resolved (ADR-0020)</text>
+<text class="mono" x="719.3333333333334" y="592" font-size="11.5" fill="#16201B">Survey #7 needs a durable sink, but cloud lands only at</text>
+<text class="mono" x="719.3333333333334" y="610" font-size="11.5" fill="#16201B">#11 — so for #1–10 the gateway IS the primary store.</text>
+<text class="mono" x="719.3333333333334" y="628" font-size="11.5" fill="#16201B">ADR-0020: an SSD/NVMe medium retires the endurance bar; a</text>
+<text class="mono" x="719.3333333333334" y="646" font-size="11.5" fill="#16201B">time-boxed survey-capture path + bounded store-and-forward</text>
+<text class="mono" x="719.3333333333334" y="664" font-size="11.5" fill="#16201B">buffer. Local audit log stays rejected (threat model).</text>
+<rect x="1362.6666666666667" y="536" width="637.3333333333334" height="150" rx="8" fill="#FCFDFC" stroke="#B23A2E" stroke-width="1.4"/>
+<rect x="1362.6666666666667" y="536" width="6" height="150" rx="3" fill="#B23A2E"/>
+<circle cx="1392.6666666666667" cy="562" r="12" fill="#B23A2E"/>
+<text class="mono disp" x="1392.6666666666667" y="566" font-size="13" text-anchor="middle" fill="#fff">3</text>
+<text class="disp" x="1414.6666666666667" y="567" font-size="15">Profile is two things</text>
+<text class="mono" x="1380.6666666666667" y="592" font-size="11.5" fill="#16201B">Local profile file is doable at #6 (ADR-0015 d4); a signed /</text>
+<text class="mono" x="1380.6666666666667" y="610" font-size="11.5" fill="#16201B">versioned / rollback profile needs PKI + IndustryFlow → #11.</text>
+<text class="mono" x="1380.6666666666667" y="628" font-size="11.5" fill="#16201B">First cultivation #10 can run on a plain local file.</text>
+<text class="mono" x="40" y="712" font-size="11.5" fill="#5B6B63">* ADR-0009 (profile schema) is referenced but not yet written — must exist before #9 (ADR-0005, DSDL, is now Accepted).  —  #14 gate also pulls from #10 (one full cycle) and #11 (mTLS, survives net loss + reboot).</text>
+</svg>

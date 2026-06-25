@@ -1,0 +1,87 @@
+{
+  "id": "strawberry-day-neutral-v1",
+  "version": "1.0",
+  "license": "CC-BY-SA-4.0",
+  "_status": "Reference instance. Profile schema and registry mechanics are to be formalized by ADR-0009 (deferred); this file anticipates that schema. The values here are the single source of truth for setpoints (ADR-0000 dec 2); ADR-0003 holds the structure and rationale, not the values.",
+  "_philosophy": "IndustryGrow plant metaphor: roots = hardware/apparatus, leaves = biological parameters. This profile specifies the leaves (biological subspace, ADR-0016) and binds to the roots (apparatus subspace); it does not re-specify hardware.",
+
+  "crop": {
+    "comment": "Day-neutral strawberry; the cadence-driven operating mode requires day-neutral (not June-bearing) varieties — ADR-0003 Variety (dec 1-2).",
+    "species": "Fragaria × ananassa",
+    "type": "day-neutral",
+    "primary_cultivar": "Albion",
+    "fallback_cultivars": ["Seascape", "San Andreas", "Monterey", "Portola"]
+  },
+
+  "operating_mode": {
+    "comment": "Continuous staggered cultivation; one slot completes its cycle each cadence interval — ADR-0003 dec 4.",
+    "mode": "continuous-staggered",
+    "slots": 9,
+    "slot_offset_weeks": 2,
+    "harvest_cadence_weeks": 2,
+    "steady_state": { "fruiting_slots": 6, "pre_fruit_slots": 3 }
+  },
+
+  "cycle": {
+    "comment": "Per-plant cycle: vegetative -> fruiting -> decline; new plants from internal propagation — ADR-0003 dec 3, 5.",
+    "total_weeks": 19,
+    "phases": { "pre_fruit_weeks": 6, "fruiting_weeks": 12, "decline_weeks": 1 },
+    "propagation": "internal; 1-2 mother plants in a cooler zone produce runners, rooted before transplant"
+  },
+
+  "leaves": {
+    "comment": "Biological subspace (ADR-0016) - variables the plant physiology responds to; the only variables that receive setpoints.",
+
+    "climate": {
+      "comment": "Day/night differential drives sugar accumulation; humidity regulated by VPD not RH (Botrytis suppression + transpiration) — ADR-0003 dec 6-8.",
+      "air_temperature_c": { "day": 20, "night": 14 },
+      "vpd_kpa": { "min": 0.8, "max": 1.2, "applies": "both photoperiods" },
+      "co2": "ambient (no enrichment in the reference build)"
+    },
+
+    "air_movement": {
+      "comment": "Canopy airflow for transpiration and leaf-boundary-layer management; verified by the M01 anemometer — ADR-0003 Climate, ADR-0014 M01.",
+      "mode": "active circulation, well-mixed cabinet"
+    },
+
+    "light": {
+      "comment": "Long photoperiod maximises DLI (day-neutral tolerates any); ramped transitions; phase-dependent spectrum; DLI target at the fruiting canopy — ADR-0003 dec 9-12.",
+      "photoperiod_h": { "on": 16, "off": 8 },
+      "transition_ramp_minutes": 30,
+      "spectrum": {
+        "vegetative": "warm white ~3500K + minor blue (compact growth)",
+        "flowering_fruiting": "warm white + 660nm red + 730nm far-red + UV-A 365-385nm trace"
+      },
+      "dli_mol_m2_day": { "min": 17, "max": 20, "at": "fruiting canopy" }
+    },
+
+    "root_zone": {
+      "comment": "Hydroponic solution chemistry - biological targets the plant responds to (ADR-0016), not hardware. Phase-dependent EC/pH; calcium prioritised — ADR-0003 dec 14-17.",
+      "method": "hydroponic",
+      "phases": {
+        "vegetative": { "ec_ms_cm": { "min": 1.2, "max": 1.4 }, "ph": { "min": 5.8, "max": 6.2 }, "formulation": "N-emphasised" },
+        "flowering_fruiting": { "ec_ms_cm": { "min": 1.6, "max": 1.8 }, "ph": { "min": 5.8, "max": 6.2 }, "formulation": "K-emphasised, calcium-loaded" }
+      },
+      "calcium": "prioritised; Ca:K above the typical leafy-greens baseline (deficiency causes tipburn and poor fruit quality)"
+    },
+
+    "pollination": {
+      "comment": "Mechanical airflow pollination - no insects, no manual brushing — ADR-0003 dec 13.",
+      "method": "low-speed fan over the flowering zone",
+      "pulse_seconds": 60,
+      "interval": "hourly during photoperiod"
+    }
+  },
+
+  "roots": {
+    "comment": "Apparatus subspace (ADR-0016) - the hardware that realises the leaves. Referenced, not re-specified: apparatus bounds are crop-agnostic hardware properties owned by the hardware spec, not copied into a crop profile (ADR-0000 dec 3).",
+    "binding": {
+      "comment": "Hardware this profile assumes; owned by the cited ADRs, not by this file.",
+      "sensing_and_actuation": "carrier + sensor modules M01-M05 (ADR-0014)",
+      "power_and_metering": "central distribution + monitoring board, M05 (ADR-0018)",
+      "dosing": "two-part A/B nutrient concentrate via peristaltic pumps, switched per slot phase (ADR-0003 dec 17)"
+    },
+    "apparatus_bounds": "held within tolerance / alarmed in software per ADR-0016 (apparatus subspace) and ADR-0018; not crop-specific, not enumerated here",
+    "survival_floor": "the hardware over-temperature interlock at the heating actuator is an independent override floor, separate from this profile (ADR-0015 dec 11, ADR-0018 dec 10)"
+  }
+}
