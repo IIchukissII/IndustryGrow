@@ -63,6 +63,7 @@ load_env() {
     IGROW_CAN_HAT_OSC="16000000"
     IGROW_CAN0_INT="25"
     IGROW_CAN1_INT="24"
+    IGROW_CAN_HAT_SPI_MAXFREQ="1000000"
     IGROW_UNATTENDED_REBOOT_TIME=""
     IGROW_PERSISTENT_BUFFER="off"
     IGROW_INDUSTRYFLOW_ENDPOINT=""
@@ -170,13 +171,20 @@ setup_can_hat() {
     sed -i "/^# BEGIN IndustryGrow-CAN-HAT/,/^# END IndustryGrow-CAN-HAT/d" "${cfg}"
 
     if [ "${IGROW_CAN_HAT}" = "mcp2515" ]; then
-        log "managing MCP2515 HAT overlay in ${cfg} (osc=${IGROW_CAN_HAT_OSC}, can0 int=${IGROW_CAN0_INT}, can1 int=${IGROW_CAN1_INT:-none})"
+        # spimaxfrequency caps the SPI clock to the MCP2515. REQUIRED on the Pi 5
+        # (RP1): the default clock is too fast, so the reads that clear the INT flag
+        # get corrupted and the interrupt storms — the driver then never surfaces
+        # received frames (RX dead, though init/TX look fine). 1 MHz is reliable.
+        local spi_suffix=""
+        [ -n "${IGROW_CAN_HAT_SPI_MAXFREQ}" ] && \
+          spi_suffix=",spimaxfrequency=${IGROW_CAN_HAT_SPI_MAXFREQ}"
+        log "managing MCP2515 HAT overlay in ${cfg} (osc=${IGROW_CAN_HAT_OSC}, can0 int=${IGROW_CAN0_INT}, can1 int=${IGROW_CAN1_INT:-none}, spimaxfreq=${IGROW_CAN_HAT_SPI_MAXFREQ:-default})"
         {
             echo "${begin}"
             echo "dtparam=spi=on"
-            echo "dtoverlay=mcp2515-can0,oscillator=${IGROW_CAN_HAT_OSC},interrupt=${IGROW_CAN0_INT}"
+            echo "dtoverlay=mcp2515-can0,oscillator=${IGROW_CAN_HAT_OSC},interrupt=${IGROW_CAN0_INT}${spi_suffix}"
             [ -n "${IGROW_CAN1_INT}" ] && \
-              echo "dtoverlay=mcp2515-can1,oscillator=${IGROW_CAN_HAT_OSC},interrupt=${IGROW_CAN1_INT}"
+              echo "dtoverlay=mcp2515-can1,oscillator=${IGROW_CAN_HAT_OSC},interrupt=${IGROW_CAN1_INT}${spi_suffix}"
             echo "${end}"
         } >> "${cfg}"
     elif [ "${IGROW_CAN_HAT}" != "off" ]; then
