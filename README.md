@@ -126,7 +126,7 @@ ADRs are the source of truth for the design. Present in this repository:
 - **ADR-0018** (rev 1) — Cabinet-level power distribution and consumption metering · *Proposed*
 - **ADR-0019** — Purchased-part (SP) identification · *Accepted*
 - **ADR-0020** — Gateway persistence model (local store as lifecycle-dependent data sink) · *Proposed (draft)*
-- **ADR-0021** — Instance-and-integration ERP: the pre-cloud system of record · *Proposed*
+- **ADR-0021** — Instance-and-integration ERP: the pre-cloud system of record · *Accepted*
 
 Status follows the lifecycle in **ADR-0000** (decision 7); the project maintainers are
 the accepting authority.
