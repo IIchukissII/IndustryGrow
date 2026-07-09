@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0021: Instance-and-integration ERP — the pre-cloud system of record
 
 - **ID:** ADR-0021
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-07-09
 - **Project:** IndustryGrow
 - **Parent:** ADR-0001
