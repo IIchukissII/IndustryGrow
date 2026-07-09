@@ -112,7 +112,7 @@ The dependency-ordered build sequence (14 stages, with the real cross-stage depe
 
 ADRs are the source of truth for the design. Present in this repository:
 
-- **ADR-0000** — Decision records and the single-source-of-truth discipline · *Accepted*
+- **ADR-0000** (rev 1) — Decision records and the single-source-of-truth discipline (adds the cross-project ADR namespace) · *Accepted*
 - **ADR-0001** (rev 1) — Project framing: open-core cultivation platform on IndustryFlow · *Accepted*
 - **ADR-0002** (rev 3) — Field bus architecture · *Accepted*
 - **ADR-0003** — Strawberry day-neutral cultivation profile (reference profile) · *Proposed*
@@ -126,6 +126,7 @@ ADRs are the source of truth for the design. Present in this repository:
 - **ADR-0018** (rev 1) — Cabinet-level power distribution and consumption metering · *Proposed*
 - **ADR-0019** — Purchased-part (SP) identification · *Accepted*
 - **ADR-0020** — Gateway persistence model (local store as lifecycle-dependent data sink) · *Proposed (draft)*
+- **ADR-0021** — Instance-and-integration ERP: the pre-cloud system of record · *Proposed*
 
 Status follows the lifecycle in **ADR-0000** (decision 7); the project maintainers are
 the accepting authority.
