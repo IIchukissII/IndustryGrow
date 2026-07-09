@@ -37,13 +37,36 @@ list small; growth is a smell.
 and moves with it if the foundation is extracted as a separate stratum.
 `[D]` domain / CEA-specific — stays with IndustryGrow.
 
-All current entries are `[F]`: type / instance / position / document
-identification is platform-foundational. Domain terms (crop, profile, VPD,
-photoperiod, …) enter as `[D]` when added.
+The identification entries (type / instance / position / document) are all `[F]`
+— platform-foundational. The **IndustryFlow / IndustryGrow** pair below is the
+origin of the `[F]`/`[D]` split itself and carries both tags. Further domain
+terms (crop, profile, VPD, photoperiod, …) enter as `[D]` when added.
 
 ---
 
 ## Part 1 — Reserved terms (exactly one meaning)
+
+**IndustryFlow** `[F]` — the independent, **multitenant** industrial-IoT **core**
+platform: history, analytics, audit, profile distribution, and the
+`production_unit` data model. Foundational — it does not depend on IndustryGrow
+and moves with the foundation if the foundation is extracted. Origin: ADR-0001.
+
+**IndustryGrow** `[D]` — the CEA **domain layer** built *over* the IndustryFlow
+core (field hardware, firmware, edge software, cultivation profiles). **Not
+standalone**: it *extends* IndustryFlow (the `production_unit` entity, cultivation
+DSDL types, plugin interfaces) — it does not replace or absorb it. At cloud
+integration the two are **core-plus-layer**, never one swallowing the other.
+Origin: ADR-0001 (decision 7); the core-plus-layer integration model is ADR-0021
+(decisions 2, 16).
+
+**ADR-IF-`NNNN`** `[F]` — a decision record owned by the **IndustryFlow**
+project, in *its* repository and number space (e.g. `ADR-IF-0001`, the
+`production_unit` entity). Distinct from a bare **`ADR-NNNN`**, which is an
+**IndustryGrow** record in *this* repository. The two projects never share a
+number: a decision is filed under the project that owns it — foundational/core →
+`ADR-IF-`, domain/layer → `ADR-`. Origin of the rule: ADR-0000 (rev 1,
+decision 8). ADR-0001 introduces `ADR-IF-0001` and the core/layer split the
+namespace expresses; the rule is first applied to a new record in ADR-0021.
 
 **Axis** `[F]` — one of the two orthogonal dimensions of identity: the
 **identity axis** (what a thing is / which copy) and the **position axis**

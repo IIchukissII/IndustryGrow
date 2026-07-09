@@ -3,13 +3,18 @@ SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
-# ADR-0000: Decision records and the single-source-of-truth discipline
+# ADR-0000 (rev 1): Decision records and the single-source-of-truth discipline
 
-- **ID:** ADR-0000
+- **ID:** ADR-0000 (rev 1)
 - **Status:** Accepted
-- **Date:** 2026-06-12
+- **Date:** 2026-07-09
 - **Project:** IndustryGrow
 - **Parent:** — (root; this ADR governs the form of all other ADRs)
+- **Supersedes:** ADR-0000 (initial, 2026-06-12)
+
+## Revision history
+
+- **rev 1 (2026-07-09)** — Adds decision 8, the **cross-project ADR namespace**: IndustryGrow decisions are `ADR-NNNN` in this repository, IndustryFlow decisions are `ADR-IF-NNNN` in the IndustryFlow repository, and the two never share a number. Adds alternatives E and F and a consequence pair. The convention was applied implicitly from ADR-0001 onward — which introduced the `ADR-IF-0001` reference and the core/layer split it rests on — but had never been recorded as a decision, exactly the unwritten-discipline gap this ADR exists to close. No existing decision changed.
 
 ## Context and problem
 
@@ -42,6 +47,8 @@ This ADR names the discipline the project already half-follows and makes it the 
 
 7. **Status lifecycle and accepting authority.** An ADR is `Proposed` while under discussion, `Accepted` once the project **maintainers** judge the decision binding, and `Superseded` when a later revision or ADR replaces it (per decision 5). Acceptance records *agreement*, not implementation — IndustryGrow is pre-fabrication, so a decision is accepted when it is settled, not when it is built. The accepting authority is the project **maintainers**; acceptance is effected through the normal review-and-merge process by setting the `Status` field to `Accepted` (and, when a revision supersedes a prior record, setting that record to `Superseded`).
 
+8. **ADRs are namespaced by owning project; the two projects never share a number.** IndustryGrow and IndustryFlow are distinct projects in distinct repositories (ADR-0001): IndustryFlow is the independent core platform, IndustryGrow the domain layer built over it. Their decision records occupy **separate number spaces**. An IndustryGrow decision is `ADR-NNNN` in *this* repository; an IndustryFlow decision is `ADR-IF-NNNN` in the IndustryFlow repository (e.g. `ADR-IF-0001`, the `production_unit` entity). A decision is filed under the project that **owns** it — a foundational/core concern under `ADR-IF-`, a domain/layer concern under `ADR-`. A cross-project citation (this repo's ADR-0017 referencing `ADR-IF-0001`) points *across* the namespace boundary; it does not pull the referenced decision into this repo's number space, and it does not create a local placeholder for it. This is a rule about the *form and identity* of the decision record — this ADR's scope — so it is recorded here rather than in any subsystem ADR (cf. alternative C's reasoning for keeping methodology in the root). `GLOSSARY.md` binds the `ADR-IF-` token to this decision; ADR-0001 remains the origin of the core/layer split the namespace expresses.
+
 ## Alternatives considered
 
 **A. Leave the discipline as unwritten convention.** *Rejected:* an unwritten rule cannot be cited in review, cannot be inferred by new contributors, and is enforced by the author's memory rather than by process — the failure mode that motivates this ADR.
@@ -52,6 +59,10 @@ This ADR names the discipline the project already half-follows and makes it the 
 
 **D. Keep the discipline only in tooling configuration or author working notes.** *Rejected:* those are not the repository's source of truth and are not authoritative for contributors. A rule about where truth lives must itself live in the source of truth.
 
+**E. Number all decisions in one shared space across both projects.** *Rejected:* IndustryFlow and IndustryGrow have independent lifecycles and separate repositories; a single counter would force cross-repo coordination to allocate every number and would blur the core/layer ownership the two-project split exists to make legible (ADR-0001). Independent per-project namespaces let each project number and evolve on its own, joined only by explicit cross-references (decision 8).
+
+**F. Record the namespace rule in ADR-0001, or only in `GLOSSARY.md`.** *Rejected:* ADR-0001 owns the product, licensing, and data-model shape; the glossary binds words to meanings and, by its own authority statement, points rather than originates. The rule about *how decision records are numbered and identified* is ADR-form governance — this ADR's scope — so the decision lives here, and both ADR-0001's usage and the glossary's `ADR-IF-` entry point to it. This mirrors alternative C: methodology stays in the methodology root.
+
 ## Consequences
 
 ### Positive
@@ -59,12 +70,14 @@ This ADR names the discipline the project already half-follows and makes it the 
 - There is one place to look for a decision's rationale and one place to change a value; the review question "is this duplicated?" becomes mechanical.
 - The discipline that ADR-0004 and ADR-0017 already apply is now named, citable, and inheritable rather than personal habit.
 - Rationale survives changes of tooling, memory, and contributors, because it is captured once in a durable artifact.
+- The two-project number space is explicit (decision 8): an `ADR-IF-` citation reads unambiguously as a cross-project reference to an IndustryFlow record — not a missing or mis-numbered local ADR — and a contributor knows which repository and number space a new decision belongs in.
 
 ### Negative
 
 - Every substantive change to a recorded decision now carries supersession ceremony (rev title, `Supersedes:`, narrative rationale) rather than a quick in-place edit. This is intentional friction — the cost of a non-drifting record.
 - Contributors must learn the *why/what* split and resist the natural convenience of copying a value into the document they happen to be editing.
 - Cross-references replace inline copies, adding a layer of indirection: obtaining a value sometimes means following a reference to its authoritative home rather than reading it where it is used.
+- A cross-project reference cannot be resolved within this repository alone (decision 8): an `ADR-IF-` record lives in the IndustryFlow repo and must be followed there. This is the unavoidable cost of two honestly-separate number spaces.
 
 ## Deferred decisions
 
@@ -74,7 +87,8 @@ This ADR names the discipline the project already half-follows and makes it the 
 
 ## References
 
-- ADR-0001: IndustryGrow framing — product, licensing, and data-model scope (distinct from this methodology root).
+- ADR-0001: IndustryGrow framing — product, licensing, and data-model scope (distinct from this methodology root); origin of the IndustryFlow-core / IndustryGrow-layer split the ADR namespace (decision 8) expresses.
+- `GLOSSARY.md`: binds the `ADR-IF-` / `ADR-` tokens and the IndustryFlow / IndustryGrow terms to decision 8 and ADR-0001.
 - ADR-0004 (rev 1): Gateway host hardening — applies single-source-of-truth by moving the audit trail platform-side (decisions 10, 16; alternative A).
 - ADR-0017: Component, document, and instance identification — applies single-source-of-truth in its driver "do not duplicate the operational audit trail" and rejected alternative E.
 - M. Nygard, "Documenting Architecture Decisions" (2011) — the ADR practice this record formalizes for the project.
