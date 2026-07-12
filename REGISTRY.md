@@ -59,6 +59,7 @@ recorded here, 2026-06-16). A **designed accessory** filed on an SP root as a
 *what*, ADR-0000 d2):
 
 - `SP0004-M-gateway-bringup` — gateway bring-up Manual.
+- `SP0004-D-rp5-case-src.zip` — Raspberry Pi 5 gateway case: printed two-shell enclosure (top + bottom Autodesk Inventor `.ipt` parts), an accessory to the gateway Pi (ADR-0019 d9).
 
 ### Firmware document layer `F` (E-modules)
 
