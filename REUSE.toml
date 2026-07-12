@@ -36,6 +36,16 @@ precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 The IndustryGrow contributors"
 SPDX-License-Identifier = "CC-BY-SA-4.0"
 
+# Repo submodule manifest — a list of firmware dependency URLs. The submodule
+# contents are gitlinks (not files in this tree) and so are not REUSE-scanned;
+# only this manifest needs a licence. Kept inline-header-free as a clean git
+# config file and annotated here, like .gitignore above.
+[[annotations]]
+path = ".gitmodules"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 The IndustryGrow contributors"
+SPDX-License-Identifier = "CC-BY-SA-4.0"
+
 # Cultivation profiles (JSON instances) — strict JSON has no comment syntax for an
 # inline SPDX header, so they are annotated here. Profiles are open by default
 # (CC-BY-SA 4.0) per ADR-0003.
