@@ -31,7 +31,7 @@ This ADR adds a parallel, deliberately minimal identifier for purchased (COTS) p
 
 ## Decision
 
-1. **Purchased (COTS) parts are identified by an `SP` number — `SPxxxx`** (`SP` + four digits): a second type-root on the identity axis (ADR-0017), parallel to the E-module, for things the project buys rather than designs. Like the E-number it is opaque; its meaning lives in the registry. (`SP` = "Supplied Part" — registry gloss, confirm.)
+1. **Purchased (COTS) parts are identified by an `SP` number — `SPxxxx`** (`SP` + four digits): a second type-root on the identity axis (ADR-0017), parallel to the E-module, for things the project buys rather than designs. Like the E-number it is opaque; its meaning lives in the registry. (`SP` = "Supplied Part".)
 
 2. **No project version, no project serial.** The supplier owns versioning, so the SP identifier carries no `VVVVVV` field; it is type-level. Where a purchased unit must be tracked as an individual instance (e.g., the gateway Raspberry Pi), the instance key is the vendor's own serial / device identity recorded in the BOM and, where applicable, the provisioning record — never a project `NNNNNN`.
 
@@ -98,7 +98,7 @@ Decisions 8 and 9 are recorded as additive in-place amendments (dated 2026-07-12
 
 ## Deferred decisions
 
-- `SP` registry gloss and the registry section holding `SPxxxx → spec / meaning` (shares ADR-0017's registry location/tooling question).
+- Registry **location and tooling** for the `SPxxxx → spec / meaning` map (shares ADR-0017's registry location/tooling question). The `SP` = "Supplied Part" gloss is now confirmed (decision 1) and the repo-side registry section exists (`REGISTRY.md`); only the platform host and tooling remain open.
 - Reference-designator convention for cabinet schematics (IEC 81346 letters) — a drafting convention, recorded with the schematic, not here.
 - Whether any SP item ever needs a depth code — none does now; revisit only if a purchased item becomes a positioned, tracked machine element.
 
