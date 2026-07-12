@@ -48,31 +48,17 @@ Conventions:
 | `SP0004` | Gateway SBC — Raspberry Pi 3B+ / 4 / 5 class | yes (vendor serial / gateway identity) | The one SP part with per-instance identity: its vendor serial and the ATECC-bound gateway certificate are the instance key (ADR-0019 decision 2; ADR-0004 / ADR-0007). Specific model in the BOM. |
 | `SP0005` | STM32F405RGT6 core board (WeAct-class) | no | Hosted on every carrier (E0001). Resolves ADR-0017's WeAct deferred item (ADR-0019 decision 7). |
 
-### Document layers on the SP axis (naming convention)
+### Document layers on the SP axis
 
-ADR-0017 d9's document-layer form `Exxxx-VVVVVV-L` is defined for **E-modules
-only**, and ADR-0019 left SP document naming open. SP documents reuse the same
-layer letters on the `SP` root:
+The SP document-layer form — `SPxxxx-<layer>[-<slug>]`, the `S/D/L/P/M/I` layer
+letters reused from E-modules, no version field, vendor models never forking it —
+is **ADR-0019 decision 8** (promoted there from the maintainer-call formerly
+recorded here, 2026-06-16). A **designed accessory** filed on an SP root as a
+`-D-` document (a printed case, bracket, or mount that serves only that part) is
+**ADR-0019 decision 9**. This registry records only the live SP documents (the
+*what*, ADR-0000 d2):
 
-```
-SPxxxx-<layer>[-<slug>]        e.g.  SP0004-M-gateway-bringup   (Manual)
-                                      SP0004-L                   (gateway BOM)
-```
-
-- **`<layer>`** — one of `S/D/L/P/M/I` (ADR-0017 d9; `M` = Manual), reused as-is;
-  only the root differs.
-- **No version field.** The supplier owns versioning, so an SP identifier carries
-  no `VVVVVV` (ADR-0019 d2): `SP0004-M-…`, not `SP0004-VVVVVV-M`.
-- **Vendor variants are BOM lines, not identifiers.** A part's vendor versions
-  (e.g. SP0004 = Raspberry Pi 3B+ / 4 / 5) do not fork the SP number (ADR-0019
-  d2/d3): the chosen model is a BOM line, and one `M` Manual per SP spec covers
-  all variants (model-specific steps as sections). So no `SP0004-RPI5-M-…`.
-- **`<slug>`** — an optional kebab-case descriptor, as on E-documents
-  (`E0001-000001-D-Top_Layer`).
-
-This convention is a maintainer call recorded here (its identifier-convention
-home), not an ADR decision (2026-06-16); promote it to an ADR-0019 amendment if
-it ever needs to constrain tooling (ADR-0000 d1).
+- `SP0004-M-gateway-bringup` — gateway bring-up Manual.
 
 ### Firmware document layer `F` (E-modules)
 
