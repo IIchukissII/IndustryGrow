@@ -84,21 +84,32 @@ E0001-VVVVVV-F[.hex|-src.zip]   e.g.  E0001-000001-F.hex     (built image)
 
 ### Fabrication outputs on the `D` (Drawing) layer (E-modules)
 
-A board version's generated fabrication outputs — gerbers, drill,
-placement/centroid — are the layout-derived `D` (Drawing) layer (ADR-0017 d17),
-filed flat, one object per identifier (d15): `Exxxx-VVVVVV-D-<descriptor>.<ext>`.
-The carrier v0.0.2 (`E0001-000002`) set:
+A board version's generated fabrication outputs are the layout-derived `D`
+(Drawing) layer (ADR-0017 d17/d18). The **gerber/drill set** — copper,
+silkscreen, soldermask, paste, edge cut, and the PTH/NPTH drills (with any
+drill-map) — is one indivisible manufacturing package and is stored as a
+**single object**, `Exxxx-VVVVVV-D-fab.zip` (ADR-0017 **decision 18**), not as
+loose per-file gerber objects. The other `D`-layer faces stay loose, one object
+per identifier (d15), because each is separately consumed:
 
-- copper `-D-Top_Layer.gtl` / `-D-Bottom_Layer.gbl`
-- silkscreen `-D-Top_Overlay.gto` / `-D-Bottom_Overlay.gbo`
-- soldermask `-D-Top_Solder.gts` / `-D-Bottom_Solder.gbs`
-- paste `-D-F_Paste.gtp` / `-D-B_Paste.gbp`
-- outline `-D-Edge_Cuts.gm1`; drill `-D-PTH.drl` / `-D-NPTH.drl`
-- placement `-D-pos.csv`
+- fabrication package `-D-fab.zip` (gerbers + drills, one zip)
+- placement / centroid `-D-pos.csv` (the CPL — its own assembly upload)
+- render `-D.png`; pin map `-D-pinmap.md`
 
 The layer is the `-D-` infix, not the extension: the placement `.csv` is `D`, not
-`L` — as are the render `-D.png` and pin map `-D-pinmap.md`. No live `.zip` (that
-is the withdrawn-set exception, d17); licensing inherits the `store/**` default.
+`L` — as are the render `-D.png` and pin map `-D-pinmap.md`. The BOM `-L.csv` is a
+distinct document layer and is likewise loose. So a released board carries four
+`E0006`-style objects — `-D-fab.zip`, `-D-pos.csv`, `-D.png`, `-L.csv` — not the
+dozen-plus a per-gerber layout would give. Internal file names inside `-D-fab.zip`
+are frozen as plotted (not re-canonicalized); the canonical identity is the object
+key. Licensing inherits the `store/**` CERN-OHL-S default.
+
+Live fab packages on record:
+
+| Object | Board | Notes |
+|--------|-------|-------|
+| `E0006-000001-D-fab.zip` | M05-SAFETY v0.0.1 (`E0006`) | The as-ordered JLCPCB package (gerbers + drills + drill-maps), byte-identical, renamed to the canonical key. Paired loose faces `-D-pos.csv`, `-D.png`, `-L.csv`. |
+| `E0001-000002-D-fab.zip` | Carrier v0.0.2 (`E0001`) | Bundled from the previously-loose gerbers/drills when decision 18 replaced the flat-per-file rule; loose `-D-*` gerber objects removed. Paired loose faces `-D-pos.csv`, `-D.png`, `-D-pinmap.md`, `-L.csv`. |
 
 ## Blocked / superseded versions
 
@@ -122,7 +133,7 @@ only the record: one row per withdrawal, above.
 
 ## Governing ADRs
 
-- ADR-0017 (rev 1) — component / document / instance identification (E-numbers, two-axis model; firmware `F` layer rooted on the carrier E0001, decision 16; withdrawn-version archival, decision 17).
+- ADR-0017 (rev 1) — component / document / instance identification (E-numbers, two-axis model; firmware `F` layer rooted on the carrier E0001, decision 16; withdrawn-version archival, decision 17; fabrication package as one `-D-fab.zip`, decision 18).
 - ADR-0019 — purchased-part (SP) identification.
 - ADR-0000 — single source of truth; vendor SKU and price live in the BOM, not here.
 - ADR-0014 — sensor-module taxonomy (module-ID straps, M01–M05).
