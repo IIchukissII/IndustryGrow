@@ -100,9 +100,10 @@ The layer is the `-D-` infix, not the extension: the placement `.csv` is `D`, no
 `L` — as are the render `-D.png` and pin map `-D-pinmap.md`. The BOM `-L.csv` is a
 distinct document layer and is likewise loose. So a released board carries four
 `E0006`-style objects — `-D-fab.zip`, `-D-pos.csv`, `-D.png`, `-L.csv` — not the
-dozen-plus a per-gerber layout would give. Internal file names inside `-D-fab.zip`
-are frozen as plotted (not re-canonicalized); the canonical identity is the object
-key. Licensing inherits the `store/**` CERN-OHL-S default.
+dozen-plus a per-gerber layout would give. The registry tracks each fab package by
+its object key only; the package's internal member structure (consistent across
+boards, ADR-0017 d18) is self-describing and intentionally not recorded here.
+Licensing inherits the `store/**` CERN-OHL-S default.
 
 Live fab packages on record:
 
