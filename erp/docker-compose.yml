@@ -1,0 +1,47 @@
+# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# One-command bring-up: the ERP app + its document store (MongoDB) + the
+# object-store warehouse (MinIO). `docker compose up` then seed with
+# `docker compose exec erp python -m app.seed`.
+
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    ports:
+      - "27017:27017"
+
+  minio:
+    image: minio/minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio-data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+
+  erp:
+    build: .
+    restart: unless-stopped
+    environment:
+      ERP_MONGO_URI: mongodb://mongo:27017
+      ERP_MONGO_DB: industrygrow_erp
+      ERP_WAREHOUSE_ENDPOINT: http://minio:9000
+      ERP_WAREHOUSE_BUCKET: industrygrow
+      ERP_WAREHOUSE_ACCESS_KEY: minioadmin
+      ERP_WAREHOUSE_SECRET_KEY: minioadmin
+    depends_on:
+      - mongo
+      - minio
+    ports:
+      - "8021:8021"
+
+volumes:
+  mongo-data:
+  minio-data:
