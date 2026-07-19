@@ -32,7 +32,11 @@ class Settings(BaseSettings):
     warehouse_bucket: str = Field(default="industrygrow")
     warehouse_access_key: str = Field(default="minioadmin")
     warehouse_secret_key: str = Field(default="minioadmin")
-    warehouse_region: str = Field(default="us-east-1")
+    warehouse_region: str = Field(default="us-east-1")  # "auto" for Cloudflare R2
+
+    # Repo store/ — the public, type-level flat keyspace synced into the warehouse
+    # (ADR-0017 d15: identifiers are object keys). See `python -m app.store_sync`.
+    store_dir: str = Field(default="../store")
 
     # Web.
     host: str = "0.0.0.0"
