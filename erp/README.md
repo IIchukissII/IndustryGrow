@@ -118,9 +118,32 @@ ruff format . && ruff check .    # lint + format (single tool)
 pytest -q                        # unit tests (mongomock — no live Mongo needed)
 ```
 
-The console has five areas — Overview (estate + integration map), Instances
-(with serial allocation), Calibration & Docs, SP Stock — styled as the
-tree-of-life living console.
+## API (ADR-0022)
+
+The JSON API is served at `/api/v1` (OpenAPI at `/docs`). Two caller classes:
+
+- **Gateway machines → mTLS.** The TLS-terminating proxy validates the ATECC-anchored
+  client cert (ADR-0007) and forwards the verified `GBOX_NNNN` identity; the app trusts
+  that header only behind the proxy. The gateway *pulls* its active profile.
+- **Operators / tooling → scoped token.** `Authorization: Bearer <token>`; `ERP_API_TOKENS`
+  maps token → role (`operator` / `provisioning` / `readonly`). Interim, → JWT at stage 11.
+
+Deliberate absences (ADR-0022): **no profile deploy/push** (record-only; gateway pulls),
+no telemetry intake, no type-meaning/SKU writes, and document upload is **allowlisted** to
+`{QP,QR,CP,CC,PR}` — type-layer docs go through `store_sync`.
+
+## UI — Vite + TypeScript SPA (`frontend/`)
+
+```sh
+cd frontend
+npm install
+npm run dev        # http://localhost:5173, proxies /api → :8021
+npm run build      # -> frontend/dist (serve behind the API in prod)
+```
+
+Set the operator token in the sidebar (default `dev-operator-token`). The SPA renders the
+tree-of-life console over the API — Overview (integration map, calibration) and Instances
+(serial allocation).
 
 ## Licensing
 

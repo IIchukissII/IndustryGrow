@@ -38,6 +38,12 @@ class Settings(BaseSettings):
     # (ADR-0017 d15: identifiers are object keys). See `python -m app.store_sync`.
     store_dir: str = Field(default="../store")
 
+    # API — scoped operator tokens (ADR-0022 d3): token -> role, one of
+    # {operator, provisioning, readonly}. Interim, shaped toward stage-11 JWT.
+    # Override via ERP_API_TOKENS='{"<token>":"operator"}'. Gateway callers use
+    # mTLS (ADR-0022 d2), not tokens.
+    api_tokens: dict[str, str] = Field(default={"dev-operator-token": "operator"})
+
     # Dev/demo only — run with no external MongoDB and preload the fixture.
     mongo_mock: bool = False
     seed_on_start: bool = False

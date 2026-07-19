@@ -41,9 +41,11 @@ def create_app() -> FastAPI:
     if static_dir.exists():
         app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
-    from app.web.routes import router
+    from app.api.routes import router as api_router
+    from app.web.routes import router as web_router
 
-    app.include_router(router)
+    app.include_router(api_router)  # JSON API (ADR-0022) at /api/v1
+    app.include_router(web_router)  # server-rendered console (legacy)
     return app
 
 
