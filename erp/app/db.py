@@ -40,15 +40,23 @@ DOMAIN = {
 class Database:
     """Thin async wrapper over a single MongoDB database."""
 
-    def __init__(self, uri: str, db_name: str) -> None:
-        self._client: AsyncIOMotorClient = AsyncIOMotorClient(uri)
+    def __init__(self, uri: str, db_name: str, *, mock: bool = False) -> None:
+        if mock:
+            # In-memory Mongo for local dev/demo — no server needed.
+            from mongomock_motor import AsyncMongoMockClient
+
+            self._client = AsyncMongoMockClient()
+        else:
+            self._client = AsyncIOMotorClient(uri)
         self.db: AsyncIOMotorDatabase = self._client[db_name]
 
     def coll(self, name: str) -> AsyncIOMotorCollection:
         return self.db[name]
 
     def close(self) -> None:
-        self._client.close()
+        close = getattr(self._client, "close", None)
+        if callable(close):
+            close()
 
 
 async def ensure_indexes(database: Database) -> None:

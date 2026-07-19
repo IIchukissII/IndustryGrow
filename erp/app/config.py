@@ -38,6 +38,10 @@ class Settings(BaseSettings):
     # (ADR-0017 d15: identifiers are object keys). See `python -m app.store_sync`.
     store_dir: str = Field(default="../store")
 
+    # Dev/demo only — run with no external MongoDB and preload the fixture.
+    mongo_mock: bool = False
+    seed_on_start: bool = False
+
     # Web.
     host: str = "0.0.0.0"
     port: int = 8021

@@ -54,8 +54,9 @@ SP_STOCK = [
 ]
 
 
-async def seed() -> None:
-    db = Database(settings.mongo_uri, settings.mongo_db).db
+async def seed(db=None) -> None:
+    if db is None:
+        db = Database(settings.mongo_uri, settings.mongo_db).db
     now = datetime.now(UTC)
 
     for name in [*FOUNDATION.values(), *DOMAIN.values()]:

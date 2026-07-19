@@ -14,7 +14,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
@@ -23,6 +23,7 @@ from app.db import DOMAIN, FOUNDATION
 from app.models.identifiers import decode_version, parse_instance
 from app.services import docs, integration, profiles
 from app.services import serials as serials_svc
+from app.services.warehouse import Warehouse
 from app.web.catalog import module_display
 
 router = APIRouter()
@@ -218,6 +219,17 @@ async def stock_page(request: Request):
         )
     ctx["rows"] = rows
     return templates.TemplateResponse("stock.html", ctx)
+
+
+@router.get("/warehouse/{key:path}")
+async def warehouse_object(key: str):
+    """Redirect to a short-lived presigned URL for a warehouse object key.
+
+    The ERP indexes the object store and hands out keys (ADR-0021 d7); the bytes
+    are served by the warehouse, never proxied through here.
+    """
+    url = await Warehouse().presigned_get(key, expires=300)
+    return RedirectResponse(url, status_code=307)
 
 
 @router.get("/healthz")

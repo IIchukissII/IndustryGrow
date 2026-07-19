@@ -16,8 +16,13 @@ from app.db import Database, ensure_indexes
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    db = Database(settings.mongo_uri, settings.mongo_db)
-    await ensure_indexes(db)
+    db = Database(settings.mongo_uri, settings.mongo_db, mock=settings.mongo_mock)
+    if not settings.mongo_mock:
+        await ensure_indexes(db)
+    if settings.seed_on_start:
+        from app.seed import seed
+
+        await seed(db.db)
     app.state.db = db
     try:
         yield
