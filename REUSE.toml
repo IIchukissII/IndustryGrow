@@ -44,3 +44,13 @@ path = "profiles/**"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 The IndustryGrow contributors"
 SPDX-License-Identifier = "CC-BY-SA-4.0"
+
+# Instance & integration ERP application (ADR-0021) — AGPL-3.0-or-later per
+# ADR-0021 decision 14. Source files carry their own inline SPDX header;
+# precedence = "closest" lets those win, and header-less files (HTML templates,
+# static CSS/JS, JSON seed fixtures) fall back to this AGPL default.
+[[annotations]]
+path = "erp/**"
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 The IndustryGrow contributors"
+SPDX-License-Identifier = "AGPL-3.0-or-later"

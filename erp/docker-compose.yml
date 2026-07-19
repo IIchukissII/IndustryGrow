@@ -1,0 +1,59 @@
+# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# One-command bring-up: the ERP app + its document store (MongoDB) + the
+# object-store warehouse (MinIO). `docker compose up` then seed with
+# `docker compose exec erp python -m app.seed`.
+
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    ports:
+      - "27017:27017"
+
+  # Dev/standalone warehouse. In an IndustryFlow-integrated deployment, drop this
+  # service and point ERP_WAREHOUSE_ENDPOINT at IndustryFlow's MinIO instead
+  # (or, later, AWS S3 / Cloudflare R2 — all S3-compatible, config-only). Start it
+  # only when you want a local one: `docker compose --profile standalone up`.
+  minio:
+    image: minio/minio
+    profiles: ["standalone"]
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio-data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+
+  erp:
+    build: .
+    restart: unless-stopped
+    environment:
+      ERP_MONGO_URI: mongodb://mongo:27017
+      ERP_MONGO_DB: industrygrow_erp
+      # Warehouse (S3-compatible). Override with IndustryFlow's MinIO / S3 / R2.
+      # Prefer injecting the three secret vars from 1Password (see README) rather
+      # than hard-coding them here.
+      ERP_WAREHOUSE_ENDPOINT: ${ERP_WAREHOUSE_ENDPOINT:-http://minio:9000}
+      ERP_WAREHOUSE_BUCKET: ${ERP_WAREHOUSE_BUCKET:-industrygrow}
+      ERP_WAREHOUSE_ACCESS_KEY: ${ERP_WAREHOUSE_ACCESS_KEY:-minioadmin}
+      ERP_WAREHOUSE_SECRET_KEY: ${ERP_WAREHOUSE_SECRET_KEY:-minioadmin}
+      ERP_WAREHOUSE_REGION: ${ERP_WAREHOUSE_REGION:-us-east-1}
+      # Repo store/ mounted read-only so `python -m app.store_sync` can upload it.
+      ERP_STORE_DIR: /srv/store
+    volumes:
+      - ../store:/srv/store:ro
+    depends_on:
+      - mongo
+    ports:
+      - "8021:8021"
+
+volumes:
+  mongo-data:
+  minio-data:

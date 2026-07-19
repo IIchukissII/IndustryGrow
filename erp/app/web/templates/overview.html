@@ -1,0 +1,84 @@
+{# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors #}
+{# SPDX-License-Identifier: AGPL-3.0-or-later #}
+{% extends "base.html" %}
+{% block heading %}Overview{% endblock %}
+{% block ctx %}{{ machine.machine_id if machine }}{% endblock %}
+{% block body %}
+
+<section class="hero">
+  <span class="tree-tile"><svg viewBox="0 0 680 680"><use href="#ig-tree"/></svg></span>
+  <div class="htext">
+    <h1>The estate, <i>alive</i></h1>
+    <p class="lede">Every serial, binding, and integration is a leaf on the tree of life. This console is the record of what has <em>grown</em>, and where. The dark is <em>prima materia</em> — the ground the system rises from.</p>
+  </div>
+</section>
+
+<section class="tiles">
+  <div class="tile"><span class="tl">Instances tracked</span><span class="num">{{ counts.instances }}</span><span class="meta">module types + carrier</span></div>
+  <div class="tile"><span class="tl">Growing now</span><span class="num" style="color:var(--green)">{{ counts.installed }}</span><span class="meta">installed across the estate</span></div>
+  <div class="tile {{ 'attn' if counts.expiring }}"><span class="tl">Calibration due ≤30d</span><span class="num">{{ counts.expiring }}</span><span class="meta">-CC certificates</span></div>
+  <div class="tile"><span class="tl">Profile versions</span><span class="num" style="color:var(--violet)">{{ counts.profile_versions }}</span><span class="meta">stored for this machine</span></div>
+</section>
+
+<section class="panel">
+  <div class="ph">
+    <h2>Integration map</h2>
+    <span class="desc">what grows where, now{% if machine %} — <span style="font-family:var(--mono);color:var(--cyan)">{{ machine.machine_id }}</span>{% if machine.cultivar %} · {{ machine.cultivar }}{% endif %}{% endif %}</span>
+    <div class="right legend"><span class="a"><span class="sw pos"></span> position axis</span><span class="a"><span class="sw id"></span> identity axis</span></div>
+  </div>
+  {% for s in slots %}
+  <div class="slot-row">
+    <span class="slot-idx">{{ "%02d"|format(loop.index) }}</span>
+    <div>
+      <div class="iid">
+        <span class="seg pos">{{ s.machine_id }}</span><span class="sepx">·</span>
+        <span class="seg pos">{{ s.depth_code }}</span>
+        {% if s.instance_id %}
+        <span class="sepx">·</span><span class="seg id">{{ s.e_number }}</span><span class="sepx">·</span>
+        <span class="seg id">{{ s.version }}</span><span class="sepx">·</span><span class="seg id">{{ s.serial }}</span>
+        {% else %}<span class="sepx">·</span><span class="seg" style="color:var(--ink-3);border-color:var(--line-2)">— no instance —</span>{% endif %}
+      </div>
+      <div class="slot-meta">
+        <span class="leaf" style="background:{{ s.module_color }}"></span>
+        <span class="slot-name">{% if s.module_name %}<b>{{ s.module_name }}</b> {% endif %}<span class="ref">type meaning → REGISTRY.md</span></span>
+      </div>
+    </div>
+    <span class="st {{ s.status_class }}">{{ s.status_label }}</span>
+  </div>
+  {% else %}
+  <div class="empty-state">No integration records yet. Allocate serials, provision, then install into positions.</div>
+  {% endfor %}
+</section>
+
+<section class="cols">
+  <div class="panel cal">
+    <div class="ph"><h2>Calibration &amp; provisioning</h2><span class="desc">-CC expiring soon — resolves to warehouse keys</span></div>
+    {% for c in calibrations %}
+    <div class="trow">
+      <div><div class="m-id">{{ c.instance_full_id }}</div><div class="m-what">{{ c.doc_type }} · calibration certificate</div><div class="whkey">▤ {{ c.object_key }}</div></div>
+      <span class="st {{ c.status_class }}">{{ c.status_label }}</span>
+      <span class="when">{{ c.when }}</span>
+    </div>
+    {% else %}<div class="empty-state">No calibration certificates indexed yet.</div>{% endfor %}
+  </div>
+
+  <div class="panel">
+    <div class="ph"><h2>Deployment profile</h2><span class="desc">store &amp; deployment record — not a deploy path</span></div>
+    <div class="roles">
+      <div class="role tpl"><span class="pin"></span><div><div class="r-name">Template</div><div class="r-where">community registry · public</div></div><div class="r-ver">{{ profile.template or "—" }}</div></div>
+      <div class="role erp"><span class="pin"></span><div><div class="r-name">Stored in ERP</div><div class="r-where">deployment-specific · one artifact</div></div><div class="r-ver">{{ profile.erp_latest or "—" }}<small>{{ profile.erp_history }}</small></div></div>
+      <div class="role gw"><span class="pin"></span><div><div class="r-name">Active on gateway</div><div class="r-where">active-profile.json cache</div></div><div class="r-ver">{{ profile.gw_active or "—" }}</div></div>
+    </div>
+    <div class="note"><b>Storing a version here does not deploy it.</b> The cabinet runs what the gateway pulls into <code style="font-family:var(--mono)">active-profile.json</code> — the single mutation channel.</div>
+  </div>
+</section>
+
+<section class="panel stock">
+  <div class="ph"><h2>SP stock &amp; placement</h2><span class="desc">stock and location only — spec → REGISTRY.md · price → BOM</span></div>
+  {% for p in sp %}
+  <div class="trow"><div><div class="sp-id">{{ p.sp_number }}</div><div class="sp-spec">{{ p.spec }}</div></div><span class="st {{ p.status_class }}">{{ p.status_label }}</span><div class="qty">{{ p.quantity }}<small> / {{ p.qty_note }}</small></div></div>
+  {% else %}<div class="empty-state">No SP stock recorded yet.</div>{% endfor %}
+</section>
+
+<div class="foot-note">ADR-0021 · pre-cloud system of record — <code>foundation.*</code> [F] migrates to IndustryFlow <code>production_unit</code> at stage 11 · <code>domain.*</code> [D] stays the grow layer</div>
+{% endblock %}

@@ -1,0 +1,16 @@
+{# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors #}
+{# SPDX-License-Identifier: AGPL-3.0-or-later #}
+{% extends "base.html" %}
+{% block heading %}Calibration &amp; Docs{% endblock %}
+{% block body %}
+<section class="panel cal">
+  <div class="ph"><h2>Lifecycle documents</h2><span class="desc">the index over the warehouse — status, dates, and object keys (ADR-0021 d7)</span></div>
+  {% for c in rows %}
+  <div class="trow">
+    <div><div class="m-id">{{ c.instance_full_id }}</div><div class="m-what">{{ c.doc_type }}</div><div class="whkey">▤ {{ c.object_key }}</div></div>
+    <span class="st {{ c.status_class }}">{{ c.status_label }}</span>
+    <span class="when">{{ c.when }}</span>
+  </div>
+  {% else %}<div class="empty-state">No lifecycle documents indexed yet.</div>{% endfor %}
+</section>
+{% endblock %}
