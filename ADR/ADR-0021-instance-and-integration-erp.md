@@ -3,16 +3,39 @@ SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
-# ADR-0021: Instance-and-integration ERP — the pre-cloud system of record
+# ADR-0021 (rev 1): Instance-and-integration ERP — the pre-cloud system of record
 
-- **ID:** ADR-0021
+- **ID:** ADR-0021 (rev 1)
 - **Status:** Accepted
-- **Date:** 2026-07-09
+- **Date:** 2026-07-09 (rev 1: 2026-07-19)
 - **Project:** IndustryGrow
 - **Parent:** ADR-0001
 - **Companions:** ADR-0000, ADR-0004 (rev 1), ADR-0007, ADR-0015, ADR-0016 (rev 1), ADR-0017 (rev 1), ADR-0019, ADR-0020
 - **Realizes:** ADR-0017 (rev 1) deferred decision "Registry and store location" — the instance/integration layer host
 - **Relates to:** ADR-IF-0001 (planned) — the `production_unit` entity this store's foundational part aligns to when IndustryGrow integrates as a layer over the IndustryFlow core at stage 11
+
+## Revision history
+
+- **rev 1 (2026-07-19)** — Resolves the deferred *"ERP product / framework /
+  database engine"* decision and refines decision 15 accordingly. The store
+  **class** changes from *"relational with history"* to a **compact document
+  metadata store over the flat object-store warehouse** (ADR-0017 decision 15).
+  The reasoning: the project's storage paradigm is already document/blob-oriented
+  — identifiers *are* object keys, the store is flat, listing is a key-prefix
+  scan (ADR-0017 decision 15) — and this ERP is the *queryable index over that
+  object store* (decision 7), not a relational core imported from IndustryFlow.
+  A relational engine would couple the `[D]` domain **layer** to the paradigm of
+  the `[F]` **core**, which decision 2 explicitly keeps separate (core-plus-layer,
+  not absorption). Where the Context, Decision drivers, and alternatives below say
+  *"relational"* (e.g. *"a mutable relational join over time"*), read it as naming
+  the **mutable-join-over-time nature** of integration data — the property that
+  ruled out the flat keyspace and the PR-gated table — now realized as a document
+  store, **not** a commitment to SQL. The concrete engine is resolved to
+  **MongoDB** (Deferred decisions, now resolved). No ownership boundary (decisions
+  4–11), tenancy decision (16), or profile-channel decision (12–13) changes. The
+  stage-11 `[F]` migration (decisions 3, 16) is now a document→`production_unit`
+  export-transform keyed on ADR-0017's identifier grammar — still *migration, not
+  remodel*, because the load-bearing keys are unchanged.
 
 ## Context and problem
 
@@ -38,7 +61,7 @@ This ADR carries **decisions and rationale only**. Database engine, ERP product/
 ## Decision drivers
 
 - **The deferred instance layer must be housed now, not at stage 11.** ADR-0020 already established that stages 1–10 need a durable sink because IndustryFlow does not yet exist; instance/integration/provisioning data is exactly such a sink's contents. Deferring further blocks the survey and first-cultivation campaigns that the pre-cloud stages exist to run.
-- **Instance/integration data is mutable, relational, and private** — the opposite of what the repo (public, type-level, PR-gated) and the object store (flat, one-object-per-identifier, blob-shaped) are good at. It wants a small relational store with history. This is a genuinely different tool, not a stretch of the two existing homes.
+- **Instance/integration data is mutable, relational, and private** — the opposite of what the repo (public, type-level, PR-gated) and the object store (flat, one-object-per-identifier, blob-shaped) are good at. It wants a small store with mutable history — realized (rev 1) as a document index over the object store, not a stretch of the two existing homes.
 - **Single source of truth (ADR-0000) is non-negotiable.** The ERP must own facts *no other home owns* and must not mirror the type registry, the object store's blobs, the BOM's SKUs/prices, or IndustryFlow's operational/forensic trail. Each boundary is drawn explicitly below.
 - **The stateless-edge and audit-authority boundaries hold.** Operational telemetry, firmware events, and the tamper-evident hash chain stay platform-side (ADR-0004 rev 1 decision 10; ADR-0020 decision 9). The ERP is an *asset/config/traceability* record, never a second forensic trail — the boundary ADR-0017 alternative E and ADR-0020 decision 9 already defend.
 - **Core plus layer, not absorption, at stage 11.** IndustryFlow is the independent core; IndustryGrow is an additional domain layer over it (ADR-0001; `GLOSSARY.md` `[F]`/`[D]` tags). The ERP's foundational instance-tracking part is the private realization of what becomes IndustryFlow's `production_unit` (ADR-IF-0001); its grow-domain part stays the IndustryGrow layer. Its schema is a forward-compatible subset so the stage-11 transition is a data migration and a re-layering, not a rewrite.
@@ -88,7 +111,7 @@ This ADR carries **decisions and rationale only**. Database engine, ERP product/
 
 ### Deployment vehicle
 
-15. **Delivery is a single self-hostable container over a relational store; the concrete product/engine is implementation.** The architectural commitments are: *containerized* (a drop-in the operator runs on or beside the gateway host, matching the self-build path), *single-node and compact* (asset/traceability core, not a finance/HR suite), and *relational with history* (integration is a mutable relational join over time). Which ERP framework or database engine realizes this — a lightweight self-hosted ERP, a small bespoke app, the specific RDBMS — is an implementation choice per ADR-0000, recorded with the implementation, not fixed here. This mirrors ADR-0020 fixing the storage *class* (SSD/NVMe) while leaving the SKU to the BOM.
+15. **Delivery is a single self-hostable container over a compact document store that indexes the flat object-store warehouse (ADR-0017 decision 15); the concrete product is implementation.** The architectural commitments are: *containerized* (a drop-in the operator runs on or beside the gateway host, matching the self-build path), *single-node and compact* (asset/traceability core, not a finance/HR suite), and *a document metadata store with mutable history over time*. The last is the rev-1 change (see Revision history): the instance/integration layer is the *queryable index over the object store* (decision 7), and the project's storage paradigm is already document/blob-oriented — identifiers are object keys (ADR-0017 decision 15) — so the layer is a **document store, not a relational core**. Integration remains a mutable cross-reference over time (decision 6); in a document store that history is carried by validity-stamped records (an `installed`/`removed` timestamp pair) with a uniqueness constraint per position, not by a relational join engine. Which document database realizes this — the specific product — is an implementation choice per ADR-0000 (Deferred decisions, now **resolved to MongoDB** over the object-store warehouse), recorded with the implementation. This mirrors ADR-0020 fixing the storage *class* (SSD/NVMe) while leaving the SKU to the BOM.
 
 ### Tenancy and integration model
 
@@ -158,7 +181,7 @@ This ADR carries **decisions and rationale only**. Database engine, ERP product/
 
 ## Deferred decisions
 
-- **ERP product / framework / database engine.** Lightweight self-hosted ERP vs. bespoke app; the RDBMS. Implementation per ADR-0000 (decision 15) — recorded with the implementation, not here.
+- **ERP product / framework / database engine — resolved (rev 1).** A compact, open-core (AGPL-3.0-or-later) bespoke application over **MongoDB** as the document metadata store, with the existing S3-compatible object store as the blob **warehouse** (ADR-0017 decision 15). Rationale: the layer is a queryable index over a document/blob store (decision 7), so a document database matches the paradigm rather than importing the relational core's shape (decision 2). It carries the ADR's obligations natively — gap-free serial allocation (decision 4) is an atomic counter update per module+version; integration history (decision 6) is validity-stamped documents (`installed_at`/`removed_at`) with a per-position uniqueness constraint; a deployment profile version (decisions 8, 13) is one whole document (setpoints + model), never split; the lifecycle-document index (decision 7) holds metadata plus the warehouse object key, never the blob. The `[F]`/`[D]` split (decisions 2, 3, 16) is the collection-group boundary (`foundation.*` carrying a constant tenant field; `domain.*` referencing it). The specific application framework, driver, and container image remain implementation detail per ADR-0000. *Still open:* serial-allocation concurrency/offline behaviour (below) and the stage-11 document→`production_unit` export-transform.
 - **Schema DDL and the exact `production_unit`-subset mapping.** The concrete entities, keys, and the migration path to ADR-IF-0001 (decision 3) — pending ADR-IF-0001's model.
 - **Serial-allocation concurrency and offline behaviour.** How the ERP issues gap-free serials per module+version (decision 4) under multiple production stations and while offline. Needs specification before production use.
 - **Backup, restore, and private-data handling** for the instance layer (decision 14; Negative consequences) — the critical-asset protection ADR-0017 flags for the type registry, now owed for this higher-churn store.
