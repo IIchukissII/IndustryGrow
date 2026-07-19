@@ -70,9 +70,20 @@ SPxxxx-<layer>[-<slug>]        e.g.  SP0004-M-gateway-bringup   (Manual)
 - **`<slug>`** — an optional kebab-case descriptor, as on E-documents
   (`E0001-000001-D-Top_Layer`).
 
-This convention is a maintainer call recorded here (its identifier-convention
-home), not an ADR decision (2026-06-16); promote it to an ADR-0019 amendment if
-it ever needs to constrain tooling (ADR-0000 d1).
+This convention is now **ADR-0019 decision 8** (promoted 2026-07-12 from the
+2026-06-16 maintainer-call once recorded here, because it underpins d9 and
+constrains identifier tooling); this section is its *what*.
+
+### Designed accessories (ADR-0019 d9)
+
+A designed artifact that serves only one specific part — a case, bracket, mount —
+has no independent existence and takes **no E-number**; it rolls up under the
+served part's root on the `D` layer with a descriptive slug, revisions carried in
+the slug (a version-less `SP` root, ADR-0019 d2): `<parent-root>-D-<slug>[-src].<ext>`.
+
+| Object | Serves | Note |
+|--------|--------|------|
+| `SP0004-D-rp5-case-src.zip` | `SP0004` gateway (Raspberry Pi 5) | Printed-case design source; slug-revisioned (`-rp5-case`). Licensing inherits the `store/**` default. |
 
 ### Firmware document layer `F` (E-modules)
 
@@ -95,23 +106,32 @@ E0001-VVVVVV-F[.hex|-src.zip]   e.g.  E0001-000001-F.hex     (built image)
 - Produced by `firmware/tools/release.sh`; licensed AGPL-3.0-or-later
   (`REUSE.toml`, overriding the CERN-OHL-S `store/**` default).
 
-### Fabrication outputs on the `D` (Drawing) layer (E-modules)
+### Fabrication package on the `D` (Drawing) layer (E-modules)
 
-A board version's generated fabrication outputs — gerbers, drill,
-placement/centroid — are the layout-derived `D` (Drawing) layer (ADR-0017 d17),
-filed flat, one object per identifier (d15): `Exxxx-VVVVVV-D-<descriptor>.<ext>`.
-The carrier v0.0.2 (`E0001-000002`) set:
+Per **ADR-0017 decision 18**, a board version's gerber + drill set is one
+indivisible object — the **fabrication package** `Exxxx-VVVVVV-D-fab.zip` — not
+loose per-file gerber objects (this supersedes the earlier flat-per-file rule,
+applied retroactively to `E0001-000002`). Inside the zip the members are named
+`Exxxx-VVVVVV-<layer>.<ext>` on the KiCad default vocabulary — `F_Cu`/`B_Cu`,
+`F_Silkscreen`/`B_Silkscreen`, `F_Mask`/`B_Mask`, `F_Paste`/`B_Paste`,
+`Edge_Cuts`, `PTH`/`NPTH` — the `-D-` infix belonging to the object key, not the
+members (d18); the internal structure is not itself registered.
 
-- copper `-D-Top_Layer.gtl` / `-D-Bottom_Layer.gbl`
-- silkscreen `-D-Top_Overlay.gto` / `-D-Bottom_Overlay.gbo`
-- soldermask `-D-Top_Solder.gts` / `-D-Bottom_Solder.gbs`
-- paste `-D-F_Paste.gtp` / `-D-B_Paste.gbp`
-- outline `-D-Edge_Cuts.gm1`; drill `-D-PTH.drl` / `-D-NPTH.drl`
-- placement `-D-pos.csv`
+The separately-consumed faces stay **loose**, because each is fetched on its own:
+placement/centroid `-D-pos.csv` (the CPL), render `-D.png`, pin map
+`-D-pinmap.md`; the BOM `-L.csv` is a different layer and also loose. So a board
+carries `-D-fab.zip` + `-D-pos.csv` + `-D.png` (+ `-D-pinmap.md`) + `-L.csv` —
+four or five objects, not fourteen.
 
-The layer is the `-D-` infix, not the extension: the placement `.csv` is `D`, not
-`L` — as are the render `-D.png` and pin map `-D-pinmap.md`. No live `.zip` (that
-is the withdrawn-set exception, d17); licensing inherits the `store/**` default.
+| Board version | Package | Loose `D` / `L` faces |
+|---------------|---------|-----------------------|
+| `E0001-000002` (carrier v0.0.2) | `E0001-000002-D-fab.zip` | `-D-pos.csv`, `-D.png`, `-D-pinmap.md`, `-L.csv` |
+| `E0006-000001` (M05 v0.0.1) | `E0006-000001-D-fab.zip` | `-D-pos.csv`, `-D.png`, `-L.csv` |
+
+The layer is the `-D-` infix, not the extension (the placement `.csv` is `D`, not
+`L`; so are the render `-D.png` and pin map `-D-pinmap.md`). Licensing inherits
+the `store/**` CERN-OHL-S default — the `.zip` is hardware design content, not the
+`-F-src.zip` AGPL override.
 
 ## Blocked / superseded versions
 
