@@ -84,7 +84,22 @@ class Warehouse:
 
     async def list_prefix(self, prefix: str) -> list[str]:
         """Prefix scan — the ADR-0017 d15 filtering primitive."""
-        resp = await asyncio.to_thread(
-            self._client.list_objects_v2, Bucket=self._bucket, Prefix=prefix
-        )
-        return [obj["Key"] for obj in resp.get("Contents", [])]
+
+        def _list() -> list[str]:
+            keys: list[str] = []
+            token: str | None = None
+            while True:
+                kwargs = {"Bucket": self._bucket, "Prefix": prefix}
+                if token:
+                    kwargs["ContinuationToken"] = token
+                resp = self._client.list_objects_v2(**kwargs)
+                keys.extend(obj["Key"] for obj in resp.get("Contents", []))
+                if not resp.get("IsTruncated"):
+                    return keys
+                token = resp.get("NextContinuationToken")
+
+        return await asyncio.to_thread(_list)
+
+    async def delete(self, key: str) -> None:
+        """Remove an object (used by the store mirror to prune stale keys)."""
+        await asyncio.to_thread(self._client.delete_object, Bucket=self._bucket, Key=key)
