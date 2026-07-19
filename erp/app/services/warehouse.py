@@ -47,6 +47,25 @@ class Warehouse:
         )
         return key
 
+    async def put_file(self, key: str, path: str, content_type: str | None = None) -> str:
+        """Upload a file from disk under ``key`` (streams; used by the store sync)."""
+        extra = {"ContentType": content_type} if content_type else {}
+        await asyncio.to_thread(
+            self._client.upload_file, str(path), self._bucket, key, ExtraArgs=extra
+        )
+        return key
+
+    async def ensure_bucket(self) -> None:
+        """Create the bucket if it does not exist (first-run convenience)."""
+
+        def _ensure() -> None:
+            try:
+                self._client.head_bucket(Bucket=self._bucket)
+            except self._client.exceptions.ClientError:
+                self._client.create_bucket(Bucket=self._bucket)
+
+        await asyncio.to_thread(_ensure)
+
     async def presigned_get(self, key: str, expires: int = 3600) -> str:
         """A time-limited read URL for an object key."""
         return await asyncio.to_thread(

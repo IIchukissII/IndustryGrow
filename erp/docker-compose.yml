@@ -13,8 +13,13 @@ services:
     ports:
       - "27017:27017"
 
+  # Dev/standalone warehouse. In an IndustryFlow-integrated deployment, drop this
+  # service and point ERP_WAREHOUSE_ENDPOINT at IndustryFlow's MinIO instead
+  # (or, later, AWS S3 / Cloudflare R2 — all S3-compatible, config-only). Start it
+  # only when you want a local one: `docker compose --profile standalone up`.
   minio:
     image: minio/minio
+    profiles: ["standalone"]
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
@@ -32,13 +37,20 @@ services:
     environment:
       ERP_MONGO_URI: mongodb://mongo:27017
       ERP_MONGO_DB: industrygrow_erp
-      ERP_WAREHOUSE_ENDPOINT: http://minio:9000
-      ERP_WAREHOUSE_BUCKET: industrygrow
-      ERP_WAREHOUSE_ACCESS_KEY: minioadmin
-      ERP_WAREHOUSE_SECRET_KEY: minioadmin
+      # Warehouse (S3-compatible). Override with IndustryFlow's MinIO / S3 / R2.
+      # Prefer injecting the three secret vars from 1Password (see README) rather
+      # than hard-coding them here.
+      ERP_WAREHOUSE_ENDPOINT: ${ERP_WAREHOUSE_ENDPOINT:-http://minio:9000}
+      ERP_WAREHOUSE_BUCKET: ${ERP_WAREHOUSE_BUCKET:-industrygrow}
+      ERP_WAREHOUSE_ACCESS_KEY: ${ERP_WAREHOUSE_ACCESS_KEY:-minioadmin}
+      ERP_WAREHOUSE_SECRET_KEY: ${ERP_WAREHOUSE_SECRET_KEY:-minioadmin}
+      ERP_WAREHOUSE_REGION: ${ERP_WAREHOUSE_REGION:-us-east-1}
+      # Repo store/ mounted read-only so `python -m app.store_sync` can upload it.
+      ERP_STORE_DIR: /srv/store
+    volumes:
+      - ../store:/srv/store:ro
     depends_on:
       - mongo
-      - minio
     ports:
       - "8021:8021"
 
