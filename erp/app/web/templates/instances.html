@@ -1,0 +1,18 @@
+{# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors #}
+{# SPDX-License-Identifier: AGPL-3.0-or-later #}
+{% extends "base.html" %}
+{% block heading %}Instances{% endblock %}
+{% block body %}
+<section class="panel">
+  <div class="ph"><h2>Module instances</h2><span class="desc">every manufactured <span style="font-family:var(--mono)">Exxxx-VVVVVV-NNNNNN</span> · the serial authority</span></div>
+  {% for r in rows %}
+  <div class="slot-row" style="grid-template-columns:1fr auto">
+    <div>
+      <div class="iid"><span class="seg id">{{ r.instance_id }}</span></div>
+      <div class="slot-meta"><span class="leaf" style="background:{{ r.module_color }}"></span><span class="slot-name"><b>{{ r.module_name }}</b> <span class="ref">type → REGISTRY.md</span></span></div>
+    </div>
+    <span class="st {{ r.status_class }}">{{ r.status_label }}</span>
+  </div>
+  {% else %}<div class="empty-state">No instances yet. Use “Allocate serials”.</div>{% endfor %}
+</section>
+{% endblock %}

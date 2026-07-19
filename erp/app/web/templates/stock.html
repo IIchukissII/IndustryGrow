@@ -1,0 +1,12 @@
+{# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors #}
+{# SPDX-License-Identifier: AGPL-3.0-or-later #}
+{% extends "base.html" %}
+{% block heading %}SP Stock{% endblock %}
+{% block body %}
+<section class="panel stock">
+  <div class="ph"><h2>SP stock &amp; placement</h2><span class="desc">stock and location only — spec → REGISTRY.md · price → BOM (ADR-0021 d9)</span></div>
+  {% for p in rows %}
+  <div class="trow"><div><div class="sp-id">{{ p.sp_number }}</div><div class="sp-spec">{{ p.spec }}</div></div><span class="st {{ p.status_class }}">{{ p.status_label }}</span><div class="qty">{{ p.quantity }}<small> / on hand</small></div></div>
+  {% else %}<div class="empty-state">No SP stock recorded yet.</div>{% endfor %}
+</section>
+{% endblock %}

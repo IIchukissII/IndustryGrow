@@ -1,0 +1,51 @@
+{# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors #}
+{# SPDX-License-Identifier: AGPL-3.0-or-later #}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}IndustryGrow — Instance &amp; Integration{% endblock %}</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
+</head>
+<body>
+{% include "_tree.svg.html" %}
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <span class="tile"><svg viewBox="0 0 680 680"><use href="#ig-tree"/></svg></span>
+      <span class="wm"><span class="n"><b>Industry</b><i>Grow</i></span><span class="s">instance · integration</span></span>
+    </div>
+    <div class="oper">
+      <span class="lbl">Operator · single tenant</span>
+      <span class="val">{{ operator }}</span>
+      <span class="tag">stages 1–10 · pre-cloud record</span>
+    </div>
+    <nav>
+      <span class="grp">Estate</span>
+      <a class="{{ 'active' if active=='overview' }}" href="/">Overview</a>
+      <a href="/instances">Instances <span class="n">{{ counts.instances }}</span></a>
+      <span class="grp">Traceability</span>
+      <a href="/calibration">Calibration &amp; Docs <span class="n">{{ counts.expiring }}</span></a>
+      <a href="/stock">SP Stock</a>
+    </nav>
+    <div class="foot">
+      <div class="kv"><span class="d" style="background:var(--violet);box-shadow:0 0 8px var(--violet)"></span> meta <b>MongoDB</b></div>
+      <div class="kv"><span class="d" style="background:var(--cyan);box-shadow:0 0 8px var(--cyan)"></span> warehouse <b>object store</b></div>
+      <div class="kv" style="color:var(--ink-3)">a living index over the store</div>
+    </div>
+  </aside>
+  <main>
+    <div class="topbar">
+      <div class="crumb"><h1>{% block heading %}Overview{% endblock %}</h1><span class="ctx">{% block ctx %}{% endblock %}</span></div>
+      <button class="btn" hx-post="/instances/allocate" hx-target="#alloc-slot" hx-swap="innerHTML">+ Allocate serials</button>
+    </div>
+    <div class="body">
+      <div id="alloc-slot"></div>
+      {% block body %}{% endblock %}
+    </div>
+  </main>
+</div>
+</body>
+</html>
