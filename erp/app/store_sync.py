@@ -8,12 +8,19 @@ S3-compatible warehouse under the same key, so a git checkout and the bucket hol
 the same objects. Per-instance private blobs (-QP/-QR/-CP/-CC/-PR) are written
 separately at provisioning/calibration time, not here.
 
-Run: ``python -m app.store_sync``  (endpoint/bucket from ERP_WAREHOUSE_* config,
+With ``--prune`` it becomes a true mirror: objects present in the warehouse but no
+longer in ``store/`` are deleted. This matters because ADR-0017 keeps one object
+per identifier — when a version's loose gerbers are bundled into a single
+``-D-fab.zip`` (ADR-0017 d18) or an artifact is withdrawn (d17), the superseded
+loose objects must not linger in the bucket.
+
+Run: ``python -m app.store_sync [--prune]``  (endpoint/bucket from ERP_WAREHOUSE_*,
 so it targets MinIO, AWS S3, or Cloudflare R2 identically).
 """
 
 from __future__ import annotations
 
+import argparse
 import asyncio
 import mimetypes
 from collections.abc import Iterator
@@ -39,23 +46,38 @@ def _collect(store_dir: str) -> tuple[Path, list[Path]]:
     return root, list(_iter_files(root))
 
 
-async def sync(store_dir: str | None = None) -> int:
+async def sync(store_dir: str | None = None, prune: bool = False) -> int:
     root, files = _collect(store_dir or settings.store_dir)
 
     warehouse = Warehouse()
     await warehouse.ensure_bucket()
 
-    count = 0
-    for path in files:
-        key = path.relative_to(root).as_posix()
+    local_keys = {path.relative_to(root).as_posix(): path for path in files}
+    for key, path in local_keys.items():
         content_type = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
         await warehouse.put_file(key, str(path), content_type)
         print(f"  ↑ {key}")
-        count += 1
 
-    print(f"Synced {count} objects from {root} → bucket {settings.warehouse_bucket}")
-    return count
+    pruned = 0
+    if prune:
+        for key in await warehouse.list_prefix(""):
+            if key not in local_keys:
+                await warehouse.delete(key)
+                print(f"  ✗ {key}  (pruned — no longer in store/)")
+                pruned += 1
+
+    tail = f", pruned {pruned} stale" if prune else ""
+    print(
+        f"Synced {len(local_keys)} objects from {root} → bucket {settings.warehouse_bucket}{tail}"
+    )
+    return len(local_keys)
 
 
 if __name__ == "__main__":
-    asyncio.run(sync())
+    parser = argparse.ArgumentParser(description="Mirror the repo store/ into the warehouse.")
+    parser.add_argument(
+        "--prune", action="store_true", help="delete warehouse objects not in store/"
+    )
+    parser.add_argument("--store-dir", default=None, help="override store/ path")
+    args = parser.parse_args()
+    asyncio.run(sync(args.store_dir, prune=args.prune))
