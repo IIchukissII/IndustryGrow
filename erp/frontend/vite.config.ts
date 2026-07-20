@@ -13,6 +13,9 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
+    // The tree-of-life mark is imported from the repo's img/ — the brand asset
+    // has one home, and the console reads it rather than keeping a copy.
+    fs: { allow: ["../.."] },
   },
   build: { outDir: "dist" },
 });

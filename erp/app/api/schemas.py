@@ -120,6 +120,9 @@ class ProfileOut(BaseModel):
     machine_id: str
     version_tag: str
     created_at: datetime | None = None
+    #: Whether this is the version recorded active on the gateway — a record of a
+    #: pull that happened, never a deploy state the ERP drives (ADR-0022 d8).
+    active: bool = False
 
 
 class Ack(BaseModel):

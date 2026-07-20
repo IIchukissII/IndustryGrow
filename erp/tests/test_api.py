@@ -102,6 +102,33 @@ def test_profile_store_then_record_active(client):
     assert r.status_code == 200 and r.json()["ok"] is True
 
 
+def test_profile_list_marks_the_active_version(client):
+    for tag in ("v1", "v2"):
+        client.post(
+            "/api/v1/machines/GBOX_0001/profiles",
+            json={"version_tag": tag, "payload": {"setpoints": {}, "model": {}}},
+            headers=AUTH,
+        )
+    listed = client.get("/api/v1/machines/GBOX_0001/profiles", headers=AUTH).json()
+    assert all(p["active"] is False for p in listed)  # storing never activates
+
+    client.put(
+        "/api/v1/machines/GBOX_0001/active-profile", json={"version_tag": "v1"}, headers=AUTH
+    )
+    listed = client.get("/api/v1/machines/GBOX_0001/profiles", headers=AUTH).json()
+    assert {p["version_tag"]: p["active"] for p in listed} == {"v1": True, "v2": False}
+
+
+def test_instance_documents_listing(client):
+    client.post(
+        "/api/v1/instances",
+        json={"e_number": "E0002", "version": "020100", "quantity": 1},
+        headers=AUTH,
+    )
+    r = client.get("/api/v1/instances/E0002-020100-000001/documents", headers=AUTH)
+    assert r.status_code == 200 and r.json() == []
+
+
 def test_gateway_pull_needs_mtls_identity(client):
     # No forwarded cert identity -> 401 (identity comes from the cert, not a param).
     assert client.get("/api/v1/gateway/active-profile").status_code == 401
