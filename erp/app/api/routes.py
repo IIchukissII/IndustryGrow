@@ -13,6 +13,7 @@ from datetime import UTC, date, datetime
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
+from pymongo.errors import DuplicateKeyError
 
 from app.api import schemas
 from app.api.deps import (
@@ -61,6 +62,17 @@ async def _require_instance(db: AsyncIOMotorDatabase, instance_id: str) -> dict:
     if doc is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"no instance {instance_id}")
     return doc
+
+
+@router.get("/meta", tags=["meta"])
+async def console_meta(role: str = Depends(require_read)):
+    """Who this instance belongs to, and what the caller's token may do. Single
+    tenant in operation, multitenant-shaped in the schema (ADR-0021 d15)."""
+    return {
+        "operator_name": settings.operator_name,
+        "operator_uuid": settings.operator_uuid,
+        "role": role,
+    }
 
 
 # ============================ instances / serials ============================
@@ -203,6 +215,30 @@ async def upload_document(
     )
 
 
+@router.get(
+    "/instances/{instance_id}/documents",
+    response_model=list[schemas.LifecycleDocOut],
+    tags=["documents"],
+)
+async def list_instance_documents(
+    instance_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    _role: str = Depends(require_read),
+):
+    """The indexed lifecycle documents for one instance — metadata plus the
+    warehouse key. The blobs stay in the object store (ADR-0022 d7)."""
+    return [
+        schemas.LifecycleDocOut(
+            instance_full_id=d["instance_full_id"],
+            doc_type=d["doc_type"],
+            object_key=d["object_key"],
+            valid_until=d.get("valid_until"),
+            status=d.get("status", "valid"),
+        )
+        for d in await docs.docs_for(db, instance_id)
+    ]
+
+
 # ============================ machines / integration ========================
 
 
@@ -282,14 +318,22 @@ async def store_profile_version(
 ):
     """Store a profile version (whole artifact). This does NOT deploy it — the
     gateway pulls the active version (ADR-0022 d8; ADR-0015 single channel)."""
-    doc = await profiles.add_version(
-        db,
-        gbox,
-        body.version_tag,
-        body.payload,
-        signed_hash=body.signed_hash,
-        source_template_ref=body.source_template_ref,
-    )
+    try:
+        doc = await profiles.add_version(
+            db,
+            gbox,
+            body.version_tag,
+            body.payload,
+            signed_hash=body.signed_hash,
+            source_template_ref=body.source_template_ref,
+        )
+    except DuplicateKeyError as exc:
+        # uq_profile_version: a stored version is immutable, so re-using a tag
+        # would silently fork what the gateway believes it pulled.
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            f"{gbox} already has a version tagged '{body.version_tag}' — tags are immutable",
+        ) from exc
     return schemas.ProfileOut(
         machine_id=gbox, version_tag=doc["version_tag"], created_at=doc.get("created_at")
     )
@@ -301,9 +345,14 @@ async def list_profile_versions(
     db: AsyncIOMotorDatabase = Depends(get_db),
     _role: str = Depends(require_read),
 ):
+    active = await profiles.active_version(db, gbox)
+    active_tag = active["version_tag"] if active else None
     return [
         schemas.ProfileOut(
-            machine_id=gbox, version_tag=v["version_tag"], created_at=v.get("created_at")
+            machine_id=gbox,
+            version_tag=v["version_tag"],
+            created_at=v.get("created_at"),
+            active=v["version_tag"] == active_tag,
         )
         for v in await profiles.versions(db, gbox)
     ]
