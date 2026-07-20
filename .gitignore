@@ -36,3 +36,14 @@ firmware/**/build*/
 .cproject
 .settings/
 .cache/
+
+# JetBrains IDE state (same "no IDE lock-in" reasoning as the Eclipse files).
+.idea/
+
+# MCP server config — local tool wiring, and it can carry endpoints or token
+# references; developer-specific, so it stays out of the public repo.
+.mcp.json
+
+# Per-developer CLI agent state (accumulated tool permissions). A shared
+# settings.json could be tracked; the *.local.json never is.
+.claude/settings.local.json
