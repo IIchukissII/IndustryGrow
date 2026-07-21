@@ -12,7 +12,8 @@ the flat object-store **warehouse**.
 
 - **meta** → **MongoDB** (this app's document store)
 - **warehouse** → S3-compatible object store (the blobs; identifiers *are* keys, ADR-0017 d15)
-- **app** → FastAPI + HTMX + Jinja2, one container
+- **app** → FastAPI + a Vite/TypeScript console, one container
+- **types** → `REGISTRY.md`, read (never copied), ADR-0023
 
 It operates **single-tenant** now and re-layers into IndustryFlow at stage 11:
 the `foundation.*` `[F]` collections migrate into IndustryFlow's `production_unit`
@@ -132,18 +133,45 @@ Deliberate absences (ADR-0022): **no profile deploy/push** (record-only; gateway
 no telemetry intake, no type-meaning/SKU writes, and document upload is **allowlisted** to
 `{QP,QR,CP,CC,PR}` — type-layer docs go through `store_sync`.
 
-## UI — Vite + TypeScript SPA (`frontend/`)
+## The console (`frontend/`) — Vite + TypeScript
+
+The API and the console it drives are **one container, one origin**. The app serves the
+built bundle at `/`; the Vite dev server is a development convenience, not a deployment
+dependency.
 
 ```sh
 cd frontend
 npm install
-npm run dev        # http://localhost:5173, proxies /api → :8021
-npm run build      # -> frontend/dist (serve behind the API in prod)
+npm run build      # -> frontend/dist, which the app serves at /
+npm run dev        # or: http://localhost:5173, proxying /api → :8021
 ```
 
-Set the operator token in the sidebar (default `dev-operator-token`). The SPA renders the
-tree-of-life console over the API — Overview (integration map, calibration) and Instances
-(serial allocation).
+Then `uvicorn app.main:app` and open <http://localhost:8021>. A source checkout that has
+never been built says so at `/` instead of 404ing; `ERP_CONSOLE_DIR` points elsewhere
+(the container builds the bundle itself and sets it to `/srv/console`).
+
+Set the operator token in the sidebar (default `dev-operator-token`). The console covers
+the whole ADR-0022 surface: overview, integration (install/replace/remove by depth),
+instances and serial allocation, an instance page (documents, provisioning, history),
+deployment profiles, and SP stock.
+
+## The type registry (ADR-0023)
+
+What an `Exxxx` or `SPxxxx` *means* is `REGISTRY.md`'s to say, and the ERP holds no copy
+of it (ADR-0021 d11). It parses the registry and serves it read-through at
+`GET /api/v1/catalog`; the console fetches that at boot and carries no label table. A type
+added to `REGISTRY.md` therefore appears in the console with no code change — and an
+identifier the registry does not carry renders as itself, never as a guess.
+
+Because software now reads it, the registry has a **canonical form** (ADR-0023 d2) checked
+in CI — run it locally with:
+
+```sh
+python -m app.services.registry     # ERP_REGISTRY_PATH, default ../REGISTRY.md
+```
+
+Leaf colours are *not* in the registry: the console assigns a hue from its own design
+palette by E-number, so meaning and appearance stay in separate homes.
 
 ## Licensing
 

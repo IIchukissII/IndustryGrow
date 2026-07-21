@@ -125,6 +125,28 @@ class ProfileOut(BaseModel):
     active: bool = False
 
 
+class ModuleOut(BaseModel):
+    e_number: str
+    designation: str
+    discipline: str
+    notes: str
+
+
+class PartOut(BaseModel):
+    sp_number: str
+    role: str
+    instance_tracked: bool
+    notes: str
+
+
+class CatalogOut(BaseModel):
+    """The type registry as the ERP reads it — meaning lives in REGISTRY.md
+    (ADR-0021 d11), this is only the parsed view of it."""
+
+    modules: list[ModuleOut]
+    parts: list[PartOut]
+
+
 class Ack(BaseModel):
     ok: bool = True
     detail: str | None = None

@@ -6,12 +6,13 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0022: Instance-and-integration ERP — the machine- and operator-facing API
 
 - **ID:** ADR-0022
-- **Status:** Proposed
-- **Date:** 2026-07-19
+- **Status:** Accepted
+- **Date:** 2026-07-19 (accepted 2026-07-21, with decision 1 clarified)
 - **Project:** IndustryGrow
 - **Parent:** ADR-0021
 - **Companions:** ADR-0000, ADR-0004 (rev 1), ADR-0007, ADR-0015, ADR-0016 (rev 1), ADR-0017 (rev 1), ADR-0019, ADR-0020
 - **Realizes:** ADR-0021 deferred decisions *"ERP ↔ object store integration"* and *"ERP ↔ gateway profile push"*
+- **Clarified by:** ADR-0023 (decision 1's type-meaning exclusion — the read-through catalog)
 - **Relates to:** ADR-IF-0001 (planned) — the `production_unit` core whose API this one's foundational operations align to at stage 11
 
 ## Context and problem
@@ -39,6 +40,8 @@ The API has two distinct caller classes with very different standing against the
 ### Surface and resource model
 
 1. **The API exposes exactly the entities ADR-0021 owns, and only those:** machines (`GBOX_NNNN`), E-instances and the serial allocator, provisioning bindings (`-PR`), integration records, the lifecycle-document index, deployment profiles and their active-version records, and SP stock/placement. There is no resource for type meaning, telemetry, an audit trail, SKUs/prices, or community template profiles. It is served by the same single container as the ERP (ADR-0021 decision 15); its OpenAPI document is generated from the implementation.
+
+   *Clarified in place 2026-07-21 by ADR-0023 (ADR-0000 decision 5):* the type-meaning exclusion is of a resource the ERP **owns**. A read-only route serving `REGISTRY.md` as parsed, storing nothing (ADR-0023 decisions 1, 4), is permitted — it is the read-side counterpart of decision 9. Denying the read would only push callers back into keeping their own tables.
 
 ### Authentication — two caller classes, two mechanisms
 
@@ -119,6 +122,7 @@ The API has two distinct caller classes with very different standing against the
 - **ADR-0007 / ADR-0004** — gateway mTLS uses the ATECC-anchored PKI; human/tooling auth is a scoped interim token shaped toward the JWT model (decisions 2, 3).
 - **ADR-0017 / ADR-0019** — the API speaks the identifier grammar precisely and assigns depth at integration; the document allowlist keeps type-layer artifacts (incl. `-D-fab.zip`, SP docs, accessories) out of the ERP (decisions 6, 7).
 - **ADR-0020** — operational buffering is the gateway's local store, never the ERP API (decision 9).
+- **ADR-0023** — the type registry is read through this API, never restated by it; it clarifies decision 1's exclusion and supplies decision 9's read-side counterpart.
 - **ADR-0000** — decisions and rationale only; route strings, schemas, and the OpenAPI document are implementation.
 - **ADR-IF-0001 (planned)** — the `production_unit` core API the foundational operations align to at stage 11 (decision 11).
 

@@ -32,7 +32,11 @@ services:
       - "9001:9001"
 
   erp:
-    build: .
+    # Context is the repo root: the console bundle is built in-image and imports
+    # the brand mark from img/ (see Dockerfile).
+    build:
+      context: ..
+      dockerfile: erp/Dockerfile
     restart: unless-stopped
     environment:
       ERP_MONGO_URI: mongodb://mongo:27017
@@ -47,8 +51,12 @@ services:
       ERP_WAREHOUSE_REGION: ${ERP_WAREHOUSE_REGION:-us-east-1}
       # Repo store/ mounted read-only so `python -m app.store_sync` can upload it.
       ERP_STORE_DIR: /srv/store
+      ERP_REGISTRY_PATH: /srv/REGISTRY.md
     volumes:
       - ../store:/srv/store:ro
+      # The type registry (ADR-0023). Also baked into the image; mounting the
+      # repo's copy means a registry edit reaches the console without a rebuild.
+      - ../REGISTRY.md:/srv/REGISTRY.md:ro
     depends_on:
       - mongo
     ports:

@@ -5,10 +5,8 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
-from pathlib import Path
 
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.db import Database, ensure_indexes
@@ -37,15 +35,12 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    static_dir = Path(__file__).parent / "web" / "static"
-    if static_dir.exists():
-        app.mount("/static", StaticFiles(directory=static_dir), name="static")
-
+    from app import console
     from app.api.routes import router as api_router
-    from app.web.routes import router as web_router
 
     app.include_router(api_router)  # JSON API (ADR-0022) at /api/v1
-    app.include_router(web_router)  # server-rendered console (legacy)
+    app.include_router(console.router)  # /healthz + the warehouse redirect
+    console.mount(app)  # the built SPA at / — last, it claims the root
     return app
 
 

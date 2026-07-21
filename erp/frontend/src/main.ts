@@ -8,7 +8,10 @@ import {
   api,
   DOC_TYPES,
   getToken,
-  moduleDisplay,
+  moduleDesignation,
+  moduleHue,
+  partRole,
+  setCatalog,
   setToken,
   type Instance,
   type IntegrationRecord,
@@ -128,7 +131,8 @@ async function overview(): Promise<string> {
 
   const rows = estate
     .map((r: IntegrationRecord, i: number) => {
-      const [name, colour] = moduleDisplay(r.instance_id.split("-")[0]);
+      const e = r.instance_id.split("-")[0];
+      const name = moduleDesignation(e), colour = moduleHue(e);
       return `<div class="slot-row pick" data-open="${i}"><span class="slot-idx">${String(i + 1).padStart(2, "0")}</span>
         <div class="slot-body"><div class="iid">${segmented(r.machine_id, r.depth_code, r.instance_id)}</div>
         <div class="slot-meta"><span class="leaf" style="background:${colour}"></span><b>${esc(name)}</b><span class="ref">· type → REGISTRY.md</span></div></div>
@@ -196,7 +200,7 @@ async function instances(): Promise<string> {
   state.counts.instances = list.length;
   const rows = list
     .map((it, i) => {
-      const [name, colour] = moduleDisplay(it.e_number);
+      const name = moduleDesignation(it.e_number), colour = moduleHue(it.e_number);
       return `<div class="slot-row pick" data-instance="${esc(it.instance_id)}"><span class="slot-idx">${String(i + 1).padStart(2, "0")}</span>
         <div class="slot-body"><div class="iid"><span class="seg id">${esc(it.e_number)}</span><span class="sepx">·</span><span class="seg id">${esc(it.version)}</span><span class="sepx">·</span><span class="seg id">${esc(it.serial)}</span></div>
         <div class="slot-meta"><span class="leaf" style="background:${colour}"></span><b>${esc(name)}</b></div></div>
@@ -226,7 +230,7 @@ async function instanceDetail(): Promise<string> {
     api.instanceDocuments(id),
   ]);
   const provisioned = documents.some((d) => d.doc_type === "PR");
-  const [modName, modColour] = moduleDisplay(inst.e_number);
+  const modName = moduleDesignation(inst.e_number), modColour = moduleHue(inst.e_number);
   const current = history.find((h) => !h.removed_at);
 
   const docRows = documents
@@ -295,7 +299,8 @@ async function integration(): Promise<string> {
   const rows = [...estate]
     .sort((a, b) => a.depth_code.localeCompare(b.depth_code))
     .map((r, i) => {
-      const [name, colour] = moduleDisplay(r.instance_id.split("-")[0]);
+      const e = r.instance_id.split("-")[0];
+      const name = moduleDesignation(e), colour = moduleHue(e);
       return `<div class="slot-row pick" data-open="${i}"><span class="slot-idx">${String(i + 1).padStart(2, "0")}</span>
         <div class="slot-body"><div class="iid">${segmented(r.machine_id, r.depth_code, r.instance_id)}</div>
         <div class="slot-meta"><span class="leaf" style="background:${colour}"></span><b>${esc(name)}</b><span class="ref">· growing since ${day(r.installed_at)}</span></div></div>
@@ -394,8 +399,11 @@ async function stock(): Promise<string> {
     .map((s) => {
       const cls = s.quantity === 0 ? "crit" : s.quantity <= 2 ? "warn" : "ok";
       const label = s.quantity === 0 ? "out" : s.quantity <= 2 ? "low" : "in stock";
+      // What the part is comes from the registry; where it sits is the ERP's.
+      const role = partRole(s.sp_number);
+      const where = s.location ?? "no location recorded";
       return `<div class="trow"><div><div class="sp-id">${esc(s.sp_number)}</div>
-        <div class="sp-spec">${esc(s.location ?? "no location recorded")}</div></div>
+        <div class="sp-spec">${esc(role ?? where)}${role ? `<span class="ref"> · ${esc(where)}</span>` : ""}</div></div>
         <span class="st ${cls}">${label}</span>
         <div class="qty">${s.quantity}<small> / on hand</small></div></div>`;
     })
@@ -637,6 +645,10 @@ async function boot(): Promise<void> {
   render();
   try {
     state.meta = await api.meta();
+    // The type registry, read once. Labels come from REGISTRY.md via the ERP
+    // (ADR-0023); the console keeps no table of its own, so an identifier the
+    // registry does not carry simply renders as itself.
+    setCatalog(await api.catalog());
     state.machines = await api.listMachines();
     state.machine = state.machines[0]?.machine_id ?? null;
     const [insts, sp] = await Promise.all([

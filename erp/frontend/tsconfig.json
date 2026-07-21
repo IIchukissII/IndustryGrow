@@ -10,6 +10,9 @@
     "noImplicitReturns": true,
     "isolatedModules": true,
     "skipLibCheck": true,
+    // Vite does the emitting; `tsc` in the build script is a type check only,
+    // and without this it would drop .js files next to the sources.
+    "noEmit": true,
     "types": ["vite/client"]
   },
   "include": ["src"]
