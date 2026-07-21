@@ -15,13 +15,9 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 ## Context and problem
 
-ADR-0017 decision 3 makes `REGISTRY.md` the authoritative map from an opaque `Exxxx` to its meaning, and ADR-0019 does the same for `SPxxxx`. ADR-0021 decision 11 and ADR-0022 decision 9 then forbid the ERP from holding type meaning: `Exxxx`/`SPxxxx` are foreign keys *into* the registry, and no ERP route accepts a description for one.
+ADR-0017 decision 3 and ADR-0019 make `REGISTRY.md` authoritative for what an `Exxxx`/`SPxxxx` means; ADR-0021 decision 11 and ADR-0022 decision 9 forbid the ERP from holding that meaning. None of them says how a consumer *obtains* it, and the gap was filled by copying: the console carried a hardcoded `E0002 → "M01-CLIMATE"` table in TypeScript and the server a second copy in Python. Both drifted — `E0007` (ADR-0018) reached neither — and nothing failed loudly, because each copy read as presentation code rather than as a second registry.
 
-Those records say where meaning lives and who may not own it. They do not say how a consumer **obtains** it. That gap was filled by habit, and the habit was to copy: the ERP console shipped a hardcoded `E0002 → "M01-CLIMATE"` table in TypeScript, and the server carried a second copy of the same table in Python. Both were labelled "display-only", which is precisely how a duplicate source of truth gets past review — the copy is introduced as a convenience, not as a claim of authority.
-
-It drifted, exactly as ADR-0000 predicts. `E0007` was added to the registry (ADR-0018, the distribution case) and appears in neither copy. Nothing failed; the console simply rendered a bare identifier and nobody was told. This is ADR-0000's canonical anti-pattern — a fact with more than one place to go wrong — reached without a single reviewer approving a duplicate registry, because each copy looked like presentation code.
-
-Removing the copies means software must read `REGISTRY.md` directly. That changes the document's standing: a file that is parsed is an **interface**, and an interface has a form whether or not anyone decided one. Today's form is accidental — two Markdown tables that happen to be shaped consistently — so an innocent editorial change (renaming a column, reflowing a row, adding a table that also holds identifiers) would silently empty the catalog of every consumer. The registry must therefore either stop being human-authored prose or acquire a decided, checkable form. This ADR chooses the second.
+Removing the copies means software reads `REGISTRY.md` directly, which changes the document's standing: a parsed file is an **interface**, and an interface has a form whether or not one was decided. Today's is accidental, so renaming a column or adding a table that also carries identifiers would empty every consumer's catalog silently. The registry must therefore either stop being human-authored prose or acquire a decided, checkable form.
 
 ## Decision drivers
 
