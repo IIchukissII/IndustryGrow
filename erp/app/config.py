@@ -38,6 +38,11 @@ class Settings(BaseSettings):
     # (ADR-0017 d15: identifiers are object keys). See `python -m app.store_sync`.
     store_dir: str = Field(default="../store")
 
+    # REGISTRY.md — the authoritative type registry (ADR-0017 d3, ADR-0019). The
+    # ERP reads it for labels and never copies it (ADR-0021 d11); see
+    # app/services/registry.py. Relative paths resolve against the erp/ directory.
+    registry_path: str = Field(default="../REGISTRY.md")
+
     # API — scoped operator tokens (ADR-0022 d3): token -> role, one of
     # {operator, provisioning, readonly}. Interim, shaped toward stage-11 JWT.
     # Override via ERP_API_TOKENS='{"<token>":"operator"}'. Gateway callers use
@@ -47,6 +52,11 @@ class Settings(BaseSettings):
     # Dev/demo only — run with no external MongoDB and preload the fixture.
     mongo_mock: bool = False
     seed_on_start: bool = False
+
+    # Operator console — the built SPA (`erp/frontend/dist`), served at / by this
+    # app. Relative paths resolve against the erp/ directory; the container sets
+    # an absolute one because the bundle is built in a separate stage.
+    console_dir: str = Field(default="frontend/dist")
 
     # Web.
     host: str = "0.0.0.0"

@@ -26,6 +26,21 @@
   --id: var(--violet);  /* identity axis */
   --amber: #eaa23c;     /* caution, kept distinct from module gold */
 
+  /* Leaf scale — one hue per designed type, walked in E-number order, which is
+     the order the system grew in (ADR-0017 d5). The console assigns from this
+     scale by identifier and cycles past the end, so a type newly registered in
+     REGISTRY.md gets a leaf without a change here: the registry holds meaning,
+     the design system holds appearance (ADR-0023 d6).
+     0 is deliberately achromatic — E0001 is the carrier every module rides on,
+     structure rather than sense, and it should not read as one more organ. */
+  --leaf-0: #9fb2c9;
+  --leaf-1: var(--cyan);    /* E0002 · climate — air */
+  --leaf-2: var(--gold);    /* E0003 · light */
+  --leaf-3: var(--violet);  /* E0004 · analytics — the solution */
+  --leaf-4: var(--green);   /* E0005 · plant */
+  --leaf-5: var(--rose-d);  /* E0006 · safety */
+  --leaf-6: var(--blue);    /* E0007 · the cabinet it all stands in */
+
   --mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, Consolas, monospace;
   --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --r: 12px;

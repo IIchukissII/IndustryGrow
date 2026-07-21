@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+# SPDX-License-Identifier: CC-BY-SA-4.0
+
+# REGISTRY.md is parsed by the ERP and its console (ADR-0023), so a malformed
+# table no longer produces a rendering glitch — it empties every consumer's
+# catalog silently. This check makes that failure loud, at edit time, using the
+# same parser the consumers use.
+
+name: Registry canonical form
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  registry:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check REGISTRY.md against the canonical form (ADR-0023 decision 2)
+        working-directory: erp
+        run: |
+          pip install --quiet pydantic pydantic-settings
+          python -m app.services.registry

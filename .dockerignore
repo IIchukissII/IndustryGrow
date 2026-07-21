@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Build context for erp/Dockerfile is the repository root (the console bundle
+# imports img/), so the exclusions live here rather than under erp/.
+
+.git/
+.github/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.ruff_cache/
+.pytest_cache/
+*.egg-info/
+
+# Node / build artifacts — the image builds the console itself.
+node_modules/
+dist/
+build/
+
+# Local config and secrets.
+.env
+*.local
+
+# Nothing outside erp/ and img/ is part of the image.
+firmware/
+gateway/
+profiles/
+project/

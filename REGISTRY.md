@@ -23,6 +23,15 @@ Conventions:
 - Numbers are assigned sequentially at design/selection commit, opaque, and not
   pre-reserved by class (ADR-0017 decision 5; ADR-0019 decision 6).
 
+> **This document is read by software** (the instance/integration ERP and its
+> console) and therefore has a **canonical form**, decided in ADR-0023: the two
+> registry tables below — under the headings `## E-numbers` and `## SP numbers`
+> — keep their column order, and each entry's first cell is the bare identifier
+> alone in backticks. Prose, notes, and every other section stay free-form.
+> Adding an entry needs no change anywhere else; restructuring those two tables
+> does. CI checks the form (`python -m app.services.registry`), because a
+> consumer that can no longer parse this file fails silently rather than loudly.
+
 ## E-numbers (designed assemblies)
 
 | E-number | Designation | Discipline | Notes |

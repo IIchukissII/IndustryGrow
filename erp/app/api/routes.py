@@ -25,7 +25,7 @@ from app.api.deps import (
 )
 from app.config import settings
 from app.db import DOMAIN, FOUNDATION
-from app.services import docs, integration, profiles
+from app.services import docs, integration, profiles, registry
 from app.services import serials as serials_svc
 from app.services.integration import PositionOccupiedError
 from app.services.warehouse import Warehouse
@@ -73,6 +73,23 @@ async def console_meta(role: str = Depends(require_read)):
         "operator_uuid": settings.operator_uuid,
         "role": role,
     }
+
+
+@router.get("/catalog", response_model=schemas.CatalogOut, tags=["meta"])
+async def catalog(_role: str = Depends(require_read)):
+    """The type registry — designations for `Exxxx` / `SPxxxx`, read from
+    REGISTRY.md (ADR-0017 d3, ADR-0019).
+
+    Read-through, not stored: the ERP owns instances, never type meaning
+    (ADR-0021 d11). Callers that need a human label for an identifier take it
+    from here instead of carrying a table, so a new type in the registry needs
+    no change on either side.
+    """
+    cat = registry.catalog()
+    return schemas.CatalogOut(
+        modules=[schemas.ModuleOut(**vars(m)) for m in cat.modules],
+        parts=[schemas.PartOut(**vars(p)) for p in cat.parts],
+    )
 
 
 # ============================ instances / serials ============================

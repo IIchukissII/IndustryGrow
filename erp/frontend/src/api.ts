@@ -112,8 +112,30 @@ export interface Meta {
   role: string;
 }
 
+/** A designed assembly, per REGISTRY.md (ADR-0017 d3). */
+export interface Module {
+  e_number: string;
+  designation: string;
+  discipline: string;
+  notes: string;
+}
+
+/** A purchased part, per REGISTRY.md (ADR-0019). The SKU stays in the BOM. */
+export interface Part {
+  sp_number: string;
+  role: string;
+  instance_tracked: boolean;
+  notes: string;
+}
+
+export interface Catalog {
+  modules: Module[];
+  parts: Part[];
+}
+
 export const api = {
   meta: () => req<Meta>("GET", "/meta"),
+  catalog: () => req<Catalog>("GET", "/catalog"),
   listInstances: (eNumber?: string) =>
     req<Instance[]>("GET", `/instances${eNumber ? `?e_number=${eNumber}` : ""}`),
   getInstance: (id: string) => req<Instance>("GET", `/instances/${id}`),
@@ -160,16 +182,28 @@ export const api = {
 /** The instance-lifecycle document allowlist (ADR-0022 d7) — mirrors the API's. */
 export const DOC_TYPES = ["QP", "QR", "CP", "CC", "PR"] as const;
 
-// Display-only module labels + leaf colours (mirrors app/web/catalog.py).
-// Type meaning is REGISTRY.md's; this is a UI convenience only.
-export const MODULE_DISPLAY: Record<string, [string, string]> = {
-  E0001: ["E0001 carrier", "#9fb2c9"],
-  E0002: ["M01-CLIMATE", "#67e8f9"],
-  E0003: ["M02-LIGHT", "#fcd34d"],
-  E0004: ["M03-ANALYTICS", "#c4b5fd"],
-  E0005: ["M04-PLANT", "#86efac"],
-  E0006: ["M05-SAFETY", "#fb7185"],
-};
-export function moduleDisplay(eNumber: string): [string, string] {
-  return MODULE_DISPLAY[eNumber] ?? [eNumber, "#9fb2c9"];
+// ---- the type registry, as read from REGISTRY.md (ADR-0023) ---------------
+// The console carries no table of its own: what an `Exxxx` means is the
+// registry's to say (ADR-0017 d3, ADR-0021 d11), fetched once at boot. An
+// identifier the registry does not know renders as itself — never as a guess.
+
+let catalogue: Catalog = { modules: [], parts: [] };
+
+export function setCatalog(c: Catalog): void {
+  catalogue = c;
 }
+
+export function moduleDesignation(eNumber: string): string {
+  return catalogue.modules.find((m) => m.e_number === eNumber)?.designation ?? eNumber;
+}
+
+/** The leaf hue for a module: assigned from the design palette by E-number, so a
+ *  newly registered type gets one with no change here and none in REGISTRY.md,
+ *  which holds meaning and never presentation (ADR-0023 d6). */
+export function moduleHue(eNumber: string): string {
+  const n = Number.parseInt(eNumber.replace(/^E/, ""), 10);
+  return Number.isFinite(n) ? `var(--leaf-${(n - 1) % LEAF_HUES})` : "var(--ink-2)";
+}
+
+/** How many leaf hues the stylesheet defines; the sequence cycles past it. */
+const LEAF_HUES = 7;
