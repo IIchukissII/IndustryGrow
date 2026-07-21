@@ -6,8 +6,8 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0022: Instance-and-integration ERP — the machine- and operator-facing API
 
 - **ID:** ADR-0022
-- **Status:** Proposed
-- **Date:** 2026-07-19
+- **Status:** Accepted
+- **Date:** 2026-07-19 (accepted 2026-07-21, with decision 1 clarified)
 - **Project:** IndustryGrow
 - **Parent:** ADR-0021
 - **Companions:** ADR-0000, ADR-0004 (rev 1), ADR-0007, ADR-0015, ADR-0016 (rev 1), ADR-0017 (rev 1), ADR-0019, ADR-0020
