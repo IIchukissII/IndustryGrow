@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0023: The type registry as a machine-readable interface
 
 - **ID:** ADR-0023
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-07-21
 - **Project:** IndustryGrow
 - **Parent:** ADR-0017 (rev 1)
