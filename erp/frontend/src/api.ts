@@ -197,6 +197,12 @@ export function moduleDesignation(eNumber: string): string {
   return catalogue.modules.find((m) => m.e_number === eNumber)?.designation ?? eNumber;
 }
 
+/** What a purchased part *is*, per the registry — vendor-free, and never the
+ *  SKU or price, which stay in the BOM (ADR-0019, ADR-0021 d9). */
+export function partRole(spNumber: string): string | null {
+  return catalogue.parts.find((p) => p.sp_number === spNumber)?.role ?? null;
+}
+
 /** The leaf hue for a module: assigned from the design palette by E-number, so a
  *  newly registered type gets one with no change here and none in REGISTRY.md,
  *  which holds meaning and never presentation (ADR-0023 d6). */

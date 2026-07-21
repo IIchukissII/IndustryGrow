@@ -10,6 +10,7 @@ import {
   getToken,
   moduleDesignation,
   moduleHue,
+  partRole,
   setCatalog,
   setToken,
   type Instance,
@@ -398,8 +399,11 @@ async function stock(): Promise<string> {
     .map((s) => {
       const cls = s.quantity === 0 ? "crit" : s.quantity <= 2 ? "warn" : "ok";
       const label = s.quantity === 0 ? "out" : s.quantity <= 2 ? "low" : "in stock";
+      // What the part is comes from the registry; where it sits is the ERP's.
+      const role = partRole(s.sp_number);
+      const where = s.location ?? "no location recorded";
       return `<div class="trow"><div><div class="sp-id">${esc(s.sp_number)}</div>
-        <div class="sp-spec">${esc(s.location ?? "no location recorded")}</div></div>
+        <div class="sp-spec">${esc(role ?? where)}${role ? `<span class="ref"> · ${esc(where)}</span>` : ""}</div></div>
         <span class="st ${cls}">${label}</span>
         <div class="qty">${s.quantity}<small> / on hand</small></div></div>`;
     })
