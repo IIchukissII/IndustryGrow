@@ -1,0 +1,15 @@
+[submodule "firmware/third_party/cmsis_core"]
+	path = firmware/third_party/cmsis_core
+	url = https://github.com/ARM-software/CMSIS_5.git
+[submodule "firmware/third_party/cmsis_device_f4"]
+	path = firmware/third_party/cmsis_device_f4
+	url = https://github.com/STMicroelectronics/cmsis_device_f4.git
+[submodule "firmware/third_party/libcanard"]
+	path = firmware/third_party/libcanard
+	url = https://github.com/OpenCyphal/libcanard.git
+[submodule "firmware/third_party/o1heap"]
+	path = firmware/third_party/o1heap
+	url = https://github.com/pavel-kirienko/o1heap.git
+[submodule "firmware/third_party/public_regulated_data_types"]
+	path = firmware/third_party/public_regulated_data_types
+	url = https://github.com/OpenCyphal/public_regulated_data_types.git
