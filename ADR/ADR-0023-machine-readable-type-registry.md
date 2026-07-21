@@ -97,7 +97,7 @@ Removing the copies means software must read `REGISTRY.md` directly. That change
 - **ADR-0017 (rev 1)** — decision 3 makes `REGISTRY.md` authoritative for `Exxxx`; this record decides the form in which that authority is consumed, and adds no new meaning.
 - **ADR-0019** — the same, for `SPxxxx`; the `Instance-tracked?` column is read per its decision 2.
 - **ADR-0021 (rev 1)** — decision 11 forbids the ERP holding type meaning; decisions 4–5 here are how the ERP satisfies it without a local table.
-- **ADR-0022** — decision 9's "no type-meaning writes" gains its read-side counterpart: a read-through catalog route that stores nothing.
+- **ADR-0022** — decision 9's "no type-meaning writes" gains its read-side counterpart: a read-through catalog route that stores nothing. That route also required clarifying **decision 1**, whose resource-model exclusion ("no resource for type meaning") read categorically enough to forbid reading the registry through the API as well as owning it. ADR-0022 is still Proposed, so the clarification was made in place (ADR-0000 decision 5): the exclusion is about *ownership*, and refusing the read is what pushes consumers back into keeping tables of their own.
 - **ADR-0000 (rev 1)** — decision 3 (single source of truth) is the driver; this record removes a duplication that reached `main` because each copy looked like presentation.
 
 ## Deferred decisions
