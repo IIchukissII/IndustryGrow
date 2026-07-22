@@ -21,10 +21,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, Depends, FastAPI
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
+from app.api.deps import get_warehouse
 from app.config import settings
 from app.services.warehouse import Warehouse
 
@@ -59,9 +60,9 @@ async def healthz() -> dict[str, str]:
 
 
 @router.get("/warehouse/{key:path}")
-async def warehouse_object(key: str):
+async def warehouse_object(key: str, warehouse: Warehouse = Depends(get_warehouse)):
     """Redirect to a short-lived presigned URL for a warehouse object key."""
-    url = await Warehouse().presigned_get(key, expires=300)
+    url = await warehouse.presigned_get(key, expires=300)
     return RedirectResponse(url, status_code=307)
 
 

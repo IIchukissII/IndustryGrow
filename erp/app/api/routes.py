@@ -19,6 +19,7 @@ from app.api import schemas
 from app.api.deps import (
     gateway_identity,
     get_db,
+    get_warehouse,
     require_provisioning,
     require_read,
     require_write,
@@ -186,6 +187,7 @@ async def upload_document(
     doc_date: date | None = Form(default=None),
     file: UploadFile = File(...),
     db: AsyncIOMotorDatabase = Depends(get_db),
+    warehouse: Warehouse = Depends(get_warehouse),
     _role: str = Depends(require_write),
 ):
     """Index a lifecycle document; blob -> warehouse, key -> ERP (ADR-0022 d7).
@@ -214,7 +216,7 @@ async def upload_document(
 
     rec = await docs.record_doc(
         db,
-        Warehouse(),
+        warehouse,
         instance_full_id=instance_id,
         doc_type=doc_type,
         object_key=object_key,
