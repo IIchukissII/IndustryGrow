@@ -8,6 +8,7 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
+from app.api.deps import get_warehouse
 from app.config import settings
 from app.main import create_app
 
@@ -15,10 +16,12 @@ AUTH = {"Authorization": "Bearer dev-operator-token"}
 
 
 @pytest.fixture
-def client(monkeypatch):
+def client(monkeypatch, warehouse):
     monkeypatch.setattr(settings, "mongo_mock", True)
     monkeypatch.setattr(settings, "seed_on_start", False)
-    with TestClient(create_app()) as c:
+    app = create_app()
+    app.dependency_overrides[get_warehouse] = lambda: warehouse
+    with TestClient(app) as c:
         yield c
 
 
@@ -77,6 +80,68 @@ def test_document_allowlist_rejects_type_layer(client):
         headers=AUTH,
     )
     assert r.status_code == 422  # type-layer docs never route through the ERP
+
+
+def _one_instance(client) -> str:
+    client.post(
+        "/api/v1/instances",
+        json={"e_number": "E0002", "version": "020100", "quantity": 1},
+        headers=AUTH,
+    )
+    return "E0002-020100-000001"
+
+
+def test_document_upload_writes_the_blob_then_indexes_its_key(client, warehouse):
+    inst = _one_instance(client)
+    r = client.post(
+        f"/api/v1/instances/{inst}/documents",
+        data={"doc_type": "qp"},
+        files={"file": ("qp.pdf", b"%PDF-1.7 quality plan", "application/pdf")},
+        headers=AUTH,
+    )
+    assert r.status_code == 200
+
+    # The identifier *is* the object key (ADR-0017 d15) — no separate blob id.
+    key = f"{inst}-QP"
+    assert r.json()["object_key"] == key
+    assert warehouse.objects[key] == b"%PDF-1.7 quality plan"
+    assert warehouse.content_types[key] == "application/pdf"
+
+    listed = client.get(f"/api/v1/instances/{inst}/documents", headers=AUTH).json()
+    assert [d["object_key"] for d in listed] == [key]
+
+
+def test_calibration_key_carries_its_date_and_is_queryable(client, warehouse):
+    inst = _one_instance(client)
+    r = client.post(
+        f"/api/v1/instances/{inst}/documents",
+        data={"doc_type": "CC", "doc_date": "2026-07-22", "valid_until": "2026-08-01"},
+        files={"file": ("cal.pdf", b"%PDF-1.7 cert", "application/pdf")},
+        headers=AUTH,
+    )
+    # A recalibration must not overwrite its predecessor, so the CC key is dated.
+    assert r.json()["object_key"] == f"{inst}-CC-20260722"
+    assert f"{inst}-CC-20260722" in warehouse.objects
+
+    # ADR-0021 d7: the point of indexing the key is that expiry is a query here.
+    expiring = client.get("/api/v1/calibration/expiring?days=3650", headers=AUTH).json()
+    assert [c["instance_full_id"] for c in expiring] == [inst]
+
+
+def test_failed_blob_write_leaves_no_index_row(client, warehouse):
+    inst = _one_instance(client)
+    warehouse.fail_on_put = True
+
+    with pytest.raises(RuntimeError):  # blob first: the store's failure is the request's
+        client.post(
+            f"/api/v1/instances/{inst}/documents",
+            data={"doc_type": "QR"},
+            files={"file": ("qr.pdf", b"%PDF-1.7", "application/pdf")},
+            headers=AUTH,
+        )
+
+    # A recorded key must always resolve — an unwritten blob is never indexed.
+    assert client.get(f"/api/v1/instances/{inst}/documents", headers=AUTH).json() == []
 
 
 def test_no_deploy_or_push_endpoint(client):

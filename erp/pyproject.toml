@@ -63,3 +63,9 @@ quote-style = "double"
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+markers = [
+  # Needs credentials and writes to the real warehouse bucket; opt in with
+  # ERP_LIVE_WAREHOUSE=1 (see tests/test_warehouse_live.py). Skipped otherwise,
+  # so the default run and CI stay hermetic.
+  "live: exercises a live external service",
+]

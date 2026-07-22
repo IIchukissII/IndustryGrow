@@ -119,6 +119,19 @@ ruff format . && ruff check .    # lint + format (single tool)
 pytest -q                        # unit tests (mongomock — no live Mongo needed)
 ```
 
+The default run is hermetic: in-memory Mongo, a fake warehouse. What a fake cannot
+vouch for is that a *real* S3-compatible store accepts the blob write and that a
+presigned URL resolves — so those tests are opt-in and marked `live`:
+
+```sh
+ERP_LIVE_WAREHOUSE=1 op run --env-file=.env.op.tpl -- pytest -m live -v
+```
+
+They write to the configured bucket and clean up after themselves: scratch objects
+go under the `_selftest/` prefix (outside the identifier keyspace), and the one test
+that must use a real identifier key parks the serial counter at 999000 and skips
+rather than overwrite an occupied key.
+
 ## API (ADR-0022)
 
 The JSON API is served at `/api/v1` (OpenAPI at `/docs`). Two caller classes:

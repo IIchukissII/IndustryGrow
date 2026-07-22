@@ -10,6 +10,7 @@ from fastapi import FastAPI
 
 from app.config import settings
 from app.db import Database, ensure_indexes
+from app.services.warehouse import Warehouse
 
 
 @asynccontextmanager
@@ -22,6 +23,9 @@ async def lifespan(app: FastAPI):
 
         await seed(db.db)
     app.state.db = db
+    # One warehouse client for the process: boto3 clients are thread-safe and
+    # hold the connection pool, so per-request construction would discard it.
+    app.state.warehouse = Warehouse()
     try:
         yield
     finally:

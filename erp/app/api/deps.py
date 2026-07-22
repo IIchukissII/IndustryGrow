@@ -19,6 +19,7 @@ from fastapi import Header, HTTPException, Request, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.config import settings
+from app.services.warehouse import Warehouse
 
 # Write roles; readonly may only GET.
 _WRITE_ROLES = frozenset({"operator", "provisioning"})
@@ -26,6 +27,15 @@ _WRITE_ROLES = frozenset({"operator", "provisioning"})
 
 def get_db(request: Request) -> AsyncIOMotorDatabase:
     return request.app.state.db.db
+
+
+def get_warehouse(request: Request) -> Warehouse:
+    """The process-wide warehouse client (created in the lifespan).
+
+    A dependency rather than a direct construction so a test can substitute a
+    fake and assert the blob-first ordering without touching a real bucket.
+    """
+    return request.app.state.warehouse
 
 
 def _token_role(authorization: str | None, x_operator_token: str | None) -> str | None:

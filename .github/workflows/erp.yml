@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+# SPDX-License-Identifier: CC-BY-SA-4.0
+
+# The ERP suite is hermetic — in-memory Mongo (mongomock), a fake warehouse — so
+# it needs no services and no credentials, and it runs in seconds. Until now it
+# only ever ran on a contributor's laptop.
+#
+# Not path-filtered to erp/**: the suite also reads REGISTRY.md from the repo
+# root (ADR-0023), so a change outside erp/ can break it.
+
+name: ERP
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  erp:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: erp
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: erp/pyproject.toml
+      - name: Install
+        run: pip install --quiet -e ".[dev]"
+      - name: Lint and format check
+        run: |
+          ruff check .
+          ruff format --check .
+      - name: Test
+        # `-m "not live"` deselects rather than relies on the ERP_LIVE_WAREHOUSE
+        # skip: CI must not be one stray environment variable away from writing
+        # to the real warehouse bucket.
+        run: pytest -q -m "not live"
