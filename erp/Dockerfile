@@ -40,4 +40,7 @@ EXPOSE 8021
 ENV ERP_HOST=0.0.0.0 ERP_PORT=8021 \
     ERP_CONSOLE_DIR=/srv/console \
     ERP_REGISTRY_PATH=/srv/REGISTRY.md
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8021"]
+# --no-proxy-headers: the gateway mTLS check tests the transport peer against the
+# trusted-proxy list (ADR-0022 d2, app/services/mtls.py). Uvicorn's proxy-header
+# mode would rewrite that address from X-Forwarded-For, i.e. from the request.
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8021", "--no-proxy-headers"]

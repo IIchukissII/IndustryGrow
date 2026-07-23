@@ -136,9 +136,13 @@ rather than overwrite an occupied key.
 
 The JSON API is served at `/api/v1` (OpenAPI at `/docs`). Two caller classes:
 
-- **Gateway machines → mTLS.** The TLS-terminating proxy validates the ATECC-anchored
-  client cert (ADR-0007) and forwards the verified `GBOX_NNNN` identity; the app trusts
-  that header only behind the proxy. The gateway *pulls* its active profile.
+- **Gateway machines → mTLS.** A TLS-terminating proxy validates the ATECC-anchored
+  client cert (ADR-0007) and forwards its verdict plus the certificate's subject DN;
+  the app believes those headers only from a configured proxy address and derives
+  `GBOX_NNNN` from the DN itself. The gateway *pulls* its active profile.
+  **Fail-closed:** `ERP_GATEWAY_TRUSTED_PROXIES` is empty by default and the gateway
+  routes then answer 503 — see [`deploy/mtls/`](deploy/mtls/README.md) for the sample
+  nginx config, the header contract, and a throwaway CA to exercise it.
 - **Operators / tooling → scoped token.** `Authorization: Bearer <token>`; `ERP_API_TOKENS`
   maps token → role (`operator` / `provisioning` / `readonly`). Interim, → JWT at stage 11.
 
