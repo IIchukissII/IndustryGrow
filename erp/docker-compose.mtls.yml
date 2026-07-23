@@ -1,0 +1,40 @@
+# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Overlay adding mTLS termination in front of the ERP (ADR-0022 d2):
+#
+#   docker compose -f docker-compose.yml -f docker-compose.mtls.yml up
+#
+# Generate the certificates first (see deploy/mtls/README.md):
+#   ./deploy/mtls/make-test-ca.sh deploy/mtls/certs
+#
+# 443  = console + token API (server TLS only)
+# 8443 = the gateway channel (client certificate required)
+
+services:
+  proxy:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    volumes:
+      - ./deploy/mtls/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./deploy/mtls/certs:/etc/nginx/tls:ro
+    ports:
+      - "443:443"
+      - "8443:8443"
+    depends_on:
+      - erp
+
+  erp:
+    # Believe forwarded certificate headers only from the proxy container. The
+    # value is the compose network's subnet, not a hostname: the check is against
+    # the address on the wire (app/services/mtls.py). Narrow it to the proxy's
+    # own address if you pin one.
+    environment:
+      ERP_GATEWAY_TRUSTED_PROXIES: '["172.16.0.0/12","192.168.0.0/16","10.0.0.0/8"]'
+    # With the proxy in front, the app itself should not be reachable directly —
+    # a caller on the app port bypasses certificate verification entirely. The
+    # trusted-peer check is what makes that survivable rather than fatal, but
+    # closing the port is the actual containment.
+    # `!reset` needs Compose v2.24+; on older versions drop the published port
+    # from docker-compose.yml by hand instead.
+    ports: !reset []

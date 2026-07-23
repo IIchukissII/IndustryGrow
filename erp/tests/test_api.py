@@ -194,6 +194,9 @@ def test_instance_documents_listing(client):
     assert r.status_code == 200 and r.json() == []
 
 
-def test_gateway_pull_needs_mtls_identity(client):
-    # No forwarded cert identity -> 401 (identity comes from the cert, not a param).
-    assert client.get("/api/v1/gateway/active-profile").status_code == 401
+def test_gateway_pull_is_closed_without_an_mtls_front_end(client):
+    # Identity comes from a verified certificate, not a parameter (ADR-0022 d2).
+    # With no trusted proxy configured — the default — there is nothing that could
+    # have verified one, so the channel is shut rather than credulous. The seam
+    # itself is tested in test_mtls.py; this holds the default in place.
+    assert client.get("/api/v1/gateway/active-profile").status_code == 503

@@ -54,4 +54,15 @@ app = create_app()
 def run() -> None:
     import uvicorn
 
-    uvicorn.run("app.main:app", host=settings.host, port=settings.port, reload=settings.reload)
+    uvicorn.run(
+        "app.main:app",
+        host=settings.host,
+        port=settings.port,
+        reload=settings.reload,
+        # Off deliberately. With proxy headers on, uvicorn rewrites the client
+        # address from X-Forwarded-For — and the gateway mTLS check (ADR-0022 d2,
+        # app/services/mtls.py) asks whether the *transport* peer is the trusted
+        # proxy. Letting a header choose that address would hand the answer to
+        # the caller. Nothing here consumes forwarded client addresses.
+        proxy_headers=False,
+    )

@@ -49,6 +49,18 @@ class Settings(BaseSettings):
     # mTLS (ADR-0022 d2), not tokens.
     api_tokens: dict[str, str] = Field(default={"dev-operator-token": "operator"})
 
+    # Gateway mTLS channel (ADR-0022 d2). TLS terminates in a reverse proxy that
+    # verifies the client chain against the operator root and forwards the result
+    # plus the certificate subject DN; the app derives GBOX_NNNN from that DN.
+    # These are the *proxy's* addresses as seen on the wire (IPs or CIDRs) —
+    # nothing forwarded from anywhere else is believed.
+    #
+    # Empty by default, and that default is fail-closed on purpose: with no proxy
+    # identified, a forwarded header is indistinguishable from a forged one, so
+    # the gateway routes answer 503 rather than trust it. Set it when the proxy
+    # is actually in front, e.g. ERP_GATEWAY_TRUSTED_PROXIES='["172.20.0.0/16"]'.
+    gateway_trusted_proxies: list[str] = Field(default=[])
+
     # Dev/demo only — run with no external MongoDB and preload the fixture.
     mongo_mock: bool = False
     seed_on_start: bool = False

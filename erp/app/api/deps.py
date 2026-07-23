@@ -6,8 +6,10 @@
   ``token -> role`` from config. Interim, shaped toward a stage-11 JWT claim.
 - Gateway machines: **mTLS** (decision 2). The TLS-terminating proxy validates
   the ATECC-anchored client certificate against the operator root CA and forwards
-  the verified machine identity in a header; the app trusts it only because it
-  sits behind that proxy. Identity comes from the cert, never a request body.
+  its verdict and the certificate's subject DN; the app believes those headers
+  only from a configured proxy address and derives ``GBOX_NNNN`` from the DN
+  itself. Identity comes from the cert, never a request parameter or body.
+  See ``app.services.mtls`` for the seam and its fail-closed default.
 """
 
 from __future__ import annotations
@@ -19,6 +21,7 @@ from fastapi import Header, HTTPException, Request, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.config import settings
+from app.services import mtls
 from app.services.warehouse import Warehouse
 
 # Write roles; readonly may only GET.
@@ -71,8 +74,28 @@ require_write = require_role(*_WRITE_ROLES)
 require_provisioning = require_role("provisioning", "operator")
 
 
-async def gateway_identity(x_client_gbox: str | None = Header(default=None)) -> str:
-    """Gateway machine identity from the mTLS-terminating proxy (ADR-0022 d2)."""
-    if not x_client_gbox:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "gateway mTLS identity required")
-    return x_client_gbox
+async def gateway_identity(
+    request: Request,
+    x_client_verify: str | None = Header(default=None),
+    x_client_dn: str | None = Header(default=None),
+) -> str:
+    """Gateway machine identity from the mTLS-terminating proxy (ADR-0022 d2).
+
+    The proxy verifies the client certificate against the operator root and
+    forwards its verdict and the subject DN; ``app.services.mtls`` decides whether
+    that material may be believed and extracts the identifier. See that module for
+    why the app parses the DN instead of accepting a ready-made identity header.
+    """
+    try:
+        return mtls.gateway_identity(
+            peer=request.client.host if request.client else None,
+            verify=x_client_verify,
+            dn=x_client_dn,
+            trusted=settings.gateway_trusted_proxies,
+        )
+    except mtls.GatewayChannelNotConfiguredError as exc:
+        # Not the caller's fault and not fixable by retrying with a credential:
+        # this deployment has no mTLS front end, so the channel does not exist.
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
+    except mtls.GatewayIdentityError as exc:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, str(exc)) from exc
