@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0024: Operator CA bootstrap and the root-key ceremony
 
 - **ID:** ADR-0024
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-07-24
 - **Project:** IndustryGrow
 - **Parent:** ADR-0007

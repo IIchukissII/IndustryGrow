@@ -129,7 +129,7 @@ ADRs are the source of truth for the design. Present in this repository:
 - **ADR-0021** (rev 1) — Instance-and-integration ERP: the pre-cloud system of record · *Accepted*
 - **ADR-0022** — Instance-and-integration ERP: the machine- and operator-facing API · *Accepted*
 - **ADR-0023** — The type registry as a machine-readable interface · *Accepted*
-- **ADR-0024** — Operator CA bootstrap and the root-key ceremony · *Proposed*
+- **ADR-0024** — Operator CA bootstrap and the root-key ceremony · *Accepted*
 
 Status follows the lifecycle in **ADR-0000** (decision 7); the project maintainers are
 the accepting authority.
@@ -146,5 +146,7 @@ authoritative mapping, with full texts in [`LICENSES/`](LICENSES/).
 - Hardware designs in `store/` (carrier + sensor modules): **CERN-OHL-S-2.0**
 - ADRs & documentation (`ADR/`, `README`, `REGISTRY.md`): **CC-BY-SA-4.0**
 - Reference firmware (`firmware/`, node sources): **AGPL-3.0-or-later**
+- DSDL protocol layer (`firmware/dsdl/`): **Apache-2.0**
+- ERP application (`erp/`) and operator CA tooling (`pki/`): **AGPL-3.0-or-later**
 - DSDL / protocol layer (`firmware/dsdl/`, the `industryflow.greenhouse.*` types): **Apache-2.0**
 - WeAct core board snapshot retained under its upstream open-hardware license
