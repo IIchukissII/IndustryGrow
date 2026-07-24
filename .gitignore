@@ -43,3 +43,14 @@ firmware/**/build*/
 # MCP server config — local tool wiring, and it can carry endpoints or token
 # references; developer-specific, so it stays out of the public repo.
 .mcp.json
+
+# Operator CA material (ADR-0024). pki/ ships scripts and openssl.cnf; everything
+# a ceremony run produces is operator-private and must never reach the repo. The
+# bare filenames are a backstop for a run whose --dir landed somewhere in-tree —
+# the operator root key is the one secret whose exposure costs the whole estate.
+pki/**/*.key
+pki/**/*.crt
+pki/**/*.csr
+pki/**/*.srl
+operator-root.key
+issuing-ca.key

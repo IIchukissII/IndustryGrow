@@ -4,7 +4,7 @@
 
 test_mtls.py exercises the app's half of the seam with hand-written DN strings.
 This file removes the hand-writing: it runs the shipped ``make-test-ca.sh`` to
-build an actual operator root and an actual P-256 client certificate, performs a
+build an actual two-tier PKI and an actual P-256 client certificate, performs a
 real TLS handshake with client verification, and feeds the *real* subject DN —
 encoded exactly as nginx's ``$ssl_client_s_dn`` encodes it — into the same
 extraction the app uses.
@@ -14,6 +14,10 @@ What that pins down:
   * one with the same CN under a foreign root does not (ADR-0007 d3: trust is
     rooted per operator), so a stolen identifier is not an identity, and
   * the DN of the accepted certificate yields exactly ``GBOX_0001``.
+
+This is the *fixture* path — disposable, unencrypted, built in one unattended
+pass. test_operator_ca.py runs the real ADR-0024 ceremony in ``pki/`` through the
+same seam. Both are two-tier, because that is what deployments run.
 
 Not covered here: nginx itself. The sample config in deploy/mtls/ declares this
 contract but is not executed by the suite — see that directory's README.
@@ -76,7 +80,7 @@ def handshake(pki: Path, client_cert: str, client_key: str) -> dict | None:
     only thing that can vouch for a client.
     """
     server_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-    server_ctx.load_cert_chain(pki / "server.crt", pki / "server.key")
+    server_ctx.load_cert_chain(pki / "server-chain.crt", pki / "server.key")
     server_ctx.verify_mode = ssl.CERT_REQUIRED
     server_ctx.load_verify_locations(pki / "operator-root.crt")
 
@@ -118,12 +122,19 @@ def handshake(pki: Path, client_cert: str, client_key: str) -> dict | None:
 
 
 def test_the_ca_script_produces_what_the_proxy_needs(pki):
-    for name in ("operator-root.crt", "server.crt", "server.key", "gateway.crt", "gateway.key"):
+    for name in (
+        "operator-root.crt",
+        "issuing-ca.crt",
+        "server-chain.crt",
+        "server.key",
+        "gateway-chain.crt",
+        "gateway.key",
+    ):
         assert (pki / name).is_file(), name
 
 
 def test_gateway_certificate_is_accepted_under_the_operator_root(pki):
-    peer = handshake(pki, "gateway.crt", "gateway.key")
+    peer = handshake(pki, "gateway-chain.crt", "gateway.key")
     assert peer is not None, "a certificate issued by the operator root must verify"
     subject = dict(entry for rdn in peer["subject"] for entry in rdn)
     assert subject["commonName"] == "GBOX_0001"
@@ -132,7 +143,7 @@ def test_gateway_certificate_is_accepted_under_the_operator_root(pki):
 def test_same_identifier_under_a_foreign_root_is_refused(pki):
     # Identical CN, different issuer. ADR-0007 d3 roots trust per operator, so
     # knowing a machine's identifier must not be enough to speak as it.
-    assert handshake(pki, "foreign-gateway.crt", "foreign-gateway.key") is None
+    assert handshake(pki, "foreign-gateway-chain.crt", "foreign-gateway.key") is None
 
 
 def test_real_certificate_dn_yields_the_machine_identity(pki):

@@ -81,14 +81,14 @@ app port survivable; it does not make it a good idea.
 ## Running it
 
 ```bash
-# a throwaway operator root + a GBOX_0001 client certificate
+# a throwaway two-tier operator PKI + a GBOX_0001 client certificate
 ./deploy/mtls/make-test-ca.sh deploy/mtls/certs
 
 docker compose -f docker-compose.yml -f docker-compose.mtls.yml up
 
 # the gateway pull channel, as a gateway
 curl --cacert deploy/mtls/certs/operator-root.crt \
-     --cert   deploy/mtls/certs/gateway.crt \
+     --cert   deploy/mtls/certs/gateway-chain.crt \
      --key    deploy/mtls/certs/gateway.key \
      --resolve erp.local:8443:127.0.0.1 \
      https://erp.local:8443/api/v1/gateway/active-profile
@@ -101,13 +101,21 @@ curl --cacert deploy/mtls/certs/operator-root.crt \
 
 `make-test-ca.sh` is **not** a CA bootstrap procedure. A real operator root
 (ADR-0007 d3 — trust is rooted per operator; there is no global IndustryGrow
-root) is a long-lived secret with custody and renewal ceremony around it, and
-standing one up is an ADR-0007 deferred decision, not a shell script. The script
-makes disposable, unencrypted keys so this contract can be run end to end on a
-laptop. It follows the real shapes where they matter: P-256 keys (the curve the
-ATECC608 does), 90-day leaves (ADR-0007 d7, short-lived and renewed), and a
-same-CN leaf under a *foreign* root so rejection can be tested rather than
-assumed.
+root) is an offline, encrypted, custody-managed secret; standing one up is the
+ceremony in [`ADR-0024`](../../../ADR/ADR-0024-operator-ca-bootstrap-and-key-ceremony.md),
+and the tooling and runbook for it live in [`pki/`](../../../pki/README.md).
+**Use that for a deployment; use this for tests.**
+
+The script makes disposable, unencrypted keys in one unattended pass so this
+contract can be run end to end on a laptop. It follows the real shapes where they
+matter: the **two-tier chain** of ADR-0024 d1 (an operator root that signs only
+the issuing CA, which signs every leaf), P-256 keys (the curve the ATECC608 does),
+90-day leaves (ADR-0007 d7, short-lived and renewed), and a same-CN leaf under a
+*foreign* root so rejection can be tested rather than assumed.
+
+Because the chain has two tiers, a peer presents **`*-chain.crt`** — its leaf plus
+the intermediate — not the bare leaf and never the root. `ssl_verify_depth 2`
+above is what lets the proxy walk it.
 
 Generated certificates are gitignored. Do not commit any.
 
@@ -120,6 +128,9 @@ exactly as `$ssl_client_s_dn` encodes it — yields `GBOX_0001`.
 `erp/tests/test_mtls.py` covers the app's half: forged headers from a direct
 caller, failed and missing verification, the fail-closed default, and a query
 parameter failing to override the certificate's identity.
+`erp/tests/test_operator_ca.py` does the same handshake against the **real**
+ADR-0024 ceremony in `pki/`, so the deployment CA and this fixture are both held
+to the two-tier shape.
 
 **`nginx.conf` itself is not executed by the suite** — there is no nginx in CI.
 It is a declaration of the same contract the tests hold the app to, verified by

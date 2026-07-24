@@ -58,6 +58,8 @@ This ADR carries **decisions and rationale only**. On-disk formats, exact storag
 
 5. **Configuration and identity state are unaffected.** `active-profile.json` (ADR-0015 decision 4), the monotonic batch sequence number (ADR-0004 rev 1 decision 10), firmware artifacts (ADR-0004 rev 1 decision 13), and the ATECC-bound identity (ADR-0004 / ADR-0007) are already-permitted persistent state and are unchanged by this ADR.
 
+   > **Amended by ADR-0024 (decision 4):** the **operator CA trust anchor** joins this enumeration. It was absent because the PKI that needs one had not been stood up; ADR-0024 stands it up, and the anchor is configuration state of a kind with the identity certificate already listed here. The rest of this decision is unchanged.
+
 ### What stays RAM-only
 
 6. **Live decoded telemetry working set stays in RAM.** The current decoded state consumed by control loops and the state estimator (ADR-0015 decision 8; ADR-0016 decision 4) is in-memory, as before.
