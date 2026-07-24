@@ -15,6 +15,7 @@ live in [`LICENSES/`](LICENSES/), named by SPDX identifier (REUSE convention).
 |------------------------|----------|---------|---------|
 | `store/` | Hardware reference designs — carrier PCB (`E0001-000001.*`), BOM, gerbers, fab data | CERN Open Hardware Licence v2 – Strongly Reciprocal | [`CERN-OHL-S-2.0`](LICENSES/CERN-OHL-S-2.0.txt) |
 | `ADR/`, `README.md`, `REGISTRY.md`, this file | Architecture decision records and project documentation | Creative Commons Attribution-ShareAlike 4.0 International | [`CC-BY-SA-4.0`](LICENSES/CC-BY-SA-4.0.txt) |
+| `pki/` | Operator CA bootstrap tooling and ceremony runbook (ADR-0024) | GNU Affero General Public License v3.0 or later | [`AGPL-3.0-or-later`](LICENSES/AGPL-3.0-or-later.txt) |
 
 ## Declared but not yet present in this repository
 

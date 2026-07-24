@@ -1,0 +1,64 @@
+# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Certificate extension profiles for the operator CA (ADR-0024).
+#
+# One file, four profiles, because the difference between a root, an issuing CA,
+# and an end-entity certificate is entirely in these extensions — and ADR-0024
+# decision 2 requires that difference to be enforced by the certificates
+# themselves rather than by whoever remembered to pass the right flag.
+
+# OpenSSL resolves ${ENV::...} when it parses the file, not when it applies the
+# section that uses it, so PKI_SAN must be set for EVERY invocation even though
+# only v3_server reads it. The scripts export a placeholder by default; sign-csr.sh
+# sets the real value and refuses a server profile without one.
+
+[ req ]
+distinguished_name = req_dn
+prompt             = no
+
+[ req_dn ]
+# Overridden per invocation with -subj; present because `openssl req` insists.
+CN = unused
+
+# ---- ADR-0024 d1: the offline operator root --------------------------------
+# Signs certificate authorities only (d2). cRLSign is asserted even though
+# ADR-0007 d7 declines CRL/OCSP: it costs nothing, and an operator who later
+# chooses to publish a CRL (that ADR permits it, it just isn't the default)
+# should not have to re-issue the root to do it.
+[ v3_root ]
+basicConstraints       = critical, CA:TRUE
+keyUsage               = critical, keyCertSign, cRLSign
+subjectKeyIdentifier   = hash
+
+# ---- ADR-0024 d2: the issuing intermediate ---------------------------------
+# pathlen:0 is the decision-2 constraint in force: this CA may issue end-entity
+# certificates and may NOT issue further CAs. A mistake at issuance time fails
+# path validation instead of silently widening the CA.
+[ v3_intermediate ]
+basicConstraints       = critical, CA:TRUE, pathlen:0
+keyUsage               = critical, keyCertSign, cRLSign
+subjectKeyIdentifier   = hash
+authorityKeyIdentifier = keyid:always
+
+# ---- ADR-0024 d1: the gateway client leaf ----------------------------------
+# The credential ADR-0022 d2 requires. clientAuth only — this certificate must
+# never be usable to impersonate the ERP it authenticates to.
+[ v3_gateway ]
+basicConstraints       = critical, CA:FALSE
+keyUsage               = critical, digitalSignature
+extendedKeyUsage       = clientAuth
+subjectKeyIdentifier   = hash
+authorityKeyIdentifier = keyid,issuer
+
+# ---- ADR-0024 d1: the ERP server leaf --------------------------------------
+# serverAuth only, for the same reason inverted. SAN is mandatory: a modern TLS
+# stack ignores CN for name checking, so a server certificate without it is one
+# that simply fails to validate.
+[ v3_server ]
+basicConstraints       = critical, CA:FALSE
+keyUsage               = critical, digitalSignature, keyEncipherment
+extendedKeyUsage       = serverAuth
+subjectKeyIdentifier   = hash
+authorityKeyIdentifier = keyid,issuer
+subjectAltName         = ${ENV::PKI_SAN}
