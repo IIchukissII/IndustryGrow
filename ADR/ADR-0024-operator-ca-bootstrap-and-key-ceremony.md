@@ -359,6 +359,13 @@ exercising what deployments run.
   constraint on what the pipeline may bake in (a specific root identity in the `-PR`, a
   single-anchor trust store) has to be fixed before the pipeline is written, or the
   migration path closes quietly.
+  > **Decided by ADR-0007 rev 1 (decision 10d):** the constraint is now settled — the
+  > `-PR` keys on `GBOX_NNNN` and the hardware public-key fingerprint (never a leaf's CN
+  > or serial), the gateway trust anchor must be **replaceable** (re-anchorable when the
+  > operator changes, not one value compiled in for the life of the part — *not* a mandate
+  > to trust two operators at once), and no tenant or CN-versus-SAN assumption is baked
+  > into anything a migration cannot rewrite. Recorded there rather than restated here, so
+  > the constraint keeps one authoritative home (ADR-0000 decision 3).
 - **Commercial-operator CA custody, staffing, and audit obligations** (decision 12).
   Named here rather than assigned, because the record that would own them does not exist.
 - **Automated issuance.** If fleet size makes manual issuance the bottleneck, an ACME
