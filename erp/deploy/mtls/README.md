@@ -7,7 +7,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 [ADR-0022 decision 2](../../../ADR/ADR-0022-instance-integration-erp-api.md): a
 gateway authenticates to the ERP with the ATECC608-bound client certificate it
-already holds under [ADR-0007](../../../ADR/ADR-0007-pki-and-secure-element-identity.md),
+already holds under [ADR-0007](../../../ADR/ADR-0007-pki-and-secure-element-identity-rev1.md),
 and its identity `GBOX_NNNN` is derived **from the verified certificate, never
 from a request parameter**.
 
