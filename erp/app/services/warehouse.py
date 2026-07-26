@@ -15,6 +15,7 @@ prefix-scan cleanup finds it), never a dangling index row.
 from __future__ import annotations
 
 import asyncio
+from typing import Any
 
 import boto3
 from botocore.config import Config
@@ -100,6 +101,24 @@ class Warehouse:
             return resp["Body"].read()
 
         return await asyncio.to_thread(_get)
+
+    async def open_stream(self, key: str) -> tuple[Any, str, int | None]:
+        """An open body for `key`, with its content type and length.
+
+        Returned rather than read so the caller can stream it through without the
+        whole object landing in memory — the read-through of ADR-0022 rev 2 d7 has
+        to work for a 1.6 MB fab archive as well as for an 11 kB manual.
+        """
+
+        def _open():
+            resp = self._client.get_object(Bucket=self._bucket, Key=key)
+            return (
+                resp["Body"],
+                resp.get("ContentType") or "application/octet-stream",
+                resp.get("ContentLength"),
+            )
+
+        return await asyncio.to_thread(_open)
 
     async def list_prefix(self, prefix: str) -> list[str]:
         """Prefix scan — the ADR-0017 d15 filtering primitive."""

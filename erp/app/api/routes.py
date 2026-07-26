@@ -14,6 +14,8 @@ from datetime import UTC, date, datetime
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi.concurrency import iterate_in_threadpool
+from fastapi.responses import StreamingResponse
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pymongo.errors import DuplicateKeyError
 
@@ -566,6 +568,55 @@ async def set_sp_stock(
 # ============================ calibration ==================================
 
 
+def _is_store_file(object_key: str) -> bool:
+    """True when the key names a file directly in the repository's `store/`.
+
+    Resolved against the directory rather than joined onto it, so a key holding
+    `..` or a separator cannot walk out of the mirror. Directly in it, not below:
+    the warehouse keyspace is flat (ADR-0017 d15), and the nested KiCad footprint
+    directories are not documents anyone reads through the console.
+    """
+    root = Path(settings.store_dir).resolve()
+    candidate = (root / object_key).resolve()
+    return candidate.parent == root and candidate.is_file()
+
+
+async def _read_through(warehouse: Warehouse, object_key: str) -> StreamingResponse:
+    """Stream one object from the store to the caller, holding none of it.
+
+    ADR-0022 rev 2 d7's third form. The ERP keeps no copy — chunks pass through —
+    so ADR-0021 d7's "does not duplicate blob content" still holds. This exists
+    because a presigned URL is only spendable by a browser the object store has
+    been configured to accept, and an operator handed a grant they cannot spend
+    has been given nothing.
+
+    `inline` rather than `attachment`: the point is to read the document where you
+    are, and a Content-Disposition of attachment would send every manual to the
+    downloads folder instead.
+    """
+    try:
+        body, content_type, length = await warehouse.open_stream(object_key)
+    except Exception as exc:
+        raise HTTPException(
+            status.HTTP_502_BAD_GATEWAY,
+            f"{object_key} could not be read from the warehouse: {exc}",
+        ) from exc
+
+    def _chunks():
+        try:
+            while chunk := body.read(64 * 1024):
+                yield chunk
+        finally:
+            body.close()
+
+    headers = {"Content-Disposition": f'inline; filename="{object_key}"'}
+    if length is not None:
+        headers["Content-Length"] = str(length)
+    return StreamingResponse(
+        iterate_in_threadpool(_chunks()), media_type=content_type, headers=headers
+    )
+
+
 @router.get("/store-documents", response_model=list[schemas.StoreDocOut], tags=["documents"])
 async def list_store_documents(_role: str = Depends(require_read)):
     """The type-layer documents the repository owns and `store_sync` mirrors.
@@ -614,12 +665,7 @@ async def store_document_url(
     containing `..` or a slash cannot walk out of the mirror.
     """
 
-    def _is_store_file() -> bool:
-        root = Path(settings.store_dir).resolve()
-        candidate = (root / object_key).resolve()
-        return candidate.parent == root and candidate.is_file()
-
-    if not await asyncio.to_thread(_is_store_file):
+    if not await asyncio.to_thread(_is_store_file, object_key):
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
             f"{object_key} is not a document in the repository's store/",
@@ -637,6 +683,25 @@ async def store_document_url(
         url=await warehouse.presigned_get(object_key, expires=expires),
         expires_in=expires,
     )
+
+
+@router.get("/store-documents/{object_key}/content", tags=["documents"])
+async def store_document_content(
+    object_key: str,
+    warehouse: Warehouse = Depends(get_warehouse),
+    _role: str = Depends(require_read),
+):
+    """Read one repository document through (ADR-0022 rev 2 d7).
+
+    Guarded exactly as the URL route above is: the key must name a file in the
+    repository's `store/`, resolved against it rather than joined onto it.
+    """
+    if not await asyncio.to_thread(_is_store_file, object_key):
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            f"{object_key} is not a document in the repository's store/",
+        )
+    return await _read_through(warehouse, object_key)
 
 
 @router.get(
@@ -689,6 +754,29 @@ async def document_url(
         url=await warehouse.presigned_get(object_key, expires=expires),
         expires_in=expires,
     )
+
+
+@router.get("/instances/{instance_id}/documents/{object_key}/content", tags=["documents"])
+async def document_content(
+    instance_id: str,
+    object_key: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    warehouse: Warehouse = Depends(get_warehouse),
+    _role: str = Depends(require_read),
+):
+    """Read one indexed document through (ADR-0022 rev 2 d7).
+
+    Same index guard as the URL route: the key must be one this instance has
+    indexed, so this serves the ERP's own record rather than the bucket.
+    """
+    doc = await db[FOUNDATION["lifecycle_doc"]].find_one(
+        {"instance_full_id": instance_id, "object_key": object_key}
+    )
+    if doc is None:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND, f"{instance_id} has no indexed document {object_key}"
+        )
+    return await _read_through(warehouse, object_key)
 
 
 @router.get(

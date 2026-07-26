@@ -3,20 +3,34 @@ SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
-# ADR-0022 (rev 1): Instance-and-integration ERP — the machine- and operator-facing API
+# ADR-0022 (rev 2): Instance-and-integration ERP — the machine- and operator-facing API
 
-- **ID:** ADR-0022 (rev 1)
+- **ID:** ADR-0022 (rev 2)
 - **Status:** Accepted
-- **Date:** 2026-07-19 (accepted 2026-07-21, with decision 1 clarified; rev 1: 2026-07-26)
+- **Date:** 2026-07-19 (accepted 2026-07-21, with decision 1 clarified; rev 1 and rev 2: 2026-07-26)
 - **Project:** IndustryGrow
 - **Parent:** ADR-0021 (rev 3)
 - **Companions:** ADR-0000, ADR-0004 (rev 1), ADR-0007 (rev 1), ADR-0015, ADR-0016 (rev 1), ADR-0017 (rev 1), ADR-0019, ADR-0020, ADR-0024, ADR-0025
-- **Supersedes:** ADR-0022 (2026-07-19, accepted 2026-07-21)
+- **Supersedes:** ADR-0022 rev 1 (2026-07-26), and through it the initial record (2026-07-19, accepted 2026-07-21)
 - **Realizes:** ADR-0021 deferred decisions *"ERP ↔ object store integration"* and *"ERP ↔ gateway profile push"*; and, at rev 1, the API surface for ADR-0021 rev 3 decision 17's machine identity binding (decision 12). ADR-0007's deferred *"`-PR` record format"* is **not** resolved by this — decision 12 records the queryable binding and leaves the blob format and document key deferred
 - **Clarified by:** ADR-0023 (decision 1's type-meaning exclusion — the read-through catalog)
 - **Relates to:** ADR-IF-0001 (planned) — the `production_unit` core whose API this one's foundational operations align to at stage 11
 
 ## Revision history
+
+- **rev 2 (2026-07-26)** — Amends decision 7. It said the ERP returns the object
+  key **or a time-limited retrieval URL**, and nothing else; a read-through that
+  streams the bytes is now permitted as a third form, for documents the ERP has
+  indexed or the repository owns. The reason the original wording did not survive
+  contact: a URL the object store issues is only usable by a browser the object
+  store has been configured to accept, so on a deployment whose bucket credentials
+  cannot set a CORS policy, an operator could be handed a valid grant for a
+  document they still could not read. The rule was stricter than the reasoning
+  under it — ADR-0021 decision 7 asks that the ERP not **duplicate** blob content,
+  and a stream duplicates nothing. It is the same shape ADR-0023 established for
+  `REGISTRY.md`, which decision 1 already serves read-through: read-only, stored
+  nowhere, owned by whoever owned it before. What stays forbidden is the ERP
+  holding a copy (alternative O).
 
 - **rev 1 (2026-07-26)** — Adds decision 12 and qualifies decision 8, both prompted
   by building the gateway side. **Decision 12** exposes the machine
@@ -44,6 +58,15 @@ ADR-0021 (rev 1) fixes the ERP's role, ownership, and boundaries and the store e
 Both are resolved only by deciding the API. Serial allocation, provisioning binding, integration tracking, and SP stock likewise need an external interface: production stations issue serials and bind ATECC records, an operator installs and moves instances, and the gateway obtains its active profile version. This ADR decides the **shape, auth model, and hard boundaries** of that interface. Concrete route strings, request/response schemas, and the OpenAPI document are implementation per ADR-0000; this record carries decisions and rationale.
 
 The API has two distinct caller classes with very different standing against the existing PKI: **machine callers** (the gateway, which already holds an ATECC608-bound X.509 client certificate under ADR-0007) and **human/tooling callers** (operators, provisioning stations), which have no hardware identity anchor. Conflating them is the central design error this ADR exists to prevent.
+
+**What deploying it exposed (rev 2).** Decision 7's original wording assumed a
+retrieval URL is always spendable. It is not: a presigned URL is honoured only by a
+browser the object store has been told to accept, and the first real deployment ran
+against a bucket whose credentials could not set that policy. So the API could hand
+an operator a correct, unexpired grant for a manual they still could not open — a
+boundary that produced no security and one unreadable document. The rule was
+stricter than the reasoning under it, and rev 2 loosens the rule to match the
+reasoning rather than the other way round.
 
 **What building the gateway side exposed (rev 1).** Two gaps surfaced once the
 gateway actually had an identity and a client, and both sit on the caller-class
@@ -98,7 +121,7 @@ that the second is closed deliberately.
 
 ### Lifecycle-document ingestion (index over the warehouse)
 
-7. **The document-ingestion surface is scoped to the instance-lifecycle suffix allowlist `{QP, QR, CP, CC, PR}` on instance identifiers `Exxxx-VVVVVV-NNNNNN`, and that scope is exhaustive.** The blob is written to the object-store warehouse *first*, then its key and metadata (type, status, dates, calibration validity) are recorded in the ERP index (referential integrity — a recorded key always resolves; ADR-0021 decision 7). **The ERP never returns blob content**; it returns the object-store key or a time-limited retrieval URL. Type-layer documents — `-S/-D/-L/-P/-M/-I`, the `-D-fab.zip` fabrication package (ADR-0017 decision 18), SP documents and designed-accessory rollups (`SPxxxx-<layer>`, `<parent>-D-<slug>`, ADR-0019 decisions 8–9) — are **not** acceptable through this API; they are repo/`store_sync` artifacts. The allowlist (not a blocklist) is what makes that boundary hold as the type layer grows.
+7. **The document-ingestion surface is scoped to the instance-lifecycle suffix allowlist `{QP, QR, CP, CC, PR}` on instance identifiers `Exxxx-VVVVVV-NNNNNN`, and that scope is exhaustive.** The blob is written to the object-store warehouse *first*, then its key and metadata (type, status, dates, calibration validity) are recorded in the ERP index (referential integrity — a recorded key always resolves; ADR-0021 decision 7). **The ERP never *stores* blob content, and returns it only by reading through.** It answers with the object-store key, a time-limited retrieval URL, or — *rev 2* — the bytes streamed straight from the object store to the caller, holding none of them. The third form exists because the second is not always usable: a URL the object store issues is only good to a browser that store has been configured to accept, and an operator handed a grant they cannot spend has been given nothing. What remains forbidden is the ERP keeping a copy — ADR-0021 decision 7 asks that it not duplicate the store, and a read-through duplicates nothing (alternative O). Type-layer documents — `-S/-D/-L/-P/-M/-I`, the `-D-fab.zip` fabrication package (ADR-0017 decision 18), SP documents and designed-accessory rollups (`SPxxxx-<layer>`, `<parent>-D-<slug>`, ADR-0019 decisions 8–9) — are **not** acceptable through this API; they are repo/`store_sync` artifacts. The allowlist (not a blocklist) is what makes that boundary hold as the type layer grows.
 
 ### Profiles — store and record, never a deploy path
 
@@ -154,6 +177,8 @@ that the second is closed deliberately.
 **F. Store model parameters separately from setpoints.** *Rejected:* exactly ADR-0016 alternative D / ADR-0021 decision 13 — a profile version is one atomically-versioned artifact.
 
 **G. Accept client-supplied serials.** *Rejected:* the ERP is the serial-allocation authority (ADR-0021 decision 4); a client-chosen serial cannot be gap-free-guaranteed and forfeits the authority.
+
+**O. Keep decision 7 as it stood and require a CORS policy on the bucket (rev 2).** The boundary is cleaner: the ERP touches no bytes at all, and one line of bucket configuration makes every grant spendable. *Rejected as a requirement,* and it remains the better arrangement wherever it is available: it makes the deployment depend on a permission the object store may not grant the credentials it was given, and it pushes a configuration step into every future deployment to preserve a property — no duplication — that a read-through does not threaten anyway. An operator who can set the policy should; the API no longer *needs* them to.
 
 **M. Record the gateway's pull — a "last pulled at" timestamp on the machine (rev 1).** One mutable field, overwritten each pull, no history; it would let an operator see at a glance whether a cabinet is actually collecting its profile, which decision 8 otherwise leaves unanswerable. *Rejected:* it is operational intake from a machine caller, which decision 9 excludes by category, and the "it is only one field, not a log" defence does not survive the caller-class test the Context sets out — the active-version record is what an *operator decided*, while this would be what a *machine did*. Its real use is monitoring ("alert me if a gateway has not pulled in an hour"), and monitoring is platform-side (ADR-0004 rev 1 decision 10). It would also convert the single endpoint a gateway calls on a 60-second timer from a read into a write, opening exactly the machine-write surface decision 9 closes. The question is a good one; the ERP is the wrong place to answer it.
 

@@ -531,48 +531,43 @@ async function openDocument(instanceId: string | null, objectKey: string): Promi
   const reader = $("dc-reader");
   reader.hidden = false;
   reader.innerHTML = `<div class="rd-head"><span class="rd-key">${esc(objectKey)}</span>
-    <span class="rd-note">requesting a read grant…</span></div>`;
+    <span class="rd-note">opening…</span></div>`;
 
-  let grant;
-  try {
-    grant = instanceId
-      ? await api.documentUrl(instanceId, objectKey)
-      : await api.storeDocumentUrl(objectKey);
-  } catch (e) {
-    reader.innerHTML = `<div class="rd-head"><span class="rd-key">${esc(objectKey)}</span></div>
-      <div class="empty"><span class="err">${esc((e as Error).message)}</span></div>`;
-    return;
-  }
-
-  const minutes = Math.round(grant.expires_in / 60);
-  const head = `<div class="rd-head">
-      <span class="rd-key">${esc(objectKey)}</span>
-      <span class="rd-note">read grant open for ${minutes} min</span>
-      <a class="btn ghost sm" href="${esc(grant.url)}" target="_blank" rel="noopener noreferrer">Open in a tab</a>
+  // Read through our own origin (ADR-0022 rev 2 d7): the ERP streams the bytes
+  // from the object store and keeps none. Going direct to a presigned URL needs
+  // a CORS policy on the bucket, which a deployment's credentials may not be
+  // able to set — an operator handed a grant they cannot spend has nothing.
+  const path = api.documentContentPath(instanceId, objectKey);
+  const head = (extra = "") => `<div class="rd-head">
+      <span class="rd-key">${esc(objectKey)}</span>${extra}
+      <a class="btn ghost sm" href="${path}" target="_blank" rel="noopener noreferrer">Open in a tab</a>
       <button class="btn ghost sm" id="rd-close">Close</button>
     </div>`;
 
   try {
-    const res = await fetch(grant.url);
-    if (!res.ok) throw new Error(`the object store answered ${res.status}`);
-    const body = await res.text();
-    const markdown = /\.(md|markdown|txt)$/i.test(objectKey) || !/^%PDF|^PK\x03\x04/.test(body);
-    reader.innerHTML =
-      head +
-      (markdown
-        ? `<article class="rd-body md">${DOMPurify.sanitize(
-            await marked.parse(body),
-          )}</article>`
-        : `<div class="empty">This is not a text document. Open it in a tab to view it.</div>`);
-  } catch {
-    // A cross-origin fetch the bucket has not been told to allow. Naming the fix
-    // beats a spinner that never resolves — and the tab link still works, because
-    // top-level navigation is not subject to CORS.
-    reader.innerHTML =
-      head +
-      `<div class="empty">Reading in place needs a CORS rule on the warehouse bucket
-        allowing <code>${esc(location.origin)}</code> to <code>GET</code>. Until then,
-        open the document in a tab — that path does not need one.</div>`;
+    const res = await fetch(path, { headers: { Authorization: `Bearer ${getToken()}` } });
+    if (!res.ok) {
+      const detail = await res.json().then((j) => j.detail).catch(() => res.statusText);
+      reader.innerHTML = head() + `<div class="empty"><span class="err">${esc(detail)}</span></div>`;
+    } else {
+      const type = res.headers.get("content-type") ?? "";
+      const textual = /^text\/|json|markdown|xml|csv/.test(type) || /\.(md|markdown|txt|csv)$/i.test(objectKey);
+      if (!textual) {
+        reader.innerHTML =
+          head(`<span class="rd-note">${esc(type.split(";")[0] || "binary")}</span>`) +
+          `<div class="empty">Not a text document — open it in a tab to view or save it.</div>`;
+      } else {
+        const body = await res.text();
+        const md = /markdown/.test(type) || /\.(md|markdown)$/i.test(objectKey);
+        reader.innerHTML =
+          head() +
+          (md
+            ? `<article class="rd-body md">${DOMPurify.sanitize(await marked.parse(body))}</article>`
+            : `<pre class="rd-body plain">${esc(body)}</pre>`);
+      }
+    }
+  } catch (e) {
+    reader.innerHTML = head() + `<div class="empty"><span class="err">${esc((e as Error).message)}</span></div>`;
   }
   $("rd-close")?.addEventListener("click", () => {
     reader.hidden = true;
@@ -584,10 +579,10 @@ async function openDocument(instanceId: string | null, objectKey: string): Promi
  * The documents the repository owns — manuals, pinmaps, schematics, fab packages.
  *
  * These are not ERP records: the ERP indexes none of them and owns none of them
- * (ADR-0021 d11). It serves a read grant for the copy `store_sync` mirrored into
- * the warehouse, the same read-only shape ADR-0023 gave `REGISTRY.md`. An
- * operator at a cabinet wants the bring-up manual, and the alternative to showing
- * it here is a second copy of store/ somewhere.
+ * (ADR-0021 d11). It serves the copy `store_sync` mirrored into the warehouse,
+ * read-only, the same shape ADR-0023 gave `REGISTRY.md`. An operator at a cabinet
+ * wants the bring-up manual, and the alternative to showing it here is a second
+ * copy of store/ somewhere.
  *
  * Grouped by what a document IS rather than by identifier, because that is how
  * someone looks for one: you go hunting for "the manual", not for "SP0004-M-".
@@ -598,15 +593,19 @@ async function library(): Promise<string> {
     return `<div class="empty">Nothing mirrored into the warehouse yet. Run
       <code>python -m app.store_sync</code> to publish the repository's <code>store/</code>.</div>`;
 
-  const readable = new Set(["manual", "document", "procedure", "instruction"]);
+  const readableKind = new Set(["manual", "document", "procedure", "instruction", "table"]);
+  // The layer letter says what a document is ABOUT; the extension says whether we
+  // can render it. A design-layer pinmap is still markdown.
+  const readable = (d: { object_key: string; kind: string }) =>
+    readableKind.has(d.kind) || /\.(md|markdown|txt|csv)$/i.test(d.object_key);
   const size = (n: number) =>
     n < 1024 ? `${n} B` : n < 1e6 ? `${Math.round(n / 1024)} kB` : `${(n / 1e6).toFixed(1)} MB`;
 
   const groups = new Map<string, typeof docs>();
   for (const d of docs) groups.set(d.kind, [...(groups.get(d.kind) ?? []), d]);
-  // Readable kinds first — the ones an operator opens rather than downloads.
+  const kindReadable = (k: string) => groups.get(k)!.some(readable);
   const order = [...groups.keys()].sort(
-    (a, b) => Number(readable.has(b)) - Number(readable.has(a)) || a.localeCompare(b),
+    (a, b) => Number(kindReadable(b)) - Number(kindReadable(a)) || a.localeCompare(b),
   );
 
   const sections = order
@@ -617,7 +616,7 @@ async function library(): Promise<string> {
           (d) => `<div class="lib-row"><button class="seg id key" data-doc="${esc(d.object_key)}"
             title="Open ${esc(d.object_key)}">${esc(d.object_key)}</button>
             <span class="ref">${size(d.size_bytes)}</span>
-            ${readable.has(kind) ? `<span class="st ok">read</span>` : ""}</div>`,
+            ${readable(d) ? `<span class="st ok">read</span>` : ""}</div>`,
         )
         .join("");
       return `<div class="lib-group"><h3 class="lib-kind">${esc(kind)}<span class="lib-n">${groups.get(kind)!.length}</span></h3>
@@ -625,15 +624,13 @@ async function library(): Promise<string> {
     })
     .join("");
 
-  // Said once, at the top, rather than on every group: it is one fact about the
-  // whole view, and repeating it per panel was noise the moment there were nine.
   return `
     <section class="panel"><div class="ph"><h2>What the repository holds</h2>
       <span class="desc">${docs.length} documents mirrored into the warehouse · manuals and
       procedures open here; the rest download</span></div>
       <div class="note">These belong to the repository, not to the ERP. It indexes none of them
-        and owns none of them — it points at the copy <code>store_sync</code> published, so the
-        manual you read here is the one in <code>store/</code>.</div>
+        and owns none of them — it reads through to the copy <code>store_sync</code> published, so
+        the manual you read here is the one in <code>store/</code>.</div>
       <div class="lib">${sections}</div>
     </section>
     <div class="reader" id="dc-reader" hidden></div>`;

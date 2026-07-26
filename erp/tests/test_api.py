@@ -213,6 +213,43 @@ def test_a_store_file_not_yet_mirrored_says_so(client, warehouse):
     assert "store_sync" in r.json()["detail"]
 
 
+def test_a_document_can_be_read_through(client, warehouse):
+    # ADR-0022 rev 2 d7's third form. The ERP holds no copy — the bytes stream from
+    # the object store — so ADR-0021 d7's "does not duplicate" still holds. It
+    # exists because a presigned URL is only spendable by a browser the store has
+    # been configured to accept, and a grant that cannot be spent is nothing.
+    warehouse.objects["SP0004-M-gateway-bringup.md"] = b"# Gateway bring-up\n"
+    warehouse.content_types["SP0004-M-gateway-bringup.md"] = "text/markdown"
+    r = client.get("/api/v1/store-documents/SP0004-M-gateway-bringup.md/content", headers=AUTH)
+    assert r.status_code == 200
+    assert r.text == "# Gateway bring-up\n"
+    assert "markdown" in r.headers["content-type"]
+    # inline, not attachment: the point is to read it here, not to download it.
+    assert r.headers["content-disposition"].startswith("inline")
+
+
+def test_read_through_honours_the_same_guards(client, warehouse):
+    # The read-through must not be a softer door than the URL route beside it.
+    warehouse.objects["E0002-020100-000001-CC-20260722"] = b"%PDF private"
+    assert (
+        client.get(
+            "/api/v1/store-documents/E0002-020100-000001-CC-20260722/content", headers=AUTH
+        ).status_code
+        == 404
+    )
+    assert client.get(
+        "/api/v1/store-documents/..%2Fpyproject.toml/content", headers=AUTH
+    ).status_code in (404, 307)
+    # An instance document is readable only for the instance that indexed it.
+    inst = _one_instance(client)
+    assert (
+        client.get(
+            f"/api/v1/instances/{inst}/documents/E0001-000002-D-pinmap.md/content", headers=AUTH
+        ).status_code
+        == 404
+    )
+
+
 def test_calibration_key_carries_its_date_and_is_queryable(client, warehouse):
     inst = _one_instance(client)
     r = client.post(
