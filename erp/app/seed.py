@@ -11,6 +11,8 @@ written to the warehouse here.
 from __future__ import annotations
 
 import asyncio
+import base64
+import json
 from datetime import UTC, datetime
 
 from app.config import settings
@@ -129,27 +131,27 @@ async def seed(db=None) -> None:
             }
         )
 
+    # Demo versions are stored UNSIGNED and none is recorded active. Seeding a
+    # signature would mean either inventing one — which fails at a gateway looking
+    # like tampering — or shipping a private key with the demo data. So the seed
+    # shows the state ADR-0025 d11 describes: a version can be parked unsigned, and
+    # cannot be activated until it is signed (signing/sign_profile.py).
     for tag in ["v5", "v6", "v7", "v8"]:
         await db[DOMAIN["profile_version"]].insert_one(
             {
                 "machine_id": MACHINE,
                 "version_tag": tag,
-                "payload": {"setpoints": {}, "model": {}},
-                "signed_hash": None,
+                "document_b64": base64.b64encode(
+                    json.dumps(
+                        {"machine_id": MACHINE, "version_tag": tag, "setpoints": {}, "model": {}}
+                    ).encode()
+                ).decode(),
+                "signature": None,
                 "source_template_ref": "v1",
                 "created_at": now,
                 "created_by": "seed",
             }
         )
-    await db[DOMAIN["profile_deployment"]].insert_one(
-        {
-            "machine_id": MACHINE,
-            "version_tag": "v7",
-            "activated_at": now,
-            "deactivated_at": None,
-            "activated_by": "seed",
-        }
-    )
 
     for sp, qty, loc in SP_STOCK:
         await db[FOUNDATION["sp_stock"]].insert_one(

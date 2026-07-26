@@ -34,13 +34,14 @@ jobs:
         run: |
           ruff check .
           ruff format --check .
-      - name: Lint the gateway Python
-        # gateway/ has no suite of its own, and its Python (the provisioning tool,
-        # the bring-up self-test) would otherwise be the only unlinted Python in
-        # the repo. Same config as the ERP's, so there is one style, not two.
+      - name: Lint the gateway and signing Python
+        # Neither directory has a suite of its own, and their Python (the
+        # provisioning tool, the profile client, the profile signer, the bring-up
+        # self-test) would otherwise be the only unlinted Python in the repo. Same
+        # config as the ERP's, so there is one style, not two.
         run: |
-          ruff check --config pyproject.toml ../gateway
-          ruff format --check --config pyproject.toml ../gateway
+          ruff check --config pyproject.toml ../gateway ../signing
+          ruff format --check --config pyproject.toml ../gateway ../signing
       - name: Test
         # `-m "not live"` deselects rather than relies on the ERP_LIVE_WAREHOUSE
         # skip: CI must not be one stray environment variable away from writing

@@ -131,6 +131,14 @@ setup_dirs() {
     install -d -m 0750 -o root -g gateway "${APP_DIR}"
     install -m 0644 "${FILES_DIR}/app/gateway_selftest.py" "${APP_DIR}/gateway_selftest.py"
     install -m 0755 "${FILES_DIR}/app/can-up.sh" "${APP_DIR}/can-up.sh"
+    # The profile client lives beside provision.sh rather than under files/app,
+    # because it is also run by hand from a checkout (`show`, `once`). It needs no
+    # dependency beyond the stdlib and the openssl already installed.
+    install -m 0644 "${SCRIPT_DIR}/profile_client.py" "${APP_DIR}/profile_client.py"
+    # Where the identity and the profile-verification key live (ADR-0025 d10).
+    # provision_identity.py writes the first two; the third is the operator's
+    # public key, copied here during commissioning.
+    install -d -m 0755 -o root -g gateway "${CONFIG_DIR}/pki"
 }
 
 setup_venv() {
@@ -231,6 +239,36 @@ install_gateway_service() {
     systemctl restart gateway-pycyphal.service
 }
 
+install_profile_pull() {
+    # The ADR-0015 d5 profile poll. Separate from gateway-pycyphal.service because
+    # that unit keeps /etc/industrygrow read-only and this one has to write the
+    # active profile into it (see the unit's own comment).
+    log "installing industrygrow-profile-pull.service + .timer (ADR-0015 d5, ADR-0025)"
+    install -m 0644 "${FILES_DIR}/systemd/industrygrow-profile-pull.service" \
+        /etc/systemd/system/industrygrow-profile-pull.service
+    install -m 0644 "${FILES_DIR}/systemd/industrygrow-profile-pull.timer" \
+        /etc/systemd/system/industrygrow-profile-pull.timer
+    systemctl daemon-reload
+
+    # Enable the TIMER, not the service: the service is oneshot and the timer is
+    # what gives it a cadence. Enabling the service would run one pull at boot and
+    # never again.
+    #
+    # Left STOPPED unless the gateway has what a pull needs. Starting the timer on
+    # a unit with no ERP URL, no certificate, or no verification key would produce
+    # a failed pull every minute in the journal and teach the operator to ignore it.
+    if [ -n "${IGROW_ERP_URL:-}" ]; then
+        systemctl enable --now industrygrow-profile-pull.timer
+        log "profile pull enabled against ${IGROW_ERP_URL}"
+    else
+        systemctl enable industrygrow-profile-pull.timer
+        systemctl stop industrygrow-profile-pull.timer 2>/dev/null || true
+        warn "IGROW_ERP_URL is empty — profile pull installed but NOT started. Set it in
+       ${CONFIG_DIR}/gateway.env, provision an identity (provision_identity.py) and the
+       operator's profile-verification key, then: systemctl start industrygrow-profile-pull.timer"
+    fi
+}
+
 harden_ssh() {
     # ADR-0004 d2 — key-only, no root. BRING-UP: sshd stays ENABLED (do not disable).
     # The drop-in is installed as 00- so it is read BEFORE cloud-init's
@@ -324,6 +362,7 @@ main() {
     setup_can_hat
     setup_can
     install_gateway_service
+    install_profile_pull
     harden_ssh
     setup_fail2ban
     setup_unattended

@@ -372,13 +372,17 @@ async function profiles(): Promise<string> {
     </section>
 
     <section class="panel"><div class="ph"><h2>Store a version</h2>
-      <span class="desc">setpoints and model together, as one whole artifact</span></div>
+      <span class="desc">setpoints and model together, as one whole artifact. Paste the document
+      exactly as signed &mdash; the signature covers these bytes, so reformatting breaks it</span></div>
       <div class="form">
         <div class="field"><label>Version tag</label><input id="pf-t" placeholder="v9" size="12"></div>
-        <div class="field"><label>Signed hash</label><input id="pf-h" placeholder="optional" size="20"></div>
+        <div class="field grow"><label>Signature</label><input id="pf-h"
+          placeholder="base64 from sign_profile.py — required before it can be activated" size="44"></div>
       </div>
       <div class="form">
-        <div class="field grow"><label>Payload</label><textarea id="pf-p" rows="6">{
+        <div class="field grow"><label>Profile document</label><textarea id="pf-p" rows="6">{
+  "machine_id": "GBOX_0001",
+  "version_tag": "v9",
   "setpoints": {},
   "model": {}
 }</textarea></div>
@@ -532,13 +536,19 @@ function wire(): void {
       act("pf-out", async () => {
         const tag = val("pf-t");
         if (!tag) throw new Error("a version tag is required");
-        let payload: unknown;
+        // Encoded exactly as pasted, not parsed and re-stringified: the signature
+        // covers these bytes (ADR-0025 d6), so reformatting them would invalidate
+        // it. Parsing happens only to reject something that is not JSON at all.
+        const text = $<HTMLTextAreaElement>("pf-p").value;
         try {
-          payload = JSON.parse($<HTMLTextAreaElement>("pf-p").value);
+          JSON.parse(text);
         } catch {
-          throw new Error("the payload is not valid JSON");
+          throw new Error("the profile document is not valid JSON");
         }
-        await api.storeProfile(state.machine!, tag, payload, val("pf-h") || undefined);
+        const document_b64 = btoa(
+          String.fromCharCode(...new TextEncoder().encode(text)),
+        );
+        await api.storeProfile(state.machine!, tag, document_b64, val("pf-h") || undefined);
         await renderBody();
         return `<span class="rl">Stored</span>${esc(tag)} is available to the gateway. It is not deployed.`;
       }),

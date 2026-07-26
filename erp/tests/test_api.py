@@ -5,6 +5,9 @@ absences (no deploy path, doc allowlist). In-memory Mongo, no warehouse calls.""
 
 from __future__ import annotations
 
+import base64
+import json
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -153,12 +156,24 @@ def test_no_deploy_or_push_endpoint(client):
     assert client.post("/api/v1/telemetry", headers=AUTH).status_code == 404
 
 
+def _profile_body(tag: str, *, signed: bool = True, machine: str = "GBOX_0001") -> dict:
+    """A stored profile version as ADR-0025 d6 shapes it — opaque signed bytes.
+
+    The signature here is a placeholder: the ERP stores and serves it without
+    verifying anything (it holds no key and is not an authority — ADR-0025 d3).
+    What the ERP enforces is that one is *present* before a version is recorded
+    active (d11); whether it verifies is the gateway's business.
+    """
+    document = json.dumps({"machine_id": machine, "version_tag": tag, "setpoints": {}}).encode()
+    return {
+        "version_tag": tag,
+        "document_b64": base64.b64encode(document).decode(),
+        "signature": "cGxhY2Vob2xkZXI=" if signed else None,
+    }
+
+
 def test_profile_store_then_record_active(client):
-    client.post(
-        "/api/v1/machines/GBOX_0001/profiles",
-        json={"version_tag": "v1", "payload": {"setpoints": {}, "model": {}}},
-        headers=AUTH,
-    )
+    client.post("/api/v1/machines/GBOX_0001/profiles", json=_profile_body("v1"), headers=AUTH)
     r = client.put(
         "/api/v1/machines/GBOX_0001/active-profile",
         json={"version_tag": "v1"},
@@ -167,13 +182,32 @@ def test_profile_store_then_record_active(client):
     assert r.status_code == 200 and r.json()["ok"] is True
 
 
+def test_an_unsigned_version_cannot_be_recorded_active(client):
+    # ADR-0025 d11: a version may be parked unsigned, and recording it active would
+    # describe a deployment that cannot happen — a gateway will not apply what it
+    # cannot verify (ADR-0015 d7). Caught here, where an operator can fix it.
+    client.post(
+        "/api/v1/machines/GBOX_0001/profiles",
+        json=_profile_body("v9", signed=False),
+        headers=AUTH,
+    )
+    r = client.put(
+        "/api/v1/machines/GBOX_0001/active-profile", json={"version_tag": "v9"}, headers=AUTH
+    )
+    assert r.status_code == 409
+    assert "no signature" in r.json()["detail"]
+
+
+def test_recording_an_unknown_version_active_is_a_404(client):
+    r = client.put(
+        "/api/v1/machines/GBOX_0001/active-profile", json={"version_tag": "nope"}, headers=AUTH
+    )
+    assert r.status_code == 404
+
+
 def test_profile_list_marks_the_active_version(client):
     for tag in ("v1", "v2"):
-        client.post(
-            "/api/v1/machines/GBOX_0001/profiles",
-            json={"version_tag": tag, "payload": {"setpoints": {}, "model": {}}},
-            headers=AUTH,
-        )
+        client.post("/api/v1/machines/GBOX_0001/profiles", json=_profile_body(tag), headers=AUTH)
     listed = client.get("/api/v1/machines/GBOX_0001/profiles", headers=AUTH).json()
     assert all(p["active"] is False for p in listed)  # storing never activates
 

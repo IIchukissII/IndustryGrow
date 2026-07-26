@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import re
 from datetime import datetime
-from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -58,11 +57,22 @@ class InstallRequest(BaseModel):
 
 
 class ProfileVersionRequest(BaseModel):
-    """A whole profile version — setpoints + model as one artifact (ADR-0022 d8)."""
+    """A whole profile version — setpoints + model as one artifact (ADR-0022 d8).
+
+    ``document_b64`` is the artifact's **exact bytes**, base64-encoded so they
+    survive the JSON hop unaltered. ADR-0025 d6 requires those bytes to travel
+    verbatim from signing to verification, so the ERP takes them opaquely and
+    never parses and re-serialises them — a store that rebuilt the document on
+    read would break every signature it holds.
+
+    ``signature`` is optional here and not optional to *activate*: a version may
+    be parked unsigned, but ADR-0025 d11 forbids recording one active, because a
+    gateway could not apply it (ADR-0015 d7).
+    """
 
     version_tag: str
-    payload: dict[str, Any]
-    signed_hash: str | None = None
+    document_b64: str
+    signature: str | None = None
     source_template_ref: str | None = None
 
 

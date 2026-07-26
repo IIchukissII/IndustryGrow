@@ -1,0 +1,64 @@
+# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Pull, verify and apply this gateway's active cultivation profile
+# (ADR-0015 d5-d7, ADR-0025). Driven by industrygrow-profile-pull.timer.
+#
+# WHY THIS IS A SEPARATE UNIT from gateway-pycyphal.service: that one keeps
+# /etc/industrygrow READ-ONLY (ADR-0004 rev 1 d7) and only ever reads the active
+# profile, which is right for the process that drives actuators. Something has to
+# write it, and giving the control-loop service write access to its own
+# configuration directory would widen the privileges of the longest-running,
+# most-exposed process on the box to suit a job that runs for a second a minute.
+# So the writer is its own short-lived unit, and the reader stays read-only.
+#
+# Type=oneshot: it does one pull and exits. Reachability failures are normal on a
+# cabinet with an intermittent link, and the timer supplies the retry cadence —
+# so a failed pull is not a failed unit to be restarted, it is a pull to try again
+# later. The gateway keeps running its previous profile throughout (ADR-0015 d7).
+
+[Unit]
+Description=IndustryGrow profile pull (ADR-0015/ADR-0025)
+Documentation=https://github.com/IIchukissII/IndustryGrow
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=gateway
+Group=gateway
+
+EnvironmentFile=-/etc/industrygrow/gateway.env
+ExecStart=/opt/industrygrow/venv/bin/python /opt/industrygrow/profile_client.py once
+
+# --- Least-privilege hardening (ADR-0004 rev 1 decision 7) ---
+# Same posture as gateway-pycyphal.service, with one deliberate difference: this
+# unit may write the profile directory, and only that.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/etc/industrygrow
+# PrivateTmp so the temporary file the signature check writes, and the temporary
+# file the atomic rename stages, are never in a directory another user can reach.
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+RemoveIPC=yes
+SystemCallArchitectures=native
+# No AF_CAN here: this unit talks to the ERP over TLS and touches no bus.
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+
+# A pull that hangs must not hold the timer's next run off indefinitely.
+TimeoutStartSec=120
+
+[Install]
+WantedBy=multi-user.target

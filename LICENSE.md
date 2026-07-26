@@ -19,8 +19,9 @@ live in [`LICENSES/`](LICENSES/), named by SPDX identifier (REUSE convention).
 | `firmware/dsdl/` | DSDL type vocabulary (`industryflow.greenhouse.*`) — the protocol layer, kept permissive so any implementation can speak it | Apache License 2.0 | [`Apache-2.0`](LICENSES/Apache-2.0.txt) |
 | `erp/` | Instance-and-integration ERP application and operator console (ADR-0021 d14) | GNU Affero General Public License v3.0 or later | [`AGPL-3.0-or-later`](LICENSES/AGPL-3.0-or-later.txt) |
 | `pki/` | Operator CA bootstrap tooling and ceremony runbook (ADR-0024) | GNU Affero General Public License v3.0 or later | [`AGPL-3.0-or-later`](LICENSES/AGPL-3.0-or-later.txt) |
+| `signing/` | Cultivation-profile signing tool and runbook (ADR-0025) | GNU Affero General Public License v3.0 or later | [`AGPL-3.0-or-later`](LICENSES/AGPL-3.0-or-later.txt) |
 | `gateway/` | Gateway host provisioning and hardening material (ADR-0004) — see the note below | Creative Commons Attribution-ShareAlike 4.0 International | [`CC-BY-SA-4.0`](LICENSES/CC-BY-SA-4.0.txt) |
-| `gateway/provision_identity.py` | Gateway ATECC608 identity provisioning tool (ADR-0007 d9, `store/SP0004-M-atecc-provisioning.md`) | GNU Affero General Public License v3.0 or later | [`AGPL-3.0-or-later`](LICENSES/AGPL-3.0-or-later.txt) |
+| `gateway/provision_identity.py`, `gateway/profile_client.py`, `gateway/files/systemd/industrygrow-profile-pull.*` | Gateway identity provisioning (ADR-0007 d9) and the profile-pull client (ADR-0015 d5-7, ADR-0025) | GNU Affero General Public License v3.0 or later | [`AGPL-3.0-or-later`](LICENSES/AGPL-3.0-or-later.txt) |
 | `ADR/`, `README.md`, `REGISTRY.md`, `project/`, this file | Architecture decision records and project documentation | Creative Commons Attribution-ShareAlike 4.0 International | [`CC-BY-SA-4.0`](LICENSES/CC-BY-SA-4.0.txt) |
 | `profiles/`, `img/`, `ADR/figures/`, `project/figures/` | Cultivation profile instances (ADR-0003), logos, and figures | Creative Commons Attribution-ShareAlike 4.0 International | [`CC-BY-SA-4.0`](LICENSES/CC-BY-SA-4.0.txt) |
 
@@ -37,11 +38,12 @@ directory. See `REUSE.toml`.
 > files *say* today rather than what they arguably should say; relicensing them is a
 > decision for the maintainers and contributors, not a documentation fix.
 >
-> `provision_identity.py` is therefore listed separately: it is new work, so it was
-> licensed `AGPL-3.0-or-later` per ADR-0001 from the start rather than inheriting a
-> label the note above already calls wrong. That leaves the directory mixed, which
-> the per-file SPDX headers handle, and it narrows the relicensing question to the
-> files that actually need contributor consent instead of growing it.
+> The newer files under `gateway/` are therefore listed separately: they are new
+> work, so they were licensed `AGPL-3.0-or-later` per ADR-0001 from the start rather
+> than inheriting a label the note above already calls wrong. That leaves the
+> directory mixed, which the per-file SPDX headers handle, and it narrows the
+> relicensing question to the files that actually need contributor consent instead
+> of growing it.
 
 ## Declared but not yet present in this repository
 
