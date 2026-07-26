@@ -260,4 +260,11 @@ def store_doc_kind(name: str) -> str:
         if part in _DOC_LAYERS:
             return _DOC_LAYERS[part]
     ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
-    return {"md": "document", "pdf": "document", "zip": "archive"}.get(ext, ext or "file")
+    # An EDA project is many files of one thing. Letting each extension become its
+    # own kind fragments the list into near-identical groups that say nothing an
+    # operator was looking for — "design source" is what they all are.
+    if ext.startswith("kicad_") or ext in {"qet", "step", "stl"}:
+        return "design source"
+    return {"md": "document", "pdf": "document", "zip": "archive", "csv": "table"}.get(
+        ext, ext or "file"
+    )
