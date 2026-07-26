@@ -403,3 +403,23 @@ button.seg.key:focus-visible { outline: 2px solid var(--violet); outline-offset:
 /* A key rendered inline in a meta line, where the row's identifier already
    carries the weight — same affordance, quieter. */
 button.seg.key.sm { font-size: 11.5px; padding: 1.5px 6px; }
+
+/* ── Documents library ──────────────────────────────────────────────────────
+   A reference shelf, not a record list: the rows carry a key and a size, so they
+   are set compact and in columns. Grouping is by what a document IS, because
+   that is how someone looks for one — you hunt for "the manual". */
+.lib { display: grid; gap: 22px; margin-top: 4px; }
+.lib-kind { display: flex; align-items: baseline; gap: 8px; margin: 0 0 8px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase;
+  color: var(--ink-3); }
+.lib-n { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3);
+  border: 1px solid var(--line-2); border-radius: 20px; padding: 0 6px; }
+.lib-row { display: flex; align-items: center; gap: 12px; padding: 5px 0;
+  border-bottom: 1px solid var(--line-2); }
+.lib-row:last-child { border-bottom: none; }
+.lib-row .ref { margin-left: auto; font-size: 11.5px; color: var(--ink-3); }
+.lib-row .st { flex: none; }
+@media (min-width: 900px) {
+  /* Two columns once there is room: 27 single-file rows is a scroll, not a shelf. */
+  .lib { grid-template-columns: 1fr 1fr; align-items: start; }
+}

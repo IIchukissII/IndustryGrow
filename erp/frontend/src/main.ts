@@ -590,7 +590,8 @@ async function library(): Promise<string> {
       <code>python -m app.store_sync</code> to publish the repository's <code>store/</code>.</div>`;
 
   const readable = new Set(["manual", "document", "procedure", "instruction"]);
-  const size = (n: number) => (n < 1024 ? `${n} B` : n < 1e6 ? `${Math.round(n / 1024)} kB` : `${(n / 1e6).toFixed(1)} MB`);
+  const size = (n: number) =>
+    n < 1024 ? `${n} B` : n < 1e6 ? `${Math.round(n / 1024)} kB` : `${(n / 1e6).toFixed(1)} MB`;
 
   const groups = new Map<string, typeof docs>();
   for (const d of docs) groups.set(d.kind, [...(groups.get(d.kind) ?? []), d]);
@@ -599,23 +600,34 @@ async function library(): Promise<string> {
     (a, b) => Number(readable.has(b)) - Number(readable.has(a)) || a.localeCompare(b),
   );
 
-  return order
+  const sections = order
     .map((kind) => {
       const rows = groups
         .get(kind)!
         .map(
-          (d) => `<div class="slot-row two"><div class="slot-body">
-            <div class="iid"><button class="seg id key" data-doc="${esc(d.object_key)}"
-              title="Open ${esc(d.object_key)}">${esc(d.object_key)}</button></div>
-            <div class="slot-meta"><span class="ref">${size(d.size_bytes)}</span></div></div>
-            <span class="st ${readable.has(kind) ? "ok" : "muted"}">${readable.has(kind) ? "readable" : "download"}</span></div>`,
+          (d) => `<div class="lib-row"><button class="seg id key" data-doc="${esc(d.object_key)}"
+            title="Open ${esc(d.object_key)}">${esc(d.object_key)}</button>
+            <span class="ref">${size(d.size_bytes)}</span>
+            ${readable.has(kind) ? `<span class="st ok">read</span>` : ""}</div>`,
         )
         .join("");
-      return `<section class="panel"><div class="ph"><h2>${esc(kind[0].toUpperCase() + kind.slice(1))}</h2>
-        <span class="desc">${groups.get(kind)!.length} in the warehouse · the repository owns these, the ERP only points at them</span></div>
-        ${rows}</section>`;
+      return `<div class="lib-group"><h3 class="lib-kind">${esc(kind)}<span class="lib-n">${groups.get(kind)!.length}</span></h3>
+        ${rows}</div>`;
     })
-    .join("") + `<div class="reader" id="dc-reader" hidden></div>`;
+    .join("");
+
+  // Said once, at the top, rather than on every group: it is one fact about the
+  // whole view, and repeating it per panel was noise the moment there were nine.
+  return `
+    <section class="panel"><div class="ph"><h2>What the repository holds</h2>
+      <span class="desc">${docs.length} documents mirrored into the warehouse · manuals and
+      procedures open here; the rest download</span></div>
+      <div class="note">These belong to the repository, not to the ERP. It indexes none of them
+        and owns none of them — it points at the copy <code>store_sync</code> published, so the
+        manual you read here is the one in <code>store/</code>.</div>
+      <div class="lib">${sections}</div>
+    </section>
+    <div class="reader" id="dc-reader" hidden></div>`;
 }
 
 async function stock(): Promise<string> {
