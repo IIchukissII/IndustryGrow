@@ -39,6 +39,14 @@ class FakeWarehouse:
     async def exists(self, key: str) -> bool:
         return key in self.objects
 
+    async def get_bytes(self, key: str) -> bytes | None:
+        # None rather than KeyError, matching the real one: the backup walks a
+        # listing that can change under it (ADR-0026).
+        return self.objects.get(key)
+
+    async def ensure_bucket(self) -> None:
+        return None
+
     async def list_prefix(self, prefix: str) -> list[str]:
         return sorted(k for k in self.objects if k.startswith(prefix))
 

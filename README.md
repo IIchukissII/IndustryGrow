@@ -131,6 +131,7 @@ ADRs are the source of truth for the design. Present in this repository:
 - **ADR-0023** — The type registry as a machine-readable interface · *Accepted*
 - **ADR-0024** — Operator CA bootstrap and the root-key ceremony · *Accepted*
 - **ADR-0025** — Deployment-profile signing and gateway verification · *Accepted*
+- **ADR-0026** — ERP backup and restore across two stores · *Accepted*
 
 Status follows the lifecycle in **ADR-0000** (decision 7); the project maintainers are
 the accepting authority.

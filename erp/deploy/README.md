@@ -176,16 +176,94 @@ identity, signed profile, atomic apply. Nothing short of it does.
 
 ---
 
-## Backup
+## Backup and restore
 
-Not solved here. The database holds the pre-cloud system of record (ADR-0021 d2),
-the warehouse holds the blobs, and *what* to back up, how often, and how to handle
-operator-private data is board card 6 — an open design question, not an oversight.
-Until it is decided, at minimum snapshot the `mongo-data` volume before upgrades:
+Decided in **ADR-0026**. This section holds the values and the procedure; the ADR
+holds the reasoning.
+
+### Why this one matters more than most backups
+
+The ERP is the **serial-allocation authority** (ADR-0021 d4). Losing its counter is
+not a loss of history — the next allocation re-issues a number already stamped on a
+board, and two physical parts then claim one identity. Everything else in the store
+could be reconstructed by someone with good notes. That cannot.
+
+### Taking one
 
 ```bash
-docker compose exec -T mongo mongodump --archive --username "$ERP_MONGO_USER" \
-  --password "$ERP_MONGO_PASSWORD" --authenticationDatabase admin > erp-$(date +%F).archive
+cd erp
+./deploy/backup.sh --out /var/backups/industrygrow \
+                   --pass-file ~/.igrow-backup-pass --keep 7
 ```
 
-That is a stopgap a person runs, not a backup policy.
+It captures **the index first and the blobs second** — the inverse of the write
+order, so the archive can never contain an index naming an object it does not have
+(ADR-0026 d3). It verifies before encrypting, encrypts under your passphrase, and
+shreds the plaintext.
+
+Then do the half it cannot do for you: **copy the result somewhere that is neither
+this host nor the R2 account holding the warehouse.** Two copies, separate
+locations — the same custody rule the operator CA root already follows (ADR-0024
+d5–7).
+
+| Value | Setting | Why here |
+|---|---|---|
+| Copies | **2**, separate locations | ADR-0026 d6 |
+| Retention | **7** archives (`--keep 7`) | a runbook value; raise it if you allocate serials rarely |
+| Cadence | **weekly**, and **before any upgrade or restore** | the store is low-churn; the risk is upgrades, not drift |
+| Restore rehearsal | **quarterly**, into a throwaway database | ADR-0026 d10 |
+| Encryption | gpg symmetric, AES-256, passphrase file | ADR-0026 d7 |
+
+**A forgotten passphrase is an unrecoverable backup** (ADR-0026 d7 accepts this in
+exchange for not adding a fourth long-lived key to custody). Keep the passphrase
+apart from both copies.
+
+### What is in it, and what is not
+
+In: the Mongo store, and the warehouse objects that exist nowhere else — the
+`-QP/-QR/-CP/-CC/-PR` lifecycle documents.
+
+Not in, each for a reason (ADR-0026 d1): the `store/` warehouse mirror (repository
+content — `store_sync` restores it), the operator CA and the profile-signing key
+(their own custody, ADR-0024 d5–7 and ADR-0025 d5), the gateway (stateless; its
+`active-profile.json` is a re-pullable cache), and `REGISTRY.md` (git).
+
+### Rehearsing a restore
+
+Do this on a schedule, not when you need it:
+
+```bash
+gpg --decrypt --passphrase-file ~/.igrow-backup-pass \
+    -o /tmp/rehearsal.tar.gz /var/backups/industrygrow/erp-….tar.gz.gpg
+
+docker compose exec -T erp python -m app.backup verify  --archive /tmp/rehearsal.tar.gz
+docker compose exec -T erp python -m app.backup restore --archive /tmp/rehearsal.tar.gz \
+                                                        --into industrygrow_rehearsal
+```
+
+`--into` restores to a throwaway database, which also skips the serial-counter
+check below — a rehearsal database has no hardware behind it.
+
+### Restoring for real
+
+```bash
+docker compose exec -T erp python -m app.backup restore --archive /tmp/erp-….tar.gz
+docker compose exec -T erp python -m app.backup check-live
+```
+
+Blobs go back first, then the index (ADR-0026 d4), so no moment exists where the
+index references an object that is not there. `check-live` confirms it afterwards.
+
+**It may refuse, and that refusal is the point.** If the live store has allocated
+serials the archive does not know about, restoring re-arms those numbers for
+re-issue. The tool stops and prints which counters are ahead. Before passing
+`--force`, establish **which of those serials reached hardware** — the ERP cannot
+tell you, and nothing afterwards can detect the mistake.
+
+### If a backup fails to verify
+
+It is not a backup. `backup.sh` discards it rather than encrypting it, and the most
+common cause is worth knowing: `save` refuses when the **live** store has indexed a
+document whose object is missing from the warehouse. That is a fault in the running
+system (ADR-0021 d7 says a recorded key always resolves), not in the backup — run
+`check-live` and investigate before trusting either.
