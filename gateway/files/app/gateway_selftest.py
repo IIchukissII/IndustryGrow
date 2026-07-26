@@ -22,6 +22,7 @@ Run modes:
   --serve    run the checks, then idle with a periodic journal heartbeat so the
              service stays "active (running)" and Restart= is meaningful.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -44,7 +45,7 @@ def _log(msg: str) -> None:
 
 def check_pycyphal() -> bool:
     try:
-        import pycyphal  # noqa: F401
+        import pycyphal
 
         _log(f"pycyphal import OK (version {getattr(pycyphal, '__version__', '?')})")
         return True
@@ -85,12 +86,13 @@ def check_socketcan_loopback(iface: str) -> bool:
         # vcan loops sent frames back to bound readers on the same iface.
         data = sock.recv(16)
         can_id, dlc, recv = struct.unpack(_CAN_FRAME_FMT, data)
-        _log(f"SocketCAN loopback OK on {iface}: id=0x{can_id:03X} dlc={dlc} "
-             f"data={recv[:dlc]!r}")
+        _log(f"SocketCAN loopback OK on {iface}: id=0x{can_id:03X} dlc={dlc} data={recv[:dlc]!r}")
         return True
-    except socket.timeout:
-        _log(f"SocketCAN loopback TIMEOUT on {iface} (fault on vcan0; on a real "
-             f"can0 a missing ACK with no other node can also time out)")
+    except TimeoutError:  # socket.timeout is an alias of this since Python 3.10
+        _log(
+            f"SocketCAN loopback TIMEOUT on {iface} (fault on vcan0; on a real "
+            f"can0 a missing ACK with no other node can also time out)"
+        )
         return False
     except OSError as exc:
         _log(f"SocketCAN loopback FAILED on {iface}: {exc!r}")
@@ -101,8 +103,9 @@ def check_socketcan_loopback(iface: str) -> bool:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="IndustryGrow gateway bring-up self-test")
-    parser.add_argument("--serve", action="store_true",
-                        help="idle with a heartbeat after the checks pass")
+    parser.add_argument(
+        "--serve", action="store_true", help="idle with a heartbeat after the checks pass"
+    )
     args = parser.parse_args()
 
     _log(f"starting; CAN interface = {CAN_IFACE}")
