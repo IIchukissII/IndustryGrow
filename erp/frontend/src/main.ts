@@ -593,14 +593,19 @@ async function library(): Promise<string> {
     return `<div class="empty">Nothing mirrored into the warehouse yet. Run
       <code>python -m app.store_sync</code> to publish the repository's <code>store/</code>.</div>`;
 
-  const readable = new Set(["manual", "document", "procedure", "instruction", "table"]);
+  const readableKind = new Set(["manual", "document", "procedure", "instruction", "table"]);
+  // The layer letter says what a document is ABOUT; the extension says whether we
+  // can render it. A design-layer pinmap is still markdown.
+  const readable = (d: { object_key: string; kind: string }) =>
+    readableKind.has(d.kind) || /\.(md|markdown|txt|csv)$/i.test(d.object_key);
   const size = (n: number) =>
     n < 1024 ? `${n} B` : n < 1e6 ? `${Math.round(n / 1024)} kB` : `${(n / 1e6).toFixed(1)} MB`;
 
   const groups = new Map<string, typeof docs>();
   for (const d of docs) groups.set(d.kind, [...(groups.get(d.kind) ?? []), d]);
+  const kindReadable = (k: string) => groups.get(k)!.some(readable);
   const order = [...groups.keys()].sort(
-    (a, b) => Number(readable.has(b)) - Number(readable.has(a)) || a.localeCompare(b),
+    (a, b) => Number(kindReadable(b)) - Number(kindReadable(a)) || a.localeCompare(b),
   );
 
   const sections = order
@@ -611,7 +616,7 @@ async function library(): Promise<string> {
           (d) => `<div class="lib-row"><button class="seg id key" data-doc="${esc(d.object_key)}"
             title="Open ${esc(d.object_key)}">${esc(d.object_key)}</button>
             <span class="ref">${size(d.size_bytes)}</span>
-            ${readable.has(kind) ? `<span class="st ok">read</span>` : ""}</div>`,
+            ${readable(d) ? `<span class="st ok">read</span>` : ""}</div>`,
         )
         .join("");
       return `<div class="lib-group"><h3 class="lib-kind">${esc(kind)}<span class="lib-n">${groups.get(kind)!.length}</span></h3>

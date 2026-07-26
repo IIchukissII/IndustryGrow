@@ -361,42 +361,51 @@ button.seg.key:focus-visible { outline: 2px solid var(--violet); outline-offset:
 .rd-note { font-size: 11.5px; color: var(--ink-3); letter-spacing: 0.02em; }
 .rd-head .btn.sm { margin-left: auto; padding: 5px 11px; font-size: 11.5px; }
 .rd-head .btn.sm + .btn.sm { margin-left: 0; }
-.rd-body { padding: 20px 24px; max-height: 60vh; overflow-y: auto; }
+.rd-body { padding: 26px 34px; max-height: 78vh; overflow-y: auto; }
 
-/* Markdown, set for reading rather than for scanning: a measure that stops at a
-   comfortable line length, and headings that step down in weight instead of size
-   alone, so a long manual does not turn into a wall of shouting. */
-.md { max-width: 74ch; color: var(--ink); font-size: 14px; line-height: 1.65; }
+/* Markdown set for reading. The measure applies to PROSE only: a manual's tables
+   and code blocks carry wide, dense content, and squeezing them into a 74ch
+   column to satisfy a typographic rule for paragraphs makes the document harder
+   to read, not easier. So text gets a comfortable line length and centres; wide
+   elements use the panel. */
+.md { color: var(--ink); font-size: 14.5px; line-height: 1.68; }
+.md > * { max-width: 86ch; margin-inline: auto; }
+.md > table, .md > pre, .md > img, .md > .table-wrap { max-width: 100%; }
 .md > :first-child { margin-top: 0; }
 .md h1, .md h2, .md h3, .md h4 { color: var(--ink); line-height: 1.3;
-  margin: 1.6em 0 0.5em; font-weight: 600; }
-.md h1 { font-size: 21px; font-weight: 650; letter-spacing: -0.01em;
-  padding-bottom: 8px; border-bottom: 1px solid var(--line-2); }
-.md h2 { font-size: 17px; color: var(--cyan); }
-.md h3 { font-size: 15px; color: var(--violet); font-weight: 550; }
-.md h4 { font-size: 14px; color: var(--ink-2); }
-.md p, .md ul, .md ol, .md blockquote, .md table { margin: 0 0 1em; }
+  margin: 1.7em 0 0.55em; font-weight: 600; }
+.md h1 { font-size: 22px; font-weight: 650; letter-spacing: -0.01em;
+  padding-bottom: 9px; border-bottom: 1px solid var(--line-2); }
+.md h2 { font-size: 17.5px; color: var(--cyan); }
+.md h3 { font-size: 15.5px; color: var(--violet); font-weight: 550; }
+.md h4 { font-size: 14.5px; color: var(--ink-2); }
+.md p, .md ul, .md ol, .md blockquote, .md table { margin: 0 0 1.05em; }
 .md ul, .md ol { padding-left: 1.4em; }
-.md li { margin: 0.3em 0; }
+.md li { margin: 0.32em 0; }
+.md li > ul, .md li > ol { margin: 0.3em 0; }
 .md a { color: var(--cyan); text-underline-offset: 3px; }
 .md code { font-family: var(--mono); font-size: 12.5px; color: #e3dbff;
   background: rgba(196, 181, 253, 0.1); padding: 1.5px 5px; border-radius: 4px; }
 .md pre { background: rgba(3, 7, 15, 0.8); border: 1px solid var(--line-2);
-  border-radius: 8px; padding: 13px 15px; overflow-x: auto; margin: 0 0 1em; }
+  border-radius: 8px; padding: 14px 16px; overflow-x: auto; margin: 0 0 1.05em; }
 .md pre code { background: none; padding: 0; color: var(--ink); font-size: 12.5px; }
-.md blockquote { border-left: 2px solid var(--violet-d); padding-left: 14px;
+.md blockquote { border-left: 2px solid var(--violet-d); padding-left: 15px;
   color: var(--ink-2); font-style: italic; }
-.md table { border-collapse: collapse; width: 100%; font-size: 13px; }
-.md th, .md td { border: 1px solid var(--line-2); padding: 7px 10px; text-align: left; }
-.md th { background: rgba(103, 232, 249, 0.06); color: var(--ink); font-weight: 600; }
-.md hr { border: none; border-top: 1px solid var(--line-2); margin: 1.8em 0; }
+/* Tables scroll inside themselves rather than widening the page. */
+.md table { border-collapse: collapse; width: 100%; font-size: 13px; display: block;
+  overflow-x: auto; }
+.md th, .md td { border: 1px solid var(--line-2); padding: 8px 11px; text-align: left;
+  vertical-align: top; }
+.md th { background: rgba(103, 232, 249, 0.06); color: var(--ink); font-weight: 600;
+  white-space: nowrap; }
+.md hr { border: none; border-top: 1px solid var(--line-2); margin: 1.9em 0; }
 .md img { max-width: 100%; height: auto; border-radius: 6px; }
 
 @media (prefers-reduced-motion: reduce) {
   button.seg.key { transition: none; }
 }
 @media (max-width: 720px) {
-  .rd-body { padding: 15px 16px; max-height: 70vh; }
+  .rd-body { padding: 16px 18px; max-height: 80vh; }
   .rd-head .btn.sm { margin-left: 0; }
 }
 
