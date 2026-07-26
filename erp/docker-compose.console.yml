@@ -1,0 +1,47 @@
+# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Overlay serving the operator console over TLS, for a deployment that does not
+# have an operator CA yet:
+#
+#   ./deploy/console/make-cert.sh --dir ./deploy/console/certs \
+#                                 --name industrygrow.local --ip <host-ip>
+#   docker compose -f docker-compose.yml -f docker-compose.console.yml up -d
+#
+# This is the console and the token API only. The gateway channel is NOT here —
+# it needs client-certificate verification against the operator root, which is
+# ADR-0024's ceremony. Switch to docker-compose.mtls.yml once that exists, and
+# stop using this file.
+#
+# Do not run both overlays at once: they both bind ERP_HTTPS_PORT.
+
+services:
+  console-proxy:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    volumes:
+      - ./deploy/console/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ${ERP_CONSOLE_TLS_DIR:-./deploy/console/certs}:/etc/nginx/tls:ro
+    ports:
+      # Reachable on the LAN, unlike the app port: that is the point of putting a
+      # TLS terminator in front of it. 443 is commonly taken on a host that runs
+      # anything else, so this defaults to the same override the mTLS overlay uses.
+      - "${ERP_HTTPS_PORT:-443}:443"
+    depends_on:
+      - erp
+    mem_limit: ${ERP_PROXY_MEM_LIMIT:-64m}
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  erp:
+    # The app port stays published on localhost only. nginx reaches the app over
+    # the compose network, so nothing needs it from outside; keeping it bound to
+    # 127.0.0.1 leaves an admin shell on the host able to curl the API directly
+    # without opening the certificate-verification bypass that publishing it
+    # broadly would (ADR-0022 d2).
+    ports:
+      - "127.0.0.1:${ERP_PORT:-8021}:8021"

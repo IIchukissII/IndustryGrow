@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Publishes industrygrow.local as a CNAME for this host. /etc/avahi/hosts cannot
+# do it — see the script's docstring and deploy/README.md.
+
+[Unit]
+Description=Publish additional mDNS names for this host (CNAMEs)
+After=avahi-daemon.service
+Requires=avahi-daemon.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/avahi-alias.py industrygrow.local
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
