@@ -249,31 +249,36 @@ Two different identifiers, deliberately not conflated:
 
 ---
 
-## 8. The provisioning binding (handoff, not schema)
+## 8. The provisioning binding
 
 Provisioning ends by recording the gateway's "birth certificate" — the
 machine ↔ ATECC ↔ certificate binding, **public material only** (ADR-0007 d6;
-ADR-0017 d12). `provision_identity.py binding` collects those inputs into a JSON
-file for submission; it names the inputs and does **not** define the record, which
-is why it refuses to emit one for a software key at all (a binding asserts a
-hardware anchor an exportable key does not have). It uses the **same
+ADR-0017 d12). `provision_identity.py binding` writes that as a JSON file shaped as
+the ERP's machine-binding request body (ADR-0022 rev 1 d12), so it is submitted
+as-is:
+
+```bash
+curl --cert /etc/industrygrow/pki/gateway-chain.crt \
+     --key  … --cacert /etc/industrygrow/pki/operator-root.crt \
+     -H 'Content-Type: application/json' -d @GBOX_0001-binding.json \
+     https://erp.local:8443/api/v1/machines/GBOX_0001/provisioning
+```
+
+It refuses to emit one for a software key at all — a binding asserts a hardware
+anchor an exportable key does not have. It uses the **same
 certificate-metadata inputs ADR-0022 d5 names** — public-key fingerprint, cert
 serial, validity, never a private key — referenced here rather than restated
-(ADR-0000 d3). But d5's binding route is written as binding *a
-serial* (`Exxxx-VVVVVV-NNNNNN`) and d7's document allowlist is E-instance-scoped, so
-**whether the gateway's machine-scoped binding reuses d5's existing route or needs a
-distinct machine-binding route is not settled in any ADR** — this document does not
-decide it. It owns only *when* in the flow the binding is written and *which local
-values* feed it; it does **not** define the record's fields — the record schema is
-deferred (ADR-0007 / ADR-0024) and lands with the ERP (board card 17).
+(ADR-0000 d3).
 
-**How the tool groups the values.** ADR-0007 rev 1 d10d fixes which facts a `-PR`
-may key on and why; that requirement is not restated here (ADR-0000 d3). What
-follows from it for this step is the shape of the handoff: `GBOX_NNNN`, the SP0004
-vendor serial, the ATECC die serial and the public-key fingerprint sit at the top
-level, and the issued certificate's serial, validity and issuer sit in a nested
-`certificate` object. The nesting is how the tool records which group is which, so
-that the d10d distinction is still legible when the record schema is settled.
+**Where the binding goes — settled after this document was first written.** This
+section originally recorded that whether a gateway's binding reused ADR-0022 d5's
+E-instance route or needed its own was not settled in any ADR. It is now:
+**ADR-0021 rev 3 d17** gives the ERP ownership of a *machine* identity binding, and
+**ADR-0022 rev 1 d12** gives it its own machine-scoped route. So this step ends by
+submitting the binding to that route, and the tool emits exactly its request body —
+no hand-translation. What remains deferred is narrower than it was: the `-PR`
+*document blob* format and whether a machine gets a lifecycle document at all
+(d12's own scope note; board card 17's tail).
 
 **Ordering (a workflow constraint, not an axis redefinition).** The CSR's CN is the
 machine identifier `GBOX_NNNN` (§1), so that machine must be registered in the ERP
@@ -287,10 +292,9 @@ suffix proper is defined on E-instances `Exxxx-VVVVVV-NNNNNN` (ADR-0022 d7), whi
 gateway is not. So the local values this step captures are `GBOX_NNNN`, the SP0004
 **vendor serial**, and the ATECC die serial + public-key fingerprint — the stable
 anchor a renewal or migration re-certification does not disturb (ADR-0007 rev 1 d10d;
-ADR-0024 deferred deny-list note). Whether the ERP records a gateway binding by
-reusing the E-instance `-PR` record shape or a machine-scoped one is not fixed in the
-ADRs; that is part of the deferred record schema, not something this document
-decides.
+ADR-0024 deferred deny-list note). Those are the values ADR-0022 rev 1 d12's
+machine-scoped binding takes; the E-instance `-PR` record shape is not reused, and
+ADR-0021 rev 3 alternative M records why a synthetic serial was rejected.
 
 ---
 
