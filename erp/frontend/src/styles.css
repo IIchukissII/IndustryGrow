@@ -427,3 +427,7 @@ button.seg.key.sm { font-size: 11.5px; padding: 1.5px 6px; }
 /* A hint sits under the control it explains and says what the value DOES, not
    what it is — the label already said that. */
 .field .hint { display: block; margin-top: 4px; font-size: 11px; color: var(--ink-3); }
+
+/* Plain text keeps its own line breaks; markdown gets the .md treatment above. */
+.rd-body.plain { font-family: var(--mono); font-size: 12.5px; line-height: 1.6;
+  color: var(--ink-2); white-space: pre-wrap; margin: 0; }

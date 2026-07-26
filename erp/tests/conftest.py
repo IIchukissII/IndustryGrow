@@ -47,6 +47,17 @@ class FakeWarehouse:
     async def ensure_bucket(self) -> None:
         return None
 
+    async def open_stream(self, key: str):
+        # Same contract as the real one: an object with .read(n)/.close(), a
+        # content type and a length, so the read-through can stream it (ADR-0022
+        # rev 2 d7) without the test holding a different shape from production.
+        import io
+
+        if key not in self.objects:
+            raise KeyError(key)
+        body = self.objects[key]
+        return io.BytesIO(body), self.content_types.get(key, "application/octet-stream"), len(body)
+
     async def list_prefix(self, prefix: str) -> list[str]:
         return sorted(k for k in self.objects if k.startswith(prefix))
 

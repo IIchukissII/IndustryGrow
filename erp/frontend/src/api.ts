@@ -224,6 +224,16 @@ export const api = {
   storeDocuments: () => req<StoreDoc[]>("GET", "/store-documents"),
   storeDocumentUrl: (key: string) =>
     req<DocumentUrl>("GET", `/store-documents/${encodeURIComponent(key)}/url`),
+  /**
+   * Same-origin paths for reading a document through the ERP (ADR-0022 rev 2 d7).
+   * The bytes stream from the object store and the ERP keeps none of them; going
+   * through our own origin is what makes them readable without a CORS policy on
+   * the bucket, which the deployment's credentials may not be able to set.
+   */
+  documentContentPath: (instanceId: string | null, key: string) =>
+    instanceId
+      ? `/api/v1/instances/${instanceId}/documents/${encodeURIComponent(key)}/content`
+      : `/api/v1/store-documents/${encodeURIComponent(key)}/content`,
 
   gatewayChannel: (gbox: string) =>
     req<GatewayChannel>("GET", `/machines/${gbox}/gateway-channel`),
