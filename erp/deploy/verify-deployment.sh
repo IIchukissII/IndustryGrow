@@ -118,8 +118,15 @@ fi
 section "TLS material"
 # ---------------------------------------------------------------------------
 
-if [ ! -d "$TLS_DIR" ]; then
-  fail "no certificate directory at $TLS_DIR"
+if [ ! -d "$TLS_DIR" ] && [ "$PROXY" = no ]; then
+  # Not a failure when the overlay is not in use: without a proxy there is nothing
+  # to serve a certificate, and the deployment is legitimately incomplete rather
+  # than broken. Failing here anyway would report two problems for one absence.
+  warn "no certificate directory at $TLS_DIR"
+  note "expected while the mTLS overlay is not deployed; the gateway channel needs"
+  note "certificates from the operator CA before it can come up (pki/README.md)"
+elif [ ! -d "$TLS_DIR" ]; then
+  fail "no certificate directory at $TLS_DIR, but the proxy is running"
 else
   for f in server-chain.crt server.key operator-root.crt; do
     if [ -f "$TLS_DIR/$f" ]; then pass "$f present"; else fail "$f missing from $TLS_DIR"; fi
@@ -208,11 +215,16 @@ fi
 section "The warehouse"
 # ---------------------------------------------------------------------------
 
+# Through the public async surface, not boto3 internals. The first version of this
+# check poked at Warehouse().client and .bucket — which are _client and _bucket —
+# so it raised AttributeError, caught it, and reported the warehouse unreachable
+# on a deployment where it was working. A check that fails when the thing it
+# checks is fine is worse than no check: it teaches you to ignore it.
 if "${COMPOSE[@]}" exec -T erp python -c '
-import sys
+import asyncio, sys
 from app.services.warehouse import Warehouse
 try:
-    Warehouse().client.head_bucket(Bucket=Warehouse().bucket)
+    asyncio.run(Warehouse().list_prefix(""))
 except Exception as exc:
     print(exc); sys.exit(1)
 ' >/dev/null 2>&1; then
