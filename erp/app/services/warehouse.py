@@ -82,6 +82,25 @@ class Warehouse:
             return False
         return True
 
+    async def get_bytes(self, key: str) -> bytes | None:
+        """An object's content, or None if it is not there.
+
+        The API never returns blob content to a caller (ADR-0022 d7) — this exists
+        for the backup path (ADR-0026), which has to copy the bytes somewhere the
+        operator controls. `None` rather than an exception because the backup is
+        walking a listing that can change under it, and a key that vanished
+        mid-copy is a thing to report, not a crash.
+        """
+
+        def _get() -> bytes | None:
+            try:
+                resp = self._client.get_object(Bucket=self._bucket, Key=key)
+            except self._client.exceptions.ClientError:
+                return None
+            return resp["Body"].read()
+
+        return await asyncio.to_thread(_get)
+
     async def list_prefix(self, prefix: str) -> list[str]:
         """Prefix scan — the ADR-0017 d15 filtering primitive."""
 

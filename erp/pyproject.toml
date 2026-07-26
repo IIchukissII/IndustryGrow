@@ -50,6 +50,13 @@ select = ["E", "F", "I", "UP", "B", "SIM", "N", "ASYNC", "RUF"]
 [tool.ruff.lint.isort]
 known-first-party = ["app"]
 
+[tool.ruff.lint.per-file-ignores]
+# ASYNC* exists to stop a request-serving event loop being blocked. app/backup.py
+# is a CLI: its loop is created by asyncio.run and serves nothing but itself, and
+# it deliberately blocks on tarfile, mongodump and mongorestore because a backup
+# has no concurrency to preserve. It is async only because the warehouse client is.
+"app/backup.py" = ["ASYNC221", "ASYNC240"]
+
 [tool.ruff.lint.flake8-bugbear]
 # FastAPI's dependency markers are idiomatic in argument defaults (not B008 bugs).
 extend-immutable-calls = [
