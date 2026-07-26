@@ -565,6 +565,58 @@ async def set_sp_stock(
 
 
 @router.get(
+    "/instances/{instance_id}/documents/{object_key}/url",
+    response_model=schemas.DocumentUrlOut,
+    tags=["documents"],
+)
+async def document_url(
+    instance_id: str,
+    object_key: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    warehouse: Warehouse = Depends(get_warehouse),
+    _role: str = Depends(require_read),
+):
+    """A time-limited retrieval URL for one indexed document (ADR-0022 d7).
+
+    d7 gives the ERP exactly two things it may hand back for a blob: the object
+    key, or a time-limited retrieval URL. This is the second — the API still never
+    returns blob content, so a reader fetches from the object store directly and
+    the ERP stays the index rather than becoming a proxy for it.
+
+    **The key must be one this instance has indexed.** Presigning whatever key a
+    caller names would turn the index into a general read primitive over the whole
+    bucket — including the `store/` mirror and anything else living there — which
+    is a different resource from the one ADR-0022 d1 exposes. The lookup below is
+    what keeps this "serve my own record" rather than "proxy the object store".
+    """
+    doc = await db[FOUNDATION["lifecycle_doc"]].find_one(
+        {"instance_full_id": instance_id, "object_key": object_key}
+    )
+    if doc is None:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            f"{instance_id} has no indexed document {object_key}",
+        )
+
+    # A recorded key always resolves (ADR-0021 d7). If it does not, the index and
+    # the store have diverged, and saying so beats handing back a URL that 404s
+    # at the object store with no explanation.
+    if not await warehouse.exists(object_key):
+        raise HTTPException(
+            status.HTTP_502_BAD_GATEWAY,
+            f"{object_key} is indexed but absent from the warehouse — the index and the "
+            "object store have diverged (ADR-0021 d7). Run `python -m app.backup check-live`.",
+        )
+
+    expires = settings.document_url_ttl
+    return schemas.DocumentUrlOut(
+        object_key=object_key,
+        url=await warehouse.presigned_get(object_key, expires=expires),
+        expires_in=expires,
+    )
+
+
+@router.get(
     "/calibration/expiring", response_model=list[schemas.LifecycleDocOut], tags=["documents"]
 )
 async def calibration_expiring(

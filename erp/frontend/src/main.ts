@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // The instance/integration ERP console — a Vite + TS SPA over the ADR-0022 API.
 
+import DOMPurify from "dompurify";
+import { marked } from "marked";
+
 import "./styles.css";
 import treeMark from "../../../img/industrygrow-logo.svg";
 import {
@@ -244,8 +247,13 @@ async function instanceDetail(): Promise<string> {
   const docRows = documents
     .map((d) => {
       const [cls, label] = d.doc_type === "CC" ? calStatus(d.valid_until) : ["ok", d.status];
+      // The identifier IS the object key (ADR-0017 d15), so the key is the
+      // control rather than a label beside one: there is no separate "file" to
+      // point at. Read as "open this record", not "download an attachment".
       return `<div class="slot-row two"><div class="slot-body">
-        <div class="iid"><span class="seg pos">${esc(d.doc_type)}</span><span class="sepx">·</span><span class="seg id">${esc(d.object_key)}</span></div>
+        <div class="iid"><span class="seg pos">${esc(d.doc_type)}</span><span class="sepx">·</span><button
+          class="seg id key" data-doc="${esc(d.object_key)}"
+          title="Open ${esc(d.object_key)}">${esc(d.object_key)}</button></div>
         <div class="slot-meta"><span class="ref">warehouse key · valid until ${day(d.valid_until)}</span></div></div>
         <span class="st ${cls}">${esc(label)}</span></div>`;
     })
@@ -276,7 +284,8 @@ async function instanceDetail(): Promise<string> {
         <button class="btn" id="dc-go">Upload document</button>
       </div>
       <div class="result" id="dc-out"></div>
-      ${docRows || `<div class="empty">Nothing indexed for this instance yet.</div>`}</section>
+      ${docRows || `<div class="empty">Nothing indexed for this instance yet.</div>`}
+      <div class="reader" id="dc-reader" hidden></div></section>
 
     <section class="panel"><div class="ph"><h2>Provisioning</h2>
       <span class="desc">serial ↔ ATECC608 binding · public certificate material only</span></div>
@@ -495,6 +504,66 @@ async function gateway(): Promise<string> {
     </section>`;
 }
 
+/**
+ * Open one indexed document in place.
+ *
+ * The bytes come from the object store, not from the ERP: ADR-0022 d7 gives the
+ * API a key or a time-limited URL and nothing else, so the console spends the
+ * grant itself. That is also the one thing that can fail for a reason the
+ * operator cannot see — a cross-origin fetch needs a CORS rule on the bucket —
+ * so the failure path says which rule, rather than "could not load".
+ */
+async function openDocument(instanceId: string, objectKey: string): Promise<void> {
+  const reader = $("dc-reader");
+  reader.hidden = false;
+  reader.innerHTML = `<div class="rd-head"><span class="rd-key">${esc(objectKey)}</span>
+    <span class="rd-note">requesting a read grant…</span></div>`;
+
+  let grant;
+  try {
+    grant = await api.documentUrl(instanceId, objectKey);
+  } catch (e) {
+    reader.innerHTML = `<div class="rd-head"><span class="rd-key">${esc(objectKey)}</span></div>
+      <div class="empty"><span class="err">${esc((e as Error).message)}</span></div>`;
+    return;
+  }
+
+  const minutes = Math.round(grant.expires_in / 60);
+  const head = `<div class="rd-head">
+      <span class="rd-key">${esc(objectKey)}</span>
+      <span class="rd-note">read grant open for ${minutes} min</span>
+      <a class="btn ghost sm" href="${esc(grant.url)}" target="_blank" rel="noopener noreferrer">Open in a tab</a>
+      <button class="btn ghost sm" id="rd-close">Close</button>
+    </div>`;
+
+  try {
+    const res = await fetch(grant.url);
+    if (!res.ok) throw new Error(`the object store answered ${res.status}`);
+    const body = await res.text();
+    const markdown = /\.(md|markdown|txt)$/i.test(objectKey) || !/^%PDF|^PK\x03\x04/.test(body);
+    reader.innerHTML =
+      head +
+      (markdown
+        ? `<article class="rd-body md">${DOMPurify.sanitize(
+            await marked.parse(body),
+          )}</article>`
+        : `<div class="empty">This is not a text document. Open it in a tab to view it.</div>`);
+  } catch {
+    // A cross-origin fetch the bucket has not been told to allow. Naming the fix
+    // beats a spinner that never resolves — and the tab link still works, because
+    // top-level navigation is not subject to CORS.
+    reader.innerHTML =
+      head +
+      `<div class="empty">Reading in place needs a CORS rule on the warehouse bucket
+        allowing <code>${esc(location.origin)}</code> to <code>GET</code>. Until then,
+        open the document in a tab — that path does not need one.</div>`;
+  }
+  $("rd-close")?.addEventListener("click", () => {
+    reader.hidden = true;
+    reader.innerHTML = "";
+  });
+}
+
 async function stock(): Promise<string> {
   const list = await api.listStock();
   state.counts.stock = list.length;
@@ -551,6 +620,14 @@ async function renderBody(): Promise<void> {
 }
 
 function wire(): void {
+  // The object key is the control, so it carries the click (ADR-0017 d15 — the
+  // identifier is the key; there is no separate file to point at).
+  document.querySelectorAll<HTMLElement>("[data-doc]").forEach((key) =>
+    key.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      void openDocument(state.instance!, key.dataset.doc!);
+    }),
+  );
   // A row with an instance id drills into it; a row with a history drawer opens it.
   document.querySelectorAll<HTMLElement>("[data-instance]").forEach((row) =>
     row.addEventListener("click", () => {

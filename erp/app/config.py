@@ -34,6 +34,12 @@ class Settings(BaseSettings):
     warehouse_secret_key: str = Field(default="minioadmin")
     warehouse_region: str = Field(default="us-east-1")  # "auto" for Cloudflare R2
 
+    # Lifetime of the retrieval URLs ADR-0022 d7 permits the API to hand back.
+    # Short because the grant is for reading one document now, not for holding:
+    # the link leaves the ERP's control the moment it is issued, so its lifetime
+    # is the only bound left on it.
+    document_url_ttl: int = Field(default=900)
+
     # Repo store/ — the public, type-level flat keyspace synced into the warehouse
     # (ADR-0017 d15: identifiers are object keys). See `python -m app.store_sync`.
     store_dir: str = Field(default="../store")

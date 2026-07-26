@@ -147,6 +147,19 @@ class LifecycleDocOut(BaseModel):
     status: str
 
 
+class DocumentUrlOut(BaseModel):
+    """A time-limited retrieval URL for one indexed document (ADR-0022 d7).
+
+    The ERP never returns blob content; d7 offers exactly two things — the object
+    key, or this. ``expires_in`` is returned so a caller can tell an operator how
+    long the grant lasts rather than handing over a link of unknown lifetime.
+    """
+
+    object_key: str
+    url: str
+    expires_in: int
+
+
 class ProfileOut(BaseModel):
     machine_id: str
     version_tag: str

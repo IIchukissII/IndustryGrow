@@ -39,6 +39,12 @@ export interface Profile {
   active: boolean;
 }
 
+export interface DocumentUrl {
+  object_key: string;
+  url: string;
+  expires_in: number;
+}
+
 export interface MachineIdentity {
   machine_id: string;
   vendor_serial: string;
@@ -174,6 +180,20 @@ export const api = {
     req<{ ok: boolean }>("POST", `/instances/${id}/provisioning`, body),
 
   instanceDocuments: (id: string) => req<LifecycleDoc[]>("GET", `/instances/${id}/documents`),
+
+  /**
+   * A time-limited retrieval URL for one indexed document (ADR-0022 d7).
+   *
+   * The ERP never returns blob content, so the reader fetches from the object
+   * store with this grant rather than through the API. That keeps the ERP the
+   * index over the store instead of a proxy for it — and it is why reading a
+   * document in the console needs a CORS rule on the bucket.
+   */
+  documentUrl: (instanceId: string, objectKey: string) =>
+    req<DocumentUrl>(
+      "GET",
+      `/instances/${instanceId}/documents/${encodeURIComponent(objectKey)}/url`,
+    ),
   uploadDocument: (id: string, doc: DocumentUpload) => {
     const form = new FormData();
     form.append("doc_type", doc.doc_type);

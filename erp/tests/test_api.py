@@ -114,6 +114,58 @@ def test_document_upload_writes_the_blob_then_indexes_its_key(client, warehouse)
     assert [d["object_key"] for d in listed] == [key]
 
 
+def test_an_indexed_document_can_be_retrieved(client, warehouse):
+    # ADR-0022 d7 offers exactly two things for a blob: the key, or a time-limited
+    # URL. This is the second — and the API still returns no blob content, which is
+    # why the console fetches from the object store rather than through here.
+    inst = _one_instance(client)
+    client.post(
+        f"/api/v1/instances/{inst}/documents",
+        data={"doc_type": "QP"},
+        files={"file": ("qp.pdf", b"%PDF-1.7", "application/pdf")},
+        headers=AUTH,
+    )
+    r = client.get(f"/api/v1/instances/{inst}/documents/{inst}-QP/url", headers=AUTH)
+    assert r.status_code == 200
+    body = r.json()
+    assert body["object_key"] == f"{inst}-QP"
+    assert body["expires_in"] > 0
+    assert body["url"].startswith("http")
+    # The bytes are not in the response. That is the boundary, not an omission.
+    assert "%PDF" not in r.text
+
+
+def test_only_indexed_keys_can_be_retrieved(client, warehouse):
+    # The guard that keeps this route from being a general read primitive over the
+    # bucket. Without the index lookup, a caller could name any key — including the
+    # store/ mirror — and the ERP would presign it, which is a different resource
+    # from the one ADR-0022 d1 exposes.
+    inst = _one_instance(client)
+    warehouse.objects["E0001-000002-D-fab.zip"] = b"repo content, not this instance's"
+
+    r = client.get(f"/api/v1/instances/{inst}/documents/E0001-000002-D-fab.zip/url", headers=AUTH)
+    assert r.status_code == 404
+    assert "no indexed document" in r.json()["detail"]
+
+
+def test_an_indexed_key_that_does_not_resolve_says_so(client, warehouse):
+    # ADR-0021 d7: a recorded key always resolves. When it does not, the index and
+    # the store have diverged — better to say that than hand back a URL that 404s
+    # at the object store with no explanation.
+    inst = _one_instance(client)
+    client.post(
+        f"/api/v1/instances/{inst}/documents",
+        data={"doc_type": "CP"},
+        files={"file": ("cp.pdf", b"%PDF-1.7", "application/pdf")},
+        headers=AUTH,
+    )
+    warehouse.objects.pop(f"{inst}-CP")  # the divergence
+
+    r = client.get(f"/api/v1/instances/{inst}/documents/{inst}-CP/url", headers=AUTH)
+    assert r.status_code == 502
+    assert "diverged" in r.json()["detail"]
+
+
 def test_calibration_key_carries_its_date_and_is_queryable(client, warehouse):
     inst = _one_instance(client)
     r = client.post(
