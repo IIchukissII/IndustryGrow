@@ -538,6 +538,10 @@ function readerDialog(): HTMLDialogElement {
   dlg.addEventListener("click", (e) => {
     if (e.target === dlg) dlg.close();
   });
+  // Drop the document when the sheet closes, however it closed — button, backdrop,
+  // or Escape. Nothing depends on this having run: every open rewrites the sheet
+  // before showing it, so a stale body can never be displayed. It only keeps a
+  // closed reader from holding a manual's worth of DOM.
   dlg.addEventListener("close", () => {
     dlg.innerHTML = "";
   });
