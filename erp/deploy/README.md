@@ -136,6 +136,45 @@ docker compose exec erp python -m app.store_sync --prune
 
 ---
 
+## 3b. Reaching the console before the CA exists
+
+The full mTLS overlay needs an operator CA. Until that ceremony happens
+(ADR-0024), the console can still be served over TLS on its own:
+
+```bash
+./deploy/console/make-cert.sh --dir ./deploy/console/certs \
+                              --name industrygrow.local --ip <this-host-ip>
+docker compose -f docker-compose.yml -f docker-compose.console.yml up -d
+```
+
+That serves the console and token API on `ERP_HTTPS_PORT`, and returns **403** on
+gateway routes — no client certificate is verified there, so no machine identity
+can be established (ADR-0022 d2). The app port stays on localhost.
+
+`make-cert.sh` issues **one self-signed leaf with `CA:FALSE`**. It is not the
+operator CA and cannot become one, and it is not `deploy/mtls/make-test-ca.sh`
+either — that fabricates something shaped like a real trust root, for tests. What
+this buys is that the operator token does not cross the LAN in clear text.
+Browsers warn once, correctly: nothing signed it.
+
+### Giving the service its own name
+
+If the host already answers to another `.local` name, **`/etc/avahi/hosts` will not
+work** — it adds an *address* record, avahi already owns the IP under the host's own
+name, and the second one is rejected as a `Local name collision` (visible only in
+`journalctl -u avahi-daemon`, which is why this is written down). An alias needs a
+**CNAME**:
+
+```bash
+sudo install -m 0755 deploy/console/avahi-alias.py /usr/local/bin/
+sudo install -m 0644 deploy/console/avahi-alias.service /etc/systemd/system/
+sudo systemctl enable --now avahi-alias.service
+```
+
+Edit the unit's `ExecStart` for a different name. The records live only while the
+process holds the entry group, so stopping the unit withdraws them — which is the
+behaviour you want when the service goes away.
+
 ## 4. Verify
 
 ```bash
