@@ -349,19 +349,41 @@ button.seg.key:focus-visible {
 }
 button.seg.key:focus-visible { outline: 2px solid var(--violet); outline-offset: 2px; }
 
-/* ── Document reader ─────────────────────────────────────────────────────── */
-.reader { margin-top: 14px; border: 1px solid var(--line); border-radius: 10px;
-  background: rgba(3, 7, 15, 0.55); overflow: hidden; }
+/* ── Document reader ──────────────────────────────────────────────────────
+   A sheet held up over the console, not a panel grown onto the end of the page.
+   `<dialog>` earns the top layer, `Escape`, and an inert background from the
+   platform, so none of that is re-implemented here in z-indexes. */
+.reader { border: 0; padding: 0; background: none; max-width: none; max-height: none;
+  width: 100vw; height: 100dvh; overflow: hidden;
+  /* The element IS the backdrop area: it fills the viewport and centres the
+     sheet, which is what makes "click outside to close" a hit on the dialog. */
+  display: grid; place-items: center; }
+.reader:not([open]) { display: none; }
+.reader::backdrop { background: rgba(2, 5, 12, 0.72); backdrop-filter: blur(3px); }
+
+.rd-sheet { width: min(1180px, 94vw); max-height: 90dvh; display: flex;
+  flex-direction: column; overflow: hidden;
+  border: 1px solid var(--line); border-radius: 14px;
+  /* Lifted off the ground the console sits on: the surface is opaque where the
+     page behind is not, which is what makes it read as held rather than inset. */
+  background: linear-gradient(180deg, #0b1730, var(--void-1));
+  box-shadow: 0 40px 90px -30px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(103, 232, 249, 0.05);
+  animation: rd-in 160ms cubic-bezier(0.16, 1, 0.3, 1); }
+@keyframes rd-in { from { opacity: 0; transform: translateY(10px) scale(0.985); } }
+
 .rd-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-  padding: 10px 14px; border-bottom: 1px solid var(--line-2);
+  padding: 12px 16px; border-bottom: 1px solid var(--line-2); flex: none;
   background: linear-gradient(90deg, rgba(196, 181, 253, 0.07), transparent); }
-.rd-key { font-family: var(--mono); font-size: 12.5px; color: #e3dbff; }
-/* The grant is time-limited by construction (ADR-0022 d7). Saying so is not a
-   detail — it is the difference between a link and a loan. */
+.rd-key { font-family: var(--mono); font-size: 12.5px; color: #e3dbff;
+  overflow-wrap: anywhere; }
 .rd-note { font-size: 11.5px; color: var(--ink-3); letter-spacing: 0.02em; }
-.rd-head .btn.sm { margin-left: auto; padding: 5px 11px; font-size: 11.5px; }
-.rd-head .btn.sm + .btn.sm { margin-left: 0; }
-.rd-body { padding: 26px 34px; max-height: 78vh; overflow-y: auto; }
+/* The actions travel together as one group, so a long key wraps the whole set
+   rather than stranding "Close" on a line of its own. */
+.rd-acts { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.rd-head .btn.sm { padding: 5px 11px; font-size: 11.5px; }
+.rd-body { padding: 28px 36px; overflow-y: auto; }
+.rd-binary { display: flex; flex-direction: column; gap: 6px; padding: 40px 0; }
+.rd-binary strong { font-family: var(--mono); font-size: 12.5px; color: var(--ink-2); }
 
 /* Markdown set for reading. The measure applies to PROSE only: a manual's tables
    and code blocks carry wide, dense content, and squeezing them into a 74ch
@@ -408,10 +430,13 @@ button.seg.key:focus-visible { outline: 2px solid var(--violet); outline-offset:
 
 @media (prefers-reduced-motion: reduce) {
   button.seg.key { transition: none; }
+  .rd-sheet { animation: none; }
 }
 @media (max-width: 720px) {
-  .rd-body { padding: 16px 18px; max-height: 80vh; }
-  .rd-head .btn.sm { margin-left: 0; }
+  .rd-sheet { width: 100vw; max-height: 100dvh; height: 100dvh; border-radius: 0;
+    border-width: 0; }
+  .rd-body { padding: 18px 20px; }
+  .rd-acts { margin-left: 0; }
 }
 
 /* A key rendered inline in a meta line, where the row's identifier already
