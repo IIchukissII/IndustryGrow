@@ -39,6 +39,34 @@ export interface Profile {
   active: boolean;
 }
 
+export interface MachineIdentity {
+  machine_id: string;
+  vendor_serial: string;
+  atecc_serial: string | null;
+  public_key_fingerprint: string;
+  cert_serial: string;
+  cert_not_before: string;
+  cert_not_after: string;
+  expires_in_days: number;
+  provisioned_at: string | null;
+}
+
+/**
+ * What the ERP owns about a machine's gateway channel (ADR-0022 rev 1 d12).
+ *
+ * There is no `last_pulled_at` here and there will not be one: the pull is a
+ * pure read and the ERP records no operational act (d8 rev 1, d9). The console
+ * shows that as a gap rather than the API inventing an answer.
+ */
+export interface GatewayChannel {
+  machine_id: string;
+  identity: MachineIdentity | null;
+  active_version: string | null;
+  active_since: string | null;
+  stored_versions: number;
+  unsigned_versions: number;
+}
+
 export interface Provisioning {
   cert_serial: string;
   public_key_fingerprint: string;
@@ -165,6 +193,9 @@ export const api = {
       "DELETE",
       `/machines/${gbox}/positions/${depth}?reason=${encodeURIComponent(reason)}`,
     ),
+
+  gatewayChannel: (gbox: string) =>
+    req<GatewayChannel>("GET", `/machines/${gbox}/gateway-channel`),
 
   listProfiles: (gbox: string) => req<Profile[]>("GET", `/machines/${gbox}/profiles`),
   // document_b64 carries the artifact's exact signed bytes; the console encodes

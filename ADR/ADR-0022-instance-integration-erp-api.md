@@ -3,17 +3,36 @@ SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
-# ADR-0022: Instance-and-integration ERP — the machine- and operator-facing API
+# ADR-0022 (rev 1): Instance-and-integration ERP — the machine- and operator-facing API
 
-- **ID:** ADR-0022
+- **ID:** ADR-0022 (rev 1)
 - **Status:** Accepted
-- **Date:** 2026-07-19 (accepted 2026-07-21, with decision 1 clarified)
+- **Date:** 2026-07-19 (accepted 2026-07-21, with decision 1 clarified; rev 1: 2026-07-26)
 - **Project:** IndustryGrow
-- **Parent:** ADR-0021
-- **Companions:** ADR-0000, ADR-0004 (rev 1), ADR-0007, ADR-0015, ADR-0016 (rev 1), ADR-0017 (rev 1), ADR-0019, ADR-0020
-- **Realizes:** ADR-0021 deferred decisions *"ERP ↔ object store integration"* and *"ERP ↔ gateway profile push"*
+- **Parent:** ADR-0021 (rev 3)
+- **Companions:** ADR-0000, ADR-0004 (rev 1), ADR-0007 (rev 1), ADR-0015, ADR-0016 (rev 1), ADR-0017 (rev 1), ADR-0019, ADR-0020, ADR-0024, ADR-0025
+- **Supersedes:** ADR-0022 (2026-07-19, accepted 2026-07-21)
+- **Realizes:** ADR-0021 deferred decisions *"ERP ↔ object store integration"* and *"ERP ↔ gateway profile push"*; and, at rev 1, the API surface for ADR-0021 rev 3 decision 17's machine identity binding (decision 12). ADR-0007's deferred *"`-PR` record format"* is **not** resolved by this — decision 12 records the queryable binding and leaves the blob format and document key deferred
 - **Clarified by:** ADR-0023 (decision 1's type-meaning exclusion — the read-through catalog)
 - **Relates to:** ADR-IF-0001 (planned) — the `production_unit` core whose API this one's foundational operations align to at stage 11
+
+## Revision history
+
+- **rev 1 (2026-07-26)** — Adds decision 12 and qualifies decision 8, both prompted
+  by building the gateway side. **Decision 12** exposes the machine
+  identity binding ADR-0021 rev 3 decision 17 gives the ERP to own. Decision 5's binding is keyed by an
+  E-instance serial `Exxxx-VVVVVV-NNNNNN`, and a gateway has none — it is SP0004,
+  identified as machine `GBOX_NNNN` (ADR-0019 decision 2; decision 1) — so the
+  gateway's certificate had nowhere to be recorded and no route to record it
+  through. `store/SP0004-M-atecc-provisioning.md` names this gap and declines to
+  close it, correctly: it is an API-contract question, and this is the API
+  contract. **Decision 8** gains an explicit statement that the profile-pull
+  endpoint is a pure read: it was implied by "a store and a cache, not a second
+  mutation channel" but never said, and the pull-confirmation write it forbids is
+  attractive enough to be worth naming as rejected (alternative M). The
+  competing option for decision 12 — a synthetic E-instance serial — is rejected
+  where the ownership question lives, in ADR-0021 rev 3 alternative M. No other
+  decision changes; no boundary moves.
 
 ## Context and problem
 
@@ -25,6 +44,18 @@ ADR-0021 (rev 1) fixes the ERP's role, ownership, and boundaries and the store e
 Both are resolved only by deciding the API. Serial allocation, provisioning binding, integration tracking, and SP stock likewise need an external interface: production stations issue serials and bind ATECC records, an operator installs and moves instances, and the gateway obtains its active profile version. This ADR decides the **shape, auth model, and hard boundaries** of that interface. Concrete route strings, request/response schemas, and the OpenAPI document are implementation per ADR-0000; this record carries decisions and rationale.
 
 The API has two distinct caller classes with very different standing against the existing PKI: **machine callers** (the gateway, which already holds an ATECC608-bound X.509 client certificate under ADR-0007) and **human/tooling callers** (operators, provisioning stations), which have no hardware identity anchor. Conflating them is the central design error this ADR exists to prevent.
+
+**What building the gateway side exposed (rev 1).** Two gaps surfaced once the
+gateway actually had an identity and a client, and both sit on the caller-class
+line above. First, the gateway's certificate had nowhere to live: the provisioning
+binding of decision 5 is keyed by an E-instance serial, and a gateway does not have
+one — so the one unit whose certificate the whole mTLS channel depends on was the
+one unit the API could not record. Second, with a real client pulling on a timer,
+the obvious next question is "did it actually pull?", and the obvious next move is
+to have the pull say so. That move is the caller-class error in its most tempting
+form: it looks like completing a record, and it is a machine reporting an
+operational act. Decision 12 closes the first gap; decision 8 now says out loud
+that the second is closed deliberately.
 
 ## Decision drivers
 
@@ -57,6 +88,8 @@ The API has two distinct caller classes with very different standing against the
 
 5. **Provisioning binds a serial to its ATECC608 certificate and writes the structured `-PR` record — public material only.** The binding request carries certificate metadata (public key fingerprint, cert serial, validity), never a private key (which never leaves the ATECC608, ADR-0007). The blob of the `-PR` document follows the lifecycle-document flow (decision 7); the ERP holds the queryable binding and the object key.
 
+   *Scope note (rev 1):* this decision is about **E-instance serials**. A machine has its own binding on its own route — see decision 12.
+
 ### Integration operations
 
 6. **Install / move / remove / replace are the integration operations, and the depth code `DDDDDD` is assigned here at integration.** Exactly one current instance may occupy a `(machine, depth)` position; history is preserved (ADR-0021 decision 6; ADR-0017 decision 13). The depth code is **never** written onto the instance record or back into any type registry (ADR-0017 decision 7); the integration identifier `GBOX_NNNN-DDDDDD-Exxxx-VVVVVV-NNNNNN` is returned only as a derived view of the current placement.
@@ -68,6 +101,18 @@ The API has two distinct caller classes with very different standing against the
 ### Profiles — store and record, never a deploy path
 
 8. **The API stores deployment-specific profile versions and records which version is active on which `GBOX`; it does not deploy.** A profile version is stored as one whole artifact (setpoints + model, atomically; ADR-0021 decision 13; ADR-0016 alternative D) — there is **no** operation that writes model parameters separately. The active-version relationship is a **record write**, not a push: **there is no deploy/push/activate-on-gateway endpoint** (ADR-0015 decision 4; ADR-0021 decision 12). The gateway obtains its active profile version by **pulling** it over its mTLS channel (decision 2); the ERP is where that version is pulled *from* and the record of *which is active where* — a store and a cache, not a second mutation channel.
+
+   **The pull is a pure read (rev 1).** The profile-pull endpoint writes nothing —
+   no last-pulled timestamp, no pull counter, no delivery receipt. The two caller
+   classes of decision 2 write different things for different reasons: an operator
+   records a *decision* (which version is active), and a machine records nothing at
+   all. A pull-confirmation write would be a machine reporting an operational act,
+   which decision 9 excludes by category, and it would turn the one endpoint the
+   gateway calls on a timer into a write channel for operational events. So "has
+   this gateway actually pulled?" is deliberately not answerable from the ERP; it
+   is answerable from the gateway's own journal, and post-cloud from IndustryFlow
+   (ADR-0004 rev 1 decision 10). Consumers of this API — the console included —
+   present that as a gap rather than closing it (alternative M).
 
 ### Boundaries as hard, un-representable constraints
 
@@ -81,6 +126,16 @@ The API has two distinct caller classes with very different standing against the
 10. **The API operates single-tenant with no tenancy routing, but carries the tenant dimension implicitly** (the operator root for mTLS callers, the token scope for others), so stage-11 adds tenancy without redesigning requests (ADR-0021 decision 16).
 
 11. **At stage 11 the foundational `[F]` operations (instances, provisioning, integration) align to IndustryFlow's `production_unit` API; the domain `[D]` operations (`GBOX`, profiles) remain the IndustryGrow layer API.** Gateway mTLS is already conformant; the operator token migrates to JWT validation against IndustryFlow's auth service. The concrete re-layering is decided with ADR-IF-0001 (Deferred decisions).
+
+### Machine-scoped provisioning (rev 1)
+
+12. **A machine carries its own provisioning binding, on its own route, keyed by `GBOX_NNNN` — it does not borrow decision 5's.** The entity, and why it cannot be decision 5's, are ADR-0021 rev 3 decision 17's; this decision is how the API exposes it, which is the division decision 1 requires. What the binding holds is the same **public certificate material** decision 5 names (public-key fingerprint, certificate serial, validity) plus the two facts that identify the unit rather than the certificate: the **SP0004 vendor serial** and the **ATECC die serial**. Public material only, as in decision 5 — a private key is not representable in this API.
+
+    Three properties follow, and are decisions rather than implementation notes:
+
+    - **The binding is upserted, latest-wins, not appended.** Gateway certificates are short-lived and auto-renewed (ADR-0007 decision 7), so a binding written once at provisioning describes a certificate that has since been replaced. Re-certification writes the binding again. This is a *configuration record kept current*, not a history: what a machine's certificate *used to be* is not a question this API answers, and making it one would be the audit trail decision 9 excludes.
+    - **What identifies the unit survives what identifies the certificate.** `GBOX_NNNN` and the public-key fingerprint are stable across renewal and across re-certification under another operator (ADR-0007 rev 1 decision 10d); the certificate serial and validity window are not. Consumers key on the former and display the latter.
+    - **The `-PR` document blob is out of scope here.** Decision 7's allowlist is defined on E-instance identifiers, and whether a machine gets a lifecycle document at all — and under what object key, given the ADR-0017 grammar — is not settled by this ADR. Decision 12 records the *queryable binding*; the blob question stays deferred.
 
 ## Alternatives considered
 
@@ -97,6 +152,8 @@ The API has two distinct caller classes with very different standing against the
 **F. Store model parameters separately from setpoints.** *Rejected:* exactly ADR-0016 alternative D / ADR-0021 decision 13 — a profile version is one atomically-versioned artifact.
 
 **G. Accept client-supplied serials.** *Rejected:* the ERP is the serial-allocation authority (ADR-0021 decision 4); a client-chosen serial cannot be gap-free-guaranteed and forfeits the authority.
+
+**M. Record the gateway's pull — a "last pulled at" timestamp on the machine (rev 1).** One mutable field, overwritten each pull, no history; it would let an operator see at a glance whether a cabinet is actually collecting its profile, which decision 8 otherwise leaves unanswerable. *Rejected:* it is operational intake from a machine caller, which decision 9 excludes by category, and the "it is only one field, not a log" defence does not survive the caller-class test the Context sets out — the active-version record is what an *operator decided*, while this would be what a *machine did*. Its real use is monitoring ("alert me if a gateway has not pulled in an hour"), and monitoring is platform-side (ADR-0004 rev 1 decision 10). It would also convert the single endpoint a gateway calls on a 60-second timer from a read into a write, opening exactly the machine-write surface decision 9 closes. The question is a good one; the ERP is the wrong place to answer it.
 
 ## Consequences
 

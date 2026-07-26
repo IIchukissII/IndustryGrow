@@ -172,6 +172,110 @@ def _profile_body(tag: str, *, signed: bool = True, machine: str = "GBOX_0001") 
     }
 
 
+def _machine_binding(**over) -> dict:
+    body = {
+        "vendor_serial": "SP0004-SN-000123",
+        "atecc_serial": "0123AABBCCDDEEFF01",
+        "public_key_fingerprint": "A" * 64,
+        "cert_serial": "5141236E2770C7FC",
+        "cert_not_before": "2026-07-01T00:00:00Z",
+        "cert_not_after": "2026-10-01T00:00:00Z",
+    }
+    body.update(over)
+    return body
+
+
+def test_a_machine_carries_its_own_provisioning_binding(client):
+    # ADR-0022 rev 1 d12: a gateway is SP0004 with no Exxxx-VVVVVV-NNNNNN serial,
+    # so it cannot use the E-instance binding route (alternative N rejects minting
+    # it a synthetic instance id to reach that row).
+    r = client.post(
+        "/api/v1/machines/GBOX_0001/provisioning", json=_machine_binding(), headers=AUTH
+    )
+    assert r.status_code == 200
+
+    channel = client.get("/api/v1/machines/GBOX_0001/gateway-channel", headers=AUTH).json()
+    assert channel["identity"]["vendor_serial"] == "SP0004-SN-000123"
+    assert channel["identity"]["cert_serial"] == "5141236E2770C7FC"
+    assert channel["identity"]["public_key_fingerprint"] == "A" * 64
+
+
+def test_the_binding_is_upserted_so_renewal_replaces_it(client):
+    # Certificates are short-lived and auto-renewed (ADR-0007 d7), so this route
+    # is called again on re-certification. It must not accumulate: what a
+    # certificate *used to be* is not a question this API answers (d12).
+    client.post("/api/v1/machines/GBOX_0001/provisioning", json=_machine_binding(), headers=AUTH)
+    client.post(
+        "/api/v1/machines/GBOX_0001/provisioning",
+        json=_machine_binding(cert_serial="NEWSERIAL01", cert_not_after="2027-01-01T00:00:00Z"),
+        headers=AUTH,
+    )
+    identity = client.get("/api/v1/machines/GBOX_0001/gateway-channel", headers=AUTH).json()[
+        "identity"
+    ]
+    assert identity["cert_serial"] == "NEWSERIAL01"
+    # The anchors that survive renewal are unchanged (ADR-0007 rev 1 d10d).
+    assert identity["public_key_fingerprint"] == "A" * 64
+    assert identity["vendor_serial"] == "SP0004-SN-000123"
+
+
+def test_the_channel_reports_days_until_the_recorded_certificate_expires(client):
+    # The same shape as the calibration-expiring query (ADR-0021 d7): a query over
+    # metadata the ERP owns, resolving to something an operator must act on.
+    from datetime import UTC, datetime, timedelta
+
+    soon = (datetime.now(UTC) + timedelta(days=5)).isoformat()
+    client.post(
+        "/api/v1/machines/GBOX_0001/provisioning",
+        json=_machine_binding(cert_not_after=soon),
+        headers=AUTH,
+    )
+    identity = client.get("/api/v1/machines/GBOX_0001/gateway-channel", headers=AUTH).json()[
+        "identity"
+    ]
+    assert 4 <= identity["expires_in_days"] <= 5
+
+
+def test_a_machine_binding_needs_a_machine_identifier(client):
+    r = client.post(
+        "/api/v1/machines/E0002-020100-000001/provisioning",
+        json=_machine_binding(),
+        headers=AUTH,
+    )
+    assert r.status_code == 422
+
+
+def test_the_gateway_channel_never_reports_a_pull(client):
+    # ADR-0022 d8 (rev 1) / d9: the pull is a pure read and the ERP records no
+    # operational act. This asserts the *absence* deliberately — a future field
+    # named anything like this should fail here and be argued through the ADR
+    # rather than added quietly.
+    client.post("/api/v1/machines/GBOX_0001/provisioning", json=_machine_binding(), headers=AUTH)
+    channel = client.get("/api/v1/machines/GBOX_0001/gateway-channel", headers=AUTH).json()
+    assert not [k for k in channel if "pull" in k.lower() or "last_seen" in k.lower()]
+
+
+def test_the_channel_of_an_unprovisioned_machine_is_empty_not_absent(client):
+    # A machine with no binding is a normal, expected state (it has not been
+    # provisioned yet), not a 404 — the console needs to render that difference.
+    channel = client.get("/api/v1/machines/GBOX_0009/gateway-channel", headers=AUTH).json()
+    assert channel["machine_id"] == "GBOX_0009"
+    assert channel["identity"] is None
+    assert channel["active_version"] is None
+
+
+def test_the_channel_counts_versions_a_gateway_could_not_apply(client):
+    # Unsigned versions are stuck: ADR-0025 d11 refuses to activate them, so the
+    # gateway can never receive them. Operator-fixable, so worth surfacing.
+    client.post("/api/v1/machines/GBOX_0001/profiles", json=_profile_body("v1"), headers=AUTH)
+    client.post(
+        "/api/v1/machines/GBOX_0001/profiles", json=_profile_body("v2", signed=False), headers=AUTH
+    )
+    channel = client.get("/api/v1/machines/GBOX_0001/gateway-channel", headers=AUTH).json()
+    assert channel["stored_versions"] == 2
+    assert channel["unsigned_versions"] == 1
+
+
 def test_profile_store_then_record_active(client):
     client.post("/api/v1/machines/GBOX_0001/profiles", json=_profile_body("v1"), headers=AUTH)
     r = client.put(

@@ -45,6 +45,27 @@ class ProvisionRequest(BaseModel):
     pr_object_key: str
 
 
+class MachineProvisionRequest(BaseModel):
+    """A machine's provisioning binding — public material only (ADR-0022 rev 1 d12).
+
+    Not ProvisionRequest with a different key: a machine binding carries the two
+    facts that identify the *unit* (the SP0004 vendor serial and the ATECC die
+    serial) alongside the certificate metadata, and it carries no ``pr_object_key``
+    — whether a machine gets a lifecycle document blob at all is deferred (d12).
+
+    Upserted, latest-wins: gateway certificates are short-lived and auto-renewed
+    (ADR-0007 d7), so re-certification writes this again. What a certificate *used
+    to be* is not a question this API answers.
+    """
+
+    vendor_serial: str
+    atecc_serial: str | None = None
+    public_key_fingerprint: str
+    cert_serial: str
+    cert_not_before: datetime
+    cert_not_after: datetime
+
+
 class InstallRequest(BaseModel):
     instance_id: str
 
@@ -133,6 +154,44 @@ class ProfileOut(BaseModel):
     #: Whether this is the version recorded active on the gateway — a record of a
     #: pull that happened, never a deploy state the ERP drives (ADR-0022 d8).
     active: bool = False
+
+
+class MachineIdentityOut(BaseModel):
+    """A machine's recorded certificate — what is on record, not what is live.
+
+    ``expires_in_days`` is computed from the recorded validity, so it answers
+    "when does the certificate the ERP knows about expire", which is only the
+    live one if re-certification wrote the binding again (ADR-0022 rev 1 d12).
+    """
+
+    machine_id: str
+    vendor_serial: str
+    atecc_serial: str | None = None
+    public_key_fingerprint: str
+    cert_serial: str
+    cert_not_before: datetime
+    cert_not_after: datetime
+    expires_in_days: int
+    provisioned_at: datetime | None = None
+
+
+class GatewayChannelOut(BaseModel):
+    """Everything the ERP owns about one machine's gateway channel (card 15).
+
+    Deliberately incomplete, and the field names say where: there is no
+    ``last_pulled_at`` and there will not be one. Whether the gateway has actually
+    collected its profile is operational, lives in the gateway's own journal, and
+    is excluded from this API by ADR-0022 d9 (see d8, rev 1).
+    """
+
+    machine_id: str
+    identity: MachineIdentityOut | None = None
+    active_version: str | None = None
+    active_since: datetime | None = None
+    stored_versions: int = 0
+    #: Versions stored but not activatable because they carry no signature
+    #: (ADR-0025 d11). An operator-fixable state, so it is worth surfacing.
+    unsigned_versions: int = 0
 
 
 class ModuleOut(BaseModel):

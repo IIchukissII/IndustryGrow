@@ -26,6 +26,7 @@ from app.api.deps import (
 )
 from app.config import settings
 from app.db import DOMAIN, FOUNDATION
+from app.models import identifiers
 from app.services import docs, integration, profiles, registry
 from app.services import serials as serials_svc
 from app.services.integration import PositionOccupiedError
@@ -395,6 +396,97 @@ async def record_active_profile(
         # conflict is with the state of that version (ADR-0025 d11).
         raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
     return schemas.Ack(detail=f"recorded {body.version_tag} active on {gbox}")
+
+
+# ============================ machine provisioning ==========================
+
+
+@router.post("/machines/{gbox}/provisioning", response_model=schemas.Ack, tags=["machines"])
+async def bind_machine_provisioning(
+    gbox: str,
+    body: schemas.MachineProvisionRequest,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    _role: str = Depends(require_provisioning),
+):
+    """Bind a machine to its ATECC608 certificate (ADR-0022 rev 1 d12).
+
+    Separate from the E-instance route because a gateway has no
+    `Exxxx-VVVVVV-NNNNNN` serial — it is SP0004 identified as a machine, and
+    minting it a synthetic instance id to reuse that route would corrupt the
+    ADR-0017 grammar to reach a database row (alternative N).
+
+    Upsert, not insert: certificates are short-lived and auto-renewed
+    (ADR-0007 d7), so re-certification calls this again with a new serial and
+    validity. The stable anchors — the machine identifier and the public-key
+    fingerprint — do not change across renewal (ADR-0007 rev 1 d10d).
+    """
+    if not identifiers.MACHINE_RE.match(gbox):
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            f"{gbox} is not an ADR-0017 machine identifier (GBOX_NNNN)",
+        )
+    await db[FOUNDATION["machine_identity"]].update_one(
+        {"_id": gbox},
+        {
+            "$set": {
+                "tenant_id": settings.operator_uuid,
+                "machine_id": gbox,
+                "vendor_serial": body.vendor_serial,
+                "atecc_serial": body.atecc_serial,
+                "public_key_fingerprint": body.public_key_fingerprint,
+                "cert_serial": body.cert_serial,
+                "cert_not_before": body.cert_not_before,
+                "cert_not_after": body.cert_not_after,
+                "provisioned_at": datetime.now(UTC),
+            }
+        },
+        upsert=True,
+    )
+    return schemas.Ack(detail=f"bound {gbox} to certificate {body.cert_serial}")
+
+
+@router.get(
+    "/machines/{gbox}/gateway-channel", response_model=schemas.GatewayChannelOut, tags=["machines"]
+)
+async def gateway_channel(
+    gbox: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    _role: str = Depends(require_read),
+):
+    """Everything the ERP owns about one machine's gateway channel (card 15).
+
+    Note what is absent: whether the gateway has actually pulled. That is
+    operational and stays out of the ERP (ADR-0022 d9; d8 rev 1) — the console
+    shows it as a gap rather than this route inventing an answer.
+    """
+    identity = await db[FOUNDATION["machine_identity"]].find_one({"_id": gbox})
+    identity_out = None
+    if identity is not None:
+        not_after = identity["cert_not_after"]
+        if not_after.tzinfo is None:  # Mongo round-trips naive UTC
+            not_after = not_after.replace(tzinfo=UTC)
+        identity_out = schemas.MachineIdentityOut(
+            machine_id=gbox,
+            vendor_serial=identity["vendor_serial"],
+            atecc_serial=identity.get("atecc_serial"),
+            public_key_fingerprint=identity["public_key_fingerprint"],
+            cert_serial=identity["cert_serial"],
+            cert_not_before=identity["cert_not_before"],
+            cert_not_after=identity["cert_not_after"],
+            expires_in_days=(not_after - datetime.now(UTC)).days,
+            provisioned_at=identity.get("provisioned_at"),
+        )
+
+    active = await profiles.active_version(db, gbox)
+    stored = await profiles.versions(db, gbox)
+    return schemas.GatewayChannelOut(
+        machine_id=gbox,
+        identity=identity_out,
+        active_version=active["version_tag"] if active else None,
+        active_since=active.get("activated_at") if active else None,
+        stored_versions=len(stored),
+        unsigned_versions=sum(1 for v in stored if not v.get("signature")),
+    )
 
 
 # ---- gateway pull channel (mTLS) ----

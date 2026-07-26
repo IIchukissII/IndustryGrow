@@ -537,15 +537,53 @@ def test_the_binding_carries_the_stable_anchors_and_no_secret(provisioned, tmp_p
     )
 
     record = json.loads(out.read_text())
-    assert record["machine"] == "GBOX_0001"
-    assert record["sp0004_vendor_serial"] == "SP0004-SN-000123"
-    assert record["public_key_sha256"] == tool.public_key_fingerprint(
+    # Shaped as the ERP's machine-binding request body (ADR-0022 rev 1 d12), so
+    # the file submits as-is. test_api.py::test_a_machine_carries_its_own_...
+    # covers the receiving end; this covers that the two agree on names.
+    assert record["machine_id"] == "GBOX_0001"
+    assert record["vendor_serial"] == "SP0004-SN-000123"
+    assert record["public_key_fingerprint"] == tool.public_key_fingerprint(
         tool.SoftwareSigner(provisioned["key"]).public_key()
     )
-    assert record["certificate"]["not_after"]
+    assert record["cert_serial"]
+    # ISO-8601, not openssl's "Jul 26 11:20:02 2026 GMT" — the API takes a datetime.
+    assert record["cert_not_after"].startswith("20")
+    assert "T" in record["cert_not_after"]
     assert "fixture" in record  # a software key says so in the record itself
     # Public material only (ADR-0007 d6): nothing key-shaped can be in here.
     assert "PRIVATE KEY" not in out.read_text()
+
+
+def test_the_binding_file_is_what_the_erp_route_accepts(provisioned, tmp_path):
+    # The claim the tool's output makes is that it can be POSTed as-is
+    # (ADR-0022 rev 1 d12). Validating it against the request model the route
+    # actually uses is what keeps that true when either side is edited — the two
+    # live in different trees and nothing else couples them.
+    from app.api.schemas import MachineProvisionRequest
+
+    out = tmp_path / "binding.json"
+    assert (
+        tool.main(
+            [
+                "binding",
+                "--gbox",
+                "GBOX_0001",
+                "--vendor-serial",
+                "SP0004-SN-000123",
+                "--software-key",
+                str(provisioned["key"]),
+                "--cert",
+                str(provisioned["leaf"]),
+                "--out",
+                str(out),
+                "--fixture",
+            ]
+        )
+        == 0
+    )
+    parsed = MachineProvisionRequest.model_validate(json.loads(out.read_text()))
+    assert parsed.vendor_serial == "SP0004-SN-000123"
+    assert parsed.cert_not_after > parsed.cert_not_before
 
 
 def test_a_software_key_cannot_reach_a_production_binding(provisioned, tmp_path, capsys):

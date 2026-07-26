@@ -3,19 +3,29 @@ SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
-# ADR-0021 (rev 2): Instance-and-integration ERP — the pre-cloud system of record
+# ADR-0021 (rev 3): Instance-and-integration ERP — the pre-cloud system of record
 
-- **ID:** ADR-0021 (rev 2)
+- **ID:** ADR-0021 (rev 3)
 - **Status:** Accepted
-- **Date:** 2026-07-09 (rev 1: 2026-07-19; rev 2: 2026-07-26)
+- **Date:** 2026-07-09 (rev 1: 2026-07-19; rev 2 and rev 3: 2026-07-26)
 - **Project:** IndustryGrow
 - **Parent:** ADR-0001
 - **Companions:** ADR-0000, ADR-0004 (rev 1), ADR-0007, ADR-0015, ADR-0016 (rev 1), ADR-0017 (rev 1), ADR-0019, ADR-0020, ADR-0022 (API contract)
-- **Supersedes:** ADR-0021 rev 1 (2026-07-19), and through it the initial record (2026-07-09)
+- **Supersedes:** ADR-0021 rev 2 (2026-07-26), and through it rev 1 (2026-07-19) and the initial record (2026-07-09)
 - **Realizes:** ADR-0017 (rev 1) deferred decision "Registry and store location" — the instance/integration layer host
 - **Relates to:** ADR-IF-0001 (planned) — the `production_unit` entity this store's foundational part aligns to when IndustryGrow integrates as a layer over the IndustryFlow core at stage 11
 
 ## Revision history
+
+- **rev 3 (2026-07-26)** — Adds decision 17: the ERP owns a **machine's** identity
+  binding, not only an E-instance's. Building the gateway side exposed that
+  decision 5's binding is keyed by a serial the gateway does not have, so the one
+  unit the mTLS channel depends on had nowhere in the record to keep its
+  certificate. This is an ownership decision and so belongs here: ADR-0022
+  decision 1 binds that API to "exactly the entities ADR-0021 owns, and only
+  those", which means the API cannot introduce an entity this record has not
+  claimed. ADR-0022 decision 12 decides how it is exposed. No existing decision
+  changes; decision 5 keeps its scope and is now explicitly the E-instance half.
 
 - **rev 2 (2026-07-26)** — Corrects where decisions 1 and 15 say the ERP runs.
   Both said *"on or beside the gateway host"*, which names the one host it must
@@ -85,6 +95,13 @@ recovery exercise. What the wording meant — single node, no managed service,
 nothing an operator cannot stand up alone — is what decision 1 now says, with the
 gateway named as an exclusion rather than as the example (alternative L).
 
+**A fourth need arrived later (rev 3).** The three above are about things the
+project *manufactures*. The gateway is not one of them — it is bought — and once it
+had a real certificate and a real client, it turned out to have no home in this
+record either: decision 5 binds a certificate to a serial, and the gateway has no
+serial. So the unit that every other machine's channel depends on was the one unit
+the system of record could not describe. Decision 17 gives it one.
+
 The integration end-state is **core plus layer, not absorption.** IndustryFlow is the *independent, multitenant core* industrial-IoT platform (ADR-0001); IndustryGrow is *not standalone* — it is an additional **domain layer** on top of that core, contributing extensions to it (the `production_unit` entity, cultivation DSDL types, plugin interfaces; ADR-0001 decision 7). The glossary already draws this line: platform-foundational concerns are tagged `[F]` and move with IndustryFlow if the foundation is extracted; domain/CEA concerns are `[D]` and stay with IndustryGrow (`GLOSSARY.md`, scope tags). This ERP straddles both: its **foundational** part (generic instance tracking, provisioning, integration history) is the single-tenant realization of what becomes IndustryFlow's multitenant `production_unit`; its **domain** part (`GBOX` machines, cultivation profiles) is the IndustryGrow layer. At stage 11 the two *integrate* — the `[F]` part becomes one tenant in the multitenant core, the `[D]` part remains the grow layer over it — rather than one swallowing the other.
 
 This ADR carries **decisions and rationale only**. Database engine, ERP product/framework, schema DDL, on-disk formats, container base image, and exact retention figures are implementation/BOM concerns per ADR-0000 and are not fixed here.
@@ -152,6 +169,12 @@ This ADR carries **decisions and rationale only**. Database engine, ERP product/
 
     So the ERP conforms to multitenancy in its model while declining to *operate* multitenant. Should a second operator appear before stage 11, the answer is a second private single-tenant instance (each still conformant), not runtime tenancy bolted into this store — or, if it is material enough, pulling the IndustryFlow-core timeline forward (Deferred decisions).
 
+### Machine identity (rev 3)
+
+17. **The ERP also owns a machine's identity binding — its certificate, recorded against `GBOX_NNNN`.** Decision 5 gives the ERP the *serial*↔ATECC608 binding, keyed by an E-instance serial. The gateway has no such serial: it is a purchased part with per-instance identity (SP0004, ADR-0019 decision 2) that *is* a machine, so decision 5 covers everything the project manufactures and nothing that talks to the ERP. That left the one unit whose certificate the whole mTLS channel depends on with no home in the record — while decision 9 already has the ERP tracking *which* SP0004 gateway sits at which machine, and decision 5 already establishes that public certificate material is the ERP's to hold. This decision closes the gap between them: the same class of fact (public certificate material, never a private key) recorded against the machine rather than against a serial. It is the ERP's because nothing else pre-cloud holds it — the operator CA issues and forgets (ADR-0024 decision 13), and the gateway holds only its own copy.
+
+    What the binding is *for* follows from what the ERP already does with decision 7's document index: making expiry a query rather than an archaeology exercise. A short-lived certificate (ADR-0007 decision 7) that nobody is watching expires, and a gateway with an expired certificate stops being able to pull its profile. How the API exposes this — the route, the request shape, and the record's update semantics — is ADR-0022 decision 12.
+
 ## Alternatives considered
 
 **A. Do not build an ERP; wait for IndustryFlow at stage 11.** *Rejected:* this is ADR-0020 alternative A/B by another name for the instance layer. Serials must be issued, provisioning records bound, and integration tracked *during* stages 1–10 — the survey and first-cultivation campaigns (ADR-0016, ADR-0020) produce exactly these records with no cloud present. The end-state home being IndustryFlow does not remove the bring-up-era need for a home.
@@ -175,6 +198,8 @@ This ADR carries **decisions and rationale only**. Database engine, ERP product/
 **K. Build a schema that ignores tenancy entirely (non-conformant single-tenant model).** *Rejected:* IndustryFlow is multitenant and this ADR must be IndustryFlow-conformant. A model with no tenant dimension would force a remodel at stage 11, defeating the migration-not-rewrite goal (decisions 2, 3). Conform to the multitenant model *and* operate single-tenant — do not conflate the two axes (decision 16).
 
 **J. Treat stage 11 as IndustryFlow absorbing and retiring the ERP.** *Rejected:* IndustryGrow is not standalone but also is not disposable — it is an additional domain layer over an independent core (ADR-0001; `GLOSSARY.md` `[F]`/`[D]`). At stage 11 the foundational `[F]` data aligns to `production_unit` in the core while the grow-domain `[D]` layer remains over it (decisions 2, 3). Absorption would erase the layered architecture the project is built on.
+
+**M. Record the gateway's certificate under decision 5 by giving it a synthetic E-instance serial (rev 3).** No new entity, no new decision. *Rejected:* `Exxxx-VVVVVV-NNNNNN` names something the project designs and manufactures (ADR-0017); a gateway is bought (ADR-0019). A synthetic one would put a value in the identity axis that names nothing, and every consumer of the grammar would have to learn the exception. Decision 17 costs one entity and keeps the grammar meaning what it says.
 
 **L. Run the ERP on the gateway host (rev 2).** The original wording of decisions 1 and 15 invited exactly this, and it is attractive: one box per deployment, nothing else to buy, and the ERP sits next to the machines it describes. *Rejected:* the gateway is the stateless replaceable edge — ADR-0004's replaceability driver requires a unit to be swappable in minutes with no accumulated local state lost, and ADR-0020 decision 5 enumerates exhaustively what may persist there. A system of record is not in that enumeration and cannot be added to it without an ADR. Putting one there converts a drop-in gateway swap into a data-recovery exercise for serial allocation, provisioning bindings, and integration history — the records with the least tolerance for loss. The self-hostability the original wording was reaching for is preserved in decision 1 without naming the one host that breaks it.
 

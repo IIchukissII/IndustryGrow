@@ -20,7 +20,14 @@ import {
   type Meta,
 } from "./api";
 
-type View = "overview" | "instances" | "instance" | "integration" | "profiles" | "stock";
+type View =
+  | "overview"
+  | "instances"
+  | "instance"
+  | "integration"
+  | "profiles"
+  | "gateway"
+  | "stock";
 
 const TITLES: Record<View, string> = {
   overview: "Overview",
@@ -28,11 +35,12 @@ const TITLES: Record<View, string> = {
   instance: "Instance",
   integration: "Integration",
   profiles: "Deployment profile",
+  gateway: "Gateway channel",
   stock: "SP stock",
 };
 
 // Views that read one cabinet at a time show the machine picker; the rest do not.
-const MACHINE_SCOPED: View[] = ["overview", "integration", "profiles"];
+const MACHINE_SCOPED: View[] = ["overview", "integration", "profiles", "gateway"];
 
 const state: {
   view: View;
@@ -396,6 +404,97 @@ async function profiles(): Promise<string> {
       <div class="result" id="pa-out"></div></section>`;
 }
 
+/**
+ * The gateway channel: what the ERP knows about how a cabinet is reached.
+ *
+ * The shape of this view is set by what the ERP is allowed to own. It shows the
+ * machine's certificate on record and the profile version waiting for it — both
+ * ERP-owned configuration — and it states plainly that whether the gateway has
+ * actually collected that profile is not knowable here. That gap is deliberate
+ * (ADR-0022 d8 rev 1, d9): a pull-confirmation write would be a machine
+ * reporting an operational act. Naming the gap is more honest than a green tick
+ * that means "we recorded it", which is what an operator would read it as.
+ */
+async function gateway(): Promise<string> {
+  const gbox = state.machine!;
+  const ch = await api.gatewayChannel(gbox);
+  const id = ch.identity;
+
+  // Bands, not a countdown: ADR-0007 d7 makes leaves short-lived and renewed, so
+  // "42 days" is unremarkable and "4 days" is a problem. The threshold is the
+  // renewal margin, not an arbitrary week.
+  const days = id?.expires_in_days ?? 0;
+  const certState = !id
+    ? { cls: "warn", label: "not provisioned" }
+    : days < 0
+      ? { cls: "crit", label: `expired ${Math.abs(days)}d ago` }
+      : days <= 14
+        ? { cls: "warn", label: `expires in ${days}d` }
+        : { cls: "ok", label: `valid, ${days}d left` };
+
+  const identityPanel = id
+    ? `<div class="roles">
+        <div class="role erp"><span class="pin"></span>
+          <div><div class="r-name">Certificate on record</div>
+            <div class="r-where">serial ${esc(id.cert_serial)} · until ${day(id.cert_not_after)}</div></div>
+          <div class="r-ver"><span class="st ${certState.cls}">${esc(certState.label)}</span></div></div>
+        <div class="role tpl"><span class="pin"></span>
+          <div><div class="r-name">Hardware anchor</div>
+            <div class="r-where">SP0004 vendor serial ${esc(id.vendor_serial)}${
+              id.atecc_serial ? ` · ATECC ${esc(id.atecc_serial)}` : ""
+            }</div></div>
+          <div class="r-ver">—<small>survives renewal</small></div></div>
+        <div class="role gw"><span class="pin"></span>
+          <div><div class="r-name">Public-key fingerprint</div>
+            <div class="r-where"><code>${esc(id.public_key_fingerprint.slice(0, 32))}…</code></div></div>
+          <div class="r-ver">—<small>stable identity</small></div></div>
+      </div>
+      <div class="note">This is the certificate the ERP was <b>told about</b>, at provisioning or at
+        the last re-certification. Gateway certificates are short-lived and renewed, so if renewal
+        does not re-submit the binding, what is shown here ages out of step with what the cabinet
+        actually presents.</div>`
+    : `<div class="empty">No certificate recorded for ${esc(gbox)}. Provision the gateway
+        (<code>gateway/provision_identity.py</code>), then submit its binding — until then this
+        machine cannot authenticate to the ERP at all.</div>`;
+
+  const unsigned =
+    ch.unsigned_versions > 0
+      ? `<div class="note"><b>${ch.unsigned_versions} stored version${
+          ch.unsigned_versions === 1 ? " carries" : "s carry"
+        } no signature.</b> Those cannot be recorded active and so can never reach the gateway
+        — sign them with <code>signing/sign_profile.py</code>.</div>`
+      : "";
+
+  return `
+    <section class="panel"><div class="ph"><h2>Identity</h2>
+      <span class="desc">how ${esc(gbox)} proves it is itself</span></div>
+      ${identityPanel}
+    </section>
+
+    <section class="panel"><div class="ph"><h2>What is waiting for it</h2>
+      <span class="desc">the ERP end of the channel</span></div>
+      <div class="roles">
+        <div class="role erp"><span class="pin"></span>
+          <div><div class="r-name">Recorded active</div>
+            <div class="r-where">${
+              ch.active_since ? `since ${day(ch.active_since)}` : "nothing recorded active"
+            }</div></div>
+          <div class="r-ver">${esc(ch.active_version ?? "—")}<small>${ch.stored_versions} stored</small></div></div>
+      </div>
+      ${unsigned}
+    </section>
+
+    <section class="panel"><div class="ph"><h2>Whether it arrived</h2>
+      <span class="desc">not answerable here, by design</span></div>
+      <div class="empty">The ERP does not record that a gateway pulled. The pull is a read; a
+        confirmation written back would be a machine reporting an operational act, which this API
+        does not accept (ADR-0022 d9).<br><br>
+        To see whether ${esc(gbox)} is actually collecting its profile, ask the gateway:
+        <code>journalctl -u industrygrow-profile-pull</code>, or
+        <code>profile_client.py show</code> for what it currently holds.</div>
+    </section>`;
+}
+
 async function stock(): Promise<string> {
   const list = await api.listStock();
   state.counts.stock = list.length;
@@ -435,6 +534,7 @@ const VIEWS: Record<View, () => Promise<string>> = {
   instance: instanceDetail,
   integration,
   profiles,
+  gateway,
   stock,
 };
 
@@ -608,6 +708,7 @@ function render(): void {
         ${nav("instances", "Instances", count(state.counts.instances))}
         <span class="grp">Traceability</span>
         ${nav("profiles", "Deployment profile")}
+        ${nav("gateway", "Gateway channel")}
         ${nav("stock", "SP stock", count(state.counts.stock))}
       </nav>
 
