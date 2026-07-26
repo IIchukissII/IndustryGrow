@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# The ADR-0015 d5 poll cadence: check for a new profile version periodically,
+# default every 60 seconds. Change it here (or with `systemctl edit`) rather than
+# in the client — the timer is what runs in production; the client's own --interval
+# is for a host without timers.
+
+[Unit]
+Description=Poll the ERP for a new cultivation profile (ADR-0015 d5)
+Documentation=https://github.com/IIchukissII/IndustryGrow
+
+[Timer]
+# From boot rather than from a wall-clock schedule: a cabinet that has just come
+# up should pick up whatever it missed while it was down, without waiting for the
+# next calendar tick.
+OnBootSec=30s
+OnUnitInactiveSec=60s
+
+# Every gateway in an estate boots off the same image and would otherwise poll in
+# lockstep. The jitter keeps a fleet from arriving at the ERP together.
+RandomizedDelaySec=10s
+
+# The pull is not so important that it should wake a sleeping host for it; the
+# next active period is soon enough.
+Persistent=false
+
+[Install]
+WantedBy=timers.target

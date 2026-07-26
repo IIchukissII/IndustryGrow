@@ -10,6 +10,9 @@ test_mtls_certs.py.
 
 from __future__ import annotations
 
+import base64
+import json
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -148,9 +151,16 @@ def test_verified_gateway_reaches_the_pull_channel(client):
 
 def test_verified_gateway_pulls_its_own_profile_only(client):
     auth = {"Authorization": "Bearer dev-operator-token"}
+    document = json.dumps(
+        {"machine_id": "GBOX_0001", "version_tag": "v1", "setpoints": {"day_c": 21}}
+    ).encode()
     client.post(
         "/api/v1/machines/GBOX_0001/profiles",
-        json={"version_tag": "v1", "payload": {"setpoints": {"day_c": 21}}},
+        json={
+            "version_tag": "v1",
+            "document_b64": base64.b64encode(document).decode(),
+            "signature": "cGxhY2Vob2xkZXI=",
+        },
         headers=auth,
     )
     client.put(

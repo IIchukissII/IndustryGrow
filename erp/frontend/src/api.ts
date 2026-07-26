@@ -167,8 +167,11 @@ export const api = {
     ),
 
   listProfiles: (gbox: string) => req<Profile[]>("GET", `/machines/${gbox}/profiles`),
-  storeProfile: (gbox: string, version_tag: string, payload: unknown, signed_hash?: string) =>
-    req<Profile>("POST", `/machines/${gbox}/profiles`, { version_tag, payload, signed_hash }),
+  // document_b64 carries the artifact's exact signed bytes; the console encodes
+  // what the operator pastes and never reformats it, because the signature covers
+  // those bytes (ADR-0025 d6).
+  storeProfile: (gbox: string, version_tag: string, document_b64: string, signature?: string) =>
+    req<Profile>("POST", `/machines/${gbox}/profiles`, { version_tag, document_b64, signature }),
   recordActiveProfile: (gbox: string, version_tag: string) =>
     req<{ ok: boolean }>("PUT", `/machines/${gbox}/active-profile`, { version_tag }),
 

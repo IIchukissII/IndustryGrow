@@ -342,8 +342,8 @@ async def store_profile_version(
             db,
             gbox,
             body.version_tag,
-            body.payload,
-            signed_hash=body.signed_hash,
+            body.document_b64,
+            signature=body.signature,
             source_template_ref=body.source_template_ref,
         )
     except DuplicateKeyError as exc:
@@ -386,7 +386,14 @@ async def record_active_profile(
 ):
     """Record which version is active on the gateway. This is a RECORD write, not
     a push — there is no deploy endpoint (ADR-0022 d8)."""
-    await profiles.mark_active(db, gbox, body.version_tag)
+    try:
+        await profiles.mark_active(db, gbox, body.version_tag)
+    except profiles.UnknownVersionError as exc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(exc)) from exc
+    except profiles.UnsignedVersionError as exc:
+        # 409, not 422: the request is well-formed and the version exists — the
+        # conflict is with the state of that version (ADR-0025 d11).
+        raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
     return schemas.Ack(detail=f"recorded {body.version_tag} active on {gbox}")
 
 
@@ -408,11 +415,16 @@ async def gateway_pull_active_profile(
     )
     if version is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "active version not found in store")
+    # The envelope is UNSIGNED and the gateway treats it as such: it carries the
+    # signed bytes and their signature, and the machine and version the client
+    # acts on come from inside those bytes after verification (ADR-0025 d6-d7).
+    # machine_id and version_tag are echoed here for operators reading the
+    # channel by hand, not as anything a client should trust.
     return {
         "machine_id": gbox,
         "version_tag": version["version_tag"],
-        "signed_hash": version.get("signed_hash"),
-        "payload": version["payload"],
+        "document_b64": version["document_b64"],
+        "signature": version.get("signature"),
     }
 
 
