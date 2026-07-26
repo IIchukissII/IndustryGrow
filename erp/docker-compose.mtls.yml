@@ -17,12 +17,27 @@ services:
     restart: unless-stopped
     volumes:
       - ./deploy/mtls/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./deploy/mtls/certs:/etc/nginx/tls:ro
+      # The certificate directory. On a real deployment point this at the
+      # operator CA's issued material rather than the test fixture — see
+      # deploy/README.md. It needs server-chain.crt, server.key, operator-root.crt.
+      - ${ERP_TLS_DIR:-./deploy/mtls/certs}:/etc/nginx/tls:ro
+    # Ports are overridable because 443 is the one port most likely already
+    # taken on a host that runs anything else. Both default to the standard
+    # value and to all interfaces: unlike the app port, these two are *meant*
+    # to be reachable — the gateway channel is what the cabinets call.
     ports:
-      - "443:443"
-      - "8443:8443"
+      - "${ERP_HTTPS_PORT:-443}:443"
+      - "${ERP_MTLS_PORT:-8443}:8443"
     depends_on:
       - erp
+    healthcheck:
+      # Proves nginx parsed its config and is listening, which is the failure
+      # this file is most likely to produce.
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
 
   erp:
     # Believe forwarded certificate headers only from the proxy container. The
