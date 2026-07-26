@@ -14,9 +14,14 @@ SPDX-License-Identifier: CC-BY-SA-4.0
   provisioning is a separate concern (ADR-0007 d5, not built).
 - **Identifier:** the filename is the object key; form `SPxxxx-<layer>-<slug>` per
   the SP document-layer convention in `REGISTRY.md`.
-- **Companion automation:** the gateway provisioning tool (produces the on-chip
-  CSR — not yet built) and the operator CA in the repo's `pki/` directory
-  (`sign-csr.sh` signs it). This document is the tool's specification.
+- **Companion automation:** the gateway provisioning tool
+  [`gateway/provision_identity.py`](../gateway/provision_identity.py), which
+  performs §4–§8, and the operator CA in the repo's `pki/` directory
+  (`sign-csr.sh` signs the CSR it produces). This document is the tool's
+  specification; where the two disagree, this document is right and the tool is a
+  bug. It reaches the Pi with the rest of the `gateway/` bundle (`deploy.ps1`) and
+  is deliberately *not* installed by `provision.sh`: provisioning is a later phase
+  than bring-up and needs a dependency the bring-up venv does not carry (§5).
 - **Stage:** roadmap Production / Phase 2 (ADR-0017) — serials and identity are
   assigned here, after the bench bring-up of `SP0004-M-gateway-bringup`.
 - **Validation status — READ THIS.** The ATECC608 config words and lock sequence
@@ -28,6 +33,14 @@ SPDX-License-Identifier: CC-BY-SA-4.0
   before locking a real one. Values here are the intended configuration, not a
   hardware-validated one — the same posture `erp/deploy/mtls`'s `nginx.conf` carried
   before it ran on a box.
+
+  What *is* exercised is everything downstream of the chip's signature
+  (`erp/tests/test_gateway_provisioning.py`, against the §5 software fallback): the
+  CSR the tool assembles verifies and is signed by `pki/sign-csr.sh`, the resulting
+  leaf authenticates through the ERP's mTLS identity extraction, renewal
+  re-certifies the same key, and the refusals in §6/§8 hold. So the unvalidated
+  surface is narrowed to the ATECC conversation itself — the config words, the lock
+  sequence, and cryptoauthlib reaching the part.
 
 ---
 
@@ -135,7 +148,10 @@ optional slot lock (step 8) until the CA has returned a working certificate.
 The CSR is the only thing that travels to the CA — the private key cannot, so
 `pki/sign-csr.sh` signs a CSR it did not generate; producing it is this tool's job.
 
-Two supported routes to a CSR whose signature is produced *by the slot-0 key*:
+Three supported routes to a CSR whose signature is produced *by the slot-0 key*.
+**`provision_identity.py csr` takes the third**, for a testability reason given
+below; the first two remain valid and are what a C or OpenSSL-centric
+implementation should use.
 
 - **cryptoauthlib atcacert (preferred, no OpenSSL needed on the Pi).** Fill an
   `atcacert_def_t` with `private_key_slot = 0` and a `public_key_dev_loc` pointing
@@ -147,6 +163,18 @@ Two supported routes to a CSR whose signature is produced *by the slot-0 key*:
   `openssl req -new -provider pkcs11 -propquery 'provider=pkcs11' -key 'pkcs11:…;object=device;type=private' -subj '/CN=GBOX_0001' -out GBOX_0001.csr`.
   **Do not** reach for the old `ateccx08` OpenSSL *engine* — Microchip has
   deprecated it and it is OpenSSL-1.1.x-only, which current Raspberry Pi OS is not.
+- **PKCS#10 assembled against the raw chip primitives (what the tool does).** Build
+  the `CertificationRequestInfo` DER directly, hash it, sign the digest with
+  `atcab_sign(0, …)`, and wrap the returned 64-byte `R||S` as a DER
+  `Ecdsa-Sig-Value`. Needs only the `cryptoauthlib` Python package — no atcacert
+  definition to fill, no PKCS#11 provider on the Pi, no OpenSSL in the signing path.
+  **Why this one:** it reduces what cannot be tested without hardware to three calls
+  (`genkey`, `get_pubkey`, `sign`). Both routes above bury CSR construction behind a
+  call that only a real part can execute, so a mistake in it is discoverable only in
+  Production; assembling it here makes the CSR path exercisable with a software key
+  that presents the same contract (a 64-byte public point, a 64-byte signature over
+  a supplied digest). The cost is owning ~100 lines of DER, of which the `R||S` →
+  DER conversion would have been required anyway.
 
 Interface init (Raspberry Pi I²C, cryptoauthlib):
 
@@ -167,7 +195,15 @@ estate consistency (`pki/` bootstrap `--operator`), but the ERP reads only the C
 ### Software-ATECC fallback (CI / laptop only)
 
 Where no chip is present, stand in a **software** P-256 key so the CSR→sign→install
-→renew flow can be exercised end to end:
+→renew flow can be exercised end to end. Every subcommand takes `--software-key`,
+which generates the key if it is absent and otherwise reuses it:
+
+```bash
+./provision_identity.py csr --gbox GBOX_0001 --software-key /tmp/gbox0001.key \
+                            --out GBOX_0001.csr
+```
+
+Equivalently by hand, which is what the tool's fallback signer wraps:
 
 ```bash
 openssl ecparam -name prime256v1 -genkey -noout -out /tmp/gbox0001.key
@@ -217,15 +253,27 @@ Two different identifiers, deliberately not conflated:
 
 Provisioning ends by recording the gateway's "birth certificate" — the
 machine ↔ ATECC ↔ certificate binding, **public material only** (ADR-0007 d6;
-ADR-0017 d12). It uses the **same certificate-metadata inputs ADR-0022 d5 names** —
-public-key fingerprint, cert serial, validity, never a private key — referenced here
-rather than restated (ADR-0000 d3). But d5's binding route is written as binding *a
+ADR-0017 d12). `provision_identity.py binding` collects those inputs into a JSON
+file for submission; it names the inputs and does **not** define the record, which
+is why it refuses to emit one for a software key at all (a binding asserts a
+hardware anchor an exportable key does not have). It uses the **same
+certificate-metadata inputs ADR-0022 d5 names** — public-key fingerprint, cert
+serial, validity, never a private key — referenced here rather than restated
+(ADR-0000 d3). But d5's binding route is written as binding *a
 serial* (`Exxxx-VVVVVV-NNNNNN`) and d7's document allowlist is E-instance-scoped, so
 **whether the gateway's machine-scoped binding reuses d5's existing route or needs a
 distinct machine-binding route is not settled in any ADR** — this document does not
 decide it. It owns only *when* in the flow the binding is written and *which local
 values* feed it; it does **not** define the record's fields — the record schema is
 deferred (ADR-0007 / ADR-0024) and lands with the ERP (board card 17).
+
+**How the tool groups the values.** ADR-0007 rev 1 d10d fixes which facts a `-PR`
+may key on and why; that requirement is not restated here (ADR-0000 d3). What
+follows from it for this step is the shape of the handoff: `GBOX_NNNN`, the SP0004
+vendor serial, the ATECC die serial and the public-key fingerprint sit at the top
+level, and the issued certificate's serial, validity and issuer sit in a nested
+`certificate` object. The nesting is how the tool records which group is which, so
+that the d10d distinction is still legible when the record schema is settled.
 
 **Ordering (a workflow constraint, not an axis redefinition).** The CSR's CN is the
 machine identifier `GBOX_NNNN` (§1), so that machine must be registered in the ERP
@@ -251,7 +299,9 @@ decides.
 - **Renewal** (short-lived leaves, ADR-0007 d7; 90 days, `pki/` runbook): re-CSR and
   re-issue over the **same** slot-0 key — the key is generated once and never
   regenerated on renewal, only re-certified. `atcab_get_pubkey(0)` → new CSR →
-  `sign-csr.sh` → install the new chain. No lock, no key change.
+  `sign-csr.sh` → install the new chain. No lock, no key change. This is
+  `provision_identity.py csr` again, unchanged: the tool has no path that
+  regenerates the key, so renewal cannot accidentally become re-keying.
 - **Migration to IndustryFlow (stage 11)**: the same key is re-certified under
   IndustryFlow's managed CA, whose leaf carries the identity in a **SAN URI**
   (`industryflow:tenant/<uuid>/device/GBOX_NNNN`) rather than the CN, and the

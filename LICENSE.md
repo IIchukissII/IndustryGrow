@@ -20,6 +20,7 @@ live in [`LICENSES/`](LICENSES/), named by SPDX identifier (REUSE convention).
 | `erp/` | Instance-and-integration ERP application and operator console (ADR-0021 d14) | GNU Affero General Public License v3.0 or later | [`AGPL-3.0-or-later`](LICENSES/AGPL-3.0-or-later.txt) |
 | `pki/` | Operator CA bootstrap tooling and ceremony runbook (ADR-0024) | GNU Affero General Public License v3.0 or later | [`AGPL-3.0-or-later`](LICENSES/AGPL-3.0-or-later.txt) |
 | `gateway/` | Gateway host provisioning and hardening material (ADR-0004) — see the note below | Creative Commons Attribution-ShareAlike 4.0 International | [`CC-BY-SA-4.0`](LICENSES/CC-BY-SA-4.0.txt) |
+| `gateway/provision_identity.py` | Gateway ATECC608 identity provisioning tool (ADR-0007 d9, `store/SP0004-M-atecc-provisioning.md`) | GNU Affero General Public License v3.0 or later | [`AGPL-3.0-or-later`](LICENSES/AGPL-3.0-or-later.txt) |
 | `ADR/`, `README.md`, `REGISTRY.md`, `project/`, this file | Architecture decision records and project documentation | Creative Commons Attribution-ShareAlike 4.0 International | [`CC-BY-SA-4.0`](LICENSES/CC-BY-SA-4.0.txt) |
 | `profiles/`, `img/`, `ADR/figures/`, `project/figures/` | Cultivation profile instances (ADR-0003), logos, and figures | Creative Commons Attribution-ShareAlike 4.0 International | [`CC-BY-SA-4.0`](LICENSES/CC-BY-SA-4.0.txt) |
 
@@ -28,13 +29,19 @@ identifier scheme (e.g. `SP0004-M-gateway-bringup.md`) carry their own inline
 `CC-BY-SA-4.0` header, which wins over the `CERN-OHL-S-2.0` default for that
 directory. See `REUSE.toml`.
 
-> **Open question — `gateway/` is licensed as documentation, but it is software.**
-> Everything under `gateway/` (`provision.sh`, `deploy.ps1`, `gateway_selftest.py`,
-> the systemd units, the nftables ruleset) carries `CC-BY-SA-4.0`. Creative Commons
-> advises against CC licences for software, and ADR-0001 routes platform code to
-> `AGPL-3.0-or-later`. This table records what the files *say* today rather than
-> what they arguably should say; changing it is a relicensing decision for the
-> maintainers and contributors, not a documentation fix.
+> **Open question — most of `gateway/` is licensed as documentation, but it is
+> software.** The pre-existing files under `gateway/` (`provision.sh`, `deploy.ps1`,
+> `gateway_selftest.py`, the systemd units, the nftables ruleset) carry
+> `CC-BY-SA-4.0`. Creative Commons advises against CC licences for software, and
+> ADR-0001 routes platform code to `AGPL-3.0-or-later`. This table records what the
+> files *say* today rather than what they arguably should say; relicensing them is a
+> decision for the maintainers and contributors, not a documentation fix.
+>
+> `provision_identity.py` is therefore listed separately: it is new work, so it was
+> licensed `AGPL-3.0-or-later` per ADR-0001 from the start rather than inheriting a
+> label the note above already calls wrong. That leaves the directory mixed, which
+> the per-file SPDX headers handle, and it narrows the relicensing question to the
+> files that actually need contributor consent instead of growing it.
 
 ## Declared but not yet present in this repository
 
