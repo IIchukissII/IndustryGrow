@@ -60,6 +60,8 @@ This ADR carries **decisions and rationale only**. On-disk formats, exact storag
 
    > **Amended by ADR-0024 (decision 4):** the **operator CA trust anchor** joins this enumeration. It was absent because the PKI that needs one had not been stood up; ADR-0024 stands it up, and the anchor is configuration state of a kind with the identity certificate already listed here. The rest of this decision is unchanged.
 
+   > **Amended by ADR-0025 (decision 10):** the **profile-verification public key** joins this enumeration on the same grounds. `active-profile.json` was already listed here, but the key the gateway checks it with was not — ADR-0015 decision 7 required the check without saying what the gateway holds in order to make it. It is public material, provisioned and replaceable rather than compiled in, and so is configuration state of a kind with the trust anchor added above. The rest of this decision is unchanged.
+
 ### What stays RAM-only
 
 6. **Live decoded telemetry working set stays in RAM.** The current decoded state consumed by control loops and the state estimator (ADR-0015 decision 8; ADR-0016 decision 4) is in-memory, as before.

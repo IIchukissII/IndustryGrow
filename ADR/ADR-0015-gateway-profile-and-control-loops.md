@@ -69,6 +69,8 @@ This ADR commits to Architecture B and specifies the contract between gateway an
 
 7. **Signature verification before application.** Each profile carries a digital signature. Gateway verifies the signature against a trusted public key (the platform's or the profile author's, per ADR-0001 decision 5 community-contributed model) before writing to the active-profile file. Profiles with invalid signatures are rejected, logged, and not applied — the previous version remains active.
 
+   > **Resolved by ADR-0025 (decisions 1–2):** this decision states the requirement and the failure behaviour, and both are unchanged — but it named no scheme, and its *"platform's or the profile author's"* key predates the ERP and ADR-0021 decision 12's template/instance split. ADR-0025 specifies the scheme for the instance profile a gateway actually pulls, and establishes that this is the only kind a gateway verifies.
+
 ### Control loops on gateway
 
 8. **Gateway runs rule-based control loops locally.** For each functional subsystem with a corresponding actuator module (per future actuator taxonomy), the gateway runs a control loop:
@@ -161,6 +163,8 @@ This ADR adds clarity to several existing decisions without changing them:
 ## Deferred decisions
 
 - **ADR-0009 — profile schema, contribution workflow, registry design.** Profile JSON schema, version compatibility rules, signature scheme, registry mechanics. Critical for community-contributed profiles per ADR-0001 decision 5.
+
+  > **Narrowed by ADR-0025 (decision 1):** the *signature scheme* item is split by artifact. ADR-0025 takes the deployment-specific **instance** profile on the ERP-to-gateway channel; what stays here is the **community template** side this entry's own qualifier names — contributor authorship, key publication, and whether registry templates carry signatures at all. The schema, version compatibility rules, and registry mechanics are untouched and remain ADR-0009's.
 - **Actuator-module taxonomy** — which Cyphal actuator nodes exist, what commands they accept, how PWM/setpoint flows work. Separate future ADR.
 - **Control-loop tuning and PID gain storage** — are PID gains part of the profile, or part of platform-default tunings, or per-cabinet calibration? Likely part of the profile, but needs explicit decision.
 - **What happens on profile-sync failure for extended period.** Gateway continues with last-known-good profile indefinitely? Triggers an alert? Triggers a refresh of CA trust? Operational concern, decide when implementing.
