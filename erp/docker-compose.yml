@@ -29,6 +29,17 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${ERP_MONGO_USER:?set ERP_MONGO_USER in .env}
       MONGO_INITDB_ROOT_PASSWORD: ${ERP_MONGO_PASSWORD:?set ERP_MONGO_PASSWORD in .env}
+    # mongod sizes its WiredTiger cache at ~50% of (RAM - 1 GB) by default, which
+    # on a shared host means it reserves against memory the other services are
+    # already using. Capped here rather than left to the default: the ERP's working
+    # set is small (an index over an object store, ADR-0021 d15), and a host that
+    # also runs something else is the expected case (ADR-0021 rev 2 d1 — a host of
+    # the operator's choosing). Raise it on a box with room to spare.
+    command:
+      - mongod
+      - --wiredTigerCacheSizeGB
+      - "${ERP_MONGO_CACHE_GB:-0.25}"
+    mem_limit: ${ERP_MONGO_MEM_LIMIT:-768m}
     volumes:
       - mongo-data:/data/db
     # NOT published. The only thing that needs Mongo is the ERP container, which
@@ -72,6 +83,9 @@ services:
       context: ..
       dockerfile: erp/Dockerfile
     restart: unless-stopped
+    # A FastAPI app serving a small index and a console bundle; the ceiling exists
+    # so a runaway request cannot crowd out whatever else the host is running.
+    mem_limit: ${ERP_MEM_LIMIT:-512m}
     environment:
       ERP_MONGO_URI: mongodb://${ERP_MONGO_USER:?}:${ERP_MONGO_PASSWORD:?}@mongo:27017/?authSource=admin
       ERP_MONGO_DB: ${ERP_MONGO_DB:-industrygrow_erp}
