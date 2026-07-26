@@ -47,6 +47,7 @@ import struct
 import subprocess
 import sys
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 
 # ADR-0017 machine identifier, the same grammar pki/sign-csr.sh enforces. Checked
@@ -700,6 +701,22 @@ def _cert_field(path: Path, *args: str) -> str:
     return _openssl("x509", "-in", str(path), "-noout", *args).decode().strip()
 
 
+def _openssl_date(field: str) -> str:
+    """openssl's `notAfter=Jul 26 11:20:02 2026 GMT` as an ISO-8601 instant.
+
+    The API takes a datetime, and openssl's default format is not one. Parsed
+    rather than reformatted with `-dateopt iso_8601`, which OpenSSL 1.1 does not
+    have and the Pi may still be carrying.
+    """
+    value = field.split("=", 1)[-1].strip()
+    for fmt in ("%b %d %H:%M:%S %Y %Z", "%b %d %H:%M:%S %Y"):
+        try:
+            return datetime.strptime(value, fmt).replace(tzinfo=UTC).isoformat()
+        except ValueError:
+            continue
+    raise ProvisioningError(f"cannot read the certificate date {value!r}")
+
+
 def _cert_common_name(path: Path) -> str:
     subject = _cert_field(path, "-subject", "-nameopt", "RFC2253")
     match = re.search(r"\bCN=([^,]+)", subject)
@@ -809,11 +826,17 @@ def cmd_binding(args: argparse.Namespace) -> int:
             "       --fixture to mark the output as a pipeline exercise, never a real unit."
         )
 
+    # Shaped as the ERP's machine-binding request body (ADR-0022 rev 1 d12), so
+    # this file is submittable as-is rather than hand-translated:
+    #   curl --cert … --key … -H 'Content-Type: application/json' \
+    #        -d @GBOX_0001-binding.json  https://erp/api/v1/machines/GBOX_0001/provisioning
+    # When the manual was written the record's schema was still deferred and this
+    # emitted its own names; d12 settled it for machines, so it follows the API.
     record = {
-        "machine": args.gbox,
-        "sp0004_vendor_serial": args.vendor_serial,
+        "machine_id": args.gbox,
+        "vendor_serial": args.vendor_serial,
         "atecc_serial": signer.device_serial(),
-        "public_key_sha256": public_key_fingerprint(public_key),
+        "public_key_fingerprint": public_key_fingerprint(public_key),
         "provenance": signer.provenance,
     }
     if args.cert:
@@ -821,16 +844,17 @@ def cmd_binding(args: argparse.Namespace) -> int:
         named = _cert_common_name(cert)
         if named != args.gbox:
             raise ProvisioningError(f"the certificate names {named}, not {args.gbox}")
-        # Nested, and deliberately so: everything in here describes one issuance,
-        # not the unit. ADR-0007 d10d says which facts a -PR may key on; the
-        # grouping is how this file carries that distinction to whoever writes the
-        # record, rather than handing over a flat bag of equally-weighted fields.
-        record["certificate"] = {
-            "serial": _cert_field(cert, "-serial").removeprefix("serial="),
-            "not_before": _cert_field(cert, "-startdate").removeprefix("notBefore="),
-            "not_after": _cert_field(cert, "-enddate").removeprefix("notAfter="),
-            "issuer": _cert_field(cert, "-issuer", "-nameopt", "RFC2253").removeprefix("issuer="),
-        }
+        # Flat, because that is the request body's shape (ADR-0022 rev 1 d12).
+        # These describe one issuance, not the unit: the serial and validity are
+        # replaced at every renewal, while machine_id and the fingerprint above
+        # are what survive it (ADR-0007 rev 1 d10d). The API upserts on that
+        # basis, so re-certification submits this file again.
+        record["cert_serial"] = _cert_field(cert, "-serial").removeprefix("serial=")
+        record["cert_not_before"] = _openssl_date(_cert_field(cert, "-startdate"))
+        record["cert_not_after"] = _openssl_date(_cert_field(cert, "-enddate"))
+        record["issuer"] = _cert_field(cert, "-issuer", "-nameopt", "RFC2253").removeprefix(
+            "issuer="
+        )
     if signer.provenance != "atecc":
         record["fixture"] = "software key — exercises the pipeline, not a provisioned unit"
 

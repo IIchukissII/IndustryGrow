@@ -23,6 +23,10 @@ FOUNDATION = {
     "serial_counter": "foundation.serial_counter",
     "module_instance": "foundation.module_instance",
     "instance_identity": "foundation.instance_identity",
+    # The machine-scoped provisioning binding (ADR-0022 rev 1 d12). Separate from
+    # instance_identity because it is keyed by GBOX_NNNN rather than by an
+    # E-instance serial — a gateway is SP0004 and has no Exxxx-VVVVVV-NNNNNN.
+    "machine_identity": "foundation.machine_identity",
     "integration_record": "foundation.integration_record",
     "lifecycle_doc": "foundation.lifecycle_doc",
     "sp_stock": "foundation.sp_stock",
