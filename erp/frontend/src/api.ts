@@ -39,6 +39,12 @@ export interface Profile {
   active: boolean;
 }
 
+export interface StoreDoc {
+  object_key: string;
+  kind: string;
+  size_bytes: number;
+}
+
 export interface DocumentUrl {
   object_key: string;
   url: string;
@@ -213,6 +219,11 @@ export const api = {
       "DELETE",
       `/machines/${gbox}/positions/${depth}?reason=${encodeURIComponent(reason)}`,
     ),
+
+  /** Type-layer documents the repository owns (ADR-0022 d1, 2026-07-26). */
+  storeDocuments: () => req<StoreDoc[]>("GET", "/store-documents"),
+  storeDocumentUrl: (key: string) =>
+    req<DocumentUrl>("GET", `/store-documents/${encodeURIComponent(key)}/url`),
 
   gatewayChannel: (gbox: string) =>
     req<GatewayChannel>("GET", `/machines/${gbox}/gateway-channel`),

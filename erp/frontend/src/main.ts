@@ -30,6 +30,7 @@ type View =
   | "integration"
   | "profiles"
   | "gateway"
+  | "library"
   | "stock";
 
 const TITLES: Record<View, string> = {
@@ -39,6 +40,7 @@ const TITLES: Record<View, string> = {
   integration: "Integration",
   profiles: "Deployment profile",
   gateway: "Gateway channel",
+  library: "Documents",
   stock: "SP stock",
 };
 
@@ -156,7 +158,9 @@ async function overview(): Promise<string> {
       const [cls, label] = calStatus(c.valid_until);
       return `<div class="slot-row two pick" data-instance="${esc(c.instance_full_id)}">
         <div class="slot-body"><div class="iid"><span class="seg id">${esc(c.instance_full_id)}</span></div>
-        <div class="slot-meta"><span class="ref">${esc(c.doc_type)} · ${esc(c.object_key)}</span></div></div>
+        <div class="slot-meta"><span class="ref">${esc(c.doc_type)} ·</span><button
+          class="seg id key sm" data-doc="${esc(c.object_key)}"
+          data-doc-instance="${esc(c.instance_full_id)}">${esc(c.object_key)}</button></div></div>
         <span class="st ${cls}">${esc(label)}</span></div>`;
     })
     .join("");
@@ -253,6 +257,7 @@ async function instanceDetail(): Promise<string> {
       return `<div class="slot-row two"><div class="slot-body">
         <div class="iid"><span class="seg pos">${esc(d.doc_type)}</span><span class="sepx">·</span><button
           class="seg id key" data-doc="${esc(d.object_key)}"
+          data-doc-instance="${esc(d.instance_full_id)}"
           title="Open ${esc(d.object_key)}">${esc(d.object_key)}</button></div>
         <div class="slot-meta"><span class="ref">warehouse key · valid until ${day(d.valid_until)}</span></div></div>
         <span class="st ${cls}">${esc(label)}</span></div>`;
@@ -513,7 +518,7 @@ async function gateway(): Promise<string> {
  * operator cannot see — a cross-origin fetch needs a CORS rule on the bucket —
  * so the failure path says which rule, rather than "could not load".
  */
-async function openDocument(instanceId: string, objectKey: string): Promise<void> {
+async function openDocument(instanceId: string | null, objectKey: string): Promise<void> {
   const reader = $("dc-reader");
   reader.hidden = false;
   reader.innerHTML = `<div class="rd-head"><span class="rd-key">${esc(objectKey)}</span>
@@ -521,7 +526,9 @@ async function openDocument(instanceId: string, objectKey: string): Promise<void
 
   let grant;
   try {
-    grant = await api.documentUrl(instanceId, objectKey);
+    grant = instanceId
+      ? await api.documentUrl(instanceId, objectKey)
+      : await api.storeDocumentUrl(objectKey);
   } catch (e) {
     reader.innerHTML = `<div class="rd-head"><span class="rd-key">${esc(objectKey)}</span></div>
       <div class="empty"><span class="err">${esc((e as Error).message)}</span></div>`;
@@ -564,6 +571,53 @@ async function openDocument(instanceId: string, objectKey: string): Promise<void
   });
 }
 
+/**
+ * The documents the repository owns — manuals, pinmaps, schematics, fab packages.
+ *
+ * These are not ERP records: the ERP indexes none of them and owns none of them
+ * (ADR-0021 d11). It serves a read grant for the copy `store_sync` mirrored into
+ * the warehouse, the same read-only shape ADR-0023 gave `REGISTRY.md`. An
+ * operator at a cabinet wants the bring-up manual, and the alternative to showing
+ * it here is a second copy of store/ somewhere.
+ *
+ * Grouped by what a document IS rather than by identifier, because that is how
+ * someone looks for one: you go hunting for "the manual", not for "SP0004-M-".
+ */
+async function library(): Promise<string> {
+  const docs = await api.storeDocuments();
+  if (!docs.length)
+    return `<div class="empty">Nothing mirrored into the warehouse yet. Run
+      <code>python -m app.store_sync</code> to publish the repository's <code>store/</code>.</div>`;
+
+  const readable = new Set(["manual", "document", "procedure", "instruction"]);
+  const size = (n: number) => (n < 1024 ? `${n} B` : n < 1e6 ? `${Math.round(n / 1024)} kB` : `${(n / 1e6).toFixed(1)} MB`);
+
+  const groups = new Map<string, typeof docs>();
+  for (const d of docs) groups.set(d.kind, [...(groups.get(d.kind) ?? []), d]);
+  // Readable kinds first — the ones an operator opens rather than downloads.
+  const order = [...groups.keys()].sort(
+    (a, b) => Number(readable.has(b)) - Number(readable.has(a)) || a.localeCompare(b),
+  );
+
+  return order
+    .map((kind) => {
+      const rows = groups
+        .get(kind)!
+        .map(
+          (d) => `<div class="slot-row two"><div class="slot-body">
+            <div class="iid"><button class="seg id key" data-doc="${esc(d.object_key)}"
+              title="Open ${esc(d.object_key)}">${esc(d.object_key)}</button></div>
+            <div class="slot-meta"><span class="ref">${size(d.size_bytes)}</span></div></div>
+            <span class="st ${readable.has(kind) ? "ok" : "muted"}">${readable.has(kind) ? "readable" : "download"}</span></div>`,
+        )
+        .join("");
+      return `<section class="panel"><div class="ph"><h2>${esc(kind[0].toUpperCase() + kind.slice(1))}</h2>
+        <span class="desc">${groups.get(kind)!.length} in the warehouse · the repository owns these, the ERP only points at them</span></div>
+        ${rows}</section>`;
+    })
+    .join("") + `<div class="reader" id="dc-reader" hidden></div>`;
+}
+
 async function stock(): Promise<string> {
   const list = await api.listStock();
   state.counts.stock = list.length;
@@ -604,6 +658,7 @@ const VIEWS: Record<View, () => Promise<string>> = {
   integration,
   profiles,
   gateway,
+  library,
   stock,
 };
 
@@ -625,7 +680,7 @@ function wire(): void {
   document.querySelectorAll<HTMLElement>("[data-doc]").forEach((key) =>
     key.addEventListener("click", (ev) => {
       ev.stopPropagation();
-      void openDocument(state.instance!, key.dataset.doc!);
+      void openDocument(key.dataset.docInstance ?? null, key.dataset.doc!);
     }),
   );
   // A row with an instance id drills into it; a row with a history drawer opens it.
@@ -786,6 +841,7 @@ function render(): void {
         <span class="grp">Traceability</span>
         ${nav("profiles", "Deployment profile")}
         ${nav("gateway", "Gateway channel")}
+        ${nav("library", "Documents")}
         ${nav("stock", "SP stock", count(state.counts.stock))}
       </nav>
 

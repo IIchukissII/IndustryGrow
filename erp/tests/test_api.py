@@ -166,6 +166,53 @@ def test_an_indexed_key_that_does_not_resolve_says_so(client, warehouse):
     assert "diverged" in r.json()["detail"]
 
 
+def test_the_repository_documents_are_listed_by_what_they_are(client):
+    # ADR-0022 d1's 2026-07-26 clarification: read-only, storing nothing, the same
+    # shape ADR-0023 gave REGISTRY.md. The listing comes from the repository's
+    # store/ directory, so the repo decides what is servable — not the bucket.
+    docs = client.get("/api/v1/store-documents", headers=AUTH).json()
+    by_key = {d["object_key"]: d for d in docs}
+    assert "SP0004-M-gateway-bringup.md" in by_key
+    assert by_key["SP0004-M-gateway-bringup.md"]["kind"] == "manual"
+    assert by_key["E0007-000001-S.pdf"]["kind"] == "schematic"
+    assert all(d["size_bytes"] > 0 for d in docs)
+
+
+def test_a_repository_document_can_be_read(client, warehouse):
+    warehouse.objects["SP0004-M-gateway-bringup.md"] = b"# Gateway bring-up\n"
+    r = client.get("/api/v1/store-documents/SP0004-M-gateway-bringup.md/url", headers=AUTH)
+    assert r.status_code == 200
+    assert r.json()["object_key"] == "SP0004-M-gateway-bringup.md"
+    # Still a grant, never content — the ERP is not a proxy for the store (d7).
+    assert "Gateway bring-up" not in r.text
+
+
+def test_only_store_files_are_servable(client, warehouse):
+    # The guard that keeps this a read of the *mirror* rather than of the bucket.
+    # An operator-private instance document lives in the same flat keyspace and
+    # must not be reachable here — it has its own route, with its own index check.
+    warehouse.objects["E0002-020100-000001-CC-20260722"] = b"%PDF private"
+    r = client.get("/api/v1/store-documents/E0002-020100-000001-CC-20260722/url", headers=AUTH)
+    assert r.status_code == 404
+    assert "not a document in the repository's store/" in r.json()["detail"]
+
+
+def test_a_key_cannot_walk_out_of_the_store(client, warehouse):
+    # Resolved against the directory, not joined onto it. Without that, a key of
+    # `../app/config.py` would name a real file and the guard would pass it.
+    for escape in ("../pyproject.toml", "..%2Fpyproject.toml", "../../README.md"):
+        r = client.get(f"/api/v1/store-documents/{escape}/url", headers=AUTH)
+        assert r.status_code in (404, 307), escape
+
+
+def test_a_store_file_not_yet_mirrored_says_so(client, warehouse):
+    # In store/ but never synced. The fix is store_sync, and saying which command
+    # beats a bare 404 that reads as "this document does not exist".
+    r = client.get("/api/v1/store-documents/SP0004-M-atecc-provisioning.md/url", headers=AUTH)
+    assert r.status_code == 404
+    assert "store_sync" in r.json()["detail"]
+
+
 def test_calibration_key_carries_its_date_and_is_queryable(client, warehouse):
     inst = _one_instance(client)
     r = client.post(
