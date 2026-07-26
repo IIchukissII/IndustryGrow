@@ -1,35 +1,69 @@
 # SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# One-command bring-up: the ERP app + its document store (MongoDB) + the
-# object-store warehouse (MinIO). `docker compose up` then seed with
-# `docker compose exec erp python -m app.seed`.
+#
+# One-command bring-up: the ERP app + its document store (MongoDB).
+#
+#   docker compose up -d
+#   docker compose exec erp python -m app.seed
+#
+# This file alone is a DEVELOPMENT bring-up: it publishes the app port and the
+# gateway channel has no certificate verification in front of it. For anything
+# reachable by more than localhost, add the mTLS overlay — which closes the app
+# port and puts the proxy in front:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.mtls.yml up -d
+#
+# See deploy/README.md for the deployment runbook.
+
+name: industrygrow-erp
 
 services:
   mongo:
     image: mongo:7
     restart: unless-stopped
+    # Credentials are required, not optional. mongo:7 starts with authentication
+    # DISABLED unless these are set, and this database holds operator-private
+    # production data (ADR-0021 d14). The `:?` makes compose refuse to start
+    # rather than silently bring up an open database — a default password here
+    # would be worse, because it would work.
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${ERP_MONGO_USER:?set ERP_MONGO_USER in .env}
+      MONGO_INITDB_ROOT_PASSWORD: ${ERP_MONGO_PASSWORD:?set ERP_MONGO_PASSWORD in .env}
     volumes:
       - mongo-data:/data/db
-    ports:
-      - "27017:27017"
+    # NOT published. The only thing that needs Mongo is the ERP container, which
+    # reaches it on the compose network. Publishing 27017 puts the system of
+    # record on the host's network for the convenience of an occasional shell —
+    # use `docker compose exec mongo mongosh` for that instead.
+    expose:
+      - "27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
 
-  # Dev/standalone warehouse. In an IndustryFlow-integrated deployment, drop this
-  # service and point ERP_WAREHOUSE_ENDPOINT at IndustryFlow's MinIO instead
-  # (or, later, AWS S3 / Cloudflare R2 — all S3-compatible, config-only). Start it
-  # only when you want a local one: `docker compose --profile standalone up`.
+  # Dev/standalone warehouse. In a real deployment, drop this service and point
+  # ERP_WAREHOUSE_ENDPOINT at the operator's object store (Cloudflare R2, AWS S3,
+  # or an existing MinIO — all S3-compatible, config-only). Start it only when you
+  # want a local one: `docker compose --profile standalone up`.
   minio:
     image: minio/minio
     profiles: ["standalone"]
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
     volumes:
       - minio-data:/data
+    # Bound to localhost and overridable. 9000 is the S3 default, so on any host
+    # that already runs an object store this collides — and the failure looks like
+    # the ERP talking to the wrong bucket rather than a port clash.
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "${MINIO_BIND:-127.0.0.1}:${MINIO_PORT:-9000}:9000"
+      - "${MINIO_BIND:-127.0.0.1}:${MINIO_CONSOLE_PORT:-9001}:9001"
 
   erp:
     # Context is the repo root: the console bundle is built in-image and imports
@@ -39,16 +73,17 @@ services:
       dockerfile: erp/Dockerfile
     restart: unless-stopped
     environment:
-      ERP_MONGO_URI: mongodb://mongo:27017
-      ERP_MONGO_DB: industrygrow_erp
-      # Warehouse (S3-compatible). Override with IndustryFlow's MinIO / S3 / R2.
-      # Prefer injecting the three secret vars from 1Password (see README) rather
-      # than hard-coding them here.
+      ERP_MONGO_URI: mongodb://${ERP_MONGO_USER:?}:${ERP_MONGO_PASSWORD:?}@mongo:27017/?authSource=admin
+      ERP_MONGO_DB: ${ERP_MONGO_DB:-industrygrow_erp}
+      # Warehouse (S3-compatible). Inject the three secret vars from 1Password or
+      # a .env file (see deploy/README.md) rather than hard-coding them here.
       ERP_WAREHOUSE_ENDPOINT: ${ERP_WAREHOUSE_ENDPOINT:-http://minio:9000}
       ERP_WAREHOUSE_BUCKET: ${ERP_WAREHOUSE_BUCKET:-industrygrow}
       ERP_WAREHOUSE_ACCESS_KEY: ${ERP_WAREHOUSE_ACCESS_KEY:-minioadmin}
       ERP_WAREHOUSE_SECRET_KEY: ${ERP_WAREHOUSE_SECRET_KEY:-minioadmin}
       ERP_WAREHOUSE_REGION: ${ERP_WAREHOUSE_REGION:-us-east-1}
+      ERP_OPERATOR_NAME: ${ERP_OPERATOR_NAME:-}
+      ERP_OPERATOR_UUID: ${ERP_OPERATOR_UUID:-}
       # Repo store/ mounted read-only so `python -m app.store_sync` can upload it.
       ERP_STORE_DIR: /srv/store
       ERP_REGISTRY_PATH: /srv/REGISTRY.md
@@ -58,9 +93,18 @@ services:
       # repo's copy means a registry edit reaches the console without a rebuild.
       - ../REGISTRY.md:/srv/REGISTRY.md:ro
     depends_on:
-      - mongo
+      mongo:
+        # Not a bare `depends_on`: that waits for the container to start, not for
+        # the database to accept connections, so the app raced Mongo on a cold
+        # boot and restarted its way to health.
+        condition: service_healthy
+    # Localhost only. Without the mTLS overlay there is no certificate
+    # verification in front of this port, and a caller who reaches it directly
+    # bypasses the whole gateway trust boundary (ADR-0022 d2) — the app's
+    # trusted-proxy check turns that into a 503 rather than a breach, but not
+    # publishing it is the actual containment. The overlay removes this entirely.
     ports:
-      - "8021:8021"
+      - "${ERP_BIND:-127.0.0.1}:${ERP_PORT:-8021}:8021"
 
 volumes:
   mongo-data:

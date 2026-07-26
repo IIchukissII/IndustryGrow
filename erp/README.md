@@ -86,20 +86,31 @@ op run --env-file=.env.op.tpl -- python -m app.store_sync
 
 ## Run it
 
-**Integrated** (default — bring your own warehouse: IndustryFlow MinIO / S3 / R2):
+> **Deploying to a host rather than trying it locally?** Follow
+> [`deploy/README.md`](deploy/README.md) instead — it covers the mTLS overlay,
+> certificates from the operator CA, and the checks that catch what goes wrong
+> silently. What is below is a development bring-up.
+
+**Development** (bring your own warehouse: MinIO / S3 / R2):
 
 ```sh
-export ERP_WAREHOUSE_ENDPOINT=…    # or use `op run` above
-docker compose up --build          # app :8021 + mongo :27017
+cp deploy/env.example .env && $EDITOR .env   # ERP_MONGO_USER/_PASSWORD are required
+docker compose up --build                    # app on 127.0.0.1:8021
 docker compose exec erp python -m app.store_sync   # load store/ into the warehouse
 docker compose exec erp python -m app.seed         # load the GBOX_0001 estate
 # open http://localhost:8021
 ```
 
+Compose refuses to start without `ERP_MONGO_USER` and `ERP_MONGO_PASSWORD`, because
+`mongo:7` runs with authentication disabled unless they are set at first start, and
+they cannot be added afterwards without destroying the data volume. Neither Mongo's
+port nor the app's is published beyond localhost — the app port has no certificate
+verification in front of it (ADR-0022 d2), and the mTLS overlay removes it entirely.
+
 **Standalone dev** (adds a local MinIO):
 
 ```sh
-docker compose --profile standalone up --build     # + minio :9000/:9001
+docker compose --profile standalone up --build     # + minio on 127.0.0.1:9000/:9001
 ```
 
 ### Local (no Docker)

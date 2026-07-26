@@ -54,3 +54,17 @@ pki/**/*.csr
 pki/**/*.srl
 operator-root.key
 issuing-ca.key
+
+# Deployment configuration (erp/deploy/env.example is the template). The real
+# file holds the database password and the warehouse keys — see erp/deploy/README.md.
+.env
+*.env
+!gateway/gateway.env.example
+!erp/deploy/env.example
+
+# Certificates and keys. The operator CA (pki/) and any issued material are
+# per-deployment and never committed (ADR-0007; ADR-0024 d5-d6).
+*.key
+*.crt
+*.csr
+*.srl
