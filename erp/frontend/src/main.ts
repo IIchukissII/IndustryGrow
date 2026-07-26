@@ -284,9 +284,18 @@ async function instanceDetail(): Promise<string> {
       <div class="form">
         <div class="field"><label>Type</label><select id="dc-t">${docOpts}</select></div>
         <div class="field"><label>File</label><input type="file" id="dc-f"></div>
-        <div class="field"><label>Document date</label><input type="date" id="dc-d"></div>
-        <div class="field"><label>Valid until</label><input type="date" id="dc-u"></div>
         <button class="btn" id="dc-go">Upload document</button>
+      </div>
+      <!-- Only a calibration certificate uses these: the date makes its key unique
+           so a recalibration cannot overwrite its predecessor, and the expiry is
+           what makes "what is due" a query. On any other type they are stored and
+           never read, so asking for them invites filling in a field that does
+           nothing. -->
+      <div class="form" id="dc-cal" hidden>
+        <div class="field"><label>Calibration date</label><input type="date" id="dc-d">
+          <span class="hint">names the certificate · defaults to today</span></div>
+        <div class="field"><label>Valid until</label><input type="date" id="dc-u">
+          <span class="hint">what makes it show up as due</span></div>
       </div>
       <div class="result" id="dc-out"></div>
       ${docRows || `<div class="empty">Nothing indexed for this instance yet.</div>`}
@@ -722,6 +731,17 @@ function wire(): void {
   }
 
   if (state.view === "instance") {
+    const calFields = () => {
+      const isCal = $<HTMLSelectElement>("dc-t").value === "CC";
+      $("dc-cal").hidden = !isCal;
+      if (!isCal) {
+        $<HTMLInputElement>("dc-d").value = "";
+        $<HTMLInputElement>("dc-u").value = "";
+      }
+    };
+    $("dc-t").addEventListener("change", calFields);
+    calFields();
+
     $("dc-go").addEventListener("click", () =>
       act("dc-out", async () => {
         const file = $<HTMLInputElement>("dc-f").files?.[0];

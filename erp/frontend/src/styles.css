@@ -423,3 +423,7 @@ button.seg.key.sm { font-size: 11.5px; padding: 1.5px 6px; }
   /* Two columns once there is room: 27 single-file rows is a scroll, not a shelf. */
   .lib { grid-template-columns: 1fr 1fr; align-items: start; }
 }
+
+/* A hint sits under the control it explains and says what the value DOES, not
+   what it is — the label already said that. */
+.field .hint { display: block; margin-top: 4px; font-size: 11px; color: var(--ink-3); }
