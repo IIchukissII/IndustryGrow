@@ -6,8 +6,8 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0020: Gateway persistence model — local store as lifecycle-dependent data sink
 
 - **ID:** ADR-0020
-- **Status:** Proposed
-- **Date:** 2026-06-15
+- **Status:** Accepted
+- **Date:** 2026-06-15 (accepted 2026-07-26)
 - **Project:** IndustryGrow
 - **Parent:** ADR-0001
 - **Companions:** ADR-0002 (rev 3), ADR-0016 (rev 1), ADR-0018 (rev 1)
@@ -50,7 +50,7 @@ This ADR carries **decisions and rationale only**. On-disk formats, exact storag
 
 ### Storage purposes (scoped separately)
 
-2. **Store-and-forward operational buffer.** Decoded telemetry is buffered locally and flushed to IndustryFlow when connectivity returns; eviction is oldest-first past a retention bound. The bound is derived from **tolerable outage length, not storage size** — scalar telemetry is on the order of kilobytes per minute (ADR-0002 bus context), so size is not the binding constraint. Proposed retention: **~7 days `[PROPOSED — confirm]`** (rationale: covers a long weekend plus a multi-day connectivity or provider outage with margin, while bounding the worst-case un-flushed tail; it is a time bound, not a capacity bound).
+2. **Store-and-forward operational buffer.** Decoded telemetry is buffered locally and flushed to IndustryFlow when connectivity returns; eviction is oldest-first past a retention bound. The bound is derived from **tolerable outage length, not storage size** — scalar telemetry is on the order of kilobytes per minute (ADR-0002 bus context), so size is not the binding constraint. What is decided is the *kind* of bound — a time bound, not a capacity bound. The figure itself is an implementation value (ADR-0000 decision 2) and is deferred: **~7 days** is the working starting point, on the rationale that it covers a long weekend plus a multi-day connectivity or provider outage with margin while bounding the worst-case un-flushed tail.
 
 3. **The buffer is best-effort, not a durability guarantee.** It survives reboot and network outage — the common case, and the gap ADR-0004 rev 1 decision 9 explicitly left lossy. It does **not** guarantee durability against failure of the storage device itself. This preserves the ADR-0004 replaceability value: a dead gateway is a drop-in swap that loses at most the un-flushed tail, not a data-recovery exercise. The "best-effort" semantics must be defined precisely enough (what is and is not promised on device failure) that replaceability is not quietly lost — see Negative consequences.
 
@@ -109,13 +109,13 @@ This ADR carries **decisions and rationale only**. On-disk formats, exact storag
 
 ### Negative
 
-- **SSD/NVMe adds power draw on the gateway.** The gateway (SP0004) is fed from the +12 V SELV rail (SP0003, ADR-0018 rev 1 decision 3). An always-on SSD/NVMe is a non-trivial addition to the sensor-side power budget metered by the single INA226 on that bus (ADR-0018 decision 5). The power-budget implication must be checked against the SELV supply sizing when the gateway BOM is authored. **`[PROPOSED — confirm]`** that the chosen `+12 V` supply has headroom for the storage device.
+- **SSD/NVMe adds power draw on the gateway.** The gateway (SP0004) is fed from the +12 V SELV rail (SP0003, ADR-0018 rev 1 decision 3). An always-on SSD/NVMe is a non-trivial addition to the sensor-side power budget metered by the single INA226 on that bus (ADR-0018 decision 5). The power-budget implication must be checked against the SELV supply sizing when the gateway BOM is authored. **Open check carried into the gateway BOM:** confirm the chosen `+12 V` supply has headroom for the storage device.
 - **"Best-effort buffer" semantics must be defined.** If the precise durability promise (what is lost on device failure vs. on reboot vs. on outage) is left vague, replaceability is quietly lost — a swapped gateway could turn into a data-recovery expectation. The semantics in decision 3 must be written down concretely before implementation.
 - **One more piece of state to reason about on the gateway.** The stateless-edge model was simpler. A bounded operational buffer reintroduces operational state (amending ADR-0015 decision 4), with its own lifecycle, eviction, and failure modes to reason about and test.
 
 ## Deferred decisions
 
-- **Exact retention numbers.** The `~7 days` operational-buffer bound (decision 2) is `[PROPOSED — confirm]`; confirm against tolerable outage length per deployment, not storage size.
+- **Exact retention numbers.** The `~7 days` operational-buffer bound (decision 2) is a starting point, not a commitment; confirm it against tolerable outage length per deployment, not against storage size.
 - **Survey data-richness temporal policy.** Whether and how per-node data richness varies between survey and operation (decision 12) — format, rate, and trigger — is a forward direction; implementation deferred.
 - **Whether the storage device earns its own SP number or folds into the gateway BOM (SP0004).** Per ADR-0019, an SSD/NVMe boot-and-data medium is a purchased part; decide whether it crosses the SP granularity threshold (ADR-0019 decision 4) as its own `SPxxxx` or is an MPN line in the gateway (SP0004) BOM. Flagged as an open question.
 - **On-disk buffer format.** Append-log vs. SQLite vs. columnar — implementation, not architecture (ADR-0000). Not decided here.
@@ -135,12 +135,16 @@ This ADR carries **decisions and rationale only**. On-disk formats, exact storag
 
 ---
 
-## Reviewer notes
+## Open checks carried past acceptance
 
-Points marked `[PROPOSED — confirm]` or flagged for human resolution, gathered for quick triage:
+Accepting this record settles the persistence *model* (ADR-0000 decision 7: a decision
+is accepted when it is settled, not when it is built). These five points are
+deliberately not settled by it — four are values or specifications that ADR-0000
+decision 2 routes to implementation documents, and one needs an owner outside this
+ADR. They are listed together so none is lost now that the record reads Accepted:
 
-1. **Operational-buffer retention `~7 days`** (decision 2; Deferred decisions). Proposed on a *tolerable-outage* basis, not capacity. Confirm the number — and confirm it should be expressed as a time bound rather than a size bound.
-2. **Gateway power budget for SSD/NVMe** (Negative consequences). Flagged `[PROPOSED — confirm]`: verify the chosen +12 V SELV supply (SP0003, ADR-0018) has headroom for an always-on SSD/NVMe before the gateway BOM is committed. This is the one cross-ADR power-budget interaction; it cannot be resolved inside this ADR.
+1. **Operational-buffer retention `~7 days`** (decision 2; Deferred decisions). The *kind* of bound — time, not capacity — is decided; the number is not. Confirm it per deployment.
+2. **Gateway power budget for SSD/NVMe** (Negative consequences). Verify the chosen +12 V SELV supply (SP0003, ADR-0018) has headroom for an always-on SSD/NVMe before the gateway BOM is committed. This is the one cross-ADR power-budget interaction; it cannot be resolved inside this ADR.
 3. **Storage device SP-numbering** (Deferred decisions). Open question per ADR-0019 decision 4: own `SPxxxx` vs. MPN line in the SP0004 BOM. Needs a registry/ADR-0019 owner to decide.
 4. **"Best-effort buffer" semantics** (decision 3; Negative consequences). Not a numeric proposal but a definitional gap that must be closed before implementation, or replaceability (an ADR-0004 value) erodes silently. Flagged for explicit specification.
 5. **Encryption-at-rest** (Deferred decisions). Recommendation is "probably not" (low-sensitivity telemetry); flagged so the human confirms the omission deliberately.
