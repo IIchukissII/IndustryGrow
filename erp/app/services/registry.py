@@ -229,3 +229,35 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
+# --- type-layer document kinds (ADR-0017 d9 document layers) -----------------
+# The layer letter in `<identifier>-<layer>-<slug>` says what a document IS, and
+# the registry is where that vocabulary lives — so the mapping sits here beside
+# the parser rather than in the API or the console (ADR-0023 d6: the registry
+# holds meaning, the design system holds appearance).
+_DOC_LAYERS = {
+    "D": "design",
+    "F": "firmware",
+    "S": "schematic",
+    "L": "bill of materials",
+    "P": "procedure",
+    "M": "manual",
+    "I": "instruction",
+}
+
+
+def store_doc_kind(name: str) -> str:
+    """A human label for a type-layer document, from its ADR-0017 layer letter.
+
+    Falls back to the file extension rather than guessing: an object in `store/`
+    that does not carry a layer letter is still a real document an operator may
+    want, and calling it "design" because that is the commonest layer would be
+    worse than calling it what it plainly is.
+    """
+    stem = name.rsplit(".", 1)[0]
+    for part in stem.split("-")[1:]:
+        if part in _DOC_LAYERS:
+            return _DOC_LAYERS[part]
+    ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
+    return {"md": "document", "pdf": "document", "zip": "archive"}.get(ext, ext or "file")

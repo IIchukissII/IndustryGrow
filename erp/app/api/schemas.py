@@ -147,6 +147,19 @@ class LifecycleDocOut(BaseModel):
     status: str
 
 
+class StoreDocOut(BaseModel):
+    """A type-layer document the repository owns and store_sync mirrors.
+
+    Not an ERP entity: the ERP indexes none of these and owns none of them. The
+    listing is the repository's `store/` directory, served read-only (ADR-0022 d1,
+    2026-07-26 clarification — the same shape ADR-0023 gave `REGISTRY.md`).
+    """
+
+    object_key: str
+    kind: str
+    size_bytes: int
+
+
 class DocumentUrlOut(BaseModel):
     """A time-limited retrieval URL for one indexed document (ADR-0022 d7).
 

@@ -9,7 +9,9 @@ document ingestion is allowlisted to the instance-lifecycle suffixes.
 
 from __future__ import annotations
 
+import asyncio
 from datetime import UTC, date, datetime
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
@@ -562,6 +564,79 @@ async def set_sp_stock(
 
 
 # ============================ calibration ==================================
+
+
+@router.get("/store-documents", response_model=list[schemas.StoreDocOut], tags=["documents"])
+async def list_store_documents(_role: str = Depends(require_read)):
+    """The type-layer documents the repository owns and `store_sync` mirrors.
+
+    Read-only, storing nothing — the same shape ADR-0023 established for
+    `REGISTRY.md` and the reasoning decision 1's 2026-07-26 clarification extends
+    to these. The ERP owns none of this: the listing is taken from the mounted
+    `store/` directory, which is the repository's, so what is servable is defined
+    by the repo rather than by whatever happens to be in the bucket.
+    """
+
+    def _scan() -> list[schemas.StoreDocOut]:
+        return sorted(
+            (
+                schemas.StoreDocOut(
+                    object_key=p.name,
+                    kind=registry.store_doc_kind(p.name),
+                    size_bytes=p.stat().st_size,
+                )
+                for p in Path(settings.store_dir).iterdir()
+                if p.is_file() and not p.name.startswith(".")
+            ),
+            key=lambda d: d.object_key,
+        )
+
+    # Off-thread: this handler serves requests, so a directory walk on a slow or
+    # network-mounted store/ would stall the loop for everyone else.
+    return await asyncio.to_thread(_scan)
+
+
+@router.get(
+    "/store-documents/{object_key}/url", response_model=schemas.DocumentUrlOut, tags=["documents"]
+)
+async def store_document_url(
+    object_key: str,
+    warehouse: Warehouse = Depends(get_warehouse),
+    _role: str = Depends(require_read),
+):
+    """A read grant for one type-layer document (decision 1, 2026-07-26 clarification).
+
+    Guarded twice, and both guards matter. The key must name a file in the
+    repository's `store/` directory — so this reads the *mirror*, not the bucket,
+    and an operator-private instance document can never be reached through here
+    (that is the indexed route above, with its own index check). And it is
+    resolved against the directory rather than joined onto it, so a key
+    containing `..` or a slash cannot walk out of the mirror.
+    """
+
+    def _is_store_file() -> bool:
+        root = Path(settings.store_dir).resolve()
+        candidate = (root / object_key).resolve()
+        return candidate.parent == root and candidate.is_file()
+
+    if not await asyncio.to_thread(_is_store_file):
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            f"{object_key} is not a document in the repository's store/",
+        )
+    if not await warehouse.exists(object_key):
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            f"{object_key} is in store/ but not in the warehouse — run "
+            "`python -m app.store_sync` to mirror it",
+        )
+
+    expires = settings.document_url_ttl
+    return schemas.DocumentUrlOut(
+        object_key=object_key,
+        url=await warehouse.presigned_get(object_key, expires=expires),
+        expires_in=expires,
+    )
 
 
 @router.get(
