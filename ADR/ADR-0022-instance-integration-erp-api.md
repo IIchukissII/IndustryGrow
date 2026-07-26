@@ -32,6 +32,14 @@ SPDX-License-Identifier: CC-BY-SA-4.0
   nowhere, owned by whoever owned it before. What stays forbidden is the ERP
   holding a copy (alternative O).
 
+  *Corrected in place 2026-07-26, after the amendment shipped:* decision 1's
+  clarification **enumerated** decision 7's forms — "a time-limited URL, never
+  content" — instead of referring to them, so amending decision 7 left decision 1
+  stating a rule its own cited source no longer carried, and the two read as a
+  contradiction for exactly the documents this revision was written to make
+  readable. It defers now. This is the drift ADR-0000 decision 3 predicts for a
+  restatement: the copy does not change when the original does.
+
 - **rev 1 (2026-07-26)** — Adds decision 12 and qualifies decision 8, both prompted
   by building the gateway side. **Decision 12** exposes the machine
   identity binding ADR-0021 rev 3 decision 17 gives the ERP to own. Decision 5's binding is keyed by an
@@ -97,7 +105,7 @@ that the second is closed deliberately.
 
    *Clarified in place 2026-07-21 by ADR-0023 (ADR-0000 decision 5):* the type-meaning exclusion is of a resource the ERP **owns**. A read-only route serving `REGISTRY.md` as parsed, storing nothing (ADR-0023 decisions 1, 4), is permitted — it is the read-side counterpart of decision 9. Denying the read would only push callers back into keeping their own tables.
 
-   *Clarified in place 2026-07-26, on the same reasoning:* the exclusion likewise does not deny a **read grant for a type-layer document** already in the warehouse — the manuals, pinmaps and schematics `store_sync` mirrors there. Decision 7 keeps them out of the *ingestion* surface and that is unchanged: the ERP still accepts no type-layer upload, indexes none, and owns none. What it may do is what it already does for `REGISTRY.md` — serve, read-only, storing nothing, a thing the repository owns. The operator standing at a cabinet needs the bring-up manual, and refusing to point at a document the ERP is already holding the key for would only push them into keeping a second copy of `store/` somewhere — the dispersion ADR-0000 decision 3 exists to prevent. Two constraints make this a read of the mirror rather than a read of the bucket: the object must correspond to a file in the repository's `store/` directory, and the route returns a time-limited URL, never content (decision 7).
+   *Clarified in place 2026-07-26, on the same reasoning:* the exclusion likewise does not deny a **read grant for a type-layer document** already in the warehouse — the manuals, pinmaps and schematics `store_sync` mirrors there. Decision 7 keeps them out of the *ingestion* surface and that is unchanged: the ERP still accepts no type-layer upload, indexes none, and owns none. What it may do is what it already does for `REGISTRY.md` — serve, read-only, storing nothing, a thing the repository owns. The operator standing at a cabinet needs the bring-up manual, and refusing to point at a document the ERP is already holding the key for would only push them into keeping a second copy of `store/` somewhere — the dispersion ADR-0000 decision 3 exists to prevent. Two constraints make this a read of the mirror rather than a read of the bucket: the object must correspond to a file in the repository's `store/` directory, and the route offers only the forms decision 7 allows — never a copy the ERP keeps.
 
 ### Authentication — two caller classes, two mechanisms
 
