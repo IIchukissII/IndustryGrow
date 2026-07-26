@@ -298,8 +298,7 @@ async function instanceDetail(): Promise<string> {
           <span class="hint">what makes it show up as due</span></div>
       </div>
       <div class="result" id="dc-out"></div>
-      ${docRows || `<div class="empty">Nothing indexed for this instance yet.</div>`}
-      <div class="reader" id="dc-reader" hidden></div></section>
+      ${docRows || `<div class="empty">Nothing indexed for this instance yet.</div>`}</section>
 
     <section class="panel"><div class="ph"><h2>Provisioning</h2>
       <span class="desc">serial ↔ ATECC608 binding · public certificate material only</span></div>
@@ -519,59 +518,138 @@ async function gateway(): Promise<string> {
 }
 
 /**
- * Open one indexed document in place.
+ * The reader is one `<dialog>` for the whole console, created on first use.
  *
- * The bytes come from the object store, not from the ERP: ADR-0022 d7 gives the
- * API a key or a time-limited URL and nothing else, so the console spends the
- * grant itself. That is also the one thing that can fail for a reason the
- * operator cannot see — a cross-origin fetch needs a CORS rule on the bucket —
- * so the failure path says which rule, rather than "could not load".
+ * A document is something an operator opens *over* their work and closes again,
+ * not a panel that grows on the end of the page they were reading: at a cabinet
+ * you hold the manual up, you do not scroll past the record to reach it. A modal
+ * dialog is also the honest element for it — the top layer, `Escape`, and the
+ * inert background come from the platform rather than from a stack of z-indexes.
+ */
+function readerDialog(): HTMLDialogElement {
+  const found = document.querySelector<HTMLDialogElement>("#dc-reader");
+  if (found) return found;
+
+  const dlg = document.createElement("dialog");
+  dlg.id = "dc-reader";
+  dlg.className = "reader";
+  // Clicking the backdrop is a click on the dialog itself — the sheet fills it,
+  // so any hit that lands on the element and not on a child is outside the sheet.
+  dlg.addEventListener("click", (e) => {
+    if (e.target === dlg) dlg.close();
+  });
+  // Drop the document when the sheet closes, however it closed — button, backdrop,
+  // or Escape. Nothing depends on this having run: every open rewrites the sheet
+  // before showing it, so a stale body can never be displayed. It only keeps a
+  // closed reader from holding a manual's worth of DOM.
+  dlg.addEventListener("close", () => {
+    dlg.innerHTML = "";
+  });
+  document.body.append(dlg);
+  return dlg;
+}
+
+/** A name an operating system can open. Instance document keys carry no suffix
+ *  (`E0004-010100-000188-CC-20260415`), and a certificate saved without one is a
+ *  file the operator has to explain to their own computer. */
+const EXT_FOR = new Map([
+  ["application/pdf", ".pdf"],
+  ["text/markdown", ".md"],
+  ["text/plain", ".txt"],
+  ["text/csv", ".csv"],
+  ["application/json", ".json"],
+  ["image/png", ".png"],
+  ["image/jpeg", ".jpg"],
+]);
+
+function downloadName(objectKey: string, contentType: string): string {
+  const base = objectKey.split("/").pop() || objectKey;
+  if (/\.[A-Za-z0-9]{1,8}$/.test(base)) return base;
+  return base + (EXT_FOR.get(contentType.split(";")[0].trim().toLowerCase()) ?? "");
+}
+
+/**
+ * Open one indexed document over the console.
+ *
+ * The bytes come from the object store, not from the ERP: they stream through
+ * our own origin (ADR-0022 rev 2 d7) and the ERP keeps none of them. Two things
+ * an operator can do with a document, and they need different mechanics:
+ *
+ * - **Save** uses the bytes already fetched here, so it works for every document
+ *   the reader can reach and needs nothing from the bucket.
+ * - **Open in a tab** must be a *plain navigation*, which carries no
+ *   `Authorization` header — so it uses the time-limited grant from d7, the one
+ *   form of this the browser can spend on its own. If the deployment cannot mint
+ *   one, the link is absent rather than present and broken.
  */
 async function openDocument(instanceId: string | null, objectKey: string): Promise<void> {
-  const reader = $("dc-reader");
-  reader.hidden = false;
-  reader.innerHTML = `<div class="rd-head"><span class="rd-key">${esc(objectKey)}</span>
-    <span class="rd-note">opening…</span></div>`;
+  const reader = readerDialog();
+  reader.innerHTML = `<div class="rd-sheet"><div class="rd-head">
+    <span class="rd-key">${esc(objectKey)}</span>
+    <span class="rd-note">opening…</span></div></div>`;
+  if (!reader.open) reader.showModal();
 
-  // Read through our own origin (ADR-0022 rev 2 d7): the ERP streams the bytes
-  // from the object store and keeps none. Going direct to a presigned URL needs
-  // a CORS policy on the bucket, which a deployment's credentials may not be
-  // able to set — an operator handed a grant they cannot spend has nothing.
   const path = api.documentContentPath(instanceId, objectKey);
-  const head = (extra = "") => `<div class="rd-head">
-      <span class="rd-key">${esc(objectKey)}</span>${extra}
-      <a class="btn ghost sm" href="${path}" target="_blank" rel="noopener noreferrer">Open in a tab</a>
-      <button class="btn ghost sm" id="rd-close">Close</button>
-    </div>`;
+  const grant = (
+    instanceId ? api.documentUrl(instanceId, objectKey) : api.storeDocumentUrl(objectKey)
+  )
+    .then((g) => g.url)
+    .catch(() => null);
 
+  let bytes: Blob | null = null;
+  let saveAs = objectKey;
+  let tabUrl: string | null = null;
+
+  const head = (note = "") => {
+    const tab = tabUrl
+      ? `<a class="btn ghost sm" href="${esc(tabUrl)}" target="_blank" rel="noopener noreferrer">Open in a tab</a>`
+      : "";
+    const save = bytes ? `<button class="btn ghost sm" id="rd-save">Download</button>` : "";
+    return `<div class="rd-head">
+      <span class="rd-key">${esc(objectKey)}</span>
+      ${note ? `<span class="rd-note">${esc(note)}</span>` : ""}
+      <span class="rd-acts">${save}${tab}
+        <button class="btn ghost sm" id="rd-close" aria-label="Close">Close</button></span>
+    </div>`;
+  };
+
+  let body = "";
   try {
     const res = await fetch(path, { headers: { Authorization: `Bearer ${getToken()}` } });
+    tabUrl = await grant;
     if (!res.ok) {
       const detail = await res.json().then((j) => j.detail).catch(() => res.statusText);
-      reader.innerHTML = head() + `<div class="empty"><span class="err">${esc(detail)}</span></div>`;
+      body = `<div class="empty"><span class="err">${esc(detail)}</span></div>`;
     } else {
       const type = res.headers.get("content-type") ?? "";
-      const textual = /^text\/|json|markdown|xml|csv/.test(type) || /\.(md|markdown|txt|csv)$/i.test(objectKey);
+      bytes = await res.blob();
+      saveAs = downloadName(objectKey, type);
+      const textual =
+        /^text\/|json|markdown|xml|csv/.test(type) || /\.(md|markdown|txt|csv)$/i.test(objectKey);
       if (!textual) {
-        reader.innerHTML =
-          head(`<span class="rd-note">${esc(type.split(";")[0] || "binary")}</span>`) +
-          `<div class="empty">Not a text document — open it in a tab to view or save it.</div>`;
+        body = `<div class="empty rd-binary"><strong>${esc(type.split(";")[0] || "binary")}</strong>
+          <span>Not a text document. Download it, or open it in a tab to view it.</span></div>`;
       } else {
-        const body = await res.text();
+        const text = await bytes.text();
         const md = /markdown/.test(type) || /\.(md|markdown)$/i.test(objectKey);
-        reader.innerHTML =
-          head() +
-          (md
-            ? `<article class="rd-body md">${DOMPurify.sanitize(await marked.parse(body))}</article>`
-            : `<pre class="rd-body plain">${esc(body)}</pre>`);
+        body = md
+          ? `<article class="rd-body md">${DOMPurify.sanitize(await marked.parse(text))}</article>`
+          : `<pre class="rd-body plain">${esc(text)}</pre>`;
       }
     }
   } catch (e) {
-    reader.innerHTML = head() + `<div class="empty"><span class="err">${esc((e as Error).message)}</span></div>`;
+    tabUrl = await grant;
+    body = `<div class="empty"><span class="err">${esc((e as Error).message)}</span></div>`;
   }
-  $("rd-close")?.addEventListener("click", () => {
-    reader.hidden = true;
-    reader.innerHTML = "";
+
+  reader.innerHTML = `<div class="rd-sheet">${head()}${body}</div>`;
+  $("rd-close")?.addEventListener("click", () => reader.close());
+  $("rd-save")?.addEventListener("click", () => {
+    const url = URL.createObjectURL(bytes!);
+    const a = Object.assign(document.createElement("a"), { href: url, download: saveAs });
+    a.click();
+    // Revoke on the next tick: revoking synchronously can beat the download start.
+    setTimeout(() => URL.revokeObjectURL(url));
   });
 }
 
@@ -632,8 +710,7 @@ async function library(): Promise<string> {
         and owns none of them — it reads through to the copy <code>store_sync</code> published, so
         the manual you read here is the one in <code>store/</code>.</div>
       <div class="lib">${sections}</div>
-    </section>
-    <div class="reader" id="dc-reader" hidden></div>`;
+    </section>`;
 }
 
 async function stock(): Promise<string> {
