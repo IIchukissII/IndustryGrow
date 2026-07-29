@@ -128,15 +128,39 @@ class InstanceOut(BaseModel):
     version: str
     serial: str
     status: str
+    # `020100` is not a number, it is `major.minor.patch` at two digits each
+    # (ADR-0017 d1). Decoded here for the same reason the store keys are: the API
+    # speaks the grammar (ADR-0022 d6) and a caller should never have to know
+    # where the field boundaries fall.
+    version_label: str | None = None
 
 
 class IntegrationOut(BaseModel):
+    """An instance at a position — the one place the two axes meet.
+
+    The identifier `GBOX_NNNN-DDDDDD-Exxxx-VVVVVV-NNNNNN` is a *mutable
+    cross-reference* (ADR-0017 conceptual model), so both sides arrive read into
+    their own fields: nothing here should have to be recovered by splitting a
+    string, least of all the boundary between where a thing sits and what it is.
+    """
+
     machine_id: str
     depth_code: str
     instance_id: str
     installed_at: datetime | None = None
     removed_at: datetime | None = None
     removal_reason: str | None = None
+
+    # Position side. `DDDDDD` is main / sub-L1 / sub-L2 at two digits each — a
+    # three-level position in the machine, not a six-digit number (d1, d7).
+    depth_levels: list[int] | None = None
+    depth_label: str | None = None
+
+    # Identity side, from the instance the position holds.
+    e_number: str | None = None
+    version: str | None = None
+    version_label: str | None = None
+    serial: str | None = None
 
 
 class LifecycleDocOut(BaseModel):
