@@ -39,10 +39,29 @@ export interface Profile {
   active: boolean;
 }
 
+/**
+ * One type-layer document, with its key already read into fields.
+ *
+ * The console parses no identifiers. An identifier *is* the object key
+ * (ADR-0017 d15) and the API is where the grammar is spoken (ADR-0022 d6), so
+ * these fields arrive parsed — a regex here would be a second implementation of
+ * the scheme, free to drift from the one the store is filed by.
+ *
+ * `root` is null for an object in store/ that carries no identifier at all.
+ */
 export interface StoreDoc {
   object_key: string;
   kind: string;
   size_bytes: number;
+  root: string | null;
+  root_kind: "E" | "SP" | null;
+  version: string | null;
+  version_label: string | null;
+  layer: string | null;
+  layer_label: string | null;
+  slug: string | null;
+  status: string | null;
+  packaged: boolean;
 }
 
 export interface DocumentUrl {
@@ -276,6 +295,21 @@ export function moduleDesignation(eNumber: string): string {
  *  SKU or price, which stay in the BOM (ADR-0019, ADR-0021 d9). */
 export function partRole(spNumber: string): string | null {
   return catalogue.parts.find((p) => p.sp_number === spNumber)?.role ?? null;
+}
+
+/**
+ * What an identifier root is, for either type space — designed or purchased.
+ *
+ * Both roots sit on the identity axis (ADR-0019 d1), so anything filed under one
+ * needs the same two answers: what the thing is, and which space it belongs to.
+ * A root the registry does not carry answers only the second, which is still
+ * true and still useful.
+ */
+export function rootLabel(root: string): { name: string | null; space: string } {
+  if (root.startsWith("SP"))
+    return { name: partRole(root), space: "purchased part · no project version" };
+  const module = catalogue.modules.find((m) => m.e_number === root);
+  return { name: module?.designation ?? null, space: module?.discipline ?? "designed assembly" };
 }
 
 /** The leaf hue for a module: assigned from the design palette by E-number, so a

@@ -22,6 +22,7 @@ from functools import lru_cache
 from pathlib import Path
 
 from app.config import settings
+from app.models.identifiers import StoreKey
 
 # A table row: leading/trailing pipes optional-ish, cells split on "|".
 _E_CELL = re.compile(r"^`(E\d{4})`$")
@@ -247,19 +248,34 @@ _DOC_LAYERS = {
 }
 
 
-def store_doc_kind(name: str) -> str:
-    """A human label for a type-layer document, from its ADR-0017 layer letter.
+def layer_label(layer: str | None) -> str | None:
+    """What a document-layer letter means, or ``None`` for a key that has no layer."""
+    return _DOC_LAYERS.get(layer or "")
 
-    Falls back to the file extension rather than guessing: an object in `store/`
-    that does not carry a layer letter is still a real document an operator may
-    want, and calling it "design" because that is the commonest layer would be
-    worse than calling it what it plainly is.
+
+def store_doc_kind(key: StoreKey) -> str:
+    """A human label for a type-layer document, from its parsed key.
+
+    The layer letter is read *positionally* (``parse_store_key``) rather than
+    hunted for anywhere in the name: `D` in the slot after the version is the
+    design layer, and `D` further along is a word in a slug. Falls back to the
+    file extension rather than guessing — an object that carries no layer letter
+    is still a real document an operator may want, and calling it "design"
+    because that is the commonest layer would be worse than calling it what it
+    plainly is.
     """
-    stem = name.rsplit(".", 1)[0]
-    for part in stem.split("-")[1:]:
-        if part in _DOC_LAYERS:
-            return _DOC_LAYERS[part]
-    ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
+    if key.status:
+        # Not a kind of document so much as a kind of grave: one archive object
+        # standing for a whole withdrawn artifact set (ADR-0017 d17).
+        return f"withdrawn · {key.status.lower()}"
+    if key.layer == "D" and key.slug == "fab":
+        # One indivisible manufacturing deliverable, not a folder of gerbers
+        # (ADR-0017 d18) — worth naming, because it is the one live object in the
+        # store that stands for many files.
+        return "fabrication package"
+    if label := layer_label(key.layer):
+        return label
+    ext = key.extension.lower()
     # An EDA project is many files of one thing. Letting each extension become its
     # own kind fragments the list into near-identical groups that say nothing an
     # operator was looking for — "design source" is what they all are.

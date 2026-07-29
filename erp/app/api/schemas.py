@@ -153,11 +153,30 @@ class StoreDocOut(BaseModel):
     Not an ERP entity: the ERP indexes none of these and owns none of them. The
     listing is the repository's `store/` directory, served read-only (ADR-0022 d1,
     2026-07-26 clarification — the same shape ADR-0023 gave `REGISTRY.md`).
+
+    The key is returned **read into its fields** as well as whole. An identifier
+    is the object key (ADR-0017 d15), so its structure is the only structure a
+    type-layer document has, and the API is where the grammar is spoken
+    (ADR-0022 d6) — a client that re-derived these fields from the string would
+    be a second, drifting implementation of the scheme.
     """
 
     object_key: str
     kind: str
     size_bytes: int
+
+    # ADR-0017 d1 / d17 / d18 and ADR-0019 d8 fields. `root` is null for an
+    # object in store/ that carries no identifier at all — reported rather than
+    # guessed at, because an unfiled object is worth seeing.
+    root: str | None = None
+    root_kind: str | None = None
+    version: str | None = None
+    version_label: str | None = None
+    layer: str | None = None
+    layer_label: str | None = None
+    slug: str | None = None
+    status: str | None = None
+    packaged: bool = False
 
 
 class DocumentUrlOut(BaseModel):
