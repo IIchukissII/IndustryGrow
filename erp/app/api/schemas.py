@@ -130,7 +130,7 @@ class InstanceOut(BaseModel):
     status: str
     # `020100` is not a number, it is `major.minor.patch` at two digits each
     # (ADR-0017 d1). Decoded here for the same reason the store keys are: the API
-    # speaks the grammar (ADR-0022 d6) and a caller should never have to know
+    # speaks the grammar (ADR-0022 d13) and a caller should never have to know
     # where the field boundaries fall.
     version_label: str | None = None
 
@@ -181,7 +181,7 @@ class StoreDocOut(BaseModel):
     The key is returned **read into its fields** as well as whole. An identifier
     is the object key (ADR-0017 d15), so its structure is the only structure a
     type-layer document has, and the API is where the grammar is spoken
-    (ADR-0022 d6) — a client that re-derived these fields from the string would
+    (ADR-0022 d13) — a client that re-derived these fields from the string would
     be a second, drifting implementation of the scheme.
     """
 

@@ -16,7 +16,7 @@ export interface Instance {
 /**
  * An instance at a position: the one record where the two axes meet.
  *
- * Both sides arrive read into their own fields (ADR-0022 d6). That matters more
+ * Both sides arrive read into their own fields (ADR-0022 d13). That matters more
  * here than anywhere else in the API, because the depth and the version are both
  * six digits and mean unrelated things — `020100` is main 02 as a position and
  * v2.1.0 as a version, and no reader should be telling them apart by counting
@@ -61,7 +61,7 @@ export interface Profile {
  * One type-layer document, with its key already read into fields.
  *
  * The console parses no identifiers. An identifier *is* the object key
- * (ADR-0017 d15) and the API is where the grammar is spoken (ADR-0022 d6), so
+ * (ADR-0017 d15) and the API is where the grammar is spoken (ADR-0022 d13), so
  * these fields arrive parsed — a regex here would be a second implementation of
  * the scheme, free to drift from the one the store is filed by.
  *

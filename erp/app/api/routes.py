@@ -45,7 +45,7 @@ router = APIRouter(prefix="/api/v1")
 def _version_label(code: str | None) -> str | None:
     """`020100` -> `v2.1.0`, or None for anything that is not a version code.
 
-    Decoding is the API's job, not a caller's (ADR-0022 d6). Returning None
+    Decoding is the API's job, not a caller's (ADR-0022 d13). Returning None
     rather than the raw code keeps the two distinguishable: a client can then
     show the code alone instead of presenting a failed decode as a version.
     """
@@ -630,7 +630,7 @@ def _store_doc(path: Path) -> schemas.StoreDocOut:
     """One store object, with its key read into the ADR-0017 / ADR-0019 fields.
 
     Parsed here rather than by the caller: the API speaks the identifier grammar
-    (ADR-0022 d6), so a console can lay a document out by root, version and layer
+    (ADR-0022 d13), so a console can lay a document out by root, version and layer
     without carrying a second copy of the scheme. Meaning — what a layer letter
     *is* — still comes from the registry module, never from this one.
     """
