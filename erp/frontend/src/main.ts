@@ -58,6 +58,10 @@ const state: {
   counts: { instances: number | null; stock: number | null };
   /** The document scope, held as what it actually is: a key prefix (ADR-0017 d15). */
   prefix: string;
+  /** The same idea on the instance axis. Kept apart from the document scope:
+   *  `SP0004` narrows a shelf and means nothing among serials, so carrying one
+   *  filter between the two views would only ever empty the second. */
+  instancePrefix: string;
 } = {
   view: "overview",
   machines: [],
@@ -66,6 +70,7 @@ const state: {
   meta: null,
   counts: { instances: null, stock: null },
   prefix: "",
+  instancePrefix: "",
 };
 
 const app = document.getElementById("app")!;
@@ -76,12 +81,36 @@ const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) 
 const val = (id: string): string => $<HTMLInputElement>(id).value.trim();
 const day = (iso: string | null): string => (iso ? iso.slice(0, 10) : "—");
 
-/** The identifier, broken along its two axes: cyan where it grows, violet what it is. */
-function segmented(machine: string, depth: string, instanceId: string | null): string {
-  const pos = `<span class="seg pos">${esc(machine)}</span><span class="sepx">·</span><span class="seg pos">${esc(depth)}</span>`;
-  if (!instanceId) return `${pos}<span class="sepx">·</span><span class="seg muted">— empty —</span>`;
-  const [e, v, n] = instanceId.split("-");
-  return `${pos}<span class="sepx">·</span><span class="seg id">${esc(e)}</span><span class="sepx">·</span><span class="seg id">${esc(v)}</span><span class="sepx">·</span><span class="seg id">${esc(n)}</span>`;
+/**
+ * The integration identifier, shown as the join it is.
+ *
+ * `GBOX_NNNN-DDDDDD-Exxxx-VVVVVV-NNNNNN` is not a five-part name — it is two
+ * orthogonal axes meeting at one mutable cross-reference (ADR-0017's governing
+ * invariant). A run of five sibling pills says the opposite: that the parts are
+ * peers of one kind. So position and identity are set as two groups with the
+ * join marked between them, and each side shows its codes *decoded*.
+ *
+ * Decoding is what stops the worst confusion in this row: the depth and the
+ * version are both six digits and mean entirely unrelated things. `020100` as a
+ * position is main 02, and `020100` as a version is v2.1.0 — telling them apart
+ * by which slot they sat in was work the reader should never have been doing.
+ */
+function integrationId(r: IntegrationRecord): string {
+  const depth = r.depth_levels
+    ? r.depth_levels.map((n) => String(n).padStart(2, "0")).join("·")
+    : r.depth_code;
+  const pos = `<span class="axis"><span class="seg pos" title="machine">${esc(r.machine_id)}</span
+    ><span class="seg pos" title="depth ${esc(r.depth_code)} — main · sub · sub">${esc(depth)}</span></span>`;
+  if (!r.e_number)
+    return `<span class="iid">${pos}<span class="axjoin"></span><span class="seg muted">— empty —</span></span>`;
+  const id = `<span class="axis"><span class="seg id" title="module">${esc(r.e_number)}</span
+    ><span class="seg id" title="design version ${esc(r.version ?? "")}">${esc(r.version_label ?? r.version ?? "")}</span
+    ><span class="seg id" title="serial">${esc(r.serial ?? "")}</span></span>`;
+  // The join is a mark, not a separator: it says these two sides are different
+  // kinds of fact, and that the pairing is re-assigned whenever the instance
+  // moves (ADR-0017 d7, d13).
+  return `<span class="iid">${pos}<span class="axjoin"
+    title="assigned at integration; re-assigned whenever the instance moves"></span>${id}</span>`;
 }
 
 function calStatus(validUntil: string | null): [string, string] {
@@ -149,11 +178,11 @@ async function overview(): Promise<string> {
 
   const rows = estate
     .map((r: IntegrationRecord, i: number) => {
-      const e = r.instance_id.split("-")[0];
+      const e = r.e_number ?? "";
       const name = moduleDesignation(e), colour = moduleHue(e);
       return `<div class="slot-row pick" data-open="${i}"><span class="slot-idx">${String(i + 1).padStart(2, "0")}</span>
-        <div class="slot-body"><div class="iid">${segmented(r.machine_id, r.depth_code, r.instance_id)}</div>
-        <div class="slot-meta"><span class="leaf" style="background:${colour}"></span><b>${esc(name)}</b><span class="ref">· type → REGISTRY.md</span></div></div>
+        <div class="slot-body">${integrationId(r)}
+        <div class="slot-meta"><span class="leaf" style="background:${colour}"></span><b>${esc(name)}</b><span class="key-echo">${esc(`${r.machine_id}-${r.depth_code}-${r.instance_id}`)}</span></div></div>
         <span class="st ok">growing</span></div>
         ${historyDrawer(r.instance_id, histories[i])}`;
     })
@@ -215,18 +244,82 @@ async function overview(): Promise<string> {
     <div class="foot-note">ADR-0021/0022 · <code>foundation.*</code> [F] → IndustryFlow <code>production_unit</code> at stage 11 · <code>domain.*</code> [D] stays the grow layer</div>`;
 }
 
+/**
+ * The instance layer of the identity axis, grouped the way it is allocated.
+ *
+ * A serial is unique per module *and* version, and the allocator counts on
+ * exactly that pair — `counter_id` is literally `Exxxx-VVVVVV` (ADR-0017 d1, d8).
+ * So the row is that prefix and the cells are the serials issued against it:
+ * the grouping is not a display convenience, it is the shape of the counter.
+ *
+ * Deliberately not the Documents plate. There the second dimension was the
+ * document layer and a grid earned its keep; here every cell would be one
+ * status column of mostly-empty width. Status rides on the chip instead, and
+ * the form matches the data rather than the last view built.
+ */
 async function instances(): Promise<string> {
-  const list = await api.listInstances();
-  state.counts.instances = list.length;
-  const rows = list
-    .map((it, i) => {
-      const name = moduleDesignation(it.e_number), colour = moduleHue(it.e_number);
-      return `<div class="slot-row pick" data-instance="${esc(it.instance_id)}"><span class="slot-idx">${String(i + 1).padStart(2, "0")}</span>
-        <div class="slot-body"><div class="iid"><span class="seg id">${esc(it.e_number)}</span><span class="sepx">·</span><span class="seg id">${esc(it.version)}</span><span class="sepx">·</span><span class="seg id">${esc(it.serial)}</span></div>
-        <div class="slot-meta"><span class="leaf" style="background:${colour}"></span><b>${esc(name)}</b></div></div>
-        <span class="st ${it.status === "installed" ? "ok" : "muted"}">${esc(it.status)}</span></div>`;
+  const all = await api.listInstances();
+  state.counts.instances = all.length;
+
+  const prefix = state.instancePrefix;
+  const list = prefix ? all.filter((i) => i.instance_id.startsWith(prefix)) : all;
+
+  // module -> version -> the serials issued against that counter
+  const byModule = new Map<string, Map<string, Instance[]>>();
+  for (const it of list) {
+    const versions = byModule.get(it.e_number) ?? new Map<string, Instance[]>();
+    versions.set(it.version, [...(versions.get(it.version) ?? []), it]);
+    byModule.set(it.e_number, versions);
+  }
+
+  // One continuous table, not a card per module. The grouping is load-bearing —
+  // a serial only means anything against its module and version — but a bordered
+  // card per group would spend more room on chrome than on records, most visibly
+  // in exactly the case this catalog starts in: one serial per type.
+  const groups = [...byModule.keys()]
+    .sort()
+    .map((e) => {
+      const versions = byModule.get(e)!;
+      const count = [...versions.values()].flat().length;
+      const head = `<div class="prow mod"><span class="modh">
+        <span class="leaf" style="background:${moduleHue(e)}"></span>
+        <button class="seg id dh-root" data-instance-prefix="${esc(e)}"
+          title="Narrow to ${esc(e)}">${esc(e)}</button>
+        <b>${esc(moduleDesignation(e))}</b>
+        <span class="ref">${count} serial${count === 1 ? "" : "s"}</span></span></div>`;
+
+      return (
+        head +
+        [...versions.keys()]
+          .sort((a, b) => b.localeCompare(a))
+          .map((v) => {
+            const here = [...versions.get(v)!].sort((a, b) => a.serial.localeCompare(b.serial));
+            const chips = here
+              .map(
+                (it) =>
+                  `<button class="seg id key chip serial${it.status === "installed" ? " live" : ""}"
+                    data-instance="${esc(it.instance_id)}"
+                    title="${esc(`${it.instance_id} · ${it.status}`)}">-${esc(it.serial)}</button>`,
+              )
+              .join("");
+            return `<div class="prow"><span class="pv"><span class="pv-v">${esc(
+              here[0].version_label ?? v,
+            )}</span><span class="pv-k">${esc(`${e}-${v}`)}</span></span>
+              <span class="pcell">${chips}</span></div>`;
+          })
+          .join("")
+      );
     })
     .join("");
+
+  const chips = [...new Set(all.map((i) => i.e_number))]
+    .sort()
+    .map(
+      (e) =>
+        `<button class="rchip${prefix === e ? " on" : ""}" data-instance-prefix="${esc(e)}">${esc(e)}</button>`,
+    )
+    .join("");
+
   return `
     <section class="panel"><div class="ph"><h2>Allocate serials</h2>
       <span class="desc">the serial-allocation authority · gap-free per module + version</span></div>
@@ -237,9 +330,24 @@ async function instances(): Promise<string> {
         <button class="btn" id="al-go">Allocate serials</button>
       </div>
       <div class="result" id="al-out"></div></section>
+
     <section class="panel"><div class="ph"><h2>Module instances</h2>
-      <span class="desc">${list.length} tracked · select one for its documents and provisioning</span></div>
-      ${rows || `<div class="empty">Nothing allocated yet. Issue the first serials above.</div>`}</section>`;
+      <span class="desc">${all.length} tracked · a row is one counter, its cells the serials
+      issued against it — select a serial for its documents and provisioning</span>
+      <div class="right pfx"><label for="in-p">prefix</label>
+        <input id="in-p" value="${esc(prefix)}" placeholder="E0002-020100" size="17"
+          spellcheck="false" autocomplete="off">
+        ${prefix ? `<button class="btn ghost sm" id="in-x">Clear</button>` : ""}</div></div>
+      <div class="rchips">${chips}
+        <span class="statkey"><span class="dot live"></span>growing
+          <span class="dot"></span>in inventory</span></div>
+      ${
+        groups
+          ? `<div class="plate flush" style="--cols:1">${groups}</div>`
+          : all.length
+            ? `<div class="empty">No serial starts with <code>${esc(prefix)}</code>.</div>`
+            : `<div class="empty">Nothing allocated yet. Issue the first serials above.</div>`
+      }</section>`;
 }
 
 async function instanceDetail(): Promise<string> {
@@ -331,14 +439,17 @@ async function integration(): Promise<string> {
     estate.map((r) => api.instanceHistory(r.instance_id).catch(() => [] as IntegrationRecord[])),
   );
 
+  // Ordered by the position code, which sorts as the machine hierarchy does —
+  // main, then sub, then sub — because that is what the six digits are.
   const rows = [...estate]
     .sort((a, b) => a.depth_code.localeCompare(b.depth_code))
     .map((r, i) => {
-      const e = r.instance_id.split("-")[0];
+      const e = r.e_number ?? "";
       const name = moduleDesignation(e), colour = moduleHue(e);
       return `<div class="slot-row pick" data-open="${i}"><span class="slot-idx">${String(i + 1).padStart(2, "0")}</span>
-        <div class="slot-body"><div class="iid">${segmented(r.machine_id, r.depth_code, r.instance_id)}</div>
-        <div class="slot-meta"><span class="leaf" style="background:${colour}"></span><b>${esc(name)}</b><span class="ref">· growing since ${day(r.installed_at)}</span></div></div>
+        <div class="slot-body">${integrationId(r)}
+        <div class="slot-meta"><span class="leaf" style="background:${colour}"></span><b>${esc(name)}</b><span class="ref">· growing since ${day(r.installed_at)}</span>
+        <span class="key-echo">${esc(`${r.machine_id}-${r.depth_code}-${r.instance_id}`)}</span></div></div>
         <div class="slot-actions"><button class="btn ghost" data-clear="${esc(r.depth_code)}">Remove</button></div></div>
         ${historyDrawer(r.instance_id, histories[i])}`;
     })
@@ -349,15 +460,26 @@ async function integration(): Promise<string> {
 
   return `
     <section class="panel"><div class="ph"><h2>${esc(gbox)}</h2>
-      <span class="desc">${estate.length} module${estate.length === 1 ? "" : "s"} growing · select a row for its history</span>
-      <div class="right legend"><span class="a"><span class="sw pos"></span> position axis</span><span class="a"><span class="sw id"></span> identity axis</span></div></div>
+      <span class="desc">${estate.length} module${estate.length === 1 ? "" : "s"} growing · select a row for its history</span></div>
+      ${
+        estate.length
+          ? `<div class="axhead">
+              <span class="axh"><span class="sw pos"></span>where it sits
+                <em>machine · depth</em></span>
+              <span class="axh"><span class="sw id"></span>what it is
+                <em>module · version · serial</em></span>
+              <span class="axh-note">the pair is re-assigned whenever a module moves; the serial
+                keeps its own history either way</span></div>`
+          : ""
+      }
       ${rows || `<div class="empty">This cabinet is bare. Install a module below to fill its first depth.</div>`}
     </section>
 
     <section class="panel"><div class="ph"><h2>Install a module</h2>
       <span class="desc">a depth that already holds a module is replaced — the outgoing one keeps its history</span></div>
       <div class="form">
-        <div class="field"><label>Depth</label><input id="in-d" value="010100" size="8"></div>
+        <div class="field"><label>Depth</label><input id="in-d" value="010100" size="8">
+          <span class="hint">main · sub · sub, two digits each</span></div>
         <div class="field grow"><label>Instance</label><select id="in-i">${opts || `<option value="">nothing in inventory — allocate serials first</option>`}</select></div>
         <button class="btn" id="in-go">Install</button>
       </div>
@@ -948,6 +1070,26 @@ function wire(): void {
   );
 
   if (state.view === "instances") {
+    const box = $<HTMLInputElement>("in-p");
+    box.addEventListener("input", async () => {
+      state.instancePrefix = box.value.trim();
+      await renderBody();
+      const again = $<HTMLInputElement>("in-p");
+      again.focus();
+      again.setSelectionRange(again.value.length, again.value.length);
+    });
+    $("in-x")?.addEventListener("click", () => {
+      state.instancePrefix = "";
+      void renderBody();
+    });
+    document.querySelectorAll<HTMLElement>("[data-instance-prefix]").forEach((el) =>
+      el.addEventListener("click", () => {
+        const want = el.dataset.instancePrefix!;
+        state.instancePrefix = state.instancePrefix === want ? "" : want;
+        void renderBody();
+      }),
+    );
+
     $("al-go").addEventListener("click", () =>
       act("al-out", async () => {
         const res = await api.allocate(val("al-e"), val("al-v"), parseInt(val("al-q"), 10) || 1);
@@ -1007,7 +1149,7 @@ function wire(): void {
         if (!instanceId) throw new Error("nothing in inventory to install");
         const rec = await api.setPosition(state.machine!, val("in-d"), instanceId);
         await renderBody();
-        return `<span class="rl">Installed</span>${segmented(rec.machine_id, rec.depth_code, rec.instance_id)}`;
+        return `<span class="rl">Installed</span>${integrationId(rec)}`;
       }),
     );
     document.querySelectorAll<HTMLElement>("[data-clear]").forEach((btn) =>

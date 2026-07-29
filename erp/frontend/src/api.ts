@@ -8,8 +8,20 @@ export interface Instance {
   version: string;
   serial: string;
   status: string;
+  /** `020100` decoded as `v2.1.0`. Null when the code is not a version code —
+   *  which keeps a failed decode distinguishable from a real version. */
+  version_label: string | null;
 }
 
+/**
+ * An instance at a position: the one record where the two axes meet.
+ *
+ * Both sides arrive read into their own fields (ADR-0022 d6). That matters more
+ * here than anywhere else in the API, because the depth and the version are both
+ * six digits and mean unrelated things — `020100` is main 02 as a position and
+ * v2.1.0 as a version, and no reader should be telling them apart by counting
+ * hyphens.
+ */
 export interface IntegrationRecord {
   machine_id: string;
   depth_code: string;
@@ -17,6 +29,12 @@ export interface IntegrationRecord {
   installed_at: string | null;
   removed_at: string | null;
   removal_reason: string | null;
+  depth_levels: number[] | null;
+  depth_label: string | null;
+  e_number: string | null;
+  version: string | null;
+  version_label: string | null;
+  serial: string | null;
 }
 
 export interface Machine {

@@ -74,6 +74,39 @@ def test_install_move_remove(client):
     assert len(history) == 1 and history[0]["removed_at"] is not None
 
 
+def test_both_axes_arrive_read_into_fields(client):
+    """ADR-0022 d6: the API speaks the grammar on the instance axis too.
+
+    The depth and the version are both six digits and mean unrelated things
+    (ADR-0017 d1). `020100` here is main 02 as a position and v2.1.0 as a
+    version — a caller telling them apart by counting hyphens is exactly the
+    re-implementation of the scheme this avoids.
+    """
+    client.post(
+        "/api/v1/instances",
+        json={"e_number": "E0002", "version": "020100", "quantity": 1},
+        headers=AUTH,
+    )
+    inst = "E0002-020100-000001"
+    client.put(
+        "/api/v1/machines/GBOX_0001/positions/020100",
+        json={"instance_id": inst},
+        headers=AUTH,
+    )
+
+    listed = client.get("/api/v1/instances", headers=AUTH).json()[0]
+    assert listed["version"] == "020100" and listed["version_label"] == "v2.1.0"
+
+    rec = client.get("/api/v1/machines/GBOX_0001/integration", headers=AUTH).json()[0]
+    # Position side: three two-digit levels, not a six-digit number (d7).
+    assert rec["depth_levels"] == [2, 1, 0]
+    assert rec["depth_label"] == "02.01.00"
+    # Identity side, split out of the instance the position holds.
+    assert (rec["e_number"], rec["version"], rec["serial"]) == ("E0002", "020100", "000001")
+    # Same six digits, two different readings — which is the whole point.
+    assert rec["version_label"] == "v2.1.0" and rec["depth_code"] == "020100"
+
+
 def test_document_allowlist_rejects_type_layer(client):
     files = {"file": ("x.zip", b"data", "application/zip")}
     r = client.post(

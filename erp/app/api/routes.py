@@ -42,6 +42,21 @@ ALLOWED_DOC_TYPES = frozenset({"QP", "QR", "CP", "CC", "PR"})
 router = APIRouter(prefix="/api/v1")
 
 
+def _version_label(code: str | None) -> str | None:
+    """`020100` -> `v2.1.0`, or None for anything that is not a version code.
+
+    Decoding is the API's job, not a caller's (ADR-0022 d6). Returning None
+    rather than the raw code keeps the two distinguishable: a client can then
+    show the code alone instead of presenting a failed decode as a version.
+    """
+    if not code:
+        return None
+    try:
+        return str(identifiers.decode_version(code))
+    except ValueError:
+        return None
+
+
 def _instance_out(doc: dict) -> schemas.InstanceOut:
     return schemas.InstanceOut(
         instance_id=doc["_id"],
@@ -49,17 +64,43 @@ def _instance_out(doc: dict) -> schemas.InstanceOut:
         version=doc["version"],
         serial=doc["serial"],
         status=doc.get("status", "in-inventory"),
+        version_label=_version_label(doc["version"]),
     )
 
 
 def _integration_out(rec: dict) -> schemas.IntegrationOut:
+    """Both axes, each read into its own fields.
+
+    The depth and the version are both six digits and mean entirely different
+    things — one is a position in the machine, the other a semantic version of
+    the design (ADR-0017 d1). Handing back two identical-looking codes and
+    leaving the reader to tell them apart by their place in a string is what
+    this decoding exists to stop.
+    """
+    depth_code = rec["depth_code"]
+    try:
+        levels = list(identifiers.decode_depth(depth_code))
+    except ValueError:
+        levels = None
+
+    try:
+        parts = identifiers.parse_instance(rec["instance_id"])
+    except ValueError:
+        parts = {}
+
     return schemas.IntegrationOut(
         machine_id=rec["machine_id"],
-        depth_code=rec["depth_code"],
+        depth_code=depth_code,
         instance_id=rec["instance_id"],
         installed_at=rec.get("installed_at"),
         removed_at=rec.get("removed_at"),
         removal_reason=rec.get("removal_reason"),
+        depth_levels=levels,
+        depth_label=".".join(f"{n:02d}" for n in levels) if levels else None,
+        e_number=parts.get("e_number"),
+        version=parts.get("version"),
+        version_label=_version_label(parts.get("version")),
+        serial=parts.get("serial"),
     )
 
 

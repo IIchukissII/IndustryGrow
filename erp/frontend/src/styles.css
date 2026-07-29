@@ -560,3 +560,76 @@ button.seg.key.chip.bin { color: var(--ink-2); background: rgba(147, 167, 192, 0
 /* Plain text keeps its own line breaks; markdown gets the .md treatment above. */
 .rd-body.plain { font-family: var(--mono); font-size: 12.5px; line-height: 1.6;
   color: var(--ink-2); white-space: pre-wrap; margin: 0; }
+
+/* -- The two axes, where they meet --------------------------------------------
+   `GBOX_NNNN-DDDDDD-Exxxx-VVVVVV-NNNNNN` is not a five-part name; it is two
+   orthogonal axes joined at one mutable cross-reference (ADR-0017's governing
+   invariant). Five sibling pills in a row said the opposite. So each axis is a
+   group with its own segments butted together, and a mark sits between them. */
+.iid .axis { display: inline-flex; align-items: center; gap: 2px; }
+.axjoin { display: inline-block; width: 15px; height: 15px; margin: 0 9px; flex: none;
+  position: relative; }
+/* Two short strokes rather than one: the sides touch, they do not run together. */
+.axjoin::before, .axjoin::after { content: ""; position: absolute; top: 1px; bottom: 1px;
+  width: 1px; }
+.axjoin::before { left: 5px; background: linear-gradient(180deg, transparent, var(--pos), transparent); }
+.axjoin::after { left: 9px; background: linear-gradient(180deg, transparent, var(--id), transparent); }
+
+/* The column captions the axis colours used to carry in a legend. Naming the
+   axes where they sit beats a swatch key in the corner. */
+/* A legend, not a table head. The identity group starts wherever the machine
+   pill ends, so captions cannot honestly claim to be column headers — naming
+   each axis and what it is made of does the same work without the pretence.
+   `axh-note`, not `.note`: that class is the amber callout used elsewhere, and
+   reusing the word would have quietly wrapped this line in a warning box. */
+.axhead { display: flex; align-items: center; gap: 22px; flex-wrap: wrap;
+  padding: 9px 18px; border-bottom: 1px solid var(--line-2);
+  background: rgba(103, 232, 249, 0.03); font-size: 11px; color: var(--ink-2); }
+.axh { display: inline-flex; align-items: center; gap: 7px; }
+/* `.sw` carries no size of its own — the swatch rules are scoped to `.legend`,
+   so a swatch used outside one has to be given its box here. */
+.axh .sw { width: 9px; height: 9px; border-radius: 3px; flex: none; }
+.axh .sw.pos { background: var(--pos); box-shadow: 0 0 8px var(--pos); }
+.axh .sw.id { background: var(--id); box-shadow: 0 0 8px var(--id); }
+.axh em { font-style: normal; font-family: var(--mono); font-size: 10.5px;
+  color: var(--ink-3); }
+.axh-note { margin-left: auto; max-width: 46ch; font-size: 11px; color: var(--ink-3);
+  text-align: right; }
+
+/* The key itself, echoed under the decoded row. The pills are for reading; this
+   is the string you copy — so it is present, quiet, and selectable. */
+.key-echo { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3);
+  user-select: all; overflow-wrap: anywhere; }
+
+/* A serial on the instance axis: same chip as a document key, but it drills into
+   the instance rather than opening a document, and it carries its status. */
+button.seg.key.chip.serial { color: var(--ink-2); background: rgba(147, 167, 192, 0.07);
+  border-color: var(--line-2); }
+button.seg.key.chip.serial.live { color: #e3dbff; background: rgba(196, 181, 253, 0.1);
+  border-color: rgba(196, 181, 253, 0.32); }
+button.seg.key.chip.serial.live::before { content: ""; display: inline-block; width: 5px;
+  height: 5px; border-radius: 50%; background: var(--green); margin-right: 6px;
+  vertical-align: middle; box-shadow: 0 0 6px var(--green); }
+
+.statkey { display: inline-flex; align-items: center; gap: 6px; margin-left: auto;
+  font-size: 11px; color: var(--ink-3); }
+.statkey .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--ink-3);
+  display: inline-block; }
+.statkey .dot.live { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.statkey .dot + .dot { margin-left: 10px; }
+
+@media (max-width: 760px) {
+  .axjoin { margin: 0 5px; }
+  .axhead { gap: 12px; }
+  .axh.note { margin-left: 0; }
+}
+
+/* The instance catalog is one table, so the plate sits flush in its panel
+   rather than as a bordered card inside one. */
+.plate.flush { border: 0; border-radius: 0; background: none; }
+.prow.mod { grid-template-columns: 1fr; padding: 14px 14px 4px;
+  border-bottom: 0; }
+.prow.mod + .prow { border-top: 0; }
+.modh { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.modh b { font-size: 13px; font-weight: 600; }
+.modh .ref { font-size: 11px; color: var(--ink-3); }
