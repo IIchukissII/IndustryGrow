@@ -75,7 +75,7 @@ def test_install_move_remove(client):
 
 
 def test_both_axes_arrive_read_into_fields(client):
-    """ADR-0022 d6: the API speaks the grammar on the instance axis too.
+    """ADR-0022 d13: the API speaks the grammar on the instance axis too.
 
     The depth and the version are both six digits and mean unrelated things
     (ADR-0017 d1). `020100` here is main 02 as a position and v2.1.0 as a
@@ -212,7 +212,7 @@ def test_the_repository_documents_are_listed_by_what_they_are(client):
 
 
 def test_a_listed_document_carries_its_key_read_into_fields(client):
-    """ADR-0022 d6: the API speaks the grammar, so a console never re-parses it.
+    """ADR-0022 d13: the API speaks the grammar, so a console never re-parses it.
 
     A client that derived root/version/layer from the string itself would be a
     second implementation of ADR-0017's scheme, free to drift from the one the
