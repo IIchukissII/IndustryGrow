@@ -443,24 +443,114 @@ button.seg.key:focus-visible { outline: 2px solid var(--violet); outline-offset:
    carries the weight — same affordance, quieter. */
 button.seg.key.sm { font-size: 11.5px; padding: 1.5px 6px; }
 
-/* ── Documents library ──────────────────────────────────────────────────────
-   A reference shelf, not a record list: the rows carry a key and a size, so they
-   are set compact and in columns. Grouping is by what a document IS, because
-   that is how someone looks for one — you hunt for "the manual". */
-.lib { display: grid; gap: 22px; margin-top: 4px; }
-.lib-kind { display: flex; align-items: baseline; gap: 8px; margin: 0 0 8px;
-  font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase;
+/* -- Documents: the filing plate -------------------------------------------
+   The identifier is a coordinate, not a string with syntax highlighting: root,
+   version, layer, slug (ADR-0017 d1, ADR-0019 d8). So the layout spells it out
+   -- the row holds the prefix its objects share, the column holds the document
+   layer, and the cell holds only the remainder of the key. Nothing here repeats
+   a segment the row or the column has already said, which is what makes a plate
+   readable where a list of 27 whole keys is not. */
+.lib { display: flex; flex-direction: column; gap: 26px; padding: 4px 18px 20px; }
+
+/* The scope control is a prefix, because that is the only query a flat keyspace
+   answers (ADR-0017 d15); the root chips are shortcuts that fill it. */
+.pfx { display: flex; align-items: center; gap: 8px; }
+.pfx label { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase;
   color: var(--ink-3); }
-.lib-n { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3);
-  border: 1px solid var(--line-2); border-radius: 20px; padding: 0 6px; }
-.lib-row { display: flex; align-items: center; gap: 12px; padding: 5px 0;
-  border-bottom: 1px solid var(--line-2); }
-.lib-row:last-child { border-bottom: none; }
-.lib-row .ref { margin-left: auto; font-size: 11.5px; color: var(--ink-3); }
-.lib-row .st { flex: none; }
-@media (min-width: 900px) {
-  /* Two columns once there is room: 27 single-file rows is a scroll, not a shelf. */
-  .lib { grid-template-columns: 1fr 1fr; align-items: start; }
+.pfx input { background: rgba(11, 20, 40, 0.7); border: 1px solid var(--line);
+  border-radius: 7px; color: var(--ink); font-family: var(--mono); font-size: 12px;
+  padding: 6px 9px; }
+/* The placeholder is an example of the thing being asked for, so it has to read
+   as an example — at this size a mono identifier would otherwise pass for a
+   filter that is already applied. */
+.pfx input::placeholder { color: var(--ink-3); opacity: 0.55; font-style: italic; }
+.rchips { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 18px 0; }
+.rchip { font-family: var(--mono); font-size: 11.5px; color: var(--ink-2); cursor: pointer;
+  background: rgba(11, 20, 40, 0.5); border: 1px solid var(--line-2); border-radius: 20px;
+  padding: 3px 11px; }
+.rchip:hover { color: var(--ink); border-color: rgba(103, 232, 249, 0.3); }
+.rchip.on { color: #e3dbff; background: rgba(196, 181, 253, 0.12);
+  border-color: rgba(196, 181, 253, 0.4); }
+.legendline { padding: 10px 18px 0; font-size: 11.5px; color: var(--ink-3); }
+
+/* One root, one dossier: the whole of what a single prefix returns. */
+.dossier { display: flex; flex-direction: column; gap: 10px; }
+.dh { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.dh b { font-size: 13.5px; font-weight: 600; }
+.dh .ref { font-size: 11.5px; color: var(--ink-3); }
+.dh-root { font-family: var(--mono); font-size: 12.5px; cursor: pointer;
+  background: rgba(196, 181, 253, 0.1); border: 1px solid rgba(196, 181, 253, 0.32);
+  color: #e3dbff; }
+.dh-root:hover { border-color: var(--violet-d); }
+.leaf.loose-mark { background: transparent; border: 1px dashed var(--line-2); }
+.leaf.loose-mark::after { display: none; }
+
+.plate { border: 1px solid var(--line); border-radius: 10px; overflow: hidden;
+  background: rgba(6, 13, 28, 0.4); }
+.prow { display: grid; grid-template-columns: 132px repeat(var(--cols), minmax(0, 1fr));
+  gap: 10px; align-items: start; padding: 10px 14px; border-bottom: 1px solid var(--line-2); }
+.prow:last-child { border-bottom: 0; }
+.prow.head { padding: 8px 14px; background: rgba(103, 232, 249, 0.04);
+  font-size: 10.5px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-3); }
+.prow.head .pv { padding-top: 0; }
+.prow.head b { font-family: var(--mono); font-size: 11.5px; color: var(--cyan);
+  text-transform: none; letter-spacing: 0; margin-right: 5px; }
+
+/* The row's own name: what every key in it starts with. */
+.pv { display: flex; flex-direction: column; gap: 2px; padding-top: 3px; min-width: 0; }
+.pv-v { font-family: var(--mono); font-size: 12.5px; color: var(--ink);
+  font-variant-numeric: tabular-nums; }
+.pv-v.none { color: var(--ink-3); font-style: italic; font-size: 11.5px; }
+.pv-k { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3);
+  overflow-wrap: anywhere; }
+
+.pcell { display: flex; flex-wrap: wrap; gap: 5px; min-width: 0; }
+.pnil { color: var(--ink-3); opacity: 0.45; font-family: var(--mono); font-size: 12px;
+  padding: 3px 2px; }
+
+/* Segments elsewhere are short and never wrap; a chip is a key tail and can be
+   long, so it wraps inside its cell rather than pushing the column wider than
+   the plate. Without this the `nowrap` inherited from `.seg` makes every column
+   as wide as its longest key and the whole page scrolls sideways. */
+button.seg.key.chip { font-size: 11.5px; padding: 3px 7px; max-width: 100%;
+  white-space: normal; overflow-wrap: anywhere; text-align: left; }
+/* Not renderable in the reader. Still openable, but it will offer the file
+   rather than the text, so it does not wear the "you can read this" hue. */
+button.seg.key.chip.bin { color: var(--ink-2); background: rgba(147, 167, 192, 0.07);
+  border-color: var(--line-2); }
+.pkg { color: var(--gold); margin-left: 5px; opacity: 0.85; }
+
+/* A withdrawn set: one archive object standing for the files it replaced. */
+.pstrip { grid-column: 2 / -1; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pstrip .ref { font-size: 11px; color: var(--ink-3); }
+.prow.gone { background: rgba(251, 113, 133, 0.04); }
+.prow.gone .pv-v, .prow.gone .pv-k { color: var(--ink-3); }
+.wd { font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 500;
+  color: var(--rose-d); background: rgba(251, 113, 133, 0.12);
+  border: 1px solid rgba(251, 113, 133, 0.34); border-radius: 20px; padding: 2px 9px; }
+
+/* Firmware hangs off the same root but versions on its own stream, so it is a
+   second plate rather than a column in the first (ADR-0017 d16). */
+.fw { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; padding-top: 4px; }
+.fw-cap { font-size: 10.5px; letter-spacing: 0.09em; text-transform: uppercase;
+  color: var(--ink-2); }
+.fw .ref { font-size: 11px; color: var(--ink-3); max-width: 70ch; }
+
+.loose { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.loose .ref { font-size: 11px; color: var(--ink-3); }
+
+@media (max-width: 900px) {
+  /* Columns become labelled bands: the layer letter stays attached to its
+     objects, since it is half of what tells you what they are. */
+  .prow { grid-template-columns: 1fr; gap: 7px; }
+  .prow.head { display: none; }
+  .pcell::before { content: attr(data-layer); font-family: var(--mono);
+    font-size: 10.5px; color: var(--cyan); align-self: center; min-width: 14px; }
+  /* A gap in the grid is legible where the columns line up; stacked, an empty
+     band is just a line saying nothing. The plate keeps the gap, the stack drops
+     it. */
+  .pcell:has(.pnil) { display: none; }
+  .pstrip { grid-column: 1 / -1; }
 }
 
 /* A hint sits under the control it explains and says what the value DOES, not

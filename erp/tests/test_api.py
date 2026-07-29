@@ -178,6 +178,45 @@ def test_the_repository_documents_are_listed_by_what_they_are(client):
     assert all(d["size_bytes"] > 0 for d in docs)
 
 
+def test_a_listed_document_carries_its_key_read_into_fields(client):
+    """ADR-0022 d6: the API speaks the grammar, so a console never re-parses it.
+
+    A client that derived root/version/layer from the string itself would be a
+    second implementation of ADR-0017's scheme, free to drift from the one the
+    store is actually filed by.
+    """
+    by_key = {
+        d["object_key"]: d for d in client.get("/api/v1/store-documents", headers=AUTH).json()
+    }
+
+    fab = by_key["E0001-000002-D-fab.zip"]
+    assert (fab["root"], fab["version"], fab["layer"], fab["slug"]) == (
+        "E0001",
+        "000002",
+        "D",
+        "fab",
+    )
+    assert fab["version_label"] == "v0.0.2"
+    # One indivisible manufacturing deliverable, not a folder of gerbers (d18).
+    assert fab["packaged"] and fab["kind"] == "fabrication package"
+
+    # A withdrawal is a published fact about a version, and the status token is
+    # what makes it machine-readable (d17) — so it arrives as a field, not as a
+    # `.zip` the reader has to call an "archive".
+    assert by_key["E0001-000001-BLOCKED.zip"]["status"] == "BLOCKED"
+    assert by_key["E0001-000001-SUPERSEDED.zip"]["status"] == "SUPERSEDED"
+
+    # Same E prefix, different axis: the firmware is not swept into the board's
+    # withdrawn v0.0.1 set (d16, d17) and its version is the codebase's.
+    assert by_key["E0001-000001-F.hex"]["status"] is None
+    assert by_key["E0001-000001-F.hex"]["layer_label"] == "firmware"
+
+    # An SP root carries no version — the supplier owns it (ADR-0019 d2).
+    manual = by_key["SP0004-M-gateway-bringup.md"]
+    assert (manual["root_kind"], manual["version"]) == ("SP", None)
+    assert manual["slug"] == "gateway-bringup"
+
+
 def test_a_repository_document_can_be_read(client, warehouse):
     warehouse.objects["SP0004-M-gateway-bringup.md"] = b"# Gateway bring-up\n"
     r = client.get("/api/v1/store-documents/SP0004-M-gateway-bringup.md/url", headers=AUTH)

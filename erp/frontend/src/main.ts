@@ -14,6 +14,7 @@ import {
   moduleDesignation,
   moduleHue,
   partRole,
+  rootLabel,
   setCatalog,
   setToken,
   type Instance,
@@ -21,6 +22,7 @@ import {
   type LifecycleDoc,
   type Machine,
   type Meta,
+  type StoreDoc,
 } from "./api";
 
 type View =
@@ -54,6 +56,8 @@ const state: {
   instance: string | null;
   meta: Meta | null;
   counts: { instances: number | null; stock: number | null };
+  /** The document scope, held as what it actually is: a key prefix (ADR-0017 d15). */
+  prefix: string;
 } = {
   view: "overview",
   machines: [],
@@ -61,6 +65,7 @@ const state: {
   instance: null,
   meta: null,
   counts: { instances: null, stock: null },
+  prefix: "",
 };
 
 const app = document.getElementById("app")!;
@@ -653,6 +658,133 @@ async function openDocument(instanceId: string | null, objectKey: string): Promi
   });
 }
 
+// ---- the filing plate ------------------------------------------------------
+
+/** Layer columns, in the order ADR-0017's code legend lists them. `F` is
+ *  deliberately absent: firmware is versioned on its own stream and gets a plate
+ *  of its own (d16). */
+const LAYER_COLUMNS = ["S", "D", "L", "P", "M", "I"];
+
+const size = (n: number) =>
+  n < 1024 ? `${n} B` : n < 1e6 ? `${Math.round(n / 1024)} kB` : `${(n / 1e6).toFixed(1)} MB`;
+
+// The layer letter says what a document is ABOUT; the extension says whether the
+// reader can render it. A design-layer pinmap is still markdown.
+const READABLE_KINDS = new Set(["manual", "document", "procedure", "instruction", "table"]);
+const readable = (d: StoreDoc) =>
+  READABLE_KINDS.has(d.kind) || /\.(md|markdown|txt|csv)$/i.test(d.object_key);
+
+/** One object, shown as the part of its key that the row and column do not
+ *  already carry. The key is still the control (ADR-0017 d15) — just not
+ *  repeated whole in every cell. */
+function docChip(d: StoreDoc, prefix: string): string {
+  const tail = d.object_key.slice(prefix.length);
+  return `<button class="seg id key chip${readable(d) ? "" : " bin"}"
+    data-doc="${esc(d.object_key)}"
+    title="${esc(`${d.object_key} · ${d.kind} · ${size(d.size_bytes)}`)}">${esc(tail)}${
+      d.packaged ? `<span class="pkg" aria-hidden="true">⧉</span>` : ""
+    }</button>`;
+}
+
+/**
+ * One plate: versions down, document layers across.
+ *
+ * An empty cell is information — this version carries nothing on that layer — so
+ * the columns hold steady across versions instead of collapsing per row.
+ */
+function plate(root: string, docs: StoreDoc[], allowed: string[]): string {
+  const live = docs.filter((d) => !d.status);
+  // Keys carrying no layer letter at all — the raw EDA sources. Real objects in
+  // the store, so they get a column of their own rather than a guessed letter.
+  const cols = [
+    ...allowed.filter((letter) => live.some((d) => d.layer === letter)),
+    ...(live.some((d) => !d.layer) ? [""] : []),
+  ];
+
+  const byVersion = new Map<string, StoreDoc[]>();
+  for (const d of docs) {
+    const v = d.version ?? "";
+    byVersion.set(v, [...(byVersion.get(v) ?? []), d]);
+  }
+
+  const heading = (letter: string) =>
+    letter
+      ? `<b>${esc(letter)}</b> ${esc(live.find((d) => d.layer === letter)?.layer_label ?? "")}`
+      : `<b>·</b> no layer letter`;
+
+  const rows = [...byVersion.keys()]
+    .sort((a, b) => b.localeCompare(a))
+    .map((version) => {
+      const group = byVersion.get(version)!;
+      const alive = group.filter((d) => !d.status);
+      const withdrawn = group.filter((d) => d.status);
+      const rowPrefix = version ? `${root}-${version}` : root;
+
+      const cells = alive.length
+        ? cols
+            .map((letter) => {
+              const here = alive.filter((d) => (d.layer ?? "") === letter);
+              // The letter rides on the cell so a narrow screen, where the
+              // column header is gone, can still say which layer this is.
+              return `<span class="pcell" data-layer="${esc(letter || "·")}">${
+                here.length
+                  ? here.map((d) => docChip(d, rowPrefix)).join("")
+                  : `<span class="pnil" title="nothing filed on this layer">–</span>`
+              }</span>`;
+            })
+            .join("")
+        : "";
+
+      // A withdrawal is scoped to the defect, not blindly to the whole version
+      // (ADR-0017 d17), so a version can be part live and part archived. The
+      // strip sits under whatever is still live rather than replacing it.
+      const strip = withdrawn.length
+        ? `<div class="pstrip"><span class="wd">withdrawn</span>${withdrawn
+            .map((d) => docChip(d, rowPrefix))
+            .join("")}
+          <span class="ref">which status covers which files, and why — REGISTRY.md</span></div>`
+        : "";
+
+      return `<div class="prow${alive.length ? "" : " gone"}"><span class="pv"><span
+        class="pv-v${version ? "" : " none"}">${esc(
+          version ? (group[0].version_label ?? version) : "no version",
+        )}</span><span class="pv-k">${esc(rowPrefix)}</span></span>${cells}${strip}</div>`;
+    })
+    .join("");
+
+  return `<div class="plate" style="--cols:${cols.length}">
+    <div class="prow head"><span class="pv">version</span>${cols
+      .map((letter) => `<span class="pcell">${heading(letter)}</span>`)
+      .join("")}</div>${rows}</div>`;
+}
+
+/** Everything filed under one root — the dossier a single key prefix returns
+ *  (ADR-0019 d9: which part an artifact serves is the load-bearing fact, and the
+ *  prefix is what carries it). */
+function dossier(root: string, docs: StoreDoc[]): string {
+  const { name, space } = rootLabel(root);
+  const firmware = docs.filter((d) => d.layer === "F");
+  const design = docs.filter((d) => d.layer !== "F");
+  const purchased = root.startsWith("SP");
+
+  return `<article class="dossier">
+    <header class="dh">
+      <span class="leaf" style="background:${purchased ? "var(--ink-3)" : moduleHue(root)}"></span>
+      <button class="seg id dh-root" data-prefix="${esc(root)}"
+        title="List everything under ${esc(root)}">${esc(root)}</button>
+      <b>${esc(name ?? "not in the registry")}</b>
+      <span class="ref">${esc(space)} · ${docs.length} object${docs.length === 1 ? "" : "s"}</span>
+    </header>
+    ${design.length ? plate(root, design, LAYER_COLUMNS) : ""}
+    ${
+      firmware.length
+        ? `<div class="fw"><span class="fw-cap">firmware · its own version stream</span>
+             <span class="ref">one codebase shared by every node, so this version tracks the code
+             and not the board's design (ADR-0017 d16)</span></div>${plate(root, firmware, ["F"])}`
+        : ""
+    }</article>`;
+}
+
 /**
  * The documents the repository owns — manuals, pinmaps, schematics, fab packages.
  *
@@ -662,54 +794,76 @@ async function openDocument(instanceId: string | null, objectKey: string): Promi
  * wants the bring-up manual, and the alternative to showing it here is a second
  * copy of store/ somewhere.
  *
- * Grouped by what a document IS rather than by identifier, because that is how
- * someone looks for one: you go hunting for "the manual", not for "SP0004-M-".
+ * The layout is the identifier, taken apart. The store is flat by decision — an
+ * identifier IS the object key and filtering it is a prefix list (ADR-0017 d15)
+ * — but flat is how it is *stored*, not how it is read, and the key already
+ * spells out root, version, layer and slug. So a row carries the prefix its
+ * objects share, a column carries the document layer, and a cell carries only
+ * what is left of the key; read a row across and the pieces spell the key back.
+ * That is the on-demand hierarchy synthesis d15 anticipated, done for a reader
+ * instead of for a bucket listing. Grouping by "kind" instead — the shape this
+ * view had — threw away the three facts the scheme works hardest to record:
+ * which root a document belongs to, which version of it, and whether that
+ * version is still alive.
  */
 async function library(): Promise<string> {
-  const docs = await api.storeDocuments();
-  if (!docs.length)
+  const all = await api.storeDocuments();
+  if (!all.length)
     return `<div class="empty">Nothing mirrored into the warehouse yet. Run
       <code>python -m app.store_sync</code> to publish the repository's <code>store/</code>.</div>`;
 
-  const readableKind = new Set(["manual", "document", "procedure", "instruction", "table"]);
-  // The layer letter says what a document is ABOUT; the extension says whether we
-  // can render it. A design-layer pinmap is still markdown.
-  const readable = (d: { object_key: string; kind: string }) =>
-    readableKind.has(d.kind) || /\.(md|markdown|txt|csv)$/i.test(d.object_key);
-  const size = (n: number) =>
-    n < 1024 ? `${n} B` : n < 1e6 ? `${Math.round(n / 1024)} kB` : `${(n / 1e6).toFixed(1)} MB`;
+  // One control, and it is the store's own: a prefix. Not a search box pretending
+  // the flat keyspace is a database — `ListObjectsV2(Prefix=…)` is the whole
+  // query the store can answer, and typing part of an identifier is how you ask.
+  const prefix = state.prefix;
+  const docs = prefix ? all.filter((d) => d.object_key.startsWith(prefix)) : all;
 
-  const groups = new Map<string, typeof docs>();
-  for (const d of docs) groups.set(d.kind, [...(groups.get(d.kind) ?? []), d]);
-  const kindReadable = (k: string) => groups.get(k)!.some(readable);
-  const order = [...groups.keys()].sort(
-    (a, b) => Number(kindReadable(b)) - Number(kindReadable(a)) || a.localeCompare(b),
-  );
+  const roots = new Map<string, StoreDoc[]>();
+  for (const d of docs) roots.set(d.root ?? "", [...(roots.get(d.root ?? "") ?? []), d]);
+  const unfiled = roots.get("") ?? [];
 
-  const sections = order
-    .map((kind) => {
-      const rows = groups
-        .get(kind)!
-        .map(
-          (d) => `<div class="lib-row"><button class="seg id key" data-doc="${esc(d.object_key)}"
-            title="Open ${esc(d.object_key)}">${esc(d.object_key)}</button>
-            <span class="ref">${size(d.size_bytes)}</span>
-            ${readable(d) ? `<span class="st ok">read</span>` : ""}</div>`,
-        )
-        .join("");
-      return `<div class="lib-group"><h3 class="lib-kind">${esc(kind)}<span class="lib-n">${groups.get(kind)!.length}</span></h3>
-        ${rows}</div>`;
-    })
+  const body = docs.length
+    ? [...roots.keys()]
+        .filter(Boolean)
+        .sort()
+        .map((root) => dossier(root, roots.get(root)!))
+        .join("") +
+      (unfiled.length
+        ? `<article class="dossier"><header class="dh">
+            <span class="leaf loose-mark"></span>
+            <b>Not filed under an identifier</b>
+            <span class="ref">${unfiled.length} object${unfiled.length === 1 ? "" : "s"} in
+              <code>store/</code> whose name is not a key, so nothing addresses them</span></header>
+            <div class="loose">${unfiled
+              .map((d) => `${docChip(d, "")}<span class="ref">${esc(d.kind)}</span>`)
+              .join("")}</div></article>`
+        : "")
+    : `<div class="empty">No object key starts with <code>${esc(prefix)}</code>.
+        The store is flat, so a prefix is the whole query — shorten it to widen the list.</div>`;
+
+  const chips = [...new Set(all.map((d) => d.root).filter(Boolean))]
+    .sort()
+    .map(
+      (root) =>
+        `<button class="rchip${prefix === root ? " on" : ""}" data-prefix="${esc(root!)}">${esc(root!)}</button>`,
+    )
     .join("");
 
   return `
     <section class="panel"><div class="ph"><h2>What the repository holds</h2>
-      <span class="desc">${docs.length} documents mirrored into the warehouse · manuals and
-      procedures open here; the rest download</span></div>
+      <span class="desc">${all.length} objects, filed flat — laid out here along the identifier
+      that names each one</span>
+      <div class="right pfx"><label for="lb-p">prefix</label>
+        <input id="lb-p" value="${esc(prefix)}" placeholder="E0001-000002" size="17"
+          spellcheck="false" autocomplete="off">
+        ${prefix ? `<button class="btn ghost sm" id="lb-x">Clear</button>` : ""}</div></div>
+      <div class="rchips">${chips}</div>
       <div class="note">These belong to the repository, not to the ERP. It indexes none of them
         and owns none of them — it reads through to the copy <code>store_sync</code> published, so
         the manual you read here is the one in <code>store/</code>.</div>
-      <div class="lib">${sections}</div>
+      <div class="legendline">A row is the prefix its objects share; a cell is what follows it.
+        Read one across and the pieces spell the key back.</div>
+      <div class="lib">${body}</div>
     </section>`;
 }
 
@@ -900,6 +1054,31 @@ function wire(): void {
           return `<span class="rl">Recorded</span>${esc(tag)} is noted as the version running on ${esc(state.machine)}.`;
         }),
       ),
+    );
+  }
+
+  if (state.view === "library") {
+    // Narrowing the prefix redraws the plates under the cursor, so the caret is
+    // put back where it was — an operator typing an identifier is mid-word, not
+    // mid-command.
+    const box = $<HTMLInputElement>("lb-p");
+    box.addEventListener("input", async () => {
+      state.prefix = box.value.trim();
+      await renderBody();
+      const again = $<HTMLInputElement>("lb-p");
+      again.focus();
+      again.setSelectionRange(again.value.length, again.value.length);
+    });
+    $("lb-x")?.addEventListener("click", () => {
+      state.prefix = "";
+      void renderBody();
+    });
+    // A root is a prefix; clicking one asks the store the same question by hand.
+    document.querySelectorAll<HTMLElement>("[data-prefix]").forEach((el) =>
+      el.addEventListener("click", () => {
+        state.prefix = state.prefix === el.dataset.prefix ? "" : el.dataset.prefix!;
+        void renderBody();
+      }),
     );
   }
 

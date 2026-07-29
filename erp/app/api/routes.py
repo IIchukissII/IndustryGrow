@@ -581,6 +581,44 @@ def _is_store_file(object_key: str) -> bool:
     return candidate.parent == root and candidate.is_file()
 
 
+def _is_listable(path: Path) -> bool:
+    return path.is_file() and not path.name.startswith(".")
+
+
+def _store_doc(path: Path) -> schemas.StoreDocOut:
+    """One store object, with its key read into the ADR-0017 / ADR-0019 fields.
+
+    Parsed here rather than by the caller: the API speaks the identifier grammar
+    (ADR-0022 d6), so a console can lay a document out by root, version and layer
+    without carrying a second copy of the scheme. Meaning — what a layer letter
+    *is* — still comes from the registry module, never from this one.
+    """
+    key = identifiers.parse_store_key(path.name)
+    version_label = None
+    if key.version:
+        try:
+            version_label = str(identifiers.decode_version(key.version))
+        except ValueError:  # a six-digit slot that is not a version code
+            version_label = None
+    return schemas.StoreDocOut(
+        object_key=path.name,
+        kind=registry.store_doc_kind(key),
+        size_bytes=path.stat().st_size,
+        root=key.root,
+        root_kind=key.root_kind,
+        version=key.version,
+        version_label=version_label,
+        layer=key.layer,
+        layer_label=registry.layer_label(key.layer),
+        slug=key.slug,
+        status=key.status,
+        # The two places the scheme lets one object stand for many files: the live
+        # fabrication package (d18) and a withdrawn artifact set (d17). Everything
+        # else in the store is one object per file.
+        packaged=bool(key.status) or (key.layer == "D" and key.slug == "fab"),
+    )
+
+
 async def _read_through(warehouse: Warehouse, object_key: str) -> StreamingResponse:
     """Stream one object from the store to the caller, holding none of it.
 
@@ -630,15 +668,7 @@ async def list_store_documents(_role: str = Depends(require_read)):
 
     def _scan() -> list[schemas.StoreDocOut]:
         return sorted(
-            (
-                schemas.StoreDocOut(
-                    object_key=p.name,
-                    kind=registry.store_doc_kind(p.name),
-                    size_bytes=p.stat().st_size,
-                )
-                for p in Path(settings.store_dir).iterdir()
-                if p.is_file() and not p.name.startswith(".")
-            ),
+            (_store_doc(p) for p in Path(settings.store_dir).iterdir() if _is_listable(p)),
             key=lambda d: d.object_key,
         )
 
