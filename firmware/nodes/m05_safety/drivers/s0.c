@@ -8,9 +8,16 @@
 
 #define S0_PIN 12u /* PB12 = GPIO_4 */
 
-/* Meter pulse constant (imp/kWh). Per-deployment (ADR-0018); should become a
- * register (ADR-0005 d7). 1000 imp/kWh -> 3600 J (1 Wh) per pulse. */
-#define S0_IMP_PER_KWH 1000.0f
+/* Meter pulse constant (imp/kWh). Per-deployment: the meter is SP0001, a COTS
+ * DIN part, and REGISTRY.md puts its phase count and pulse constant in the
+ * deployment BOM (ADR-0018). No E0007 BOM exists yet, so the fitted meter's
+ * value lives here until it does -- and until the subject-ID-style register
+ * treatment of ADR-0005 d7 reaches it.
+ *
+ * Fitted meter: 1600 imp/kWh -> 2250 J per pulse. A meter swap that changes
+ * this constant silently rescales every energy reading, so it is the first
+ * thing to check when published energy looks wrong by a clean ratio. */
+#define S0_IMP_PER_KWH 1600.0f
 #define S0_JOULE_PER_KWH 3600000.0f
 
 static volatile uint32_t s_pulses;
