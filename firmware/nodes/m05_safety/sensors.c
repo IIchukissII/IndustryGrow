@@ -123,8 +123,10 @@ static void pub_temperature(float kelvin)
 
 static void pub_door(void)
 {
-    /* NO reed to GND with pull-up: engaged (closed) reads low. Polarity TBD
-     * against the E0006 wiring. */
+    /* E0006 puts the reed on J5, switching PA15 to GND through R7 with C4 for
+     * debounce and no external pull-up (the internal one above holds the pin
+     * high). The NO reed closes when the door is shut, so engaged reads low --
+     * confirmed on the bench against a fitted reed. */
     bool engaged = (GPIOA->IDR & (1u << REED_PIN)) == 0u;
     industryflow_greenhouse_safety_DoorStatus_1_0 m = {0};
     m.timestamp.microsecond = now_ts();
