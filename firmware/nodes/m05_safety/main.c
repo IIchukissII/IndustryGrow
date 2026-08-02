@@ -17,6 +17,7 @@
 #include "atecc608.h"
 #include "module_id.h"
 #include "clock.h"
+#include "watchdog.h"
 #include "cyphal.h"
 #include "can.h"
 #include "uart.h"
@@ -36,11 +37,18 @@ static void put_hex8(uint8_t b)
 
 int main(void)
 {
+    /* Before anything else: the reset flags are sticky, so latch and clear them
+     * while they still describe THIS boot rather than every boot since power-on. */
+    watchdog_capture_reset_cause();
+
     clock_init();
     e0001_init();
     uart_init();
 
     uart_puts("\r\nIndustryGrow M05-SAFETY bring-up (layer 1)\r\n");
+    uart_puts("last reset: ");
+    uart_puts(watchdog_reset_cause_str());
+    uart_puts("\r\n");
 
     /* Module-ID strap self-check (ADR-0014 d6). */
     uint8_t id = e0001_read_module_id();
@@ -89,10 +97,15 @@ int main(void)
     uart_puts("debug console ends here (PA9 -> leak excitation)\r\n");
     sensors_init(); /* M05 personality: probe + publish the sensor set */
 
+    /* Last: I2C probing, the ATECC read and the CAN self-test above are slow
+     * and must not race the first timeout. Once started it cannot be stopped. */
+    watchdog_start();
+
     uint32_t last = millis();
     for (;;) {
-        sensors_spin(); /* queue sensor telemetry ... */
-        cyphal_spin();  /* ... and flush TX + service RX */
+        watchdog_kick(); /* the ONLY kick: from the foreground, never an ISR */
+        sensors_spin();  /* queue sensor telemetry ... */
+        cyphal_spin();   /* ... and flush TX + service RX */
         if ((millis() - last) >= 500u) {
             last = millis();
             e0001_led_status_toggle(); /* liveness blink */
