@@ -16,10 +16,14 @@
 /* Fixed LSBs (datasheet): bus voltage 1.25 mV, power = 25 * current LSB. */
 #define INA226_BUSV_LSB_V 0.00125f
 
-/* --- E0006 BOM values (ADR-0000): set to the populated shunt + design max.
- *     Placeholders until the E0006 BOM is finalized. --- */
-#define INA226_RSHUNT_OHMS 0.010f
-#define INA226_MAX_CURRENT_A 1.0f
+/* --- E0006 BOM values (ADR-0000): R1 (0R1, 2512) is the shunt, sitting across
+ *     Vin+/Vin- between F1 and the J2 output. The INA226 shunt input is
+ *     +/-81.92 mV full scale, so 0.1 ohm caps the measurable current at
+ *     0.8192 A -- just under F1's 1 A rating. Taking that as the full-scale
+ *     current makes the current LSB exactly 25 uA and CAL exactly 2048, so
+ *     ina226_init()'s cast truncates nothing. --- */
+#define INA226_RSHUNT_OHMS 0.100f
+#define INA226_MAX_CURRENT_A 0.8192f
 
 #define INA226_CURRENT_LSB (INA226_MAX_CURRENT_A / 32768.0f)
 
