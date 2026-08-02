@@ -27,6 +27,7 @@
 #include "atecc608.h"
 #include "clock.h"
 #include "can.h"
+#include "watchdog.h"
 
 #include <string.h>
 
@@ -149,7 +150,10 @@ static void publish_heartbeat(void)
     hb.uptime = (uint32_t)((micros64() - s_start_us) / 1000000u);
     hb.health.value = uavcan_node_Health_1_0_NOMINAL;
     hb.mode.value = uavcan_node_Mode_1_0_OPERATIONAL;
-    hb.vendor_specific_status_code = 0u;
+    /* Why this node last restarted (RCC_CSR flags, latched at boot). Lets the
+     * gateway tell a watchdog recovery from a power cut or a probe-induced
+     * reset without anyone attaching a debugger. */
+    hb.vendor_specific_status_code = watchdog_reset_cause();
 
     uint8_t buf[uavcan_node_Heartbeat_1_0_SERIALIZATION_BUFFER_SIZE_BYTES_];
     size_t sz = sizeof(buf);
