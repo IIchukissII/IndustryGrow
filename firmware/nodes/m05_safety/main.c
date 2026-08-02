@@ -79,10 +79,15 @@ int main(void)
      * so the node enumerates on the gateway console (roadmap stage 1). */
     (void)can_init_normal();
     cyphal_init(IGROW_NODE_ID);
-    sensors_init(); /* M05 personality: probe + publish the sensor set */
     uart_puts("cyphal up: node-id ");
     uart_put_u32(IGROW_NODE_ID);
     uart_puts(", M05 telemetry live\r\n");
+
+    /* Last console output: sensors_init() -> leak_init() claims PA9 (GPIO_1,
+     * shared with USART1_TX) as the leak excitation drive, so the debug UART
+     * goes silent from here. Everything above still prints. */
+    uart_puts("debug console ends here (PA9 -> leak excitation)\r\n");
+    sensors_init(); /* M05 personality: probe + publish the sensor set */
 
     uint32_t last = millis();
     for (;;) {

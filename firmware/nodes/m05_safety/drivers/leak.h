@@ -8,10 +8,14 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-/* Reservoir/pump-zone leak strip on ADC_1 = PC4 (ADC1_IN14). The electrode is
- * impulse-excited only during a sample to avoid electrolysis (ADR-0018 d11);
- * the excitation drive pin is an E0006 net to be wired into leak_sample_raw().
- * Report/alert only — no interlock. */
+/* Reservoir/pump-zone leak strip: sensed on ADC_1 = PC4 (ADC1_IN14), excited
+ * from GPIO_1 = PA9. E0006 puts R6 (4.7k) between the two, with the strip as
+ * the lower leg to GND and R8 (1k) + C5 (100n) filtering into the ADC. The
+ * electrode is impulse-excited only during a sample to avoid electrolysis
+ * (ADR-0018 d11). Report/alert only — no interlock.
+ *
+ * PA9 is also USART1_TX, so leak_init() ENDS the debug console (e0001.h). Do
+ * all uart_puts() before sensors_init(); release builds use SWD instead. */
 void leak_init(void);
 
 /* One gated-excitation sample: drive the electrode, settle, read ADC, stop. */

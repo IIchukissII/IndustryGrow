@@ -68,8 +68,11 @@
 #define E0001_SECURE_SDA_PIN    11u
 
 /* --- Debug UART: USART1 PA9 = TX, PA10 = RX, AF7 (bench bring-up only) --- *
- * These pins are GPIO_1/GPIO_2 on the sensor-module header; M05 uses GPIO_3/4
- * (reed/S0), so PA9/PA10 are free for a debug console on the bench. */
+ * These pins are GPIO_1/GPIO_2 on the sensor-module header, so the console is
+ * only ever on loan from the module. On M05 it is NOT free: E0006 drives the
+ * leak-strip excitation from GPIO_1 = PA9 (R6 to the electrode), so
+ * leak_init() reclaims the pin and the console stops at that point in boot.
+ * Print everything before sensors_init(); release builds debug over SWD. */
 #define E0001_DBG_UART        USART1
 #define E0001_DBG_GPIO        GPIOA
 #define E0001_DBG_TX_PIN      9u
