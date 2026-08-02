@@ -60,6 +60,11 @@ static void mem_free(CanardInstance *ins, void *pointer)
     o1heapFree((O1HeapInstance *)ins->user_reference, pointer);
 }
 
+/* Latched at init: is the node identifying by its ATECC608 anchor, or by the
+ * fallback? Sampled once so the answer cannot change between the GetInfo
+ * response and the health it is reported through. */
+static bool s_identity_anchored;
+
 /* 16-byte Cyphal unique_id. Per ADR-0007 the carrier's ATECC608 is the node's
  * hardware-identity anchor, so its 9-byte serial is the preferred source (left-
  * justified, zero-padded). When the secure element is absent (bare WeAct / no
@@ -91,6 +96,9 @@ void cyphal_init(uint8_t node_id)
     s_canard = canardInit(&mem_alloc, &mem_free);
     s_canard.user_reference = s_heap;
     s_canard.node_id = node_id;
+
+    /* atecc608_init() must already have run (main.c probes it before this). */
+    s_identity_anchored = atecc608_present();
 
     s_txq = canardTxInit(CYPHAL_TX_QUEUE_CAP, CANARD_MTU_CAN_CLASSIC);
 
@@ -148,7 +156,14 @@ static void publish_heartbeat(void)
 {
     uavcan_node_Heartbeat_1_0 hb;
     hb.uptime = (uint32_t)((micros64() - s_start_us) / 1000000u);
-    hb.health.value = uavcan_node_Health_1_0_NOMINAL;
+    /* Without the ATECC608 the node still senses and publishes, but it is
+     * identifying by the STM32 factory UID instead of its ADR-0007 anchor --
+     * and that substitution is otherwise invisible on the bus, since GetInfo
+     * reports a plausible unique_id either way. ADVISORY is the Health value
+     * for exactly this: "a minor failure that does not prevent the subsystem
+     * from performing any of its real-time functions". */
+    hb.health.value = s_identity_anchored ? uavcan_node_Health_1_0_NOMINAL
+                                          : uavcan_node_Health_1_0_ADVISORY;
     hb.mode.value = uavcan_node_Mode_1_0_OPERATIONAL;
     /* Why this node last restarted (RCC_CSR flags, latched at boot). Lets the
      * gateway tell a watchdog recovery from a power cut or a probe-induced
