@@ -162,7 +162,7 @@ Never use "level" to mean a document layer.
 qualify:
 - *IndustryFlow `module`* — a data-model entity = a functional subsystem (a
   position concept). Write "`module` entity" or "IndustryFlow `module`".
-- *sensor module / actuator module* — a hardware PCB (M01–M05; actuator boards).
+- *sensor module / actuator module* — a hardware PCB (M01–M07; actuator boards).
 - *E-module* — a buildable assembly with an E-number (Part 1).
 - *commercial / ML / control module* — a software plugin (ADR-0001).
 
