@@ -98,14 +98,34 @@ services:
       ERP_WAREHOUSE_REGION: ${ERP_WAREHOUSE_REGION:-us-east-1}
       ERP_OPERATOR_NAME: ${ERP_OPERATOR_NAME:-}
       ERP_OPERATOR_UUID: ${ERP_OPERATOR_UUID:-}
-      # Repo store/ mounted read-only so `python -m app.store_sync` can upload it.
-      ERP_STORE_DIR: /srv/store
-      ERP_REGISTRY_PATH: /srv/REGISTRY.md
+      # Both read out of the one repo mount below: store/ so
+      # `python -m app.store_sync` can upload it, and the type registry
+      # (ADR-0023), which the image also carries as a fallback.
+      ERP_STORE_DIR: /srv/repo/store
+      ERP_REGISTRY_PATH: /srv/repo/REGISTRY.md
     volumes:
-      - ../store:/srv/store:ro
-      # The type registry (ADR-0023). Also baked into the image; mounting the
-      # repo's copy means a registry edit reaches the console without a rebuild.
-      - ../REGISTRY.md:/srv/REGISTRY.md:ro
+      # ONE read-only mount of the repository — deliberately not per-file mounts
+      # of the two things inside it.
+      #
+      # A *file* bind mount binds an inode. `git pull` replaces a tracked file
+      # (write-temp-then-rename) rather than editing it in place, so the old
+      # `../REGISTRY.md:/srv/REGISTRY.md` mount went on serving the pre-pull
+      # file for the whole life of the container. It failed **silently**: the
+      # stale copy is still valid Markdown, so `python -m app.services.registry`
+      # kept exiting 0 while the console showed a registry that no longer
+      # existed on disk. Only recreating the container re-bound it, which made
+      # the bug look like it came and went at random.
+      #
+      # A directory mount resolves each path on access and survives the
+      # replacement, so a `git pull` alone is now enough. Do not "simplify" this
+      # back into per-file mounts.
+      #
+      # Scope note: the container can read the whole checkout, including
+      # `erp/.env`. That file holds the Mongo and warehouse credentials this
+      # process is already handed through the environment above, so it is not a
+      # new secret — but keep the mount read-only and keep unrelated secrets out
+      # of the checkout.
+      - ..:/srv/repo:ro
     depends_on:
       mongo:
         # Not a bare `depends_on`: that waits for the container to start, not for
