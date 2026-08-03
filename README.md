@@ -77,22 +77,34 @@ dynamics and operate it efficiently afterward.
 
 ### Sensor module catalog
 
-Five reusable PCB designs, one functional subsystem each. Instances are specialized by
+Seven reusable PCB designs, one functional subsystem each. Instances are specialized by
 populated-BOM, not by new designs.
 
 | Module | Subsystem | Key sensing |
 |--------|-----------|-------------|
-| M01-CLIMATE | Air environment | Temp/RH, gas/VOC, CO₂, airflow |
+| M01-CLIMATE | Air environment | Temp/RH, gas/VOC, CO₂ |
 | M02-LIGHT | Photic environment | 11-channel spectral, UV-A |
 | M03-ANALYTICS | Hydroponic solution | pH, EC, solution temperature |
 | M04-PLANT | Plant-level | Canopy thermal imaging |
 | M05-SAFETY | Power & monitoring | +12 V bus current, reported cabinet temp, door, leak (report/alert) |
+| M06-VENTILATION | Air transport | Duct velocity, filter Δp, envelope↔ambient Δp, in-stream T/RH |
+| M07-AMBIENT | Boundary conditions | Ambient T/RH, barometric pressure, ambient CO₂, irradiance, wind (outdoor, deployment scale) |
+
+> M01 measures air *state* at the plant; M06 measures air *transport* through the
+> cabinet. The split is why airflow is no longer an M01 quantity (ADR-0014 rev 2).
+> M07's "ambient" is whatever the growing enclosure exchanges with *one step out* — the
+> weather for a greenhouse, the surrounding room for a cabinet — so it ships as **indoor
+> and outdoor variants of one design**, differing in populated BOM and housing, never in
+> PCB, strap, or firmware.
+> **M06 and M07 are defined, not scheduled** — neither is laid out or fabricated, and
+> Phase 1 remains the M01–M05 set. Their working specifications live in
+> [`spec/`](spec/).
 
 ## Project status
 
 | Phase | Scope | State |
 |-------|-------|-------|
-| Phase 1 | Hardware + firmware bring-up; 5 sensor nodes + gateway; standalone, no cloud | In progress |
+| Phase 1 | Hardware + firmware bring-up; the 5 sensor nodes M01–M05 + gateway; standalone, no cloud | In progress |
 | Phase 2 | Cloud integration: mTLS ingestion, profile sync, audit trail | Blocked on IndustryFlow prerequisites |
 | Phase 3 | Community profile registry, predictive ML, multi-cabinet coordination | Planned |
 
@@ -106,6 +118,7 @@ The dependency-ordered build sequence (14 stages, with the real cross-stage depe
 | [`project/RESEARCH.md`](project/RESEARCH.md) | **What's open** — the research directions (L1–L7) the gap opens |
 | [`project/ROADMAP.md`](project/ROADMAP.md) | **When** — the dependency-ordered build sequence |
 | [Architecture decision records](#architecture-decision-records) | **How** — the design decisions, the source of truth |
+| [`spec/`](spec/) | Module specifications — sensor complement, power, bus, thermal and mechanical, per module class. As-built for built modules (M05), pre-schematic for the rest |
 | [`REGISTRY.md`](REGISTRY.md) | The hardware E-number / instance map |
 
 ## Architecture decision records
@@ -119,7 +132,7 @@ ADRs are the source of truth for the design. Present in this repository:
 - **ADR-0004** (rev 1) — Gateway host hardening & stateless-edge operation · *Accepted*
 - **ADR-0005** (rev 1) — DSDL foundation: `industryflow.greenhouse` vocabulary, standard-type reuse, port-ID allocation · *Accepted*
 - **ADR-0007** (rev 1) — PKI, hardware identity, and provisioning (ATECC608 secure element; adds identity across operators) · *Accepted*
-- **ADR-0014** (rev 1) — Sensor node taxonomy and module decomposition · *Accepted*
+- **ADR-0014** (rev 2) — Sensor node taxonomy and module decomposition (adds M06-VENTILATION and M07-AMBIENT; module-ID field exhausted) · *Accepted*
 - **ADR-0015** — Gateway profile caching and local control loops · *Accepted*
 - **ADR-0016** (rev 1) — Empirical survey and state-space modeling · *Proposed*
 - **ADR-0017** (rev 1) — Component, document, and instance identification scheme (firmware `F` layer rooted on the carrier) · *Accepted*
@@ -146,7 +159,7 @@ Open-core; license per part of the repo — see [`LICENSE.md`](LICENSE.md) for t
 authoritative mapping, with full texts in [`LICENSES/`](LICENSES/).
 
 - Hardware designs in `store/` (carrier + sensor modules): **CERN-OHL-S-2.0**
-- ADRs & documentation (`ADR/`, `README`, `REGISTRY.md`): **CC-BY-SA-4.0**
+- ADRs & documentation (`ADR/`, `README`, `REGISTRY.md`, `spec/`): **CC-BY-SA-4.0**
 - Reference firmware (`firmware/`, node sources): **AGPL-3.0-or-later**
 - DSDL protocol layer (`firmware/dsdl/`): **Apache-2.0**
 - ERP application (`erp/`) and operator CA tooling (`pki/`): **AGPL-3.0-or-later**
