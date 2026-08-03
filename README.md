@@ -135,7 +135,7 @@ ADRs are the source of truth for the design. Present in this repository:
 - **ADR-0014** (rev 2) — Sensor node taxonomy and module decomposition (adds M06-VENTILATION and M07-AMBIENT; module-ID field exhausted) · *Accepted*
 - **ADR-0015** — Gateway profile caching and local control loops · *Accepted*
 - **ADR-0016** (rev 1) — Empirical survey and state-space modeling · *Proposed*
-- **ADR-0017** (rev 1) — Component, document, and instance identification scheme (firmware `F` layer rooted on the carrier) · *Accepted*
+- **ADR-0017** (rev 2) — Component, document, and instance identification scheme (firmware `F` layer rooted on the carrier; extends the taxonomy to M01–M07) · *Accepted*
 - **ADR-0018** (rev 1) — Cabinet-level power distribution and consumption metering · *Proposed*
 - **ADR-0019** — Purchased-part (SP) identification · *Accepted*
 - **ADR-0020** — Gateway persistence model (local store as lifecycle-dependent data sink) · *Accepted*

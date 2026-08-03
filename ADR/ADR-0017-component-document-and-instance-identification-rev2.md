@@ -3,15 +3,15 @@ SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
-# ADR-0017 (rev 1): Component, document, and instance identification scheme
+# ADR-0017 (rev 2): Component, document, and instance identification scheme
 
-- **ID:** ADR-0017 (rev 1)
+- **ID:** ADR-0017 (rev 2)
 - **Status:** Accepted
-- **Date:** 2026-06-19
+- **Date:** 2026-06-19 (rev 2: 2026-08-03)
 - **Project:** IndustryGrow
 - **Parent:** ADR-0001
-- **Companions:** ADR-0002 (rev 3), ADR-0004 (rev 1), ADR-0007, ADR-0014, ADR-0015, ADR-0016
-- **Supersedes:** ADR-0017 (initial, 2026-05-31)
+- **Companions:** ADR-0002 (rev 3), ADR-0004 (rev 1), ADR-0007, ADR-0014 (rev 2), ADR-0015, ADR-0016
+- **Supersedes:** ADR-0017 (initial, 2026-05-31), ADR-0017 (rev 1, 2026-06-19)
 
 ## Revision history
 
@@ -24,12 +24,23 @@ SPDX-License-Identifier: CC-BY-SA-4.0
   code change to bump the `F` version of every module — a count-into-identity
   leak. Adds decision 16 and alternative G. Also refreshes companion references:
   ADR-0005 and ADR-0007 are now Accepted (were "planned").
+- **rev 2 (2026-08-03)** — Extends the type vocabulary from `M01–M05` to `M01–M07`
+  following ADR-0014 rev 2, which adds M06-VENTILATION and M07-AMBIENT. No
+  identifier format changes and no decision is reversed; the scheme absorbed two
+  new module classes exactly as designed. Decision 4 gains the case ADR-0014 rev 2
+  created and this ADR had already answered in principle: M07's indoor and outdoor
+  deployment variants are **one bare design and two assembly E-numbers**, because a
+  wind group fitted or omitted at build is a real populate variant, unlike the
+  carrier's install-time jumper. Also records a gap this revision cannot close —
+  the position axis roots every node in a `GBOX_NNNN` cabinet, and an outdoor
+  M07 sits in no cabinet while serving several; the missing piece is an entity
+  above the machine, which belongs to ADR-0008.
 
 ## Context and problem
 
-IndustryGrow produces physical artifacts and documentation across a lifecycle (design → production/QC → integration → operation) and across deployment scales (apartment cabinet to commercial greenhouse). The architecture already commits to a strong shape: a small set of reusable PCB designs (carrier, M01–M05 per ADR-0014), instantiated many times, with instances that **move between deployments** as inventory (ADR-0016). What it has not committed to is how those artifacts and their documents are **identified**.
+IndustryGrow produces physical artifacts and documentation across a lifecycle (design → production/QC → integration → operation) and across deployment scales (apartment cabinet to commercial greenhouse). The architecture already commits to a strong shape: a small set of reusable PCB designs (carrier, M01–M07 per ADR-0014 rev 2), instantiated many times, with instances that **move between deployments** as inventory (ADR-0016). What it has not committed to is how those artifacts and their documents are **identified**.
 
-The existing ADRs supply a taxonomy — module classes M01–M05, module-ID straps, the carrier as a distinct host board — but not material numbers, serial numbers, document identifiers, or a way to address per-instance lifecycle documents (test data, calibration, provisioning). Without a scheme, traceability is ad-hoc, procurement and QC records have no canonical key, and the inventory/mobility model of ADR-0016 has nowhere to hang an instance's history.
+The existing ADRs supply a taxonomy — module classes M01–M07, module-ID straps, the carrier as a distinct host board — but not material numbers, serial numbers, document identifiers, or a way to address per-instance lifecycle documents (test data, calibration, provisioning). Without a scheme, traceability is ad-hoc, procurement and QC records have no canonical key, and the inventory/mobility model of ADR-0016 has nowhere to hang an instance's history.
 
 This ADR specifies a hierarchical identification scheme for IndustryGrow. Its organizing principle is the separation of three things the project needs kept apart: the **type** (a module designation plus a version), the **instance** (a serial number), and the **position in the machine** (a hierarchical depth code). The scheme uses phase-specific identifier formats so that an artifact's identifier reflects where it is in its lifecycle, and it reserves a suffix slot for per-instance lifecycle documents.
 
@@ -37,7 +48,7 @@ The separation is load-bearing for two reasons specific to IndustryGrow. ADR-001
 
 ## Decision drivers
 
-- **Reuse the existing taxonomy; do not reinvent it.** M01–M05 and the module-ID straps (ADR-0014) are already a stable type vocabulary. The identifier scheme must encode that vocabulary, not run parallel to it.
+- **Reuse the existing taxonomy; do not reinvent it.** M01–M07 and the module-ID straps (ADR-0014 rev 2) are already a stable type vocabulary. The identifier scheme must encode that vocabulary, not run parallel to it.
 - **Separate type, instance, and position.** Load-bearing because of ADR-0014 (one design, many instances at many positions) and ADR-0016 (an instance physically moves between positions and deployments over its life).
 - **Reuse hardware identity already present.** Every carrier carries an ATECC608 (ADR-0002 rev 3 decision 3). Instance identity should bind to it rather than to a second, invented serial authority.
 - **One scheme across disciplines.** Electrical, mechanical, and pneumatic/fluidic parts of IndustryGrow should share one identification scheme, not fork per discipline.
@@ -147,11 +158,15 @@ The single key to the trailing letter codes in an identifier: the **document-lay
 
 ### Module designation (E-numbers)
 
-3. **An E-number identifies a buildable/documentable assembly.** The existing taxonomy maps directly: the carrier and each of M01–M05 are buildable assemblies and each receives an E-number. A **functional subsystem** (climate, lighting, irrigation, plant monitoring, pollination, power/safety per ADR-0001 decision 7) is *not* an E-number — it is a **position** in the machine, expressed as a depth code (decision 7). The WeAct STM32F4 core board is a purchased sub-component identified by an `SP` number, not an E-number (ADR-0019). One further bounded carve-out: a *designed* accessory that has no existence apart from one specific part (a printed case, a bracket, a mount) does **not** take its own E-number — it rolls up under the served part's root as a `D`-layer document (ADR-0019 decision 9); a designed assembly that stands alone or is serialized still does (decision 4, decision 5).
+3. **An E-number identifies a buildable/documentable assembly.** The existing taxonomy maps directly: the carrier and each of M01–M07 are buildable assemblies and each receives an E-number. A **functional subsystem** (climate, lighting, irrigation, plant monitoring, pollination, power/safety per ADR-0001 decision 7) is *not* an E-number — it is a **position** in the machine, expressed as a depth code (decision 7). The WeAct STM32F4 core board is a purchased sub-component identified by an `SP` number, not an E-number (ADR-0019). One further bounded carve-out: a *designed* accessory that has no existence apart from one specific part (a printed case, a bracket, a mount) does **not** take its own E-number — it rolls up under the served part's root as a `D`-layer document (ADR-0019 decision 9); a designed assembly that stands alone or is serialized still does (decision 4, decision 5).
 
 4. **Bare-PCB design and populated assembly are distinguished.** One PCB *layout* is one bare-board design artifact; each standard *populated configuration* of that layout is an assembly E-number that references the shared bare design. This resolves the partial-BOM mechanism of ADR-0014 decision 2 without adding a variant field to the scheme:
    - **Carrier:** one bare design and effectively one assembly. Termination is jumper-selected and the power-input set is the only populate option, so the carrier is treated as a single assembly E-number — one type, one version, many serials, appearing at many depth positions. (This was the original motivating case: the carrier is universal precisely because it has no real variant.)
-   - **M01–M05:** one bare design each; in Phase 1 one fully-populated assembly E-number each. Zone-specific partial populations in Phase 2 (ADR-0014 decision 2) receive **additional assembly E-numbers referencing the same bare design** — no new layout, no version churn.
+   - **M01–M07:** one bare design each; in Phase 1 one fully-populated assembly E-number each. Zone-specific partial populations in Phase 2 (ADR-0014 decision 2) receive **additional assembly E-numbers referencing the same bare design** — no new layout, no version churn.
+   - **M07's indoor and outdoor variants are two assembly E-numbers, not one** *(rev 2)*. ADR-0014 rev 2 gives M07 two deployment variants sharing one layout, one module-ID strap and one firmware image, differing only in populated BOM and housing. That is precisely the case this decision resolves, so it resolves it the same way: **one bare design, two standard populated configurations, therefore two assembly E-numbers.** The outdoor variant populates a wind group — pulse conditioning, shift-register interface, heading reference — that the indoor variant leaves as bare footprints. Two boards you order, stock, build and serialize differently are two things on the identity axis, whatever they share on the design axis.
+     - **The carrier's single-assembly treatment does not extend to M07.** The carrier is one assembly E-number because its only populate option is a jumper set at install time — *"the carrier is universal precisely because it has no real variant."* A wind group fitted or omitted at build is a real variant. Reading the carrier bullet as a general licence to collapse variants would dissolve this decision entirely.
+     - **One module class, two assembly numbers, and no contradiction.** ADR-0014 rev 2 is right that M07 is not two module classes: the strap is one value and the firmware is one image, because the node identifies its *class*, not its population — the boot probe finds what is fitted (ADR-0014 decision 8). Class and assembly are different questions on different axes, and the answers are allowed to differ. What is **not** admissible is the claim that the variants take no separate identifier at all.
+     - Assign the second number at design commit, not now: ADR-0014 rev 2 records M07 as defined but not laid out, and decision 5's opaque-identifier principle assigns numbers when a design is committed rather than pre-reserving them by class.
 
 5. **Discipline (electrical / mechanical / pneumatic / fluidic) is a property of the E-module, not a field in the identifier.** It is expressed through decomposition — each discipline-specific buildable unit is its own E-number at its own depth sub-position — and recorded as registry metadata. The identifier stays opaque, with meaning held in the registry. Encoding discipline by partitioning the E-number range (e.g. reserving leading digits per discipline) is **reserved as an option** for the case where pattern-filtering by discipline across the document store becomes necessary; it is not the default.
 
@@ -275,7 +290,7 @@ The single key to the trailing letter codes in an identifier: the **document-lay
 ## Relationship to other ADRs
 
 - **ADR-0001** (machine/module data model) — the cabinet `machine` is the machine designation; functional subsystems are depth positions, not E-numbers.
-- **ADR-0002 (rev 3)** — carrier and M01–M05 are E-modules; the `I` document layer carries the Cyphal/DSDL definitions named there.
+- **ADR-0002 (rev 3)** — carrier and M01–M07 are E-modules; the `I` document layer carries the Cyphal/DSDL definitions named there.
 - **ADR-0004 (rev 1)** — fixes the document-store / audit-log boundary; firmware and telemetry events stay platform-side and are not suffixes.
 - **ADR-0007** — ATECC608 binding and certificate issuance are the `-PR` provisioning record and the cryptographic instance identity behind the serial.
 - **ADR-0014** — taxonomy reused as the E-vocabulary; partial-BOM realized as distinct assembly E-numbers over a shared bare design; gateway `(module_class, node_role, zone)` tagging is the integration-phase depth code.
@@ -287,7 +302,11 @@ The single key to the trailing letter codes in an identifier: the **document-lay
 
 - **Calibration recurrence encoding.** Dated (`-CC-YYYYMMDD`) vs. sequenced (`-CCnnn`), and the calibration validity-period / re-calibration-interval policy.
 - **Registry and store location.** The scheme lives in two homes joined only at integration. The **type registry** (`Exxxx → meaning / discipline / bare-design`) and the type-level design documents are repo-side, public for open-core designs. The **instance and integration layer** — serials, ATECC bindings, the `-QP/-QR/-CP/-CC/-PR` records, and the integration identifier `GBOX_NNNN-DDDDDD-Exxxx-VVVVVV-NNNNNN` that joins the two trees — is production data created at assembly and lives platform-side (IndustryFlow / `production_unit`, ADR-IF-0001), off the public repo. The precise platform host and the type-registry tooling remain deferred to ADR-IF-0001 and Phase 2.
-- **Bare-PCB design artifact identification.** Whether the shared bare layout gets its own E-number or is tracked as a hardware-repo artifact under CERN-OHL-S.
+- **Bare-PCB design artifact identification.** Whether the shared bare layout gets its own E-number or is tracked as a hardware-repo artifact under CERN-OHL-S. Decision 4's M07 case makes this less theoretical: two assembly E-numbers now reference a bare design that has no identifier of its own.
+- **The position axis has no root for a node that sits inside no machine** *(raised in rev 2)*. Decision 6 makes `GBOX_NNNN` — one cabinet — the root of the position axis, and decision 7 bounds the depth code to one cabinet's physical decomposition, explicitly refusing a deeper hierarchy inside a box and directing facility scale into *more* machines instead. An outdoor M07-AMBIENT (ADR-0014 rev 2) fits neither half: it is mast-mounted outside the building, it is in no cabinet's decomposition, and one instance measures the boundary conditions of every cabinet on the site at once. The integration identifier `GBOX_NNNN-DDDDDD-…` requires a machine root that does not honestly exist for it.
+  - **This is not repairable inside this ADR**, because what is missing is an entity, not a format: the data model has nothing above the cabinet (ADR-0001 decision 7 — *machine = cabinet*). Decision 6 already anticipated other machine families under their own prefixes, so the identifier half is a small change once there is something to name.
+  - **Owner: ADR-0008** (deployment topology and operational scale, ADR-0001's own deferred list). Once it defines a site- or facility-level entity, this ADR registers the prefix and the meaning of depth within it, and ADR-0001 decision 7 takes an inline amendment.
+  - **Do not assign an outdoor M07 to an arbitrary `GBOX_NNNN` as an interim measure.** The depth code would then assert membership in one cabinet's decomposition, which is false, and integration records written under that fiction are the hardest kind to unwind later. An indoor M07, which does sit within one cabinet's deployment, raises none of this.
 - **Identifier validation and parsing tooling.** Regexes and encoders implemented from the field formats in this ADR, including the full suffix set. *Where it lives is now settled:* ADR-0022 decision 13 puts the parse in one server-side implementation and has the API return identifiers already read into their fields, so no consumer re-derives them. What stays open is coverage — the calibration suffix's dated/sequenced form is unresolved (above) and therefore unparsed, and no encoder exists for the compact binary form (below).
 - **Optional compact binary encoding** of identifiers for embedded/indexing use — out of scope now.
 - **Object-store deployment specifics (decision 15).** Bucket topology (single vs. per-deployment / per-tenant), region and replication, how object versioning interacts with the dated calibration suffix and the write-once QC/provisioning records, and prefix-scoped access-control granularity.
@@ -296,7 +315,7 @@ The single key to the trailing letter codes in an identifier: the **document-lay
 ## References
 
 - ADR-0001: IndustryGrow framing — machine/module data model.
-- ADR-0002 (rev 3): Field bus architecture — carrier, M01–M05, ATECC608, Cyphal/DSDL.
+- ADR-0002 (rev 3): Field bus architecture — carrier, M01–M07, ATECC608, Cyphal/DSDL.
 - ADR-0004 (rev 1): Gateway host hardening and stateless-edge operation — IndustryFlow audit log, firmware events.
 - ADR-0007: PKI, hardware identity, provisioning — ATECC608 binding, certificate provisioning.
 - ADR-0014: Sensor node taxonomy — module classes, module-ID straps, partial-BOM, gateway role/zone tagging.
