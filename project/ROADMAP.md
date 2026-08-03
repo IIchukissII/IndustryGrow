@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # IndustryGrow — implementation roadmap
 
 - **Status:** Living document
-- **Date:** 2026-06-19
+- **Date:** 2026-08-03
 - **Project:** IndustryGrow
 - **Parent:** ADR-0001
 - **Companions:** ADR-0002, ADR-0004, ADR-0014, ADR-0015, ADR-0016, ADR-0018, ADR-0020
@@ -55,7 +55,7 @@ experiments require operator-controllable actuators.
 | 1 | CAN bring-up | — (root) | ADR-0002, ADR-0004, ADR-0017 | Nodes enumerate on the gateway console |
 | 2 | DSDL foundation | 1 | ADR-0005 | Stable wire vocabulary for the whole system |
 | 3 | Sensor MVP | 2 | ADR-0014 | Live telemetry from the first sensor node |
-| 4 | Sensor platform | 3 | ADR-0014, ADR-0018 | Full cabinet telemetry (M01–M05) — **end of Phase 1** |
+| 4 | Sensor platform | 3 | ADR-0014 (rev 2), ADR-0018 | Full cabinet telemetry (M01–M05) — **end of Phase 1** |
 | 5 | Actuator layer | 4 | ADR-0018 (d10 interlock) | Environment can be driven; HW thermal cutoff + watchdog |
 | 6 | Gateway MVP *(branch)* | 5 | ADR-0015 | Cabinet runs without cloud on rule-based loops (provisional) |
 | 7 | Survey mode | 5 | ADR-0016, ADR-0020 | Dense, high-rate data for system identification |
@@ -123,14 +123,28 @@ straddles stages 6 and 11.
 - Procurement is the silent long pole. This roadmap is a bring-up/integration
   view and assumes the boards (E0001 + M01–M05) exist; PCB fabrication and the
   Raspberry Pi lead time sit underneath stage 1 and are not represented here.
+- **M06-VENTILATION and M07-AMBIENT are defined, not scheduled.** ADR-0014 rev 2
+  adds both classes to the taxonomy (`E0008`, `E0009`), but neither is laid out or
+  fabricated and **no stage below is scoped to them**. Every `M01–M05` in this
+  document is deliberate: the phase gate is E0001 bring-up, then E0006
+  fabrication, then any new module. Their working specifications — and the open
+  items that block schematic capture — live in `spec/`. M07 splits further: its
+  **indoor** variant (the room around a cabinet) is core sensors on an in-cabinet
+  bus segment and carries no new dependency, while its **outdoor** variant (the
+  weather) is the first module deployed outside the building envelope, which puts
+  the field bus outdoors and reopens surge protection, grounding, and `+12 V`
+  distribution (ADR-0002, ADR-0018). Same PCB, same firmware — the difference is
+  populated BOM and housing. If M07 is ever pulled forward it will be the indoor
+  variant; the outdoor one is gated behind an ADR-0002 revision.
 - **Editorial.** The map draws *true* dependencies, not the order originally
   listed. If Gateway MVP is intended to be on the critical path before the survey,
   both the map and the table above change.
 
 ## Exit criteria for v1.0 (stage 14)
 
-A release is v1.0 when all of the following hold simultaneously: all five module
-classes (M01–M05) operate; the local autonomous control loop runs; the profile
+A release is v1.0 when all of the following hold simultaneously: all five **Phase-1**
+module classes (M01–M05) operate — M06 and M07 exist in the taxonomy but are
+explicitly outside this gate; the local autonomous control loop runs; the profile
 governs system behavior; the identified model is embedded in the profile; the
 cloud synchronizes over mTLS; the cabinet survives network loss and reboots; and
 at least one full cultivation cycle has been grown. Work that only makes sense
@@ -148,7 +162,7 @@ the gate is passed.
 - ADR-0005 (rev 1) — DSDL foundation *(Accepted)*.
 - ADR-0007 — PKI, hardware identity, provisioning *(Accepted)*.
 - ADR-0009 — profile schema *(deferred; not yet audited)*.
-- ADR-0014 — sensor node taxonomy (M01–M05).
+- ADR-0014 (rev 2) — sensor node taxonomy (M01–M07; only M01–M05 are scheduled here).
 - ADR-0015 — gateway profile caching and local control loops.
 - ADR-0016 — empirical survey, state-space modeling, sensor-density lifecycle.
 - ADR-0017 — component / document / instance identification.

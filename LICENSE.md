@@ -22,7 +22,7 @@ live in [`LICENSES/`](LICENSES/), named by SPDX identifier (REUSE convention).
 | `signing/` | Cultivation-profile signing tool and runbook (ADR-0025) | GNU Affero General Public License v3.0 or later | [`AGPL-3.0-or-later`](LICENSES/AGPL-3.0-or-later.txt) |
 | `gateway/` | Gateway host provisioning and hardening material (ADR-0004) — see the note below | Creative Commons Attribution-ShareAlike 4.0 International | [`CC-BY-SA-4.0`](LICENSES/CC-BY-SA-4.0.txt) |
 | `gateway/provision_identity.py`, `gateway/profile_client.py`, `gateway/files/systemd/industrygrow-profile-pull.*` | Gateway identity provisioning (ADR-0007 d9) and the profile-pull client (ADR-0015 d5-7, ADR-0025) | GNU Affero General Public License v3.0 or later | [`AGPL-3.0-or-later`](LICENSES/AGPL-3.0-or-later.txt) |
-| `ADR/`, `README.md`, `REGISTRY.md`, `project/`, this file | Architecture decision records and project documentation | Creative Commons Attribution-ShareAlike 4.0 International | [`CC-BY-SA-4.0`](LICENSES/CC-BY-SA-4.0.txt) |
+| `ADR/`, `README.md`, `REGISTRY.md`, `project/`, `spec/`, this file | Architecture decision records, module specifications, and project documentation | Creative Commons Attribution-ShareAlike 4.0 International | [`CC-BY-SA-4.0`](LICENSES/CC-BY-SA-4.0.txt) |
 | `profiles/`, `img/`, `ADR/figures/`, `project/figures/` | Cultivation profile instances (ADR-0003), logos, and figures | Creative Commons Attribution-ShareAlike 4.0 International | [`CC-BY-SA-4.0`](LICENSES/CC-BY-SA-4.0.txt) |
 
 Documentation-layer documents that live flat in `store/` under the ADR-0017
