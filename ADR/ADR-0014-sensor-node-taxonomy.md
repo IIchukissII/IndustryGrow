@@ -3,19 +3,20 @@ SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
-# ADR-0014 (rev 1): Sensor node taxonomy and module decomposition
+# ADR-0014 (rev 2): Sensor node taxonomy and module decomposition
 
-- **ID:** ADR-0014 (rev 1)
+- **ID:** ADR-0014 (rev 2)
 - **Status:** Accepted
-- **Date:** 2026-05-16 (rev 1: 2026-06-14)
+- **Date:** 2026-05-16 (rev 1: 2026-06-14; rev 2: 2026-08-03)
 - **Project:** IndustryGrow
 - **Parent:** ADR-0001
-- **Companions:** ADR-0002 (rev 3), ADR-0003
-- **Supersedes:** ADR-0014 (initial draft, 2026-05-16)
+- **Companions:** ADR-0002 (rev 3), ADR-0003, ADR-0016, ADR-0017 (rev 1), ADR-0019
+- **Supersedes:** ADR-0014 (initial draft, 2026-05-16), ADR-0014 (rev 1, 2026-06-14)
 
 ## Revision history
 
 - **rev 1 (2026-06-14)** — Softened the M04-PLANT MLX90640 entry to separate delivered capability (canopy thermal field + on-node summary statistics) from per-leaf temperature for leaf-VPD, now marked deferred pending a canopy-segmentation pipeline and bounded by raw-frame radiometric accuracy. Corrects an over-claim that read leaf-VPD as a current capability and aligns with ADR-0016's state-estimation framing of leaf VPD. No decision changed; telemetry detail unchanged.
+- **rev 2 (2026-08-03)** — Added two sensor module classes: M06-VENTILATION (air transport) and M07-AMBIENT (boundary conditions outside the growing space). Moved the Renesas FS3000 anemometer out of M01-CLIMATE into M06; M01 is now fully board-mounted at canopy with no displaced sensor. Assigned module-ID straps `0b110` and `0b111`, exhausting the 3-bit field, and recorded the widening of that field as an obligation of the next carrier revision rather than a future trigger. Clarified that instances of a shared sensor type across M01, M06 and M07 do not constitute in-zone redundancy under alternative G. Recorded that M07 has indoor and outdoor deployment variants — one PCB design, one strap, one firmware image, differing only in populated BOM and housing — and that the outdoor variant is the first module deployed outside the building envelope, with its consequences for the field bus. Added deferred items for M07's irradiance quantity and range, wind instrumentation, magnetic interference between rotary readout and heading reference, flow-coefficient identification, the ventilation/pollination subsystem boundary, and the fate of decision 3.
 
 ## Context and problem
 
@@ -59,18 +60,18 @@ Zone count is not an architectural decision — it is a deployment-time choice m
    - **Quantity.** Same PCB instantiated more or fewer times as zone count scales.
    - **Populated BOM.** Same PCB design with different chips populated, used to specialize an instance for a specific role (e.g., a climate node in an air-handling zone may populate the airflow sensor and leave the CO₂ sensor unpopulated, or vice versa). Unpopulated chips have unused footprints; firmware probes I²C addresses at boot and publishes only Cyphal subjects for sensors that respond.
 
-   The partial-BOM mechanism is the architectural lever that lets the same five PCB designs cover every conceivable zone-specific specialization. It is most useful at medium and large scale, where different zones have different sensing needs. At apartment scale, instances are typically single per subsystem and fully populated.
+   The partial-BOM mechanism is the architectural lever that lets the same seven PCB designs cover every conceivable zone-specific specialization. It is most useful at medium and large scale, where different zones have different sensing needs. At apartment scale, instances are typically single per subsystem and fully populated.
 
 3. **Spatial requirements at apartment scale: short-lead sensor extension.** When a single instance of a sensor module must cover sensors with spatially incompatible requirements (e.g., M01-CLIMATE with airflow sensing needed at the fan outlet rather than at canopy), individual sensors may be mounted on short leads (≤30 cm) from the main sensor module PCB. I²C at ≤30 cm with shielded twisted pair and proper pull-ups is reliable at 100 kHz. This is the apartment-scale solution; it does not extend to inter-zone distances at larger deployments — there, separate instances are the correct answer.
 
-4. **Sensor module catalog (five PCB designs):**
+4. **Sensor module catalog (seven PCB designs):**
 
    **M01-CLIMATE — air environment sensing.**
    - Sensirion SHT45 — primary T/RH for VPD computation (ADR-0003 decision 7). I²C, ±1.5 %RH, industrial.
    - Bosch BME688 — gas (VOC) + secondary T/H/P. I²C. Parallel to SHT45 for VOC trend monitoring as early plant-stress signal.
    - Sensirion SCD41 — true CO₂ (photoacoustic NDIR). I²C. ADR-0003 specifies ambient CO₂ without enrichment, but monitoring is required because plants deplete CO₂ in a closed cabinet during photoperiod.
-   - Renesas FS3000 — thermal anemometer for airflow over canopy. I²C. Verifies pollination-fan operation and informs leaf-boundary-layer modelling.
-   - All I²C on one bus. In apartment-scale deployments: one instance, with FS3000 either on the PCB at canopy location or on a short lead to the fan outlet per installation. In larger deployments: multiple instances per zone, populated as the zone requires.
+   - Airflow is **not** measured by this module. The Renesas FS3000 anemometer moved to M06-VENTILATION in rev 2: air *state* at the plant and air *transport* through the cabinet are different measured quantities with different valid locations, and a single module cannot hold both without a displaced sensor.
+   - All I²C on one bus, all sensors board-mounted at canopy. No leads, no displaced sensors. In apartment-scale deployments: one instance. In larger deployments: multiple instances per zone, populated as the zone requires.
 
    **M02-LIGHT — photic environment sensing.**
    - ams OSRAM AS7341 — 11-channel spectral sensor. I²C. Provides per-channel intensity (validates spectrum from multi-channel LED driver per ADR-0003 decision 11) and integrated PPFD proxy for DLI accounting (ADR-0003 decision 12).
@@ -99,6 +100,28 @@ Zone count is not an architectural decision — it is a deployment-time choice m
    - Leak-detection strip(s) — ADC channel, on a wire from the strip location to the module. *(Refined by ADR-0018: report/alert only; response is software-mediated — the gateway commands the pump off over Cyphal. Not a hardware interlock.)*
    - Apartment scale: one instance with the on-board TMP117 (cabinet air), a reed wire to the door, and a leak wire under the reservoir; the grow-volume over-temperature trip sensor is on a lead but belongs to the heating actuator, not M05 (ADR-0018 decision 10). Larger deployments: one instance per safety-critical zone or load cluster.
 
+   **M06-VENTILATION — air transport sensing.** *(Introduced in rev 2. Not yet laid out or fabricated.)*
+   - Renesas FS3000 — thermal anemometer, air velocity in the flow path. I²C. Moved here from M01-CLIMATE. Volumetric flow is computed from the known cross-section and a velocity profile coefficient identified per installation.
+   - Differential-pressure sensor, higher range (Sensirion SDP8xx class) — pressure drop across the filter. I²C. Read together with velocity, it yields filter resistance and so separates filter loading from flow.
+   - Differential-pressure sensor, low range (Sensirion SDP8xx class) — enclosure interior referenced to ambient. I²C. Supports identification of the envelope leakage characteristic by fan pressurization.
+   - Sensirion SHT45 — in-stream T/RH. I²C. Required for density compensation of mass flow; not a duplicate of M01's SHT45, which measures the air state the plant experiences for VPD (ADR-0003 decision 7).
+   - Deliberately **not** populated: a gas sensor of the BME688 class. Its output is an uncalibrated resistance trend; measured in diluted duct air it answers no question the canopy instance answers better.
+   - No sealed enclosure is assumed, required or specified in any phase. Gas exchange is obtained from the identified model (ADR-0016), driven by informative transients, not from a steady-state balance of flow against concentration difference.
+
+   **M07-AMBIENT — boundary conditions outside the growing space.** *(Introduced in rev 2. Not yet laid out or fabricated.)*
+   - **"Ambient" is whatever the growing enclosure exchanges with, one step out — not a synonym for outdoors.** For a greenhouse that is the weather; for a cabinet standing in a room it is the room, and an outdoor CO₂ or temperature reading would state a boundary condition that enclosure never sees. M07 therefore has two deployment variants, **indoor** and **outdoor**, which differ in populated BOM and housing only: same PCB design, same strap `0b111`, same firmware image, no second module class. This is decision 2's third dimension, not an exception to it. Where both boundaries are real — a cabinet, in a room, in a building — the answer is two *instances* of the one class in two zones (decision 1), distinguished by the gateway's role-and-zone tagging (decision 7); the node itself never knows which variant it is. Every sensor below is read against that definition of ambient.
+   - Sensirion SHT45 — ambient air T/RH. I²C. Boundary condition for the thermal and moisture balance; without it, disturbance cannot be separated from response.
+   - Absolute barometric pressure sensor (Bosch BMP390 class). I²C. Barometric pressure has no meaningful value inside the enclosure; it feeds density computation for M06 mass flow and pressure compensation for every SCD41 in the deployment.
+   - Sensirion SCD41 — ambient CO₂. I²C. Reference against which depletion inside is measured, and the only physically sound basis for cross-calibrating independent CO₂ instruments. For a cabinet the room is the correct reference, not the outdoor baseline: a cabinet vents into the room, and an occupied room runs far above outdoor with a diurnal swing that would otherwise be read as a plant signal.
+   - Irradiance sensor — energy-balance input for any growing space with a window or translucent wall. Quantity and part deferred; see deferred decisions.
+   - Wind speed — purchased anemometer with pulse output, identified by an SP number (ADR-0019), conditioned by hardware RC and Schmitt trigger and read by a timer in external counter mode. Wind is a boundary condition only for the outdoor variant at deployment scale and above; the group is left unpopulated on the indoor variant and at cabinet scale, under the partial-BOM mechanism.
+   - Wind direction — purchased vane with a Gray-coded absolute encoder, serialized in the vane housing and read over SPI. Gray coding is required because the vane hunts continuously across code boundaries. Encoder resolution is a property of the instrument and does not enter the header contract. I²C is rejected for this link: it is open-drain and capacitance-bound, which is the constraint that ruled out cabled sensor extension in the first place.
+   - Heading reference and installation-integrity monitor (accelerometer + magnetometer, LSM303AGR class). I²C, polled at minute scale. Mast guides on the enclosure fix the enclosure-to-vane-base orientation mechanically, so the mounting offset is a constant of the assembly and the magnetometer supplies the heading term of the wind azimuth directly. It does not remove a manual commissioning step — it exchanges entering an azimuth for calibrating magnetic distortion on site. Its justification is that a profile-entered azimuth never notices a mast turned, struck, or resettled after installation, whereas a live heading does; the accelerometer likewise reports a mast out of plumb or displaced. This is drift detection applied to the installation itself. A rate gyroscope is **not** populated: it serves moving platforms, and M07 is a fixed installation.
+   - Vane and anemometer cross-check each other for failure: a static vane with the anemometer above its starting threshold indicates a seized or detached vane, and the converse indicates a seized anemometer. The discriminator is measured speed against the starting threshold, never a bare zero, since below that threshold both instruments are legitimately still. This is failure-mode coverage in the sense admitted by alternative G, obtained from instruments already required for their own sake.
+   - Precipitation is not measured; it feeds none of the identified quantities.
+   - Instruments on leads are not a new construction class. M05-SAFETY already carries door and leak sensors on leads, and 1-Wire parts are cabled by nature. A node conditions signals; where the transducer physically sits does not define its module class (decision 1).
+   - The **outdoor** variant is the first module deployed outside the building envelope. Environmental qualification, radiation shielding of the air sensors, and the consequences for a field bus leaving the enclosure are specification concerns, tracked in the module's own documents. None of them constrain the indoor variant, which sits on an in-cabinet bus segment under the same environmental assumptions as M01–M05.
+
 5. **Sensor-module header — standardized signal allocation.** All sensor modules use the same physical header on the carrier PCB. The pinout exposes a superset of interfaces; modules use what they need:
    - 3.3 V (sensor power; the only on-carrier rail, from the carrier's TPS54302 buck)
    - GND × 2 (analog + digital separation where applicable)
@@ -117,7 +140,12 @@ Zone count is not an architectural decision — it is a deployment-time choice m
    - `0b011` — M03-ANALYTICS
    - `0b100` — M04-PLANT
    - `0b101` — M05-SAFETY
-   - `0b110`, `0b111` — reserved for additional sensor module classes. Actuator modules use a separate ID space allocated in a future actuator-taxonomy ADR.
+   - `0b110` — M06-VENTILATION
+   - `0b111` — M07-AMBIENT
+
+   Actuator modules use a separate ID space allocated in a future actuator-taxonomy ADR.
+
+   **The 3-bit module-ID field is exhausted.** All eight identifiers are assigned. The field is not widened in this revision: five carrier boards already exist with three strap pins, no eighth sensor class is defined, and widening the field changes the carrier↔module header contract in decision 5. It is instead recorded as an **obligation of the next carrier revision**: the module-ID field is widened to four strap pins, giving sixteen identifiers, whenever the carrier is next revised for any reason. No eighth sensor module class may be defined before that revision ships.
 
    **Module-ID identifies the class (PCB design), not the instance.** Multiple instances of the same class in different zones share the strap pattern; they are distinguished by Cyphal Node-ID and by gateway-resolved tagging (see decision 7).
 
@@ -132,7 +160,7 @@ Zone count is not an architectural decision — it is a deployment-time choice m
 9. **Out of scope for this ADR:**
    - **Actuator modules** (LED drivers, pump drivers, heater control, dosing peristaltic control). These follow the same carrier + module pattern but require their own taxonomy ADR. The scale-aware multi-instance pattern is expected to apply analogously.
    - **Camera.** The cabinet camera is not a Cyphal node — it connects directly to the gateway. Covered by the gateway and platform layers.
-   - **Detailed PCB layout** for any of the five sensor modules.
+   - **Detailed PCB layout** for any of the seven sensor modules.
    - **Detailed pH/EC front-end schematic, layout, and isolation strategy.** May warrant its own ADR once analytics-module schematic capture begins.
    - **Zone-definition methodology for large greenhouses.** How to identify zones empirically, how dense the initial sensor coverage should be before model identifies zones — operational concern, not architectural. Touches future predictive-ML modules (ADR-0001 decision 4).
    - **`node_role` and `zone` representation in the IndustryFlow data model.** Touches ADR-IF-0001 (production_unit entity) or its extension.
@@ -151,14 +179,14 @@ Zone count is not an architectural decision — it is a deployment-time choice m
 
 **F. Single PCB per subsystem with all sensors at one point in space.** This was the implicit assumption of the original ADR-0014 draft. *Rejected on revision:* climate and safety subsystems contain sensors with genuinely incompatible spatial requirements. At apartment scale, the answer is short-lead sensor extension (decision 3); at larger scales, the answer is multi-instance per zone (decisions 1 and 2). Both use the same PCB design.
 
-**G. Sensor proliferation for redundancy within a zone.** *Rejected:* once a single accurate sensor produces dense time-series data, modelling outperforms additional spatial sampling within the same zone. Multiplying co-located sensors raises cost, calibration complexity, and BoM footprint without proportional information gain. Redundancy is justified only for safety failure-mode coverage (and even there, the heating actuator's analog over-temperature trip in the grow volume, paired with the M01 climate sensor, provides cross-subsystem redundancy for grow-volume over-temperature without duplication within either subsystem; M05's on-board TMP117 measures the cabinet — a different volume — and is not part of this redundancy).
+**G. Sensor proliferation for redundancy within a zone.** *Rejected:* once a single accurate sensor produces dense time-series data, modelling outperforms additional spatial sampling within the same zone. Multiplying co-located sensors raises cost, calibration complexity, and BoM footprint without proportional information gain. This rejection concerns duplicate measurement of the *same* quantity in the *same* zone. It does not apply to sensors of a shared type distributed across M01-CLIMATE, M06-VENTILATION and M07-AMBIENT: these measure different quantities at locations that are not interchangeable — air state at the plant, air transport through the duct, and the boundary condition outside the enclosure. Redundancy is justified only for safety failure-mode coverage (and even there, the heating actuator's analog over-temperature trip in the grow volume, paired with the M01 climate sensor, provides cross-subsystem redundancy for grow-volume over-temperature without duplication within either subsystem; M05's on-board TMP117 measures the cabinet — a different volume — and is not part of this redundancy).
 
 ## Consequences
 
 ### Positive
 
 - One architecture, all scales. Apartment cabinet and 200 m² greenhouse use identical PCB designs, firmware, and DSDL — they differ only in instance count and gateway-side tagging.
-- Five sensor module designs cover the full project. Instance multiplication is the only scaling mechanism; no new node-classes are introduced as deployments grow.
+- Seven sensor module designs cover the full project. Instance multiplication is the only scaling mechanism; no new node-classes are introduced as deployments grow.
 - Each module is independently replaceable. Fault in one functional subsystem does not propagate to others.
 - Module-ID straps make firmware class-identification automatic at boot. Gateway role-and-zone tagging distinguishes instances.
 - Partial-BOM mechanism gives operators a finely-graded specialization tool without requiring new PCB designs.
@@ -179,7 +207,16 @@ Zone count is not an architectural decision — it is a deployment-time choice m
 - **Zone-definition methodology for non-trivial deployments** — operational concern; out of scope until first multi-zone deployment.
 - **Sensor-module versioning and revision policy** — how a module evolves (e.g., M01 v1 → v2 when SCD41 is EOL'd) without breaking deployments.
 - **`node_role` and `zone` representation in IndustryFlow data model** — touches ADR-IF-0001.
-- **PCB schematics, gerbers, and BOMs for all five modules** — published in the hardware reference repository under CERN-OHL-S. Specification artifacts, not ADRs.
+- **PCB schematics, gerbers, and BOMs for all seven modules** — published in the hardware reference repository under CERN-OHL-S. Specification artifacts, not ADRs.
+- **M07 irradiance quantity and range.** Whether ambient irradiance is reported as PPFD, for direct comparability with M02-LIGHT inside, or as broadband irradiance or illuminance. The quantities are not interchangeable and must not be mixed in one time series. M02's sensor is calibrated for a narrowband luminaire spectrum at closed-space levels and cannot be assumed usable under broadband sunlight orders of magnitude brighter. The indoor/outdoor variant split adds a second, separate question on the same part: full sunlight and room light are orders of magnitude apart, so whether one part serves both variants — or the variants populate different parts, or need different footprints — is unresolved and must be settled before the footprint is committed.
+- **M07 barometric duplication across variants.** Barometric pressure reads effectively the same in a room and outside it, so a deployment carrying both M07 variants measures it twice. Which instance carries the sensor, whether the other leaves the footprint unpopulated, and which instance the deployment profile names as the pressure source for M06's density computation and every SCD41's pressure compensation.
+- **Magnetic compatibility between the vane encoder and the heading reference.** Where the purchased encoder reads its tracks magnetically, its field must not reach M07's magnetometer. Mast-to-base separation is expected to settle this, but it is a check at model selection rather than an assumption.
+- **Magnetic distortion calibration for M07.** Whether hard-iron and soft-iron coefficients are established on site with the assembly mast-mounted, or beforehand at the risk of the installed environment invalidating them. The coefficients belong to the deployment, not to the module design.
+- **1-Wire is absent from the header contract.** Decision 5 names the interfaces a sensor module may use, and 1-Wire is not among them, yet DS18B20-class parts are intended for systematic use. Whether the header gains a dedicated line, or 1-Wire is assigned to a general-purpose pin by convention, is unresolved and is properly settled at the next carrier revision alongside the module-ID field widening.
+- **M06 velocity profile coefficient.** How the coefficient relating point velocity to mean velocity is identified at commissioning without permanently altering the air path being measured. Flow error propagates linearly into every transport quantity derived from M06.
+- **Ventilation / pollination subsystem boundary.** Which fans belong to which functional subsystem, and therefore which `node_role` values M06 takes. The original FS3000 entry justified airflow sensing as pollination-fan verification, while M06 is framed around air transport; the boundary is now load-bearing for role assignment.
+- **Fate of decision 3.** The short-lead mechanism was motivated by M01's displaced FS3000, which rev 2 removed. Whether decision 3 remains as a general provision or is retired is unresolved; M05's door and leak leads are GPIO and ADC, not I²C, and are unaffected either way.
+- **Whether the actuator "separate ID space" is separate *pins* or a separate *namespace on the same pins*.** Decision 6 says actuator modules use a separate ID space; decision 9 says they follow the same carrier + module pattern; ADR-0002 rev 3 decision 3 lists exactly one header on the carrier — the sensor-module header — and decision 5 there speaks of the type being read via "sensor-module strap pins". If actuator modules plug into that same header and are identified by those same three straps, then this revision's exhaustion of the field removes every identifier an actuator module could take, and the carrier revision becomes a hard prerequisite for the **first actuator node** — ROADMAP stage 5, the Phase 1 → Phase 2 boundary and a step on the critical path to first cultivation. If instead actuators carry their own physically separate strap field, that field does not exist in any accepted decision and must be added to the carrier description. **This revision does not settle it, and the exhaustion statement above should not be read as having settled it.** It is properly resolved together with the field widening, and before the actuator-taxonomy ADR is written rather than by it.
 
 ## References
 
@@ -189,6 +226,11 @@ Zone count is not an architectural decision — it is a deployment-time choice m
 - Sensirion SHT45, SCD41 datasheets.
 - Bosch BME688 datasheet.
 - Renesas FS3000 datasheet.
+- Sensirion SDP8xx differential-pressure sensor datasheet.
+- Bosch BMP390 barometric pressure sensor datasheet.
+- ST LSM303AGR accelerometer / magnetometer datasheet.
+- ADR-0016: Empirical survey and state-space modeling — survey-phase instrumentation density and inventory return.
+- ADR-0019: Purchased-part (SP) identification — applies if wind instrumentation is procured rather than built.
 - ams OSRAM AS7341 datasheet.
 - Melexis MLX90640 datasheet.
 - Texas Instruments LMP7721 datasheet — femtoampere-bias-current op-amp for the pH front-end.
