@@ -32,8 +32,10 @@ RUN pip install --no-cache-dir .
 COPY --from=console /repo/erp/frontend/dist ./console
 
 # The type registry travels with the image (ADR-0023 d1): the ERP reads meaning
-# from it rather than holding a copy. Mount over it to update the registry
-# without a rebuild.
+# from it rather than holding a copy. This baked copy is the fallback for running
+# the image on its own; docker-compose.yml points ERP_REGISTRY_PATH at the repo
+# mount instead, so a `git pull` updates the registry without a rebuild. That
+# mount is a *directory* for a reason — see the comment on it.
 COPY REGISTRY.md ./REGISTRY.md
 
 EXPOSE 8021
