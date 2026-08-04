@@ -8,7 +8,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Status:** As-built. `E0006-000001` fabricated and bench-verified 2026-08-02
 - **Date:** 2026-08-04 (measurements 2026-08-02; restructured to specification form 2026-08-04, no technical change)
 - **E-number:** `E0006` · module-ID strap `0b101`
-- **Governing ADRs:** ADR-0018, ADR-0014 (rev 2), ADR-0002 (rev 3), ADR-0017 (rev 2)
+- **Governing ADRs:** ADR-0018, ADR-0014 (rev 3), ADR-0002 (rev 3), ADR-0017 (rev 2)
 - **Companions:** `M01-CLIMATE-specification.md`, `M06-VENTILATION-specification.md`, `M07-AMBIENT-specification.md`
 
 Rationale for the decisions applied here is in the governing ADRs and is not restated.

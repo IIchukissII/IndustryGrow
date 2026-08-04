@@ -8,7 +8,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Status:** Working specification, pre-schematic capture. `E0002` not laid out, not fabricated
 - **Date:** 2026-08-04
 - **E-number:** `E0002` · module-ID strap `0b001`
-- **Governing ADRs:** ADR-0014 (rev 2), ADR-0002 (rev 3), ADR-0003, ADR-0016, ADR-0017 (rev 2), ADR-0018
+- **Governing ADRs:** ADR-0014 (rev 3), ADR-0002 (rev 3), ADR-0003, ADR-0016, ADR-0017 (rev 2), ADR-0018
 - **Companions:** `M05-SAFETY-specification.md`, `M06-VENTILATION-specification.md`, `M07-AMBIENT-specification.md`
 - **Supersedes:** the M01 sections of `M01-M06-air-nodes-specification.md` (2026-08-03), split into this document and `M06-VENTILATION-specification.md` on 2026-08-04
 
@@ -309,7 +309,7 @@ O-8, O-10 and O-11 are M06's; O-12 to O-24 are M07's; O-25 to O-31 are M05's.
 | O-33 | T2 value and V1 method not confirmed | Layout freeze |
 | O-34 | Pressure source for CO₂ compensation: U2 or M07 | Firmware, M07's O-23 |
 | O-35 | Node power unmeasured; M05's O-31 node-count ceilings assume M05-class nodes | Distribution-board sizing, O-31 |
-| ~~O-36~~ | ~~ADR-0014 d2's partial-BOM example cites M01's airflow sensor, moved to M06 in rev 2~~ — corrected by ADR-0014 rev 3; closes when that revision is accepted | — |
+| ~~O-36~~ | ~~ADR-0014 d2's partial-BOM example cites M01's airflow sensor, moved to M06 in rev 2~~ — closed 2026-08-04 by ADR-0014 rev 3 | — |
 | O-37 | Boot probe does not distinguish *not fitted* from *failed* | Gateway fault handling |
 | O-38 | T1 has no confirmed shading design or measured bias | Enclosure design |
 | O-39 | Neither ADR-0003 d7 nor the profile instance states a VPD uncertainty limit; §6.1 gives ±2.0…±4.4 % in band, ±10 % on humid excursion | Profile validity, U1 part grade |

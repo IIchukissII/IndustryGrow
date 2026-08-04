@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0000 (rev 2): Decision records and the single-source-of-truth discipline
 
 - **ID:** ADR-0000 (rev 2)
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-07-09 (rev 2: 2026-08-04)
 - **Project:** IndustryGrow
 - **Parent:** — (root; this ADR governs the form of all other ADRs)

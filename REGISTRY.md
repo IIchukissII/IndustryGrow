@@ -173,5 +173,5 @@ only the record: one row per withdrawal, above.
 - ADR-0017 (rev 1) — component / document / instance identification (E-numbers, two-axis model; firmware `F` layer rooted on the carrier E0001, decision 16; withdrawn-version archival, decision 17).
 - ADR-0019 — purchased-part (SP) identification.
 - ADR-0000 — single source of truth; vendor SKU and price live in the BOM, not here.
-- ADR-0014 (rev 2) — sensor-module taxonomy (module-ID straps, M01–M07; the 3-bit strap field is now exhausted).
+- ADR-0014 (rev 3) — sensor-module taxonomy (module-ID straps, M01–M07; the 3-bit strap field is now exhausted).
 - ADR-0018 — cabinet power distribution (E0006 / M05, the S0 meter, the SELV supply).

@@ -10,7 +10,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Date:** 2026-06-19 (rev 2: 2026-08-03)
 - **Project:** IndustryGrow
 - **Parent:** ADR-0001
-- **Companions:** ADR-0002 (rev 3), ADR-0004 (rev 1), ADR-0007, ADR-0014 (rev 2), ADR-0015, ADR-0016
+- **Companions:** ADR-0002 (rev 3), ADR-0004 (rev 1), ADR-0007, ADR-0014 (rev 3), ADR-0015, ADR-0016
 - **Supersedes:** ADR-0017 (initial, 2026-05-31), ADR-0017 (rev 1, 2026-06-19)
 
 ## Revision history
