@@ -98,7 +98,7 @@ instances are mobile and interchangeable (ADR-0014, ADR-0016).
    Documentation  (type-level)
    Exxxx-VVVVVV-L
    │     │      │
-   │     │      └─ document layer (S, D, L, P, M, I)
+   │     │      └─ document layer (S, D, L, P, M, I, F)
    │     └─ version, 6 digits (major.minor.patch)
    └─ module, E + 4 digits
 
@@ -130,7 +130,7 @@ instances are mobile and interchangeable (ADR-0014, ADR-0016).
    - **Version** `VVVVVV` — six digits encoding semantic version `major.minor.patch`, two digits each (`1.0.0` → `010000`, `2.1.3` → `020103`). This is the version of the *design*, not of a populated configuration (see alternative D).
    - **Serial** `NNNNNN` — six digits, unique per module+version (`000001`–`999999`). Assigned in Production. The width is sized to the largest declared deployment's lifetime install base of a single design+version — most acutely the universal carrier, which has one near-static version and therefore accumulates the most serials — so the range is not exhausted in practice. There is deliberately **no** overflow-into-version mechanism: bumping the patch when a range fills would leak instance *count* into the design *version*, the same corruption alternative D rejects, and would not even buy more headroom than simply widening the field (see decision 8 and alternative D).
    - **Depth** `DDDDDD` — six digits in three two-digit levels (main / sub-position 1 / sub-position 2), encoding the position within the machine hierarchy. Position only; assigned at integration, never present in the production identifier (decision 7).
-   - **Document layer** `L` — a single letter naming the document type (decision 9).
+   - **Document layer** `L` — a single letter naming the document type (decision 9, extended by decision 16).
    - **Suffix** — a per-instance lifecycle-document tag appended in the production identifier (decisions 10–14).
 
    Documents are stored flat, with the hierarchy carried entirely in the identifier, so the store can be filtered by identifier pattern (all documents of one module, all reports, all instances at a given position, and so on). The store is realized as an object store, where this filtering is a key-prefix list (decision 15).
@@ -139,7 +139,7 @@ instances are mobile and interchangeable (ADR-0014, ADR-0016).
 
 ### Code legend
 
-The single key to the trailing letter codes in an identifier: the **document-layer** letter in the type-level form `Exxxx-VVVVVV-L` (e.g. the `D` in `E0001-000001-D.png`, the `L` in `E0001-000001-L.csv`) and the **lifecycle suffix** in the instance form `Exxxx-VVVVVV-NNNNNN-XX`. This table is the one place the codes are expanded; the cited decisions hold the definitions and rules, not a second copy of the mapping. Both sets are extensible — add a code by appending a row here; suffix codes are two uppercase letters and must not collide with the document-layer letters.
+The single key to every code that can occupy the trailing slot of an identifier: the **document-layer** letter in the type-level form `Exxxx-VVVVVV-L` (e.g. the `D` in `E0001-000001-D.png`, the `L` in `E0001-000001-L.csv`), the **lifecycle suffix** in the instance form `Exxxx-VVVVVV-NNNNNN-XX`, the **status token** of a withdrawn artifact set (decision 17), and the **package descriptor** of a document-layer object that collapses a set into one file (decision 18). This table is the one place the codes are expanded; the cited decisions hold the definitions and rules, not a second copy of the mapping. The sets are extensible — add a code by appending a row here. Suffix codes are two uppercase letters and must not collide with the document-layer letters; status tokens are full uppercase words, so they can collide with neither.
 
 | Code | Meaning | Field | Defined in |
 |------|---------|-------|------------|
@@ -155,6 +155,9 @@ The single key to the trailing letter codes in an identifier: the **document-lay
 | `-CP` | Calibration Protocol | lifecycle suffix | decision 11 |
 | `-CC` | Calibration Certificate | lifecycle suffix | decision 11 |
 | `-PR` | Provisioning Record | lifecycle suffix | decision 12 |
+| `BLOCKED` | Withdrawn artifact set — defective, never to be fabricated or relied on | status token | decision 17 |
+| `SUPERSEDED` | Withdrawn artifact set — replaced, no defect | status token | decision 17 |
+| `-fab` | Fabrication package: the gerber layer set plus drill files, one object | `D`-layer package descriptor | decision 18 |
 
 ### Module designation (E-numbers)
 
@@ -162,7 +165,7 @@ The single key to the trailing letter codes in an identifier: the **document-lay
 
 4. **Bare-PCB design and populated assembly are distinguished.** One PCB *layout* is one bare-board design artifact; each standard *populated configuration* of that layout is an assembly E-number that references the shared bare design. This resolves the partial-BOM mechanism of ADR-0014 decision 2 without adding a variant field to the scheme:
    - **Carrier:** one bare design and effectively one assembly. Termination is jumper-selected and the power-input set is the only populate option, so the carrier is treated as a single assembly E-number — one type, one version, many serials, appearing at many depth positions. (This was the original motivating case: the carrier is universal precisely because it has no real variant.)
-   - **M01–M07:** one bare design each; in Phase 1 one fully-populated assembly E-number each. Zone-specific partial populations in Phase 2 (ADR-0014 decision 2) receive **additional assembly E-numbers referencing the same bare design** — no new layout, no version churn.
+   - **M01–M07:** one bare design each, and one fully-populated assembly E-number each as first assigned — which is what the Phase-1 set M01–M05 carries today. Zone-specific partial populations (ADR-0014 decision 2) receive **additional assembly E-numbers referencing the same bare design** — no new layout, no version churn.
    - **M07's indoor and outdoor variants are two assembly E-numbers, not one** *(rev 2)*. ADR-0014 rev 2 gives M07 two deployment variants sharing one layout, one module-ID strap and one firmware image, differing only in populated BOM and housing. That is precisely the case this decision resolves, so it resolves it the same way: **one bare design, two standard populated configurations, therefore two assembly E-numbers.** The outdoor variant populates a wind group — pulse conditioning, shift-register interface, heading reference — that the indoor variant leaves as bare footprints. Two boards you order, stock, build and serialize differently are two things on the identity axis, whatever they share on the design axis.
      - **The carrier's single-assembly treatment does not extend to M07.** The carrier is one assembly E-number because its only populate option is a jumper set at install time — *"the carrier is universal precisely because it has no real variant."* A wind group fitted or omitted at build is a real variant. Reading the carrier bullet as a general licence to collapse variants would dissolve this decision entirely.
      - **One module class, two assembly numbers, and no contradiction.** ADR-0014 rev 2 is right that M07 is not two module classes: the strap is one value and the firmware is one image, because the node identifies its *class*, not its population — the boot probe finds what is fitted (ADR-0014 decision 8). Class and assembly are different questions on different axes, and the answers are allowed to differ. What is **not** admissible is the claim that the variants take no separate identifier at all.
@@ -232,7 +235,9 @@ The single key to the trailing letter codes in an identifier: the **document-lay
     5. **Licensing.** The `.zip` is hardware design content, covered by the `store/**` CERN-OHL-S default in `REUSE.toml` (it does not match the `-F-src.zip` AGPL override) — no `REUSE.toml` change needed.
     6. **Ship** via branch → PR; the maintainer accepts (ADR-0000 d7).
 
-    Recorded here as an additive in-place amendment to rev 1 — a new packaging rule plus a bounded qualification of decision 15 — rather than a fresh revision, per the project's partial-supersession-by-inline-note practice (ADR-0000 d5). The per-version record (the *what* — each withdrawal's status, archive object, and exact file boundary) lives in `REGISTRY.md`.
+    Recorded as an additive in-place amendment — a new packaging rule plus a bounded qualification of decision 15 — rather than a fresh revision, per the project's partial-supersession-by-inline-note practice (added against rev 1 on 2026-06-21 and carried through rev 2; ADR-0000 d5). The per-version record (the *what* — each withdrawal's status, archive object, and exact file boundary) lives in `REGISTRY.md`.
+
+    **The status token is a property of the archive, not of the version.** One version may carry more than one archive when withdrawal is scoped to a defect: `E0001-000001` holds both a `BLOCKED` set (the defective layout and its fabrication outputs) and, once `E0001-000002` released, a `SUPERSEDED` set (the schematic, BOM and pin map that had stayed loose as the basis for the relayout).
 
 ### Live fabrication package
 
@@ -246,7 +251,7 @@ The single key to the trailing letter codes in an identifier: the **document-lay
 
     - **Supersedes the prior flat listing; applied retroactively.** This overrides the earlier "fabrication outputs are filed flat, one object per file, no live `.zip`" rule recorded in `REGISTRY.md`. The one already-released board stored the old way — the carrier `E0001-000002` — has its loose gerbers/drills bundled into `E0001-000002-D-fab.zip` and the loose objects removed, so the store is uniform (alternative H). Licensing is unchanged: the `.zip` is hardware design content under the `store/**` CERN-OHL-S default (`REUSE.toml`), not the `-F-src.zip` AGPL override.
 
-    Recorded as an additive in-place amendment to rev 1 (a bounded qualification of decision 15, like decision 17), not a fresh revision, per the project's partial-supersession-by-inline-note practice (ADR-0000 d5). The concrete descriptor (`-D-fab`) and the per-board fab-object record live in `REGISTRY.md` (the *what*); this decision is the *why*.
+    Recorded as an additive in-place amendment (a bounded qualification of decision 15, like decision 17), not a fresh revision, per the project's partial-supersession-by-inline-note practice (added against rev 1 on 2026-07-18 and carried through rev 2; ADR-0000 d5). The concrete descriptor (`-D-fab`) and the per-board fab-object record live in `REGISTRY.md` (the *what*); this decision is the *why*.
 
 ## Alternatives considered
 

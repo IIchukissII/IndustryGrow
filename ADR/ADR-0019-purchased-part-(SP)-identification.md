@@ -15,7 +15,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 ## Context and problem
 
-ADR-0017 identifies what the project *designs*: the carrier and M01–M05 are E-modules, with an identity axis `Exxxx-VVVVVV-NNNNNN` whose version is our design's semantic version and whose serial is our manufactured, ATECC608-bound instance. It deliberately left open how to identify what the project *buys* — flagging the WeAct core board as "own E-number or vendor-part-number tracking (deferred)" (decision 3).
+ADR-0017 identifies what the project *designs*: the carrier and M01–M07 are E-modules, with an identity axis `Exxxx-VVVVVV-NNNNNN` whose version is our design's semantic version and whose serial is our manufactured, ATECC608-bound instance. It deliberately left open how to identify what the project *buys* — flagging the WeAct core board as "own E-number or vendor-part-number tracking (deferred)" (decision 3).
 
 The gap became concrete with the cabinet power-distribution work (ADR-0018): a power supply, a DIN kWh meter, a fuse-holder, the gateway Raspberry Pi, and — when actuators arrive — pumps, SSRs, fixtures, and heating elements are real cabinet line items that need a stable key for part lists, inventory, and cost accounting. None is a thing we design, version, or serialize; forcing them into the E-number space would fill its version and serial fields with foreign or empty data and corrupt E semantics.
 

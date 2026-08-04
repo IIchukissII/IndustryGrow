@@ -10,7 +10,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Date:** 2026-07-25
 - **Project:** IndustryGrow
 - **Parent:** ADR-0001
-- **Companions:** ADR-0002 (rev 3), ADR-0004 (rev 1), ADR-0017 (rev 1), ADR-0021, ADR-0022, ADR-0024
+- **Companions:** ADR-0002 (rev 3), ADR-0004 (rev 1), ADR-0017 (rev 2), ADR-0021, ADR-0022, ADR-0024
 - **Cross-project:** ADR-IF-0007 (IndustryFlow device CA — the SAN-URI tenant identity the stage-11 leaf conforms to)
 - **Supersedes:** ADR-0007 (initial, 2026-06-19)
 
@@ -161,7 +161,7 @@ What remains genuinely open — and is decided below — is the certificate arch
 - ADR-0001: IndustryGrow framing — names the future PKI architecture; community-self-hosted and commercial-managed fleet models.
 - ADR-0002 (rev 3): Field bus architecture — ATECC608B on every board; security boundary at the gateway; trusted-CAN domain.
 - ADR-0004 (rev 1): Gateway host hardening — gateway↔IndustryFlow mTLS, ATECC608-bound gateway identity, audit-batch identity, separate offline firmware-signing key, trusted-CAN assumption.
-- ADR-0017 (rev 1): Component, document, and instance identification — serial↔ATECC608↔certificate binding; the `-PR` provisioning record; serials assigned in Production; the `GBOX_NNNN` machine identifier decision 10 keeps stable across envelopes.
+- ADR-0017 (rev 2): Component, document, and instance identification — serial↔ATECC608↔certificate binding; the `-PR` provisioning record; serials assigned in Production; the `GBOX_NNNN` machine identifier decision 10 keeps stable across envelopes.
 - ADR-0019: Purchased-part identification — the gateway SBC's ATECC-bound certificate as its instance key.
 - ADR-0020: Gateway persistence model — ATECC-bound identity as already-permitted persistent state; the trust anchor decision 10d keeps replaceable.
 - ADR-0021: Instance-and-integration ERP — the pre-cloud, single-tenant/operator-private system of record whose ERP consumes the `CN=GBOX_NNNN` leaf (decision 10b).

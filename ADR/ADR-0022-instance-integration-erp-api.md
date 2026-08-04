@@ -10,7 +10,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Date:** 2026-07-19 (accepted 2026-07-21, with decision 1 clarified; rev 1 and rev 2: 2026-07-26)
 - **Project:** IndustryGrow
 - **Parent:** ADR-0021 (rev 3)
-- **Companions:** ADR-0000, ADR-0004 (rev 1), ADR-0007 (rev 1), ADR-0015, ADR-0016 (rev 1), ADR-0017 (rev 1), ADR-0019, ADR-0020, ADR-0024, ADR-0025
+- **Companions:** ADR-0000, ADR-0004 (rev 1), ADR-0007 (rev 1), ADR-0015, ADR-0016 (rev 1), ADR-0017 (rev 2), ADR-0019, ADR-0020, ADR-0024, ADR-0025
 - **Supersedes:** ADR-0022 rev 1 (2026-07-26), and through it the initial record (2026-07-19, accepted 2026-07-21)
 - **Realizes:** ADR-0021 deferred decisions *"ERP ↔ object store integration"* and *"ERP ↔ gateway profile push"*; and, at rev 1, the API surface for ADR-0021 rev 3 decision 17's machine identity binding (decision 12). ADR-0007's deferred *"`-PR` record format"* is **not** resolved by this — decision 12 records the queryable binding and leaves the blob format and document key deferred
 - **Clarified by:** ADR-0023 (decision 1's type-meaning exclusion — the read-through catalog)
@@ -240,4 +240,4 @@ that the second is closed deliberately.
 
 ## References
 
-- ADR-0000, ADR-0004 (rev 1), ADR-0007, ADR-0015, ADR-0016 (rev 1), ADR-0017 (rev 1), ADR-0019, ADR-0020, ADR-0021, ADR-IF-0001 (planned), `GLOSSARY.md`.
+- ADR-0000, ADR-0004 (rev 1), ADR-0007, ADR-0015, ADR-0016 (rev 1), ADR-0017 (rev 2), ADR-0019, ADR-0020, ADR-0021, ADR-IF-0001 (planned), `GLOSSARY.md`.

@@ -9,7 +9,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Status:** Accepted
 - **Date:** 2026-07-21
 - **Project:** IndustryGrow
-- **Parent:** ADR-0017 (rev 1)
+- **Parent:** ADR-0017 (rev 2)
 - **Companions:** ADR-0000 (rev 1), ADR-0019, ADR-0021 (rev 1), ADR-0022
 - **Relates to:** ADR-0021 decision 11 — the ERP references type meaning and never holds it
 
@@ -90,7 +90,7 @@ Removing the copies means software reads `REGISTRY.md` directly, which changes t
 
 ## Relationship to other ADRs
 
-- **ADR-0017 (rev 1)** — decision 3 makes `REGISTRY.md` authoritative for `Exxxx`; this record decides the form in which that authority is consumed, and adds no new meaning.
+- **ADR-0017 (rev 2)** — decision 3 makes `REGISTRY.md` authoritative for `Exxxx`; this record decides the form in which that authority is consumed, and adds no new meaning.
 - **ADR-0019** — the same, for `SPxxxx`; the `Instance-tracked?` column is read per its decision 2.
 - **ADR-0021 (rev 1)** — decision 11 forbids the ERP holding type meaning; decisions 4–5 here are how the ERP satisfies it without a local table.
 - **ADR-0022** — decision 9's "no type-meaning writes" gains its read-side counterpart: a read-through catalog route that stores nothing. Decision 1's exclusion of any type-meaning *resource* was clarified in place to mean ownership, not reading (ADR-0000 decision 5); the two records are accepted together.
@@ -104,4 +104,4 @@ Removing the copies means software reads `REGISTRY.md` directly, which changes t
 
 ## References
 
-- ADR-0000 (rev 1), ADR-0014, ADR-0017 (rev 1), ADR-0018, ADR-0019, ADR-0021 (rev 1), ADR-0022, `REGISTRY.md`, `GLOSSARY.md`.
+- ADR-0000 (rev 1), ADR-0014, ADR-0017 (rev 2), ADR-0018, ADR-0019, ADR-0021 (rev 1), ADR-0022, `REGISTRY.md`, `GLOSSARY.md`.
