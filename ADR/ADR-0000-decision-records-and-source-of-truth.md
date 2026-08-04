@@ -3,17 +3,18 @@ SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
-# ADR-0000 (rev 1): Decision records and the single-source-of-truth discipline
+# ADR-0000 (rev 2): Decision records and the single-source-of-truth discipline
 
-- **ID:** ADR-0000 (rev 1)
-- **Status:** Accepted
-- **Date:** 2026-07-09
+- **ID:** ADR-0000 (rev 2)
+- **Status:** Proposed
+- **Date:** 2026-07-09 (rev 2: 2026-08-04)
 - **Project:** IndustryGrow
 - **Parent:** — (root; this ADR governs the form of all other ADRs)
-- **Supersedes:** ADR-0000 (initial, 2026-06-12)
+- **Supersedes:** ADR-0000 (initial, 2026-06-12), ADR-0000 (rev 1, 2026-07-09)
 
 ## Revision history
 
+- **rev 2 (2026-08-04)** — Adds decision 9, the **bounded in-place amendment**: an additive, dated, separately numbered decision that qualifies an existing one may be added to an Accepted ADR without a revision bump. Amends decision 5, which permitted in-place editing only on a still-Proposed draft and so did not describe the practice the project was already using. Adds alternative G. No existing decision is reversed.
 - **rev 1 (2026-07-09)** — Adds decision 8, the **cross-project ADR namespace**: IndustryGrow decisions are `ADR-NNNN` in this repository, IndustryFlow decisions are `ADR-IF-NNNN` in the IndustryFlow repository, and the two never share a number. Adds alternatives E and F and a consequence pair. The convention was applied implicitly from ADR-0001 onward — which introduced the `ADR-IF-0001` reference and the core/layer split it rests on — but had never been recorded as a decision, exactly the unwritten-discipline gap this ADR exists to close. No existing decision changed.
 
 ## Context and problem
@@ -29,6 +30,8 @@ This ADR names the discipline the project already half-follows and makes it the 
 - **Rationale decays slowest when captured once.** The *why* behind a decision is the part hardest to reconstruct later and easiest to lose; it needs exactly one durable home.
 - **Duplication is the dominant source of documentation entropy.** N copies of a fact are N independent opportunities to drift; the only copy count that cannot drift is one. More dispersion, more entropy.
 - **A contributor needs one place to look and one place to change.** If a value can be edited in two documents, "where do I change this?" has no correct answer and review cannot be mechanical.
+**rev 2.** Decision 5 permitted an in-place clarifying addition only on a still-Proposed draft, and required a revision for anything else. The project has not worked that way: ADR-0017 carries two additions made after acceptance — decision 17 (2026-06-21, withdrawn artifact sets archived as one object) and decision 18 (2026-07-18, the live fabrication package as one object) — each a new numbered decision bounding an existing one, each citing decision 5 as its authority. Decision 5 as written did not grant it. The practice is sound and the rule was incomplete, so this revision records the mechanism and its limits rather than retrofitting two revisions onto ADR-0017. It also fixes what the practice was missing: the two amendments were discoverable only by reading the whole record, because nothing required them to appear in the revision history.
+
 - **The discipline already exists implicitly.** ADR-0004 rev 1 and ADR-0017 apply it without naming it; naming it makes it reviewable and inheritable rather than personal.
 
 ## Decision
@@ -41,13 +44,24 @@ This ADR names the discipline the project already half-follows and makes it the 
 
 4. **Downstream documents must never silently override an ADR decision.** If a procurement or schematic document needs to diverge from a recorded decision, the divergence is resolved by amending the ADR, not by quietly changing the downstream document. A silent override is the canonical anti-pattern this discipline exists to forbid.
 
-5. **A revision is a supersession, not a silent edit.** A substantive change to a decision already on record produces a new revision: the title gains `(rev N)`, the metadata gains a `Supersedes:` line, and the reason is woven into *Context and problem* and documented in *Alternatives considered*. Revision history records the substantive reason for the change. A clarifying addition that changes no existing decision may be made in place on a still-Proposed draft without a revision bump.
+5. **A revision is a supersession, not a silent edit.** A substantive change to a decision already on record produces a new revision: the title gains `(rev N)`, the metadata gains a `Supersedes:` line, and the reason is woven into *Context and problem* and documented in *Alternatives considered*. Revision history records the substantive reason for the change. A clarifying addition that changes no existing decision may be made in place on a still-Proposed draft without a revision bump; on an Accepted record, an addition that changes no existing decision is a bounded in-place amendment under decision 9. *(rev 2: final clause added.)*
 
 6. **The governance root is not mirrored into the ADRs it governs.** This ADR applies to every ADR by being the root; individual ADRs do not back-reference it in their metadata. Enumerating "governed by ADR-0000" in each ADR would be exactly the mirroring this ADR forbids. The relationship is inherited, not copied.
 
 7. **Status lifecycle and accepting authority.** An ADR is `Proposed` while under discussion, `Accepted` once the project **maintainers** judge the decision binding, and `Superseded` when a later revision or ADR replaces it (per decision 5). Acceptance records *agreement*, not implementation — IndustryGrow is pre-fabrication, so a decision is accepted when it is settled, not when it is built. The accepting authority is the project **maintainers**; acceptance is effected through the normal review-and-merge process by setting the `Status` field to `Accepted` (and, when a revision supersedes a prior record, setting that record to `Superseded`).
 
 8. **ADRs are namespaced by owning project; the two projects never share a number.** IndustryGrow and IndustryFlow are distinct projects in distinct repositories (ADR-0001): IndustryFlow is the independent core platform, IndustryGrow the domain layer built over it. Their decision records occupy **separate number spaces**. An IndustryGrow decision is `ADR-NNNN` in *this* repository; an IndustryFlow decision is `ADR-IF-NNNN` in the IndustryFlow repository (e.g. `ADR-IF-0001`, the `production_unit` entity). A decision is filed under the project that **owns** it — a foundational/core concern under `ADR-IF-`, a domain/layer concern under `ADR-`. A cross-project citation (this repo's ADR-0017 referencing `ADR-IF-0001`) points *across* the namespace boundary; it does not pull the referenced decision into this repo's number space, and it does not create a local placeholder for it. This is a rule about the *form and identity* of the decision record — this ADR's scope — so it is recorded here rather than in any subsystem ADR (cf. alternative C's reasoning for keeping methodology in the root). `GLOSSARY.md` binds the `ADR-IF-` token to this decision; ADR-0001 remains the origin of the core/layer split the namespace expresses.
+
+9. **Bounded in-place amendment of an Accepted record.** An addition to an Accepted ADR may be made in place, without a revision bump, when all four conditions hold:
+
+   - it **adds a new numbered decision** rather than editing an existing one;
+   - it **reverses, narrows or re-words no decision already on record** — it may qualify one, and the qualification must be stated as bounded;
+   - it carries **the date it was added**, in the decision text;
+   - it is **listed in the revision history** under an `Amendments` entry, so a reader of the history sees it without reading the whole record.
+
+   Anything failing one of these is a substantive change and takes a revision under decision 5. The amendment is a decision of the record it joins and is accepted the same way, by the maintainers (decision 7).
+
+   The mechanism exists because the alternative is worse in both directions: a full revision for every bounded addition either buries the reason for the addition in supersession ceremony, or discourages recording the addition at all. It is deliberately narrow — the four conditions are what keep it from becoming the silent edit decision 5 forbids.
 
 ## Alternatives considered
 
@@ -62,6 +76,8 @@ This ADR names the discipline the project already half-follows and makes it the 
 **E. Number all decisions in one shared space across both projects.** *Rejected:* IndustryFlow and IndustryGrow have independent lifecycles and separate repositories; a single counter would force cross-repo coordination to allocate every number and would blur the core/layer ownership the two-project split exists to make legible (ADR-0001). Independent per-project namespaces let each project number and evolve on its own, joined only by explicit cross-references (decision 8).
 
 **F. Record the namespace rule in ADR-0001, or only in `GLOSSARY.md`.** *Rejected:* ADR-0001 owns the product, licensing, and data-model shape; the glossary binds words to meanings and, by its own authority statement, points rather than originates. The rule about *how decision records are numbered and identified* is ADR-form governance — this ADR's scope — so the decision lives here, and both ADR-0001's usage and the glossary's `ADR-IF-` entry point to it. This mirrors alternative C: methodology stays in the methodology root.
+
+**G. Require a full revision for every addition to an Accepted record, with no amendment mechanism.** *Rejected:* the project had already made two such additions — ADR-0017 decisions 17 and 18, each a bounded packaging rule qualifying its decision 15 — and neither is a change to a decision on record. Forcing supersession ceremony on them would file a bounded addition as a supersession of a record nothing superseded, and would push the reason for the addition into revision narrative rather than into the decision itself. The genuine risk is that "amendment" becomes a route around decision 5, so decision 9 bounds it with four conditions and sends everything else to a revision. Discovering the two existing amendments only by reading the full record is the defect the `Amendments` revision-history entry closes.
 
 ## Consequences
 

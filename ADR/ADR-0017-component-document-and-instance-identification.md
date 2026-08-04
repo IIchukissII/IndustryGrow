@@ -36,6 +36,14 @@ SPDX-License-Identifier: CC-BY-SA-4.0
   M07 sits in no cabinet while serving several; the missing piece is an entity
   above the machine, which belongs to ADR-0008.
 
+**Amendments** (bounded in-place additions under ADR-0000 decision 9 — each adds a
+numbered decision, reverses nothing, and qualifies decision 15):
+
+- **decision 17 (2026-06-21)** — A withdrawn design artifact set is archived as one
+  object whose key names its status, `BLOCKED` or `SUPERSEDED`.
+- **decision 18 (2026-07-18)** — The live fabrication package (gerber layer set plus
+  drill files) is one object, `Exxxx-VVVVVV-D-fab.zip`.
+
 ## Context and problem
 
 IndustryGrow produces physical artifacts and documentation across a lifecycle (design → production/QC → integration → operation) and across deployment scales (apartment cabinet to commercial greenhouse). The architecture already commits to a strong shape: a small set of reusable PCB designs (carrier, M01–M07 per ADR-0014 rev 2), instantiated many times, with instances that **move between deployments** as inventory (ADR-0016). What it has not committed to is how those artifacts and their documents are **identified**.
@@ -226,16 +234,9 @@ The single key to every code that can occupy the trailing slot of an identifier:
     - **Identity axis only; firmware is never swept in.** The firmware document layer `F` is independently versioned and rooted on the carrier (decision 16) — a blocked *board* design does not block the firmware *codebase*, so `Exxxx-VVVVVV-F.*` objects are **never** bundled into a board-design archive even when they share the `Exxxx-VVVVVV` prefix.
     - **One immutable archive per withdrawal.** This collapses the dead artifacts to a single object, the bounded exception noted on decision 15. The one-object-per-identifier rule continues to hold for every live object.
 
-    **Procedure (the *how*).** Archiving a withdrawn artifact set:
+    The archiving **procedure** — scoping the withdrawal, bundling, removing the loose objects, recording the row, licensing — is a manual, not a decision: `CONTRIBUTING.md`, *Working with the document store*.
 
-    1. **Confirm the withdrawal and its scope.** Decide the status (`BLOCKED` = defective, must never be used; `SUPERSEDED` = replaced, no defect) and which artifacts are actually dead. Localize to the defect: if only the layout is wrong, keep the schematic, BOM, and pin map loose as the basis for the relayout. **Close any editor** holding the files first (a KiCad session leaves `~*.lck` locks — archiving while open risks the editor rewriting them).
-    2. **Bundle the withdrawn artifacts** into `Exxxx-VVVVVV-<STATUS>.zip` — for a bad layout, the layout source (`.kicad_pcb`) and every generated fabrication output (gerbers, drills, placement `-D-pos`, render `-D.png`). **Exclude** the firmware `-F.*` objects (a separate axis) and any still-valid sources kept loose.
-    3. **`git rm` the loose per-file objects** now inside the archive, leaving the one `.zip` plus the objects kept loose.
-    4. **Record it** by adding a row to the blocked/superseded table in `REGISTRY.md` (the *what*) with the scope and concrete reason.
-    5. **Licensing.** The `.zip` is hardware design content, covered by the `store/**` CERN-OHL-S default in `REUSE.toml` (it does not match the `-F-src.zip` AGPL override) — no `REUSE.toml` change needed.
-    6. **Ship** via branch → PR; the maintainer accepts (ADR-0000 d7).
-
-    Recorded as an additive in-place amendment — a new packaging rule plus a bounded qualification of decision 15 — rather than a fresh revision, per the project's partial-supersession-by-inline-note practice (added against rev 1 on 2026-06-21 and carried through rev 2; ADR-0000 d5). The per-version record (the *what* — each withdrawal's status, archive object, and exact file boundary) lives in `REGISTRY.md`.
+    Recorded as an additive in-place amendment — a new packaging rule plus a bounded qualification of decision 15 — rather than a fresh revision, a bounded in-place amendment under ADR-0000 d9, added 2026-06-21 and listed in the revision history above. The per-version record (the *what* — each withdrawal's status, archive object, and exact file boundary) lives in `REGISTRY.md`.
 
     **The status token is a property of the archive, not of the version.** One version may carry more than one archive when withdrawal is scoped to a defect: `E0001-000001` holds both a `BLOCKED` set (the defective layout and its fabrication outputs) and, once `E0001-000002` released, a `SUPERSEDED` set (the schematic, BOM and pin map that had stayed loose as the basis for the relayout).
 
@@ -247,11 +248,11 @@ The single key to every code that can occupy the trailing slot of an identifier:
 
     - **Scope — only the gerber/drill set collapses.** The other `D`-layer faces stay loose, because each *is* separately consumed and separately addressable: the placement/centroid `-D-pos.csv` (the CPL — uploaded to assembly as its own file), the render `-D.png` and the pin map `-D-pinmap.md` (human documents). The BOM `-L.csv` is a different document layer entirely and likewise stays loose. This split is exactly the fab house's own upload flow: one gerber zip **+** a separate CPL **+** a separate BOM. So `E0006-000001` carries `-D-fab.zip`, `-D-pos.csv`, `-D.png`, and `-L.csv` as four objects, not fourteen.
 
-    - **Internal members follow one consistent structure, itself not registered.** Inside every `-D-fab.zip` the members are named `Exxxx-VVVVVV-<layer>.<ext>` under a single layer-descriptor vocabulary — `F_Cu`/`B_Cu`, `F_Silkscreen`/`B_Silkscreen`, `F_Mask`/`B_Mask`, `F_Paste`/`B_Paste`, `Edge_Cuts`, `PTH`/`NPTH` (the KiCad default set); the `-D-` infix belongs to the store *key*, not repeated inside the package. Two boards' fab zips therefore hold members named on the same scheme (a board plotted with extra outputs — e.g. a drill-map `.gbr` — carries those under the same scheme too). This internal structure is deliberately **not** enumerated in `REGISTRY.md`: the registry tracks the package by its object key (`-D-fab.zip`), and the members are self-describing by their consistent names. The package still has structure; the registry just does not carry it.
+    - **Internal members follow one consistent structure, itself not registered.** Every `-D-fab.zip` names its members on one scheme, so two boards' packages are structured alike and the members are self-describing. The registry tracks the package by its object key (`-D-fab.zip`) and does not enumerate its contents; the concrete layer vocabulary is a manual, not a decision — `CONTRIBUTING.md`, *Working with the document store*.
 
     - **Supersedes the prior flat listing; applied retroactively.** This overrides the earlier "fabrication outputs are filed flat, one object per file, no live `.zip`" rule recorded in `REGISTRY.md`. The one already-released board stored the old way — the carrier `E0001-000002` — has its loose gerbers/drills bundled into `E0001-000002-D-fab.zip` and the loose objects removed, so the store is uniform (alternative H). Licensing is unchanged: the `.zip` is hardware design content under the `store/**` CERN-OHL-S default (`REUSE.toml`), not the `-F-src.zip` AGPL override.
 
-    Recorded as an additive in-place amendment (a bounded qualification of decision 15, like decision 17), not a fresh revision, per the project's partial-supersession-by-inline-note practice (added against rev 1 on 2026-07-18 and carried through rev 2; ADR-0000 d5). The concrete descriptor (`-D-fab`) and the per-board fab-object record live in `REGISTRY.md` (the *what*); this decision is the *why*.
+    Recorded as an additive in-place amendment (a bounded qualification of decision 15, like decision 17), not a fresh revision — a bounded in-place amendment under ADR-0000 d9, added 2026-07-18 and listed in the revision history above. The concrete descriptor (`-D-fab`) and the per-board fab-object record live in `REGISTRY.md` (the *what*); this decision is the *why*.
 
 ## Alternatives considered
 
