@@ -10,9 +10,9 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Date:** 2026-07-09 (rev 1: 2026-07-19; rev 2 and rev 3: 2026-07-26)
 - **Project:** IndustryGrow
 - **Parent:** ADR-0001
-- **Companions:** ADR-0000, ADR-0004 (rev 1), ADR-0007, ADR-0015, ADR-0016 (rev 1), ADR-0017 (rev 1), ADR-0019, ADR-0020, ADR-0022 (API contract)
+- **Companions:** ADR-0000, ADR-0004 (rev 1), ADR-0007, ADR-0015, ADR-0016 (rev 1), ADR-0017 (rev 2), ADR-0019, ADR-0020, ADR-0022 (API contract)
 - **Supersedes:** ADR-0021 rev 2 (2026-07-26), and through it rev 1 (2026-07-19) and the initial record (2026-07-09)
-- **Realizes:** ADR-0017 (rev 1) deferred decision "Registry and store location" — the instance/integration layer host
+- **Realizes:** ADR-0017 (rev 2) deferred decision "Registry and store location" — the instance/integration layer host
 - **Relates to:** ADR-IF-0001 (planned) — the `production_unit` entity this store's foundational part aligns to when IndustryGrow integrates as a layer over the IndustryFlow core at stage 11
 
 ## Revision history
@@ -70,7 +70,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 ADR-0017 separated identity into two axes and three homes. The **type registry** (`Exxxx`/`SPxxxx` → meaning) is repo-side and public — it is `REGISTRY.md`. The **document store** for type-level and per-instance artifacts is an S3-compatible object store keyed by identifier (decision 15). But the third home — the **instance and integration layer** — was named and then deferred:
 
 > the instance and integration layer — serials, ATECC bindings, the `-QP/-QR/-CP/-CC/-PR` records, and the integration identifier `GBOX_NNNN-DDDDDD-Exxxx-VVVVVV-NNNNNN` that joins the two trees — is production data created at assembly and lives platform-side (IndustryFlow / `production_unit`, ADR-IF-0001), off the public repo. The precise platform host … remain[s] deferred to ADR-IF-0001 and Phase 2.
-> — ADR-0017 (rev 1), Deferred decisions
+> — ADR-0017 (rev 2), Deferred decisions
 
 That deferral is now blocking. Three concrete needs have arrived at once, and none can be met by the type registry (type-level, public, immutable-by-PR) or the object store (flat blobs, one object per identifier) alone:
 
@@ -231,7 +231,7 @@ This ADR carries **decisions and rationale only**. Database engine, ERP product/
 - **ADR-0007** — the serial↔ATECC binding the ERP holds *is* the structured `-PR` provisioning content (decision 5).
 - **ADR-0015** — the gateway's single mutation channel is untouched; the ERP is the versioned profile store, not a deploy path (decision 12).
 - **ADR-0016 (rev 1)** — the ERP is where deployment-specific profile versions (setpoints + model, one artifact) durably live pre-cloud, and it operationalizes the inventory-mobility model as integration history (decisions 6, 8, 13).
-- **ADR-0017 (rev 1)** — this ADR realizes its deferred "Registry and store location" instance/integration host; it holds serials, ATECC bindings, the lifecycle-document index, and the integration identifier, referencing the repo type registry and the object store.
+- **ADR-0017 (rev 2)** — this ADR realizes its deferred "Registry and store location" instance/integration host; it holds serials, ATECC bindings, the lifecycle-document index, and the integration identifier, referencing the repo type registry and the object store.
 - **ADR-0019** — the ERP holds SP stock and placement; the SP spec stays in the type registry and the SKU/price in the BOM (decision 9).
 - **ADR-0020** — lifecycle-staged, pre-cloud-primary / post-cloud-integrated-as-a-layer framing (decision 2); the ERP is asset state, distinct from ADR-0020's operational buffer.
 - **ADR-IF-0001 (planned)** — the `production_unit` entity in the IndustryFlow core that the ERP's foundational `[F]` part aligns to at stage 11; integration is core-plus-layer, not absorption (decisions 2, 3).
@@ -256,7 +256,7 @@ This ADR carries **decisions and rationale only**. Database engine, ERP product/
 - ADR-0007: PKI and secure-element identity — ATECC608 binding, provisioning.
 - ADR-0015: Gateway profile caching and local control loops — `active-profile.json`, single mutation channel.
 - ADR-0016 (rev 1): Empirical survey and state-space modeling — deployment-specific profiles/models, inventory mobility.
-- ADR-0017 (rev 1): Component, document, and instance identification — two-axis model, deferred instance/integration layer host, object store.
+- ADR-0017 (rev 2): Component, document, and instance identification — two-axis model, deferred instance/integration layer host, object store.
 - ADR-0019: Purchased-part (SP) identification — SP spec in registry, SKU/price in BOM.
 - ADR-0020: Gateway persistence model — lifecycle-staged store, pre-cloud/post-cloud roles, IndustryFlow at stage 11.
 - ADR-IF-0001 (planned): IndustryFlow multitenant `production_unit` entity — the stage-11 core the ERP's foundational data aligns to as one tenant.

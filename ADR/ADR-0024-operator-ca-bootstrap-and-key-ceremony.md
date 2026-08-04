@@ -10,7 +10,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Date:** 2026-07-24
 - **Project:** IndustryGrow
 - **Parent:** ADR-0007
-- **Companions:** ADR-0001, ADR-0004 (rev 1), ADR-0015, ADR-0017 (rev 1), ADR-0022
+- **Companions:** ADR-0001, ADR-0004 (rev 1), ADR-0015, ADR-0017 (rev 2), ADR-0022
 - **Amends:** ADR-0020 decision 5 (permitted gateway persistent state — adds the operator trust anchor)
 - **Realizes:** ADR-0007 deferred decisions *"Self-hoster CA bootstrap tooling and documentation"* and *"Operator root-key ceremony"*
 
@@ -393,7 +393,7 @@ exercising what deployments run.
 - ADR-0015: Gateway profile and control loops — the single mutation interface
   (decisions 1, 4) that decision 10 declines to reuse, and decision 4's
   configuration-vs-operational state line that decision 4 here relies on.
-- ADR-0017 (rev 1): Component, document, and instance identification — the serial ↔
+- ADR-0017 (rev 2): Component, document, and instance identification — the serial ↔
   certificate binding and the `-PR` record the issued leaves will be recorded in.
 - ADR-0020: Gateway persistence model — decision 5's enumeration of permitted persistent
   state, which decision 4 adds the trust anchor to.

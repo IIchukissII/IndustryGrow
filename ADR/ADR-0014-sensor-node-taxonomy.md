@@ -3,19 +3,20 @@ SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
-# ADR-0014 (rev 2): Sensor node taxonomy and module decomposition
+# ADR-0014 (rev 3): Sensor node taxonomy and module decomposition
 
-- **ID:** ADR-0014 (rev 2)
+- **ID:** ADR-0014 (rev 3)
 - **Status:** Accepted
-- **Date:** 2026-05-16 (rev 1: 2026-06-14; rev 2: 2026-08-03)
+- **Date:** 2026-05-16 (rev 1: 2026-06-14; rev 2: 2026-08-03; rev 3: 2026-08-04)
 - **Project:** IndustryGrow
 - **Parent:** ADR-0001
-- **Companions:** ADR-0002 (rev 3), ADR-0003, ADR-0016, ADR-0017 (rev 1), ADR-0019
-- **Supersedes:** ADR-0014 (initial draft, 2026-05-16), ADR-0014 (rev 1, 2026-06-14)
+- **Companions:** ADR-0002 (rev 3), ADR-0003, ADR-0016, ADR-0017 (rev 2), ADR-0019
+- **Supersedes:** ADR-0014 (initial draft, 2026-05-16), ADR-0014 (rev 1, 2026-06-14), ADR-0014 (rev 2, 2026-08-03)
 
 ## Revision history
 
 - **rev 1 (2026-06-14)** — Softened the M04-PLANT MLX90640 entry to separate delivered capability (canopy thermal field + on-node summary statistics) from per-leaf temperature for leaf-VPD, now marked deferred pending a canopy-segmentation pipeline and bounded by raw-frame radiometric accuracy. Corrects an over-claim that read leaf-VPD as a current capability and aligns with ADR-0016's state-estimation framing of leaf VPD. No decision changed; telemetry detail unchanged.
+- **rev 3 (2026-08-04)** — Records five measurement-method alternatives, H to L, that were held only in the module specification documents: M06's flow element and leakage method, and M07's vane-readout transport, rotating-vane sensor placement and wind-instrument type. Corrects decision 2's illustrative example, which still cited an airflow sensor rev 2 moved off M01. No decision changed.
 - **rev 2 (2026-08-03)** — Added two sensor module classes: M06-VENTILATION (air transport) and M07-AMBIENT (boundary conditions outside the growing space). Moved the Renesas FS3000 anemometer out of M01-CLIMATE into M06; M01 is now fully board-mounted at canopy with no displaced sensor. Assigned module-ID straps `0b110` and `0b111`, exhausting the 3-bit field, and recorded the widening of that field as an obligation of the next carrier revision rather than a future trigger. Clarified that instances of a shared sensor type across M01, M06 and M07 do not constitute in-zone redundancy under alternative G. Recorded that M07 has indoor and outdoor deployment variants — one PCB design, one strap, one firmware image, differing only in populated BOM and housing — and that the outdoor variant is the first module deployed outside the building envelope, with its consequences for the field bus. Added deferred items for M07's irradiance quantity and range, wind instrumentation, magnetic interference between rotary readout and heading reference, flow-coefficient identification, the ventilation/pollination subsystem boundary, and the fate of decision 3.
 
 ## Context and problem
@@ -25,6 +26,14 @@ ADR-0001 (decision 7) committed IndustryGrow to a data model where the cabinet `
 What ADR-0002 leaves implicit is **how sensors group into modules**: which sensors live on which sensor module PCB, which physical Cyphal node implements which IndustryFlow module, and what the principle is for adding new sensor types. This ADR fills that gap and establishes the taxonomy that future cabinets and community-contributed deployments are expected to follow.
 
 ADR-0001 commits IndustryGrow to scale across deployment sizes — from an apartment cabinet (~1 m³) to a several-hundred-square-meter commercial facility. The taxonomy in this ADR must be the **same architecture at both ends**; only the application of the pattern changes with scale. This is the central architectural concern: a pattern that requires redesign when scaling from cabinet to greenhouse would violate the platform's defining promise.
+
+**rev 3.** The module specifications in `spec/` were restructured to carry requirements only —
+measured quantities, ranges, accuracies, verification — with rationale left to the ADRs. Five
+measurement-method alternatives had been recorded only in those specification documents and so
+had no ADR home: two from M06 (the primary flow element, and the method for obtaining the
+envelope leakage characteristic) and three from M07 (vane-readout transport, sensors on the
+rotating vane, and wind-instrument type). Each is a decision about how a module class obtains
+its quantity, which is this ADR's subject. They are recorded below as alternatives H to L.
 
 A separate concern is the **density of sensors per zone**: within a single zone of relatively uniform environmental conditions, multiplying redundant sensors yields diminishing returns once a single accurate sensor produces dense time-series data — time-series modelling fills in spatial details better than co-located sensor copies. Spatial coverage instead comes from instantiating the same node across **different** zones. The two ideas combine: design for instance multiplication (across zones), reject redundancy multiplication (within a zone).
 
@@ -58,7 +67,7 @@ Zone count is not an architectural decision — it is a deployment-time choice m
 
    - **Location.** Same PCB stocked identically, placed at different points in space (typical at all scales when multiple instances exist).
    - **Quantity.** Same PCB instantiated more or fewer times as zone count scales.
-   - **Populated BOM.** Same PCB design with different chips populated, used to specialize an instance for a specific role (e.g., a climate node in an air-handling zone may populate the airflow sensor and leave the CO₂ sensor unpopulated, or vice versa). Unpopulated chips have unused footprints; firmware probes I²C addresses at boot and publishes only Cyphal subjects for sensors that respond.
+   - **Populated BOM.** Same PCB design with different chips populated, used to specialize an instance for a specific role — an M01-CLIMATE instance in a zone where CO₂ is monitored elsewhere may leave the SCD41 unpopulated; an M07-AMBIENT indoor instance leaves the whole wind group as bare footprints. Unpopulated chips have unused footprints; firmware probes I²C addresses at boot and publishes only Cyphal subjects for sensors that respond. *(rev 3: the previous example cited M01's airflow sensor, which rev 2 moved to M06.)*
 
    The partial-BOM mechanism is the architectural lever that lets the same seven PCB designs cover every conceivable zone-specific specialization. It is most useful at medium and large scale, where different zones have different sensing needs. At apartment scale, instances are typically single per subsystem and fully populated.
 
@@ -181,6 +190,16 @@ Zone count is not an architectural decision — it is a deployment-time choice m
 
 **G. Sensor proliferation for redundancy within a zone.** *Rejected:* once a single accurate sensor produces dense time-series data, modelling outperforms additional spatial sampling within the same zone. Multiplying co-located sensors raises cost, calibration complexity, and BoM footprint without proportional information gain. This rejection concerns duplicate measurement of the *same* quantity in the *same* zone. It does not apply to sensors of a shared type distributed across M01-CLIMATE, M06-VENTILATION and M07-AMBIENT: these measure different quantities at locations that are not interchangeable — air state at the plant, air transport through the duct, and the boundary condition outside the enclosure. Redundancy is justified only for safety failure-mode coverage (and even there, the heating actuator's analog over-temperature trip in the grow volume, paired with the M01 climate sensor, provides cross-subsystem redundancy for grow-volume over-temperature without duplication within either subsystem; M05's on-board TMP117 measures the cabinet — a different volume — and is not part of this redundancy).
 
+**H. A calibrated restriction as M06's primary flow element.** An orifice plate or similar, with flow derived from the pressure drop across it. *Rejected:* it requires inserting a constriction into the air path, which modifies the space being measured. Volumetric flow is instead computed from the duct cross-section and a velocity profile coefficient identified per installation (decision 4). A restriction remains available as an optional commissioning-time reference for identifying that coefficient; it is not part of the operating configuration.
+
+**I. Envelope leakage as a difference of measured flows.** Supply flow minus exhaust flow. *Rejected:* it is a small difference of large numbers — at a few percent measurement error per instrument, the error on the leakage estimate exceeds the estimate. The selected method is a fan pressurization characteristic: flow is stepped across several operating points, envelope-to-ambient pressure is recorded at each, and a power-law characteristic is fitted (ISO 9972 class, applied at cabinet scale). A cabinet fan produces envelope pressures already within the operating range, so the characteristic is identified at the pressures at which it is used.
+
+**J. Parallel Gray code from M07's vane encoder direct to GPIO.** Static levels, no clocking, no timing. *Rejected:* the header contract of decision 5 carries named interfaces, not a count of general-purpose lines, and encoder resolution would propagate into that contract. The selected transport is SPI via a shift register in the vane housing (decision 4), which keeps encoder resolution a property of the purchased instrument. I²C is rejected for the same link: it is open-drain and capacitance-bound.
+
+**K. Sensors mounted on M07's rotating vane.** An air-velocity sensor and a magnetometer on the vane body, kept aligned with the flow by the vane itself. *Rejected:* powering and reading a continuously rotating body requires slip rings or a wireless link with local power generation. A thermal anemometer of the FS3000 class also saturates silently at its range ceiling, which appears in a wind record as calm during a gale; a cup anemometer has no such ceiling.
+
+**L. Ultrasonic or analog-output wind instruments.** *Rejected on cost:* an ultrasonic instrument has no moving parts and yields both wind quantities from one device, at materially higher cost — reconsider if bearing wear proves limiting. Analog outputs (0–5 V, 4–20 mA) are available on industrial models with integrated electronics, also at higher cost. A pulse output fits the hardware pattern already established for S0 energy metering: RC network and Schmitt trigger, timer in external counter mode.
+
 ## Consequences
 
 ### Positive
@@ -227,6 +246,7 @@ Zone count is not an architectural decision — it is a deployment-time choice m
 - Bosch BME688 datasheet.
 - Renesas FS3000 datasheet.
 - Sensirion SDP8xx differential-pressure sensor datasheet.
+- ISO 9972 — determination of air permeability of buildings by fan pressurization; the method class applied at cabinet scale in alternative I.
 - Bosch BMP390 barometric pressure sensor datasheet.
 - ST LSM303AGR accelerometer / magnetometer datasheet.
 - ADR-0016: Empirical survey and state-space modeling — survey-phase instrumentation density and inventory return.

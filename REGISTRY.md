@@ -37,13 +37,13 @@ Conventions:
 | E-number | Designation | Discipline | Notes |
 |----------|-------------|------------|-------|
 | `E0001` | Universal carrier | electrical | One bare design, one assembly — no real variant (ADR-0017 decision 4). Hosts the WeAct core board (`SP0005`). |
-| `E0002` | M01-CLIMATE sensor module | electrical | Module-ID strap `0b001`. Air *state* at the canopy: SHT45, BME688, SCD41 — all board-mounted. Airflow moved to `E0008` (ADR-0014 rev 2). |
+| `E0002` | M01-CLIMATE sensor module | electrical | Module-ID strap `0b001`. Air *state* at the canopy: SHT45, BME688, SCD41 — all board-mounted. Airflow moved to `E0008` (ADR-0014 rev 2). Specification: `spec/M01-CLIMATE-specification.md`. |
 | `E0003` | M02-LIGHT sensor module | electrical | Module-ID strap `0b010`. Photic: AS7341 + UV-A sensor. |
 | `E0004` | M03-ANALYTICS sensor module | electrical (mixed-signal) | Module-ID strap `0b011`. Hydroponic solution: pH (LMP7721 front-end), EC (AD5933), DS18B20, ADuM isolation. |
 | `E0005` | M04-PLANT sensor module | electrical | Module-ID strap `0b100`. Plant-level: MLX90640 thermal imager. |
 | `E0006` | M05-SAFETY / cabinet distribution + monitoring board | electrical | Module-ID strap `0b101`. Sense-only. Single INA226 on the `+12 V` SELV bus, TMP117, reed, leak, on-board input fuse, DIN-meter S0 input (ADR-0018). Node draw measured 0.25 W with carrier. Specification: `spec/M05-SAFETY-specification.md`. |
 | `E0007` | Distribution case — cabinet enclosure + mains distribution wiring | electrical | The physical cabinet that houses the M05-SAFETY board (`E0006`) plus the DIN-rail purchased parts: energy meter (`SP0001`), mains MCB (`SP0002`), `+12 V` SELV supply (`SP0003`), and the gateway Raspberry Pi (`SP0004`). Mains infeed/protection, `+12 V` rail fan-out, and X2 field-wiring termination. Schematic `E0007-000001-S` (QElectroTech); see ADR-0018. |
-| `E0008` | M06-VENTILATION sensor module | electrical | Module-ID strap `0b110`. Air *transport* through the cabinet: FS3000 velocity (moved here from `E0002`), two SDP8xx-class differential-pressure ranges (filter loading, envelope↔ambient), SHT45 for in-stream density compensation. Introduced by ADR-0014 rev 2; not yet laid out. Specification: `spec/M01-M06-air-nodes-specification.md`. |
+| `E0008` | M06-VENTILATION sensor module | electrical | Module-ID strap `0b110`. Air *transport* through the cabinet: FS3000 velocity (moved here from `E0002`), two SDP8xx-class differential-pressure ranges (filter loading, envelope↔ambient), SHT45 for in-stream density compensation. Introduced by ADR-0014 rev 2; not yet laid out. Specification: `spec/M06-VENTILATION-specification.md`. |
 | `E0009` | M07-AMBIENT sensor module | electrical | Module-ID strap `0b111`. Boundary conditions one step outside the growing enclosure: SHT45, BMP390-class barometric, SCD41 reference, irradiance. Two **populated-BOM variants of this one design** (ADR-0014 rev 2): *indoor* — the room around a cabinet, core sensors only; *outdoor* — the weather, adding the deployment-scale wind group (purchased anemometer + Gray-coded vane, LSM303AGR heading / installation-integrity monitor) and outdoor qualification. One PCB layout, one module class, one strap, one firmware image — but **two assembly E-numbers**, since a wind group fitted or omitted at build is a real populate variant (ADR-0017 rev 2 decision 4). `E0009` names the first; the second is assigned at design commit, not pre-reserved. Introduced by ADR-0014 rev 2; not yet laid out. Specification: `spec/M07-AMBIENT-specification.md`. |
 
 > The `E0002`–`E0006` contiguity follows M01→M05 design order, and `E0008`–`E0009`
@@ -173,5 +173,5 @@ only the record: one row per withdrawal, above.
 - ADR-0017 (rev 1) — component / document / instance identification (E-numbers, two-axis model; firmware `F` layer rooted on the carrier E0001, decision 16; withdrawn-version archival, decision 17).
 - ADR-0019 — purchased-part (SP) identification.
 - ADR-0000 — single source of truth; vendor SKU and price live in the BOM, not here.
-- ADR-0014 (rev 2) — sensor-module taxonomy (module-ID straps, M01–M07; the 3-bit strap field is now exhausted).
+- ADR-0014 (rev 3) — sensor-module taxonomy (module-ID straps, M01–M07; the 3-bit strap field is now exhausted).
 - ADR-0018 — cabinet power distribution (E0006 / M05, the S0 meter, the SELV supply).

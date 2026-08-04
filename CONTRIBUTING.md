@@ -121,3 +121,56 @@ By making a contribution to this project, I certify that:
     maintained indefinitely and may be redistributed consistent with
     this project or the open source license(s) involved.
 ```
+
+## Working with the document store
+
+`store/` is a flat object store: every object's key *is* its identifier, and the
+hierarchy lives in the identifier rather than in directories. ADR-0017 owns the
+scheme and the rules; the procedures below are the *how*.
+
+### Withdrawing a design artifact set
+
+A version's artifacts are withdrawn when they are **blocked** (defective, never to
+be fabricated) or **superseded** (replaced, no defect). They are bundled into one
+archive object, `Exxxx-VVVVVV-BLOCKED.zip` or `Exxxx-VVVVVV-SUPERSEDED.zip`
+(ADR-0017 decision 17).
+
+1. **Confirm the withdrawal and its scope.** Decide the status, and which artifacts
+   are actually dead. Scope to the defect: if only the layout is wrong, the
+   schematic, BOM and pin map stay loose as the basis for the relayout. **Close any
+   editor holding the files first** — a KiCad session leaves `~*.lck` locks, and
+   archiving while open risks the editor rewriting them.
+2. **Bundle the withdrawn artifacts.** For a bad layout: the layout source
+   (`.kicad_pcb`) and every generated fabrication output (gerbers, drills,
+   placement `-D-pos`, render `-D.png`). **Exclude** the firmware `-F.*` objects —
+   a different axis, never swept into a board archive — and anything kept loose.
+3. **`git rm` the loose per-file objects** now inside the archive.
+4. **Record it** by adding a row to the blocked/superseded table in `REGISTRY.md`
+   with the scope and the concrete reason.
+5. **Check licensing.** The `.zip` is hardware design content under the `store/**`
+   CERN-OHL-S default in `REUSE.toml` — it does not match the `-F-src.zip` AGPL
+   override, so no `REUSE.toml` change is needed.
+6. **Ship** via branch → pull request; a maintainer accepts.
+
+### Fabrication package contents
+
+A board version's gerber and drill set ships as one object,
+`Exxxx-VVVVVV-D-fab.zip` (ADR-0017 decision 18). Inside it, members are named
+`Exxxx-VVVVVV-<layer>.<ext>` using the KiCad default layer vocabulary:
+
+| Group | Descriptors |
+|-------|-------------|
+| Copper | `F_Cu`, `B_Cu` |
+| Silkscreen | `F_Silkscreen`, `B_Silkscreen` |
+| Soldermask | `F_Mask`, `B_Mask` |
+| Paste | `F_Paste`, `B_Paste` |
+| Outline | `Edge_Cuts` |
+| Drill | `PTH`, `NPTH` (plus any drill map, same scheme) |
+
+The `-D-` infix belongs to the store key and is not repeated inside the package.
+This internal structure is deliberately not enumerated in `REGISTRY.md`, which
+tracks the package by its object key.
+
+The placement `-D-pos.csv`, the render `-D.png`, the pin map `-D-pinmap.md` and the
+BOM `-L.csv` stay loose — each is separately consumed, and this split matches the
+fab house's own upload flow: one gerber zip, a separate CPL, a separate BOM.

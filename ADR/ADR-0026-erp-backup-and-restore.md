@@ -10,7 +10,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Date:** 2026-07-26
 - **Project:** IndustryGrow
 - **Parent:** ADR-0021 (rev 3)
-- **Companions:** ADR-0000, ADR-0004 (rev 1), ADR-0007 (rev 1), ADR-0017 (rev 1), ADR-0020, ADR-0022 (rev 1), ADR-0024, ADR-0025
+- **Companions:** ADR-0000, ADR-0004 (rev 1), ADR-0007 (rev 1), ADR-0017 (rev 2), ADR-0020, ADR-0022 (rev 1), ADR-0024, ADR-0025
 - **Realizes:** ADR-0021's deferred *"backup/restore and operator-private data handling"*
 
 ## Context and problem
@@ -256,5 +256,5 @@ decision 8 makes it a refusal that the operator must clear deliberately.
 - ADR-0004 (rev 1) / ADR-0020: the stateless gateway and its enumerated persistent
   state — why the edge is out of scope.
 - ADR-0023: the type registry in git, and `store_sync` as the mirror's restore path.
-- ADR-0017 (rev 1): decision 15's identifier-as-object-key, which is what makes the
+- ADR-0017 (rev 2): decision 15's identifier-as-object-key, which is what makes the
   index-to-blob verification of decision 9 a simple key existence check.

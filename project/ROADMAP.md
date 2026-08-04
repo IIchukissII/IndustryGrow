@@ -55,7 +55,7 @@ experiments require operator-controllable actuators.
 | 1 | CAN bring-up | — (root) | ADR-0002, ADR-0004, ADR-0017 | Nodes enumerate on the gateway console |
 | 2 | DSDL foundation | 1 | ADR-0005 | Stable wire vocabulary for the whole system |
 | 3 | Sensor MVP | 2 | ADR-0014 | Live telemetry from the first sensor node |
-| 4 | Sensor platform | 3 | ADR-0014 (rev 2), ADR-0018 | Full cabinet telemetry (M01–M05) — **end of Phase 1** |
+| 4 | Sensor platform | 3 | ADR-0014 (rev 3), ADR-0018 | Full cabinet telemetry (M01–M05) — **end of Phase 1** |
 | 5 | Actuator layer | 4 | ADR-0018 (d10 interlock) | Environment can be driven; HW thermal cutoff + watchdog |
 | 6 | Gateway MVP *(branch)* | 5 | ADR-0015 | Cabinet runs without cloud on rule-based loops (provisional) |
 | 7 | Survey mode | 5 | ADR-0016, ADR-0020 | Dense, high-rate data for system identification |
@@ -162,7 +162,7 @@ the gate is passed.
 - ADR-0005 (rev 1) — DSDL foundation *(Accepted)*.
 - ADR-0007 — PKI, hardware identity, provisioning *(Accepted)*.
 - ADR-0009 — profile schema *(deferred; not yet audited)*.
-- ADR-0014 (rev 2) — sensor node taxonomy (M01–M07; only M01–M05 are scheduled here).
+- ADR-0014 (rev 3) — sensor node taxonomy (M01–M07; only M01–M05 are scheduled here).
 - ADR-0015 — gateway profile caching and local control loops.
 - ADR-0016 — empirical survey, state-space modeling, sensor-density lifecycle.
 - ADR-0017 — component / document / instance identification.
