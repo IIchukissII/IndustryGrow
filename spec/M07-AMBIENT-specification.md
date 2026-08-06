@@ -56,9 +56,9 @@ M07 measures the boundary conditions of the growing space. It participates in no
 | Published quantity | Sensor | Sensor range | Expected operating range | Accuracy |
 |--------------------|--------|--------------|--------------------------|----------|
 | Ambient air temperature | U1 SHT45 | −40…+125 °C (`verify`) | Indoor 15…30 °C; outdoor −20…+45 °C (`verify`) | ±0.1 °C (`verify`) |
-| Ambient relative humidity | U1 SHT45 | 0…100 %RH | Indoor 25…65 %RH; outdoor 10…100 %RH incl. condensing | ±1.5 %RH (`verify`) |
+| Ambient relative humidity | U1 SHT45 | 0…100 %RH | Indoor 25…65 %RH; outdoor 10…100 %RH incl. condensing | ±1.0 %RH typ (`verify`) |
 | Absolute barometric pressure | U2 BMP390 class | 300…1250 hPa (`verify`) | 950…1050 hPa | ±0.5 hPa (`verify`) |
-| Ambient CO₂ reference | U3 SCD41 | 400…5000 ppm specified (`verify`) | Outdoor 400…450 ppm; occupied room 450…1200 ppm | ±(50 ppm + 5 %) (`verify`) |
+| Ambient CO₂ reference | U3 SCD41 | 400…5000 ppm specified | Outdoor 400…450 ppm; occupied room 450…1200 ppm | ±(50 ppm + 2.5 % of reading) 400–1000 ppm; ±(50 ppm + 3 % of reading) 1001–2000 ppm |
 | Irradiance | U4 | `verify` — quantity and range unresolved | Full sun ≈ 1000 W/m² vs room light: orders of magnitude apart | `verify` |
 | Wind speed | Purchased anemometer (`SP`), pulse | Per instrument | 0…30 m/s (`verify`) | Per instrument |
 | Wind direction | Purchased vane, Gray-coded absolute encoder | 0…360°, resolution per instrument | — | Encoder resolution |

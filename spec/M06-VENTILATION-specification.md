@@ -45,7 +45,7 @@ discharge — and not relocatable outside it.
 | Differential pressure, filter | U2 SDP8xx class | `verify` | Tens to hundreds of Pa (`verify`) | `verify` |
 | Differential pressure, envelope ↔ ambient | U3 SDP8xx class | `verify` | Single Pa (`verify`) | `verify` |
 | Filter resistance (derived, §6.2) | U1, U2 | — | `verify` | — |
-| In-stream temperature / RH | U4 SHT45 | −40…+125 °C, 0…100 %RH (`verify`) | Cabinet air, near the M01 range | ±0.1 °C, ±1.5 %RH (`verify`) |
+| In-stream temperature / RH | U4 SHT45 | −40…+125 °C, 0…100 %RH (`verify`) | Cabinet air, near the M01 range | ±0.1 °C typ, ±1.0 %RH typ (`verify`) |
 | Air density (derived, §6.1) | U4 + external pressure | — | ≈ 1.2 kg/m³ | — |
 
 Publication rate: seconds, all subjects.
