@@ -227,7 +227,8 @@ d7 or by the profile instance. O-39.
 
 Prior revisions of this document carried ±1.5 %RH for U1, a figure matching no member of the
 SHT4x family — SHT45 is ±1.0 %RH typ, SHT40 and SHT41 are ±1.8 %RH. The error propagated from
-ADR-0014 d4 and inflated the VPD budget by half.
+ADR-0014 d4 and inflated the VPD budget by half. ADR-0014 d4 no longer states an accuracy for
+U1; this document is its only home.
 
 ### 6.2 Temperature bias at U1
 
@@ -249,6 +250,7 @@ This transfer function sets the thermal requirements of §8.
 | Regulation | None. CO₂ runs at ambient, monitored not enriched | ADR-0003 d8 |
 | Range of interest | Ambient baseline 400–450 ppm; depletion during photoperiod; accumulation from respiration at night | ADR-0014 d4 |
 | Output range | 0–40 000 ppm. Specified accuracy applies over 400–5000 ppm only | — |
+| Specified accuracy, by band | ±(50 ppm + 2.5 % of reading) 400–1000 ppm; ±(50 ppm + 3 % of reading) 1001–2000 ppm; ±(40 ppm + 5 % of reading) 2001–5000 ppm. Datasheet default conditions: 25 °C, 50 %RH, 1013 mbar, periodic measurement, 3.3 V. These are the SCD41 figures; the SCD40 carries ±(50 ppm + 5 % of reading) across 400–2000 ppm | — |
 | Depletion below 400 ppm | Reported, outside the specified accuracy band. The device neither saturates nor faults. Closes O-41: no part change is required | §6.3.1 |
 | Pressure compensation | Required. Absolute pressure written to the SCD41 compensation register; uncompensated pressure error propagates ≈ 1:1 into reported concentration | — |
 | Compensation source | **U2, on board.** ±0.6 hPa is 0.06 % of 1013 hPa, ≈ 0.25 ppm at 400 ppm, against U3's ±50 ppm floor — a margin of two orders. Closes O-34 | §6.3.2 |

@@ -76,7 +76,7 @@ Zone count is not an architectural decision — it is a deployment-time choice m
 4. **Sensor module catalog (seven PCB designs):**
 
    **M01-CLIMATE — air environment sensing.**
-   - Sensirion SHT45 — primary T/RH for VPD computation (ADR-0003 decision 7). I²C, ±1.5 %RH, industrial.
+   - Sensirion SHT45 — primary T/RH for VPD computation (ADR-0003 decision 7). I²C, industrial. Accuracy lives in `spec/M01-CLIMATE-specification.md`.
    - Bosch BME688 — gas (VOC) + secondary T/H/P. I²C. Parallel to SHT45 for VOC trend monitoring as early plant-stress signal.
    - Sensirion SCD41 — true CO₂ (photoacoustic NDIR). I²C. ADR-0003 specifies ambient CO₂ without enrichment, but monitoring is required because plants deplete CO₂ in a closed cabinet during photoperiod.
    - Airflow is **not** measured by this module. The Renesas FS3000 anemometer moved to M06-VENTILATION in rev 2: air *state* at the plant and air *transport* through the cabinet are different measured quantities with different valid locations, and a single module cannot hold both without a displaced sensor.
