@@ -5,8 +5,8 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 # M01-CLIMATE — module specification
 
-- **Status:** Schematic captured, not frozen. `E0002-000001` schematic exists; not laid out, not fabricated
-- **Date:** 2026-08-05
+- **Status:** Schematic captured, not frozen. `E0002-000001` schematic exists; not laid out, not fabricated. V6 and V8 not executed
+- **Date:** 2026-08-06
 - **E-number:** `E0002` · module-ID strap `0b001`
 - **Governing ADRs:** ADR-0014 (rev 3), ADR-0002 (rev 3), ADR-0003, ADR-0016, ADR-0017 (rev 2), ADR-0018
 - **Companions:** `M05-SAFETY-specification.md`, `M06-VENTILATION-specification.md`, `M07-AMBIENT-specification.md`
@@ -51,7 +51,7 @@ mol·m⁻²·d⁻¹ at the fruiting canopy.
 | Air VPD (derived, §6.1) | U1 | — | 0.8…1.2 kPa, both photoperiods | ±0.024 kPa at the day band edge |
 | CO₂ | U3 | 0…40 000 ppm output; 400…5000 ppm specified | 400…450 ppm ambient baseline; below 400 ppm on depletion during photoperiod (§6.3); elevated at night | ±(50 ppm + 2.5 % of reading) at 400–1000 ppm |
 | Barometric pressure | U2 | 300…1100 hPa | 950…1050 hPa | ±0.6 hPa (0–65 °C) |
-| Gas resistance (VOC trend) | U2 | kΩ…MΩ (`verify`) | Trend only; no absolute expectation | Uncalibrated |
+| Gas resistance (VOC trend) | U2 | No absolute range is specified by the device datasheet | Trend only; no absolute expectation | Uncalibrated. Resolution 0.08 % typ (0.05 min, 0.11 max); noise 1.5 % RMS |
 | Secondary T / RH | U2 | Per device | As above | ±0.5 °C, ±3 %RH — not used for VPD |
 | Secondary T / RH | U3 | Per device | As above | ±0.8 °C, ±6 %RH at 15–35 °C — not used for VPD; valid only after §10 offset calibration |
 
@@ -120,7 +120,7 @@ and shall not enter the VPD computation.
 
 | # | Package | Body size | Notes |
 |---|---------|-----------|-------|
-| U1 | DFN-4 | 1.5 × 1.5 mm; height per the membrane variant outline, `verify` | Centre die pad shall not be soldered and shall carry no net; no copper under the device except at the pin pads |
+| U1 | DFN-4 | 1.5 ±0.1 × 1.5 ±0.1 × **0.69 ±0.1 mm**, the membrane variant. Sensor opening ⌀0.4 mm | Centre die pad shall not be soldered and shall carry no net; no copper under the device except at the pin pads |
 | U2 | LGA-8 | 3.0 × 3.0 × 0.93 mm | Pin numbering runs clockwise in top view — an inversion-class hazard |
 | U3 | LGA-20 | 10.1 × 10.1 × 6.5 mm | `DNC` pads shall be soldered to floating pads and connected to no net. Pin-1 key is the notched corner of the protection membrane |
 
@@ -135,7 +135,7 @@ Substitution is a BOM line change and requires no board revision.
 
 | # | Alternative | Consequence |
 |---|-------------|-------------|
-| U1 | `SHT45-AD1B-R2` (C5221601) | Loses the PTFE membrane, therefore loses the only physical protection of the sensor opening (M1). Accuracy, response time and address unchanged |
+| U1 | `SHT45-AD1B-R2` (C5221601) | Loses the PTFE membrane, therefore loses the only physical protection of the sensor opening (M1). Accuracy, response time and address unchanged. Package is 0.54 ±0.05 mm tall against 0.69 ±0.1 mm, and the opening widens to ⌀0.6 mm; both are footprint-compatible |
 | U2 | `BME680` | Temperature accuracy ±1.0 °C instead of ±0.5 °C; pressure accuracy degrades; no parallel mode, therefore no hardware-sequenced heater profile (§6.4). Requires the firmware discrimination of §10 |
 
 ### 4.3 Supporting active parts
@@ -307,7 +307,7 @@ residue is O-48.
 |---|---|
 | Node draw on `+12 V` | Not measured. O-35 |
 | Reference figure | M05 node, 0.25 W (254 mW at 12.12 V, 2026-08-02). M01 exceeds it |
-| Burst reflected to `+12 V` | ≈ 60–70 mA (`verify`, 205 mA × 3.3 V / 12 V ÷ η, η = 0.85), plus the losses of §7.4 |
+| Burst reflected to `+12 V` | ≈ 60–70 mA, calculated as 205 mA × 3.3 V / 12 V ÷ η at η = 0.85, plus the losses of §7.4. Measured by V3. O-35 |
 
 ### 7.2 Device currents
 
@@ -392,9 +392,13 @@ limit rather than against the rail. O-44.
 | Function | Covers U5's load-transient response interval, not the 205 mA burst itself |
 | Step current | ΔI = 205 − 18 = 187 mA |
 | Allowed droop | 400 mV, from the 2.8 V rail to U3's 2.4 V minimum |
-| Value | **4.7 µF effective**, the upper characterized point of U5's stability, PSRR and load-transient data. Closes O-3 |
-| Nameplate | **4.7 µF.** Not to be raised: 4.7 µF is also the upper characterized point, so a larger nameplate part leaves U5's characterized range |
-| Specification basis | Effective capacitance at 2.8 V DC bias, not nameplate. Held near 4.7 µF by dielectric, voltage rating and case size rather than by nameplate value; the part is selected against its DC-bias curve at BOM release. O-50 |
+| Stability range | **1.0…4.7 µF effective.** 1.0 µF is U5's minimum output capacitance; 4.7 µF its upper characterized point. Closes O-3 |
+| Nameplate | **4.7 µF.** Not to be raised above U5's characterized range |
+| Specification basis | Effective capacitance at 2.8 V DC bias, not nameplate. Recovered by dielectric, voltage rating and case size |
+| Dielectric | **X7R minimum.** X5R not permitted |
+| Voltage rating | **≥ 25 V** |
+| Case | **0805 minimum** |
+| Acceptance | **≥ 2.0 µF and ≤ 4.7 µF effective** at 2.8 V DC bias over −10…+60 °C, from the vendor DC-bias curve for the ordering part. V8 |
 | Local decoupling | 100 nF at U3's supply pins, in addition and not as a substitute |
 
 The value is taken from the regulator's characterization rather than computed from a droop
@@ -406,18 +410,46 @@ already publishes as a measured curve. Confirm against that curve that the excur
 
 | ID | Requirement | Reference |
 |----|-------------|-----------|
-| T1 | U1 shaded from direct line of sight to the luminaire, air exchange maintained (M1, M5). Canopy irradiance from the profile: DLI 17–20 mol·m⁻²·d⁻¹ over 16 h = 295–347 µmol·m⁻²·s⁻¹ ≈ 65–76 W/m² PAR, before non-PAR emission. Unshaded bias ΔT ≈ α·E/h, of order several kelvin at α ≈ 0.3, h ≈ 10 W·m⁻²·K⁻¹ (`verify`) | Profile, ADR-0003 d11/d12; O-38 |
-| T2 | Bias at U1 from all board-internal sources ≤ **0.1 K**, giving ≤ 1.7 % induced VPD error per §6.2. Proposed value; confirm or replace before layout freeze | O-33 |
+| T1 | U1 shaded from direct line of sight to the luminaire, air exchange maintained (M1, M5). Canopy irradiance from the profile: DLI 17–20 mol·m⁻²·d⁻¹ over 16 h = 295–347 µmol·m⁻²·s⁻¹ ≈ 65–76 W/m² PAR, before non-PAR emission | Profile, ADR-0003 d11/d12 |
+| T2 | Bias at U1 from all board-internal sources ≤ **0.1 K**, giving ≤ 1.7 % induced VPD error per §6.2 | §6.2, §8.1 |
 | T3 | Maximum lateral separation between U1 and every heat source — U2, U3, U4, U5; thermal relief slot between U1 and U2; no shared copper pour | — |
 | T4 | Maximum lateral separation between U1 and U3; no shared copper pour | — |
+| T5 | U1's centre die pad unsoldered, per §4.1 and §11.1 | §8.1 |
 
-On-board heat sources: U2's gas hotplate, cycled to several hundred °C; U3's self-heating
-≈ 1 K typical at the module (`verify`); U4 and U5, each dissipating the rail difference times
-the load current.
+Unshaded bias follows ΔT ≈ α·E/h. α and h are fixed by the enclosure design, not by any part;
+O-38, verified by V2.
+
+On-board heat sources: U2's gas hotplate, cycled to several hundred °C; U4 and U5, each
+dissipating the rail difference times the load current; U3, whose contribution is not separable
+by specification — see §8.1.
 
 Supplying U2 at 1.8 V does not remove heat from the board — it relocates it from U2's die to U4,
 whose position is unconstrained by the diffusion access that M2 imposes on U2. That freedom is
 the benefit; it is realized only if T3 is honoured for U4 and U5 as well.
+
+### 8.1 U1 thermal metrics
+
+Device datasheet values for the **die pad not soldered** configuration required by T5.
+Simulation-based.
+
+| Metric | Heater off | Heater on, 200 mW |
+|--------|-----------|-------------------|
+| R_θJA, junction-to-ambient | 297 K/W | 357 K/W |
+| R_θJC, junction-to-case | 191 K/W | 257 K/W |
+| R_θJB, junction-to-board | 193 K/W | 258 K/W |
+| Ψ_JB, junction-to-board characterization | 191 K/W | 254 K/W |
+| Ψ_JT, junction-to-top characterization | 44 K/W | 112 K/W |
+
+Die pad soldered gives R_θJA 246 K/W. T5 requires it unsoldered.
+
+| Derived | Value |
+|---------|-------|
+| U1 self-heating, measurement | 500 µA max at 3.3 V = 1.65 mW → 0.49 K at steady state. At 1 Hz with an 8.3 ms high-repeatability conversion the duty is 0.83 %, so the sustained contribution is ≈ 0.004 K |
+| U1 self-heating, heater | 200 mW → 59 K at steady state. Bounded by the 10 % maximum duty cycle and the 0.1 / 1 s pulse lengths, not by the rail. Sets the §10 rule that a heater pulse shall not overlap a U3 measurement |
+
+U3 self-heating: no datasheet figure. Its temperature offset compounds measurement mode,
+self-heating of nearby components, ambient temperature and air flow; default 4 °C, recommended
+range 0–20 °C, determined in the finished board at thermal equilibrium. Measured by V7. O-45.
 
 ## 9. Mechanical and enclosure
 
@@ -444,7 +476,7 @@ end to end or M4 is narrowed. Unresolved. O-46.
 | Boot probe addresses | `0x44`, `0x76`, `0x62` |
 | Re-probe interval | ≈ 60 s (ADR-0014 d8) |
 | Publish rule | Responders only; partial populations require no rebuild |
-| U2 variant discrimination | `chip_id` is `0x61` on both BME688 and BME680 and does not distinguish them. `variant_id` at `0xF0` does: `0x01` for BME688, `0x00` for BME680 (`verify`). Required before parallel mode is commanded — the alternative part of §4.2 does not implement it |
+| U2 variant discrimination | `chip_id` is `0x61` on both BME688 and BME680 and does not distinguish them. `variant_id` at `0xF0` does: `0x01` for the fitted BME688, `0x00` for the BME680. Source: the vendor's BME68x Sensor API — `BME68X_REG_VARIANT_ID` `0xF0`, `BME68X_VARIANT_GAS_HIGH` `0x01`, `BME68X_VARIANT_GAS_LOW` `0x00`. Required before parallel mode is commanded — the alternative part of §4.2 does not implement it |
 | Primary T/RH | U1 only |
 | Derived | Air VPD per §6.1 |
 | CO₂ compensation | Pressure from U2 written to U3's compensation register (§6.3). Fallback when U2 is absent undefined — O-48 |
@@ -461,13 +493,14 @@ end to end or M4 is narrowed. Unresolved. O-46.
 
 | ID | Verifies | Method |
 |----|----------|--------|
-| V1 | T2 | Board at steady state against a reference thermometer in the same air; U2 hotplate and U3 measurement cycle each running and idle. Method to be fixed with T2 (O-33) |
+| V1 | T2 | Board at thermal equilibrium in still air, U1's heater disabled throughout. U1's reported temperature recorded in four states: (a) U2 gas scan idle and U3 idle; (b) U2 gas scan running, U3 idle; (c) U2 idle, U3 periodic at 5 s; (d) both running. T2 is met when the spread across the four states is ≤ 0.1 K. The measurement is differential and needs no absolute reference — an offset common to all four states is not T2's subject. A reference thermometer in the same air is used only to confirm the ambient held during the run |
 | V2 | T1 | U1 reading with and without the luminaire at the profile's operating PPFD, against a shaded reference thermometer in the same air |
 | V3 | §7.1, §7.4 | Node draw on `+12 V` measured at first bring-up, average and during a U3 burst. Rail voltages at U2 VDD and U3 VDD measured under load, to detect a regulator out of regulation. Rail ripple against the 30 mV limit of §7.4.1 requires instrumentation the project does not have — O-44 |
 | V4 | §6.1 | U1 against a reference hygrometer at two points of the ADR-0003 d7 band |
 | V5 | §6.3 | CO₂ against M07's reference instance in the same air (O-7), no earlier than five days after assembly and at the 2.8 V rail |
 | V6 | §4.1 footprints | 1:1 paper printout against the physical part, all three devices, including U1's unsoldered die pad and U3's full pad count |
-| V7 | §10 | U3 temperature offset determined and written; U3 T/RH against a reference in the same air before and after |
+| V7 | §10, §8.1 | U3 temperature offset determined and written; U3 T/RH against a reference in the same air before and after. Determined in the finished board at thermal equilibrium in the operating mode used in the application, per the device datasheet. This is also the only source of U3's self-heating contribution (§8.1) |
+| V8 | §7.5 | C8's effective capacitance at 2.8 V DC bias read from the vendor's DC-bias curve for the specific ordering part, against the 2.0–4.7 µF acceptance band. Executed at BOM release, before the `L` document is issued |
 
 ### 11.1 Assembly constraints
 
@@ -494,13 +527,13 @@ O-8, O-10 and O-11 are M06's; O-12 to O-24 are M07's; O-25 to O-31 are M05's.
 | O-5 | FRC interval, and the operational trigger for performing one. Procedure and constraints now fixed (§6.3.1) | CO₂ validity |
 | O-7 | Cross-calibration procedure, M01 CO₂ against M07 reference | Survey method, ADR-0016 identification |
 | O-9 | Fate of ADR-0014 d3, the ≤ 30 cm short-lead provision | ADR-0014 hygiene |
-| O-32 | Remaining `verify` values: U2 gas-resistance range, U1 membrane-variant height, U3 self-heating, BME680 `variant_id`, T1's radiative constants | `L` release |
-| O-33 | T2 value and V1 method not confirmed | Layout freeze |
+| ~~O-32~~ | ~~Remaining `verify` values~~ — closed 2026-08-06. Height and `variant_id` answered in §4.1 and §10. Gas-resistance range is not specified by the device; §3 carries resolution and noise instead. U3 self-heating has no datasheet figure — measured, V7 and O-45. T1's α and h are enclosure properties — O-38 | — |
+| ~~O-33~~ | ~~T2 value and V1 method not confirmed~~ — closed 2026-08-06: T2 fixed at 0.1 K per §6.2; V1 fixed as a four-state differential measurement | — |
 | ~~O-34~~ | ~~Pressure source for CO₂ compensation: U2 or M07~~ — closed 2026-08-05 by §6.3 in favour of U2. Unpopulated-U2 residue moved to O-48 | — |
 | O-35 | Node power unmeasured; M05's O-31 node-count ceilings assume M05-class nodes | Distribution-board sizing, O-31 |
 | ~~O-36~~ | ~~ADR-0014 d2's partial-BOM example cites M01's airflow sensor, moved to M06 in rev 2~~ — closed 2026-08-04 by ADR-0014 rev 3 | — |
 | O-37 | Boot probe does not distinguish *not fitted*, *failed* and *unpowered* | Gateway fault handling |
-| O-38 | T1 has no confirmed shading design or measured bias | Enclosure design |
+| O-38 | T1 fixed as a requirement in §8. Residue: no enclosure design realizes the shading, α and h are unfixed (from O-32), and V2 is not executed | Enclosure design, V2 |
 | O-39 | Neither ADR-0003 d7 nor the profile instance states a VPD uncertainty limit; §6.1 gives ±1.3…±2.9 % in band, ±6.7 % on humid excursion | Profile validity, U1 part grade |
 | O-40 | ADR-0003 d7 does not state air VPD or leaf VPD | Profile interpretation |
 | ~~O-41~~ | ~~SCD41's specified range starts at 400 ppm~~ — closed 2026-08-05 by §6.3: depletion is reported outside the specified accuracy band, no part change required | — |
@@ -512,17 +545,17 @@ O-8, O-10 and O-11 are M06's; O-12 to O-24 are M07's; O-25 to O-31 are M05's.
 | O-47 | Condensation on excursions places U2 and U3 outside their stated operating conditions. Post-excursion validity and recovery undefined | Excursion handling, data validity |
 | O-48 | Pressure source for CO₂ compensation when U2 is not populated | Firmware, partial populations |
 | O-49 | Whether the node publishes U2's 10-step resistance vector or a reduction of it | DSDL, ADR-0005 |
-| O-50 | C8's dielectric, voltage rating and case are unfixed; §7.5 requires 4.7 µF *effective* at 2.8 V bias from a 4.7 µF nameplate part, which the DC-bias curve must be checked to deliver | `L` release, §7.5 |
+| ~~O-50~~ | ~~C8's dielectric, voltage rating and case are unfixed~~ — closed 2026-08-06 by §7.5: X7R minimum, ≥ 25 V, 0805 minimum, acceptance 2.0–4.7 µF effective at 2.8 V bias, confirmed by V8 | — |
 
 ## 13. Maturity
 
-**Schematic captured, not frozen.**
+**Schematic captured, not frozen.** No `verify` value remains. V6 and V8 hold the rung.
 
 | Rung | Content | Reached when |
 |------|---------|--------------|
 | **Pre-schematic** | Complement and requirements fixed; values estimated or `verify` | — |
 | **Schematic captured** ← here | Parts fixed to ordering part numbers; schematic exists; component values determined | `store/E0002-000001.kicad_sch` exists; O-3, O-34, O-41 closed |
-| **Schematic-frozen** | Remaining `verify` resolved, footprints checked against physical parts. `L` releases here | O-32, O-50 closed; O-33, O-38 fixed as requirements; V6 executed |
+| **Schematic-frozen** | Remaining `verify` resolved, footprints checked against physical parts. `L` releases here | O-32, O-50 closed ✔; O-33 closed ✔; O-38 fixed as a requirement ✔; **V6 not executed**; **V8 not executed** |
 | **As-built** | Estimates replaced by measured values; verification §11 executed | `E0002` fabricated and bench-verified; O-35 measured |
 
 `M05-SAFETY-specification.md` is the as-built form of this document class. The transition is an
