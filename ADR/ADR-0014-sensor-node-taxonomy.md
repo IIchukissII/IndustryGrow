@@ -46,7 +46,14 @@ next carrier revision. This revision discharges it, and not by adding a fourth s
 - A parallel strap spends header pins on a value fixed at manufacture.
 
 The carrier is `E0001-000100`. It does not supersede `E0001-000002`, which stays in service with
-its own firmware.
+its own firmware. The strap transport is kept for a reason of installed base rather than of
+design: five carriers with strap pins exist, `E0006` is built and bench-verified, and `E0002`'s
+schematic is captured. Changing them buys nothing, because every sensor class defined today fits
+the strap's `0x01`–`0x07` range. Actuator classes do not — `0x80` is outside it — so the wider
+transport is required for actuators and optional for sensors.
+
+The strap transport is therefore **transitional**. It is expected to be superseded once Phase 1
+bring-up is complete; this revision does not schedule that.
 
 A separate concern is the **density of sensors per zone**: within a single zone of relatively uniform environmental conditions, multiplying redundant sensors yields diminishing returns once a single accurate sensor produces dense time-series data — time-series modelling fills in spatial details better than co-located sensor copies. Spatial coverage instead comes from instantiating the same node across **different** zones. The two ideas combine: design for instance multiplication (across zones), reject redundancy multiplication (within a zone).
 
@@ -268,7 +275,7 @@ Zone count is not an architectural decision — it is a deployment-time choice m
 - The analytics module (M03) remains a complex mixed-signal analog design. Reserve dedicated engineering effort before schematic capture.
 - At medium and large scales, instance counts and gateway-configuration management grow proportional to zone count. This makes gateway-side configuration tooling (zone definition, role assignment, validation) a real engineering surface — touches future deployment-tooling work.
 - Firmware sensor-presence probing must be robust against transient I²C errors. Periodic re-probe handles this but is an explicit firmware requirement.
-- *(rev 4)* **Two concurrent carrier revisions.** `E0001-000002` stays in service, so the project maintains two carrier designs, two firmware images and two identification transports at once. Where the pin map reallocates the strap pins, a mismatched pairing is an electrical fault one way and a misidentification the other (decision 6) — neither recoverable in software. Every built node must record its carrier revision, and flashing becomes a step that can be got wrong. Ends when `E0001-000002` is retired, which this ADR does not schedule.
+- *(rev 4)* **Two concurrent carrier revisions.** `E0001-000002` stays in service, so the project maintains two carrier designs, two firmware images and two identification transports at once. Where the pin map reallocates the strap pins, a mismatched pairing is an electrical fault one way and a misidentification the other (decision 6) — neither recoverable in software. Every built node must record its carrier revision, and flashing becomes a step that can be got wrong. The strap transport is transitional and expected to be superseded after Phase 1 bring-up; this ADR does not schedule it.
 - *(rev 4)* Where the EEPROM transport is used, identity depends on the I²C bus; a bus fault takes it with it, where a strap pattern survived one. An unreadable ID is *unidentified* — never a guessed class.
 - *(rev 4)* One EEPROM on modules that adopt it, against the strap resistors it replaces.
 - On-node aggregation in M04-PLANT is a non-trivial firmware concern. Memory budget on STM32F405 is comfortable (192 KB RAM vs 1.5 KB per frame), but firmware design needs care.
