@@ -3,17 +3,19 @@ SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
-# ADR-0014 (rev 3): Sensor node taxonomy and module decomposition
+# ADR-0014 (rev 4): Sensor node taxonomy and module decomposition
 
-- **ID:** ADR-0014 (rev 3)
+- **ID:** ADR-0014 (rev 4)
 - **Status:** Accepted
-- **Date:** 2026-05-16 (rev 1: 2026-06-14; rev 2: 2026-08-03; rev 3: 2026-08-04)
+- **Date:** 2026-05-16 (rev 1: 2026-06-14; rev 2: 2026-08-03; rev 3: 2026-08-04; rev 4: 2026-08-07)
 - **Project:** IndustryGrow
 - **Parent:** ADR-0001
 - **Companions:** ADR-0002 (rev 3), ADR-0003, ADR-0016, ADR-0017 (rev 2), ADR-0019
-- **Supersedes:** ADR-0014 (initial draft, 2026-05-16), ADR-0014 (rev 1, 2026-06-14), ADR-0014 (rev 2, 2026-08-03)
+- **Supersedes:** ADR-0014 (initial draft, 2026-05-16), ADR-0014 (rev 1, 2026-06-14), ADR-0014 (rev 2, 2026-08-03), ADR-0014 (rev 3, 2026-08-04)
 
 ## Revision history
+
+- **rev 4 (2026-08-07)** — Widens the module ID to **8 bits** and separates the identifier from its transport, discharging the obligation rev 2 placed on the next carrier revision. Decision 6 fixes the encoding, the reserved address block and the sensor/actuator ranges; it deliberately does not fix one transport for every module — the 3-bit strap remains valid where 3 bits suffice, and an I²C EEPROM carries the full range from carrier `E0001-000100`. Decision 5 gains the per-carrier-revision form. `E0001-000100` **does not supersede `E0001-000002`**; both stay in service, each with its own firmware image. Records alternatives M to P — widening the parallel field, an I²C port expander, an SPI shift register, a resistor ladder. Settles the deferred actuator ID-space question in favour of a namespace rather than separate pins. Existing M01–M07 identifiers keep their numeric values.
 
 - **rev 1 (2026-06-14)** — Softened the M04-PLANT MLX90640 entry to separate delivered capability (canopy thermal field + on-node summary statistics) from per-leaf temperature for leaf-VPD, now marked deferred pending a canopy-segmentation pipeline and bounded by raw-frame radiometric accuracy. Corrects an over-claim that read leaf-VPD as a current capability and aligns with ADR-0016's state-estimation framing of leaf VPD. No decision changed; telemetry detail unchanged.
 - **rev 3 (2026-08-04)** — Records five measurement-method alternatives, H to L, that were held only in the module specification documents: M06's flow element and leakage method, and M07's vane-readout transport, rotating-vane sensor placement and wind-instrument type. Corrects decision 2's illustrative example, which still cited an airflow sensor rev 2 moved off M01. No decision changed.
@@ -34,6 +36,24 @@ had no ADR home: two from M06 (the primary flow element, and the method for obta
 envelope leakage characteristic) and three from M07 (vane-readout transport, sensors on the
 rotating vane, and wind-instrument type). Each is a decision about how a module class obtains
 its quantity, which is this ADR's subject. They are recorded below as alternatives H to L.
+
+**rev 4.** Rev 2 exhausted the 3-bit module-ID field and made widening it an obligation of the
+next carrier revision. This revision discharges it, and not by adding a fourth strap pin:
+
+- Four pins is one growth step from exhaustion again.
+- The actuator ID space has no identifiers left, putting the first actuator node on the critical
+  path.
+- A parallel strap spends header pins on a value fixed at manufacture.
+
+The carrier is `E0001-000100`. It does not supersede `E0001-000002`, which stays in service with
+its own firmware. The strap transport is kept for a reason of installed base rather than of
+design: five carriers with strap pins exist, `E0006` is built and bench-verified, and `E0002`'s
+schematic is captured. Changing them buys nothing, because every sensor class defined today fits
+the strap's `0x01`–`0x07` range. Actuator classes do not — `0x80` is outside it — so the wider
+transport is required for actuators and optional for sensors.
+
+The strap transport is therefore **transitional**. It is expected to be superseded once Phase 1
+bring-up is complete; this revision does not schedule that.
 
 A separate concern is the **density of sensors per zone**: within a single zone of relatively uniform environmental conditions, multiplying redundant sensors yields diminishing returns once a single accurate sensor produces dense time-series data — time-series modelling fills in spatial details better than co-located sensor copies. Spatial coverage instead comes from instantiating the same node across **different** zones. The two ideas combine: design for instance multiplication (across zones), reject redundancy multiplication (within a zone).
 
@@ -140,23 +160,53 @@ Zone count is not an architectural decision — it is a deployment-time choice m
    - 2× ADC (12-bit, from STM32 internal)
    - 1-Wire bus
    - 4× PWM (used by actuator modules; sensor modules typically leave unused)
-   - 3× module-ID strap pins (tied to GND/VCC on each module; firmware reads the strap pattern to identify which module class is plugged in — 8 possible IDs)
+   - Module identification, by carrier revision *(rev 4)*:
+     - On `E0001-000002` and earlier: **3× module-ID strap pins**, tied to GND/VCC on each module; firmware reads the strap pattern — 8 possible IDs.
+     - On `E0001-000100` and later: identity may instead be read over the I²C bus already listed, from an EEPROM on the module (decision 6), costing no dedicated pin. Whether the three strap pins are then retained, or reallocated to other functions, is fixed by the `E0001-000100` pin map, not here.
 
-6. **Module-ID assignments:**
-   - `0b000` — reserved (default / unplugged / unknown)
-   - `0b001` — M01-CLIMATE
-   - `0b010` — M02-LIGHT
-   - `0b011` — M03-ANALYTICS
-   - `0b100` — M04-PLANT
-   - `0b101` — M05-SAFETY
-   - `0b110` — M06-VENTILATION
-   - `0b111` — M07-AMBIENT
+6. **Module identification — an 8-bit class ID, held on the module and read over I²C** *(rev 4)*.
 
-   Actuator modules use a separate ID space allocated in a future actuator-taxonomy ADR.
+   **The identifier and its transport are separate.** This decision fixes the identifier — an 8-bit class ID with the encoding below. It does **not** fix one transport for every module.
 
-   **The 3-bit module-ID field is exhausted.** All eight identifiers are assigned. The field is not widened in this revision: five carrier boards already exist with three strap pins, no eighth sensor class is defined, and widening the field changes the carrier↔module header contract in decision 5. It is instead recorded as an **obligation of the next carrier revision**: the module-ID field is widened to four strap pins, giving sixteen identifiers, whenever the carrier is next revised for any reason. No eighth sensor module class may be defined before that revision ships.
+   | Transport | Width | Available on |
+   |-----------|-------|--------------|
+   | Module-ID straps, decision 5 | 3 bits, values `0x01`–`0x07` only | `E0001-000002` and earlier |
+   | Serial EEPROM, 24Cxx class, byte 0, at a reserved I²C address | 8 bits, full range | `E0001-000100` and later |
 
-   **Module-ID identifies the class (PCB design), not the instance.** Multiple instances of the same class in different zones share the strap pattern; they are distinguished by Cyphal Node-ID and by gateway-resolved tagging (see decision 7).
+   A module uses whichever its carrier revision provides. Where 3 bits suffice — every sensor class defined today fits in `0x01`–`0x07` — a module may continue to identify by strap. Actuator classes cannot: their range begins at `0x80`. Which transport each module family adopts is settled per module and per carrier pin map, not here.
+
+   Addresses `0x50`–`0x57` are **reserved project-wide** for the EEPROM transport; no sensor on any module may occupy them, whether or not that module uses it. The ID is programmed at module manufacture and is not writable in the field.
+
+   **Encoding:**
+
+   | Value | Meaning |
+   |-------|---------|
+   | `0x00` | Reserved — unknown / unprogrammed-to-zero |
+   | `0x01`–`0x7F` | Sensor module classes |
+   | `0x80`–`0xFE` | Actuator module classes |
+   | `0xFF` | **Not a valid class.** An erased EEPROM reads `0xFF`; firmware shall treat it as *unidentified*, never as a class |
+
+   **Sensor class assignments** — unchanged in value from rev 3, widened in field:
+
+   | ID | Class | | ID | Class |
+   |----|-------|-|----|-------|
+   | `0x01` | M01-CLIMATE | | `0x05` | M05-SAFETY |
+   | `0x02` | M02-LIGHT | | `0x06` | M06-VENTILATION |
+   | `0x03` | M03-ANALYTICS | | `0x07` | M07-AMBIENT |
+   | `0x04` | M04-PLANT | | | |
+
+   **Actuator modules take a range in this same space, not separate pins** — `0x80`–`0xFE`, allocated by the actuator-taxonomy ADR. This settles the question rev 2 left open and removes the carrier revision from the critical path of the first actuator node.
+
+   **Carrier compatibility.** `E0001-000100` does not supersede `E0001-000002`; both stay in service. Where the pin map reallocates the strap pins, the two revisions become incompatible in both directions, because on a strapped module those pins are hard-tied to `3V3` or `GND`:
+
+   | Pairing | Failure |
+   |---------|---------|
+   | New firmware on old carrier | A reallocated pin driven as an output shorts to a rail through a strapped module |
+   | Old firmware on new carrier | Strap read returns whatever the reallocated pins carry |
+
+   Neither is a degraded mode to be handled in software. A firmware image is built for one carrier revision and named for it (ADR-0017 d16). Whether the pins are in fact reallocated, and how far the two revisions can be kept interchangeable, is a pin-map decision — this ADR requires no fallback between transports and forbids none.
+
+   **Module ID identifies the class (PCB design), not the instance.** Multiple instances of the same class in different zones carry the same ID; they are distinguished by Cyphal Node-ID and by gateway-resolved tagging (decision 7). Per-instance identity is the serial and the ATECC608 binding of ADR-0017 decision 8, which this EEPROM does not duplicate and shall not carry.
 
 7. **Per-instance role and zone tagging at the gateway.** Each Cyphal Node-ID is mapped at the gateway configuration to a `(module_class, node_role, zone)` triple. Examples:
    - Apartment cabinet: `(M01-CLIMATE, canopy, zone-0)`, `(M05-SAFETY, default, zone-0)` — every node in zone-0, default roles.
@@ -200,6 +250,14 @@ Zone count is not an architectural decision — it is a deployment-time choice m
 
 **L. Ultrasonic or analog-output wind instruments.** *Rejected on cost:* an ultrasonic instrument has no moving parts and yields both wind quantities from one device, at materially higher cost — reconsider if bearing wear proves limiting. Analog outputs (0–5 V, 4–20 mA) are available on industrial models with integrated electronics, also at higher cost. A pulse output fits the hardware pattern already established for S0 energy metering: RC network and Schmitt trigger, timer in external counter mode.
 
+**M. Widen the parallel strap field to four or eight pins.** The rev 2 obligation named four pins. *Rejected:* four is one growth step from exhaustion across sensor and actuator classes, so the header contract changes a third time. Eight ends it but spends eight header pins on a value fixed at manufacture, and puts eight strap resistors on every module.
+
+**N. I²C port expander with strap resistors.** PCF8574-class, eight strapped inputs, read over the existing bus. *Rejected:* costs no header pin, but keeps identity as wiring and adds a part — expander plus up to eight resistors, against one EEPROM. Its own address sits in the same reserved block, so the address cost is identical.
+
+**O. SPI shift register.** 74HC165-class, precedent set by M07's vane readout in decision 4. *Rejected:* spends one of the header's two chip selects, which M03 and M07 already contend for. The precedent does not transfer — M07's register serialises a continuously changing value; a module class never changes.
+
+**P. Resistor ladder into an ADC pin.** *Rejected:* cheapest in parts and pins, but 256 codes demand ratiometric accuracy across tolerance, temperature and ADC error that a divider cannot deliver. Workable at 8–16 codes, which is the field size this revision exists to escape.
+
 ## Consequences
 
 ### Positive
@@ -207,7 +265,8 @@ Zone count is not an architectural decision — it is a deployment-time choice m
 - One architecture, all scales. Apartment cabinet and 200 m² greenhouse use identical PCB designs, firmware, and DSDL — they differ only in instance count and gateway-side tagging.
 - Seven sensor module designs cover the full project. Instance multiplication is the only scaling mechanism; no new node-classes are introduced as deployments grow.
 - Each module is independently replaceable. Fault in one functional subsystem does not propagate to others.
-- Module-ID straps make firmware class-identification automatic at boot. Gateway role-and-zone tagging distinguishes instances.
+- Module identification is automatic at boot and needs no gateway configuration. Gateway role-and-zone tagging distinguishes instances.
+- *(rev 4)* Identity as data rather than as wiring: a module class is programmed, not laid out, and the field widens again without touching hardware. The 8-bit space ends the field-exhaustion problem for both sensor and actuator classes, and returns three pins to the header's general-purpose pool.
 - Partial-BOM mechanism gives operators a finely-graded specialization tool without requiring new PCB designs.
 - Time-series + model principle keeps sensor count proportional to operational need, not to area to be covered.
 
@@ -216,7 +275,9 @@ Zone count is not an architectural decision — it is a deployment-time choice m
 - The analytics module (M03) remains a complex mixed-signal analog design. Reserve dedicated engineering effort before schematic capture.
 - At medium and large scales, instance counts and gateway-configuration management grow proportional to zone count. This makes gateway-side configuration tooling (zone definition, role assignment, validation) a real engineering surface — touches future deployment-tooling work.
 - Firmware sensor-presence probing must be robust against transient I²C errors. Periodic re-probe handles this but is an explicit firmware requirement.
-- Module-ID space is bounded (3 strap pins = 8 IDs). Extending to 4 pins is straightforward when needed.
+- *(rev 4)* **Two concurrent carrier revisions.** `E0001-000002` stays in service, so the project maintains two carrier designs, two firmware images and two identification transports at once. Where the pin map reallocates the strap pins, a mismatched pairing is an electrical fault one way and a misidentification the other (decision 6) — neither recoverable in software. Every built node must record its carrier revision, and flashing becomes a step that can be got wrong. Which instance is paired with which is the ERP's integration record (ADR-0021 d6), not a new mechanism. The strap transport is transitional and expected to be superseded after Phase 1 bring-up; this ADR does not schedule it.
+- *(rev 4)* Where the EEPROM transport is used, identity depends on the I²C bus; a bus fault takes it with it, where a strap pattern survived one. An unreadable ID is *unidentified* — never a guessed class.
+- *(rev 4)* One EEPROM on modules that adopt it, against the strap resistors it replaces.
 - On-node aggregation in M04-PLANT is a non-trivial firmware concern. Memory budget on STM32F405 is comfortable (192 KB RAM vs 1.5 KB per frame), but firmware design needs care.
 
 ## Deferred decisions
@@ -231,11 +292,13 @@ Zone count is not an architectural decision — it is a deployment-time choice m
 - **M07 barometric duplication across variants.** Barometric pressure reads effectively the same in a room and outside it, so a deployment carrying both M07 variants measures it twice. Which instance carries the sensor, whether the other leaves the footprint unpopulated, and which instance the deployment profile names as the pressure source for M06's density computation and every SCD41's pressure compensation.
 - **Magnetic compatibility between the vane encoder and the heading reference.** Where the purchased encoder reads its tracks magnetically, its field must not reach M07's magnetometer. Mast-to-base separation is expected to settle this, but it is a check at model selection rather than an assumption.
 - **Magnetic distortion calibration for M07.** Whether hard-iron and soft-iron coefficients are established on site with the assembly mast-mounted, or beforehand at the risk of the installed environment invalidating them. The coefficients belong to the deployment, not to the module design.
-- **1-Wire is absent from the header contract.** Decision 5 names the interfaces a sensor module may use, and 1-Wire is not among them, yet DS18B20-class parts are intended for systematic use. Whether the header gains a dedicated line, or 1-Wire is assigned to a general-purpose pin by convention, is unresolved and is properly settled at the next carrier revision alongside the module-ID field widening.
+- **1-Wire is absent from the header contract.** Decision 5 names the interfaces a sensor module may use, and 1-Wire is not among them, yet DS18B20-class parts are intended for systematic use. Whether the header gains a dedicated line, or 1-Wire is assigned to a general-purpose pin by convention, is unresolved. *(rev 4: still unresolved, but no longer blocked — the three pins released by decision 6 are the obvious source, and the allocation belongs to the `E0001-000100` pin map rather than to this ADR.)*
 - **M06 velocity profile coefficient.** How the coefficient relating point velocity to mean velocity is identified at commissioning without permanently altering the air path being measured. Flow error propagates linearly into every transport quantity derived from M06.
 - **Ventilation / pollination subsystem boundary.** Which fans belong to which functional subsystem, and therefore which `node_role` values M06 takes. The original FS3000 entry justified airflow sensing as pollination-fan verification, while M06 is framed around air transport; the boundary is now load-bearing for role assignment.
 - **Fate of decision 3.** The short-lead mechanism was motivated by M01's displaced FS3000, which rev 2 removed. Whether decision 3 remains as a general provision or is retired is unresolved; M05's door and leak leads are GPIO and ADC, not I²C, and are unaffected either way.
-- **Whether the actuator "separate ID space" is separate *pins* or a separate *namespace on the same pins*.** Decision 6 says actuator modules use a separate ID space; decision 9 says they follow the same carrier + module pattern; ADR-0002 rev 3 decision 3 lists exactly one header on the carrier — the sensor-module header — and decision 5 there speaks of the type being read via "sensor-module strap pins". If actuator modules plug into that same header and are identified by those same three straps, then this revision's exhaustion of the field removes every identifier an actuator module could take, and the carrier revision becomes a hard prerequisite for the **first actuator node** — ROADMAP stage 5, the Phase 1 → Phase 2 boundary and a step on the critical path to first cultivation. If instead actuators carry their own physically separate strap field, that field does not exist in any accepted decision and must be added to the carrier description. **This revision does not settle it, and the exhaustion statement above should not be read as having settled it.** It is properly resolved together with the field widening, and before the actuator-taxonomy ADR is written rather than by it.
+- ~~**Whether the actuator "separate ID space" is separate *pins* or a separate *namespace on the same pins*.**~~ *(Settled by rev 4 decision 6: a namespace, `0x80`–`0xFE`, in the same 8-bit field read by the same mechanism. The carrier revision is no longer a prerequisite for the first actuator node on `E0001-000100`. The original text is kept below for the reasoning it records.)*
+
+  **Original (rev 2):** Decision 6 says actuator modules use a separate ID space; decision 9 says they follow the same carrier + module pattern; ADR-0002 rev 3 decision 3 lists exactly one header on the carrier — the sensor-module header — and decision 5 there speaks of the type being read via "sensor-module strap pins". If actuator modules plug into that same header and are identified by those same three straps, then this revision's exhaustion of the field removes every identifier an actuator module could take, and the carrier revision becomes a hard prerequisite for the **first actuator node** — ROADMAP stage 5, the Phase 1 → Phase 2 boundary and a step on the critical path to first cultivation. If instead actuators carry their own physically separate strap field, that field does not exist in any accepted decision and must be added to the carrier description. **This revision does not settle it, and the exhaustion statement above should not be read as having settled it.** It is properly resolved together with the field widening, and before the actuator-taxonomy ADR is written rather than by it.
 
 ## References
 
