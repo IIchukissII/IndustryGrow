@@ -5283,10 +5283,10 @@
 		(end 170.7896 114.9604)
 		(stroke
 			(width 0.2)
-			(type default)
+			(type solid)
 		)
 		(fill no)
-		(layer "F.Cu")
+		(layer "B.SilkS")
 		(uuid "dcbbd0ea-4781-442f-9fc5-e1349eb30ecc")
 	)
 	(gr_rect
