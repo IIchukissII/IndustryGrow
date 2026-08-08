@@ -5,7 +5,6 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 # M01-CLIMATE — module specification
 
-- **Status:** Schematic captured, not frozen. `E0002-000001` schematic exists; not laid out, not fabricated. V6 and V8 not executed
 - **Date:** 2026-08-06
 - **E-number:** `E0002` · module-ID strap `0b001`
 - **Governing ADRs:** ADR-0014 (rev 3), ADR-0002 (rev 3), ADR-0003, ADR-0016, ADR-0017 (rev 2), ADR-0018
