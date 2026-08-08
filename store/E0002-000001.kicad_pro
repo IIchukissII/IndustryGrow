@@ -70,7 +70,9 @@
         }
       },
       "diff_pair_dimensions": [],
-      "drc_exclusions": [],
+      "drc_exclusions": [
+        "items_not_allowed|125526800|115976400|1f6198ad-ea45-40ab-af85-4bfdf58571f0|00000000-0000-0000-0000-000000000000"
+      ],
       "meta": {
         "version": 2
       },
