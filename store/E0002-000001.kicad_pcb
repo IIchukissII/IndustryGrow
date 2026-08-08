@@ -5591,6 +5591,14 @@
 		(net "STRAP_1")
 		(uuid "a5fd0296-e3fd-4824-9c77-2c30d492ce7b")
 	)
+	(segment
+		(start 173.7804 88.2376)
+		(end 173.7804 90.7776)
+		(width 0.2)
+		(layer "F.Cu")
+		(net "STRAP_1")
+		(uuid "e2fbaf08-be31-4568-a936-fae38472c73a")
+	)
 	(via
 		(at 167.9956 82.4484)
 		(size 0.6)
