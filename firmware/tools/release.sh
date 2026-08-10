@@ -4,7 +4,7 @@
 #
 # Build the node image and publish the release artifacts into store/ under the
 # ADR-0017 (rev 1) 'F' (Firmware) document layer, rooted on the carrier E0001
-# (one shared codebase across node types; decision 16):
+# (one shared codebase AND one image across node types; decision 16):
 #   store/E0001-000001-F.hex       built image
 #   store/E0001-000001-F-src.zip   source snapshot (firmware/ tree at HEAD)
 #
@@ -24,7 +24,8 @@ cmake -S firmware -B firmware/build \
       -DCMAKE_BUILD_TYPE=Release
 cmake --build firmware/build
 
-cp "firmware/build/m05.hex" "store/${ART}.hex"
+# One image, every personality; the strap selects at runtime (ADR-0017 d16).
+cp "firmware/build/igrow.hex" "store/${ART}.hex"
 
 # Source snapshot of the firmware/ tree at HEAD (tracked files only; submodules
 # are gitlinks and excluded by design — bootstrap.sh re-fetches them).

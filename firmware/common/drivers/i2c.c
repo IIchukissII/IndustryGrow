@@ -78,6 +78,145 @@ bool i2c_probe(uint8_t addr7)
     return true;
 }
 
+/* Address + payload, leaving the bus WITHOUT a STOP so the caller can either
+ * close it or turn it round with a repeated START. */
+static int send(uint8_t addr7, const uint8_t *buf, size_t len)
+{
+    if (start(addr7, false) < 0) {
+        return -1;
+    }
+    (void)I2C1->SR2; /* clear ADDR */
+    for (size_t i = 0; i < len; i++) {
+        if (wait_set(&I2C1->SR1, I2C_SR1_TXE) < 0) {
+            return -2;
+        }
+        I2C1->DR = buf[i];
+    }
+    if (wait_set(&I2C1->SR1, I2C_SR1_BTF) < 0) {
+        return -3;
+    }
+    return 0;
+}
+
+/* Master reception, RM0090 27.3.3. The three length cases are genuinely
+ * different sequences on this peripheral, not an optimization: the NACK for
+ * the final byte has to be programmed before that byte is clocked in, and how
+ * far ahead of it that is depends on how many bytes are still in flight. */
+static int recv(uint8_t addr7, uint8_t *buf, size_t len)
+{
+    if (len == 0u) {
+        return -1;
+    }
+
+    if (len == 1u) {
+        /* ACK off BEFORE the address is cleared — the single byte is also the
+         * last one, and clearing ADDR starts clocking it in. */
+        I2C1->CR1 &= ~(I2C_CR1_ACK | I2C_CR1_POS);
+        if (start(addr7, true) < 0) {
+            return -4;
+        }
+        __disable_irq();
+        (void)I2C1->SR2; /* clear ADDR */
+        I2C1->CR1 |= I2C_CR1_STOP;
+        __enable_irq();
+        if (wait_set(&I2C1->SR1, I2C_SR1_RXNE) < 0) {
+            return -5;
+        }
+        buf[0] = (uint8_t)I2C1->DR;
+        return 0;
+    }
+
+    if (len == 2u) {
+        /* POS defers the NACK to the byte after next, which is the only way to
+         * NACK byte 2 while byte 1 is still being received. */
+        I2C1->CR1 |= I2C_CR1_ACK | I2C_CR1_POS;
+        if (start(addr7, true) < 0) {
+            I2C1->CR1 &= ~I2C_CR1_POS;
+            return -4;
+        }
+        __disable_irq();
+        (void)I2C1->SR2; /* clear ADDR */
+        I2C1->CR1 &= ~I2C_CR1_ACK;
+        __enable_irq();
+        if (wait_set(&I2C1->SR1, I2C_SR1_BTF) < 0) {
+            stop();
+            I2C1->CR1 &= ~I2C_CR1_POS;
+            return -5;
+        }
+        __disable_irq();
+        I2C1->CR1 |= I2C_CR1_STOP;
+        buf[0] = (uint8_t)I2C1->DR;
+        buf[1] = (uint8_t)I2C1->DR;
+        __enable_irq();
+        I2C1->CR1 &= ~I2C_CR1_POS;
+        return 0;
+    }
+
+    /* len >= 3: stream on ACK until three remain, then close out on BTF. */
+    I2C1->CR1 &= ~I2C_CR1_POS;
+    I2C1->CR1 |= I2C_CR1_ACK;
+    if (start(addr7, true) < 0) {
+        return -4;
+    }
+    (void)I2C1->SR2; /* clear ADDR */
+
+    size_t i = 0;
+    while ((len - i) > 3u) {
+        if (wait_set(&I2C1->SR1, I2C_SR1_RXNE) < 0) {
+            stop();
+            return -5;
+        }
+        buf[i++] = (uint8_t)I2C1->DR;
+    }
+    /* BTF here means N-2 is in DR and N-1 in the shift register, with SCL held
+     * low — so the NACK for N lands in time. */
+    if (wait_set(&I2C1->SR1, I2C_SR1_BTF) < 0) {
+        stop();
+        return -6;
+    }
+    I2C1->CR1 &= ~I2C_CR1_ACK;
+    buf[i++] = (uint8_t)I2C1->DR; /* data N-2 */
+    if (wait_set(&I2C1->SR1, I2C_SR1_BTF) < 0) {
+        stop();
+        return -7;
+    }
+    __disable_irq();
+    I2C1->CR1 |= I2C_CR1_STOP;
+    buf[i++] = (uint8_t)I2C1->DR; /* data N-1 */
+    buf[i] = (uint8_t)I2C1->DR;   /* data N */
+    __enable_irq();
+    return 0;
+}
+
+int i2c_write(uint8_t addr7, const uint8_t *buf, size_t len)
+{
+    if (len == 0u) {
+        return -1;
+    }
+    int rc = send(addr7, buf, len);
+    stop();
+    return rc;
+}
+
+int i2c_read(uint8_t addr7, uint8_t *buf, size_t len)
+{
+    return recv(addr7, buf, len);
+}
+
+int i2c_write_read(uint8_t addr7, const uint8_t *wbuf, size_t wlen,
+                   uint8_t *rbuf, size_t rlen)
+{
+    if (wlen == 0u) {
+        return -1;
+    }
+    int rc = send(addr7, wbuf, wlen);
+    if (rc < 0) {
+        stop();
+        return rc;
+    }
+    return recv(addr7, rbuf, rlen); /* repeated START, no STOP in between */
+}
+
 int i2c_write_reg16(uint8_t addr7, uint8_t reg, uint16_t value)
 {
     if (start(addr7, false) < 0) {

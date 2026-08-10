@@ -16,8 +16,14 @@
  *
  * `node_id` is static for bring-up; ADR-0005 d6 makes it register-provisioned
  * later. Call cyphal_init() once after can_init_normal(), then cyphal_spin()
- * as often as possible from the main loop. */
-void cyphal_init(uint8_t node_id);
+ * as often as possible from the main loop.
+ *
+ * `node_name` is the reverse-DNS uavcan.node.GetInfo name and `description` the
+ * uavcan.node.description register. Both belong to the strap-selected
+ * personality, not to the image -- one image serves every module class
+ * (ADR-0017 d16), so these are how the gateway tells an E0002 from an E0006 on
+ * the wire. Both must outlive the call; string literals are the intended source. */
+void cyphal_init(uint8_t node_id, const char *node_name, const char *description);
 void cyphal_spin(void);
 
 /* Publish a pre-serialized message on `subject_id` (a Cyphal port-ID). The

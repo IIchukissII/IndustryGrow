@@ -8,6 +8,7 @@
 #include "e0001.h"
 #include "clock.h"
 #include "cyphal.h"
+#include "uart.h"
 #include "i2c.h"
 #include "ina226.h"
 #include "tmp117.h"
@@ -57,8 +58,14 @@ static void probe(void)
     s_tmp117 = i2c_probe(TMP117_ADDR);
 }
 
-void sensors_init(void)
+void m05_sensors_init(void)
 {
+    /* Last console output on this personality: leak_init() claims PA9 (GPIO_1,
+     * shared with USART1_TX) as the leak excitation drive, so the debug UART
+     * goes silent from here. Everything the common boot path printed still
+     * arrives; M01 keeps its console because E0002 claims no header GPIO. */
+    uart_puts("debug console ends here (PA9 -> leak excitation)\r\n");
+
     i2c_init();
     s0_init();
     leak_init();
@@ -186,7 +193,7 @@ static void publish_all(void)
     pub_energy();
 }
 
-void sensors_spin(void)
+void m05_sensors_spin(void)
 {
     uint64_t now = now_ts();
     if ((now - s_last_pub) >= PUBLISH_PERIOD_US) {

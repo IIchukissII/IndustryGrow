@@ -45,6 +45,7 @@ static CanardRxSubscription s_access_sub;
 static CanardRxSubscription s_list_sub;
 static CanardRxSubscription s_execcmd_sub;
 static bool s_pending_reset; /* set by ExecuteCommand RESTART, acted on after TX flush */
+static const char *s_node_name = "org.industrygrow.node"; /* set by cyphal_init() */
 
 static uint8_t s_hb_tid;       /* heartbeat transfer-id (5-bit, wraps) */
 static uint64_t s_start_us;    /* for uptime */
@@ -89,7 +90,7 @@ static void read_unique_id(uint8_t out[16])
     }
 }
 
-void cyphal_init(uint8_t node_id)
+void cyphal_init(uint8_t node_id, const char *node_name, const char *description)
 {
     s_heap = o1heapInit(s_arena, sizeof(s_arena));
 
@@ -127,7 +128,8 @@ void cyphal_init(uint8_t node_id)
                             CANARD_DEFAULT_TRANSFER_ID_TIMEOUT_USEC,
                             &s_execcmd_sub);
 
-    registers_init(node_id);
+    s_node_name = node_name;
+    registers_init(node_id, description);
 
     s_start_us = micros64();
     s_next_hb_us = s_start_us + 1000000u;
@@ -200,9 +202,16 @@ static void handle_getinfo(const CanardRxTransfer *req)
     resp.software_vcs_revision_id = 0u;
     read_unique_id(resp.unique_id);
 
-    static const char name[] = "org.industrygrow.node.m05";
-    resp.name.count = sizeof(name) - 1u;
-    memcpy(resp.name.elements, name, resp.name.count);
+    /* The node name is the personality's, not the image's: one image serves
+     * every module class and the strap picks which (ADR-0017 d16), so this is
+     * how the gateway learns what is actually in the socket. Bounded because
+     * uavcan.node.GetInfo caps the field at 50 bytes. */
+    size_t name_len = strlen(s_node_name);
+    if (name_len > uavcan_node_GetInfo_Response_1_0_name_ARRAY_CAPACITY_) {
+        name_len = uavcan_node_GetInfo_Response_1_0_name_ARRAY_CAPACITY_;
+    }
+    resp.name.count = name_len;
+    memcpy(resp.name.elements, s_node_name, name_len);
 
     uint8_t buf[uavcan_node_GetInfo_Response_1_0_SERIALIZATION_BUFFER_SIZE_BYTES_];
     size_t sz = sizeof(buf);

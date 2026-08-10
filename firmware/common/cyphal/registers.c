@@ -22,17 +22,27 @@ typedef struct {
 } reg_entry_t;
 
 /* The table. Port-id registers for the sensor subjects (uavcan.pub.*.id) are
- * added alongside the sensor publications (next slice). */
+ * added alongside the sensor publications (next slice). The description is
+ * filled at init from the strap-selected personality, not baked here -- one
+ * image runs every module class (ADR-0017 d16). */
 static reg_entry_t s_regs[] = {
     {"uavcan.node.id", REG_NATURAL16, true, false, 0u, {0}},
-    {"uavcan.node.description", REG_STRING, true, false, 0u, "IndustryGrow M05-SAFETY"},
+    {"uavcan.node.description", REG_STRING, true, false, 0u, "IndustryGrow node"},
 };
 
 #define REG_N (sizeof(s_regs) / sizeof(s_regs[0]))
 
-void registers_init(uint8_t node_id)
+void registers_init(uint8_t node_id, const char *description)
 {
     s_regs[0].n16 = node_id;
+    if (description != NULL) {
+        size_t len = strlen(description);
+        if (len >= sizeof(s_regs[1].str)) {
+            len = sizeof(s_regs[1].str) - 1u;
+        }
+        memcpy(s_regs[1].str, description, len);
+        s_regs[1].str[len] = '\0';
+    }
 }
 
 size_t registers_count(void)

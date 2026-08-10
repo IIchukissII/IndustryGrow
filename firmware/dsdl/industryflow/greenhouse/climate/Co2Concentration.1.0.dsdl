@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Carbon-dioxide concentration of a gas, as an amount-of-substance fraction.
+# Minted because the OpenCyphal standard set has no concentration sample type
+# (ADR-0005 d2).
+#
+# An NDIR instrument measures a mole fraction; ppm IS that fraction scaled by
+# 1e6. The scaling is dropped on the wire for the reason ADR-0005 rev 1 gave for
+# joule over watt-hour -- the node would multiply a raw count by a constant
+# either way, and float32 relative precision is unaffected. The 400 ppm ambient
+# baseline of M01 spec 6.3 is 400e-6 here.
+#
+# Depletion below the sensor's specified band is reported, not clamped: M01
+# spec 6.3 makes below-400 ppm a real operating condition of a closed cabinet
+# during photoperiod, outside the specified accuracy but not outside the range.
+uavcan.time.SynchronizedTimestamp.1.0 timestamp
+float32 mole_fraction  # mol CO2 per mol of gas; 400 ppm = 400e-6
+@extent 16 * 8

@@ -472,21 +472,53 @@ end to end or M4 is narrowed. Unresolved. O-46.
 | Item | Requirement |
 |------|-------------|
 | Module-ID strap | `0b001` — STRAP_0 high, STRAP_1 low, STRAP_2 low |
-| Boot probe addresses | `0x44`, `0x76`, `0x62` |
+| Boot probe addresses | `0x44`, `0x76`, `0x62`. An ACK is not identification: M05's INA226 (`E0006`) answers `0x44` as well, so an M01 image on an E0006 finds U1 "present". The addresses are on different modules and never share a bus, so this is not a conflict — but the probe is backed by a device-specific read (U1's serial, U2's `chip_id`, U3's word CRC), and a foreign part fails it. Observed on the bench 2026-08-10 |
 | Re-probe interval | ≈ 60 s (ADR-0014 d8) |
 | Publish rule | Responders only; partial populations require no rebuild |
 | U2 variant discrimination | `chip_id` is `0x61` on both BME688 and BME680 and does not distinguish them. `variant_id` at `0xF0` does: `0x01` for the fitted BME688, `0x00` for the BME680. Source: the vendor's BME68x Sensor API — `BME68X_REG_VARIANT_ID` `0xF0`, `BME68X_VARIANT_GAS_HIGH` `0x01`, `BME68X_VARIANT_GAS_LOW` `0x00`. Required before parallel mode is commanded — the alternative part of §4.2 does not implement it |
 | Primary T/RH | U1 only |
 | Derived | Air VPD per §6.1 |
-| CO₂ compensation | Pressure from U2 written to U3's compensation register (§6.3). Fallback when U2 is absent undefined — O-48 |
-| CO₂ self-calibration | ASC disabled; FRC per §6.3.1 |
-| U3 temperature offset | Shall be determined for this board under its operating conditions in thermal equilibrium and written to the device. The default is 4 °C and is not this board's value. U3's published T and RH are invalid until it is set. O-45 |
+| CO₂ compensation | Pressure from U2 written to U3's compensation register (§6.3), refreshed each cycle and only when the value changed. Fallback when U2 is absent: **1013 hPa**, compiled in — closes O-48 |
+| CO₂ self-calibration | ASC disabled; FRC per §6.3.1. FRC is not implemented: §6.3.1 bars it until five days after assembly and requires a reference concentration, so it is a commanded bench operation and awaits the command surface |
+| U3 temperature offset | Shall be determined for this board under its operating conditions in thermal equilibrium and written to the device. The default is 4 °C and is not this board's value. U3's published T and RH are invalid until it is set. O-45. Firmware reads the offset at boot and logs it; it does not write one, because writing the default back would be a value pretending to be a calibration |
 | U3 settings persistence | `persist_settings` writes EEPROM rated for at least 2000 cycles. It shall be issued only when configuration actually changed, never unconditionally at boot |
-| VOC | Trend against a tracked per-device baseline; raw gas resistance via the sensor API (§6.4) |
+| VOC | Trend against a tracked per-device baseline; raw gas resistance via the sensor API (§6.4). **Scalar, forced mode**, one hotplate setpoint of 320 °C for 150 ms per cycle, published with the setpoint — closes O-49. Parallel mode is not commanded; the §4.2 alternative does not implement it |
 | SHT45 heater | Disabled by default. When enabled for condensate recovery, its pulse shall not overlap a U3 measurement window. Lowest sufficient power level preferred; the rail tolerates the highest |
 | Rail failure | Failure of U4 or U5 removes U2 or U3 from the bus. The boot probe handles this as absence; *not fitted*, *failed* and *unpowered* remain indistinguishable. O-37 |
 | Role and zone | Not held by the node; assigned by the gateway (ADR-0014 d7) |
-| Node directory | `firmware/nodes/m01_climate/` — does not exist |
+| Node directory | `firmware/nodes/m01_climate/` — `main.c`, `module_id.h`, `sensors.{h,c}`, `drivers/{sensirion,sht4x,bme68x,scd4x}` |
+| Node-ID | 96 is M05's; M01 takes **97**, static for bring-up (ADR-0005 d6) |
+| Publication rate | 1 s for U1 and the derived VPD; U2 lands ≈ 190 ms later in the same second (its conversion is triggered on the tick and collected afterwards); U3 publishes at its own fixed 5 s |
+
+### 10.1 Published subjects
+
+Baked defaults in the unregulated range. ADR-0005 d7 makes these
+`uavcan.pub.<name>.id` register entries; the firmware does not yet carry them.
+M05 holds 4096–4102.
+
+| ID | Quantity | Source | Type |
+|----|----------|--------|------|
+| 4112 | Air temperature | U1 | `uavcan.si.sample.temperature.Scalar` (K) |
+| 4113 | Air relative humidity | U1 | `industryflow.greenhouse.climate.RelativeHumidity` (ratio) |
+| 4114 | Air VPD | derived, §6.1 | `uavcan.si.sample.pressure.Scalar` (Pa) |
+| 4115 | CO₂ | U3 | `industryflow.greenhouse.climate.Co2Concentration` (mole fraction) |
+| 4116 | Barometric pressure | U2 | `uavcan.si.sample.pressure.Scalar` (Pa) |
+| 4117 | Gas resistance | U2 | `industryflow.greenhouse.climate.GasResistance` (Ω) |
+| 4118 | Secondary temperature | U2 | `uavcan.si.sample.temperature.Scalar` (K) |
+| 4119 | Secondary humidity | U2 | `industryflow.greenhouse.climate.RelativeHumidity` (ratio) |
+| 4120 | Secondary temperature | U3 | `uavcan.si.sample.temperature.Scalar` (K) |
+| 4121 | Secondary humidity | U3 | `industryflow.greenhouse.climate.RelativeHumidity` (ratio) |
+
+Ten subjects, not one record: a partial population must be able to omit any one
+of them (ADR-0005 d8). 4118–4121 are the secondary sources of §4 and are not
+admissible for VPD; 4120 and 4121 additionally carry the uncalibrated offset of
+O-45 until V7 runs.
+
+The three climate types are minted because the standard set has no humidity,
+concentration or electrical-resistance sample type (ADR-0005 d2). All three are
+unscaled — ratio, mole fraction, ohm — for the reason ADR-0005 rev 1 gave for
+joule over watt-hour: %RH, ppm and kΩ are display conventions, and display is
+the gateway's concern.
 
 ## 11. Verification
 
@@ -542,8 +574,8 @@ O-8, O-10 and O-11 are M06's; O-12 to O-24 are M07's; O-25 to O-31 are M05's.
 | O-45 | U3 temperature offset uncalibrated; U3's T and RH are invalid until V7 is executed | U3 T/RH validity |
 | O-46 | U3 forbids board wash after reflow; M4 requires conformal coating, which conventionally follows cleaning | Coating process, M4 |
 | O-47 | Condensation on excursions places U2 and U3 outside their stated operating conditions. Post-excursion validity and recovery undefined | Excursion handling, data validity |
-| O-48 | Pressure source for CO₂ compensation when U2 is not populated | Firmware, partial populations |
-| O-49 | Whether the node publishes U2's 10-step resistance vector or a reduction of it | DSDL, ADR-0005 |
+| ~~O-48~~ | ~~Pressure source for CO₂ compensation when U2 is not populated~~ — closed 2026-08-10 by §10: 1013 hPa compiled in. Sea-level standard; the residual CO₂ error is proportional to the pressure deviation, ≈ 1.5 % at 950 hPa, inside U3's ±50 ppm floor at ambient concentration. A deployment at altitude populates U2 or provisions the value | — |
+| ~~O-49~~ | ~~Whether the node publishes U2's 10-step resistance vector or a reduction of it~~ — closed 2026-08-10 by §10 in favour of a scalar at one setpoint. Parallel mode is unavailable on the §4.2 alternative, and a vector would make the `variant_id` gate load-bearing for every population. A vector is a minor version bump on `GasResistance` if it is later wanted | — |
 | ~~O-50~~ | ~~C8's dielectric, voltage rating and case are unfixed~~ — closed 2026-08-06 by §7.5: X7R minimum, ≥ 25 V, 0805 minimum, acceptance 2.0–4.7 µF effective at 2.8 V bias, confirmed by V8 | — |
 
 ## 13. Maturity

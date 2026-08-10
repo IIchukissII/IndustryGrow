@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Metal-oxide gas-sensor resistance -- the VOC trend signal of M01 spec 6.4.
+# Minted because the OpenCyphal standard set has no electrical-resistance sample
+# type (ADR-0005 d2).
+#
+# Deliberately NOT an air-quality index. IAQ, CO2-equivalent, bVOC-equivalent
+# and gas-scan classification are outputs of Bosch's closed-source BSEC, which
+# is incompatible with the AGPL reference firmware (ADR-0002 d5), so this
+# subject carries the raw sensor-API resistance and nothing derived from it.
+# Absolute values are meaningless; the quantity is a trend against a per-device
+# baseline, and the baseline moves with hotplate ageing (spec 6.4). CO2 is
+# measured by the SCD41 on its own subject, never estimated from this one.
+#
+# Scalar, one hotplate setpoint per cycle. The BME688 can sequence a 10-step
+# profile in parallel mode and yield a vector (spec O-49), but the approved
+# BME680 alternative of spec 4.2 has no parallel mode, and a vector would put
+# the variant_id gate of spec 10 on the critical path of every population. A
+# vector reading is a minor version bump on this type if it is ever wanted.
+uavcan.time.SynchronizedTimestamp.1.0 timestamp
+float32 ohm              # heater-plate resistance at the setpoint below
+uint16 heater_celsius    # hotplate target this cycle, for trend comparability
+bool valid               # gas conversion completed AND the heater reached stability
+@extent 32 * 8
