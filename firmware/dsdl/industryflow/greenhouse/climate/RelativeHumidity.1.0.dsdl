@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Relative humidity of a gas. Minted because the OpenCyphal standard set has no
+# humidity sample type -- relative humidity is dimensionless, so it falls
+# outside uavcan.si.sample.* entirely (ADR-0005 d2: mint only for a real gap).
+#
+# Dimensionless and unscaled, for the reason ADR-0005 rev 1 gave for joule over
+# watt-hour: a scaled unit on the wire is a display convention, and display is
+# the gateway's concern. 0.658 here is the 65.8 %RH of M01 spec 6.1.
+#
+# Which sensor produced it is carried by the subject, not by a field: M01
+# publishes its primary (SHT45) and its two secondary sources (BME688, SCD41) on
+# separate subjects, because only the primary is admissible for VPD (spec 4).
+uavcan.time.SynchronizedTimestamp.1.0 timestamp
+float32 ratio  # 0.0 = dry, 1.0 = saturated
+@extent 16 * 8

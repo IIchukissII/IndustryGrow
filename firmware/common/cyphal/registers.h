@@ -24,7 +24,9 @@
 #include "uavcan/_register/Name_1_0.h"
 
 /* Seed the table (node.id, node.description, and any port-id defaults). */
-void registers_init(uint8_t node_id);
+/* `description` seeds uavcan.node.description and is the strap-selected
+ * personality's, not the image's (ADR-0017 d16). Must outlive the call. */
+void registers_init(uint8_t node_id, const char *description);
 
 /* Number of registers, for List index bounds. */
 size_t registers_count(void);
