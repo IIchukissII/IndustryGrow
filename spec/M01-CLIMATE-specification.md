@@ -452,6 +452,9 @@ range 0–20 °C, determined in the finished board at thermal equilibrium. Measu
 
 ## 9. Mechanical and enclosure
 
+Enclosure source: `store/E0002-000001-D-case-src.zip` — bottom half only. Top half not designed;
+M1–M6 and the T1 shading are unrealized. O-38.
+
 | ID | Requirement | Reference |
 |----|-------------|-----------|
 | M1 | U1: diffusion access to canopy air; shaded per T1; no conformal coating over the sensor opening. The PTFE membrane of the fitted variant protects against particles; it is not a coating mask and does not remove this requirement | T1, §4.2 |
