@@ -38,7 +38,7 @@ Conventions:
 |----------|-------------|------------|-------|
 | `E0001` | Universal carrier | electrical | One bare design, one assembly — no real variant (ADR-0017 decision 4). Hosts the WeAct core board (`SP0005`). |
 | `E0002` | M01-CLIMATE sensor module | electrical | Module-ID strap `0b001`. Air *state* at the canopy: SHT45, BME688, SCD41 — all board-mounted. Airflow moved to `E0008` (ADR-0014 rev 2). Specification: `spec/M01-CLIMATE-specification.md`. |
-| `E0003` | M02-LIGHT sensor module | electrical | Module-ID strap `0b010`. Photic: AS7341 + UV-A sensor. Not yet laid out. Specification: `spec/M02-LIGHT-specification.md`. |
+| `E0003` | M02-LIGHT sensor module | electrical | Module-ID strap `0b010`. Photic: AS7343 14-channel spectral + AS7331 UV-A/B/C (both fixed by ADR-0014 rev 5). Not yet laid out. Specification: `spec/M02-LIGHT-specification.md`. |
 | `E0004` | M03-ANALYTICS sensor module | electrical (mixed-signal) | Module-ID strap `0b011`. Hydroponic solution: pH (LMP7721 front-end), EC (AD5933), DS18B20, ADuM isolation. |
 | `E0005` | M04-PLANT sensor module | electrical | Module-ID strap `0b100`. Plant-level: MLX90640 thermal imager. |
 | `E0006` | M05-SAFETY / cabinet distribution + monitoring board | electrical | Module-ID strap `0b101`. Sense-only. Single INA226 on the `+12 V` SELV bus, TMP117, reed, leak, on-board input fuse, DIN-meter S0 input (ADR-0018). Node draw measured 0.25 W with carrier. Specification: `spec/M05-SAFETY-specification.md`. |
@@ -175,5 +175,5 @@ only the record: one row per withdrawal, above.
 - ADR-0017 (rev 1) — component / document / instance identification (E-numbers, two-axis model; firmware `F` layer rooted on the carrier E0001, decision 16; withdrawn-version archival, decision 17).
 - ADR-0019 — purchased-part (SP) identification.
 - ADR-0000 — single source of truth; vendor SKU and price live in the BOM, not here.
-- ADR-0014 (rev 3) — sensor-module taxonomy (module-ID straps, M01–M07; the 3-bit strap field is now exhausted).
+- ADR-0014 (rev 5) — sensor-module taxonomy (M01–M07). The module ID is 8-bit (rev 4); the 3-bit strap carries `0x01`–`0x07` and is the transport for every module built on `E0001-000002`. M02's parts revised in rev 5.
 - ADR-0018 — cabinet power distribution (E0006 / M05, the S0 meter, the SELV supply).
