@@ -9,7 +9,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Date:** 2026-08-04 (restructured to specification form; no decision changed)
 - **E-number:** `E0009` · module-ID strap `0b111`
 - **Governing ADRs:** ADR-0014 (rev 3), ADR-0001, ADR-0002 (rev 3), ADR-0016, ADR-0017 (rev 2), ADR-0018, ADR-0019
-- **Companions:** `M01-CLIMATE-specification.md`, `M05-SAFETY-specification.md`, `M06-VENTILATION-specification.md`
+- **Companions:** `M01-CLIMATE-specification.md`, `M02-LIGHT-specification.md`, `M05-SAFETY-specification.md`, `M06-VENTILATION-specification.md`
 
 Rationale for the decisions applied here is in the governing ADRs and is not restated.
 Values marked `verify` are not confirmed against the manufacturer datasheet.
@@ -222,9 +222,9 @@ The indoor variant inherits the M01–M05 indoor assumptions; nothing in this se
 
 ## 11. Open items
 
-Shared `O-` namespace. O-3, O-5, O-7, O-9, O-32 to O-41 are M01's; O-2, O-4, O-6, O-8, O-10,
-O-11, O-42 are M06's; O-25 to O-31 are M05's. The **Variant** column records which deployment
-variant an item gates.
+Shared `O-` namespace. O-3, O-5, O-7, O-9, O-32 to O-41 and O-43 to O-51 are M01's; O-2, O-4,
+O-6, O-8, O-10, O-11, O-42 are M06's; O-25 to O-31 are M05's; O-52 to O-62 are M02's. The
+**Variant** column records which deployment variant an item gates.
 
 | ID | Variant | Item | Blocks |
 |----|---------|------|--------|

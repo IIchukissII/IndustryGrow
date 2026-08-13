@@ -3,17 +3,19 @@ SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
-# ADR-0014 (rev 4): Sensor node taxonomy and module decomposition
+# ADR-0014 (rev 5): Sensor node taxonomy and module decomposition
 
-- **ID:** ADR-0014 (rev 4)
+- **ID:** ADR-0014 (rev 5)
 - **Status:** Accepted
-- **Date:** 2026-05-16 (rev 1: 2026-06-14; rev 2: 2026-08-03; rev 3: 2026-08-04; rev 4: 2026-08-07)
+- **Date:** 2026-05-16 (rev 1: 2026-06-14; rev 2: 2026-08-03; rev 3: 2026-08-04; rev 4: 2026-08-07; rev 5: 2026-08-13)
 - **Project:** IndustryGrow
 - **Parent:** ADR-0001
-- **Companions:** ADR-0002 (rev 3), ADR-0003, ADR-0016, ADR-0017 (rev 2), ADR-0019
-- **Supersedes:** ADR-0014 (initial draft, 2026-05-16), ADR-0014 (rev 1, 2026-06-14), ADR-0014 (rev 2, 2026-08-03), ADR-0014 (rev 3, 2026-08-04)
+- **Companions:** ADR-0002 (rev 3), ADR-0003, ADR-0005 (rev 1), ADR-0016, ADR-0017 (rev 2), ADR-0019
+- **Supersedes:** ADR-0014 (initial draft, 2026-05-16), ADR-0014 (rev 1, 2026-06-14), ADR-0014 (rev 2, 2026-08-03), ADR-0014 (rev 3, 2026-08-04), ADR-0014 (rev 4, 2026-08-07)
 
 ## Revision history
+
+- **rev 5 (2026-08-13)** — Bounded in-place amendment (ADR-0000 d9) to **decision 4's M02-LIGHT entry only**. Replaces both named parts: the AS7341 becomes the **AS7343**, because the AS7341 cannot observe the 730 nm far-red channel ADR-0003 d11 commands — its highest filtered band is 680 nm with a 706 nm half-maximum and its next channel is NIR at 910 nm — and the LTR390 / VEML6075 pair becomes the **AS7331**, because the VEML6075 was terminated by its manufacturer in 2019 and the LTR390's UV response peaks at 300–350 nm rather than on the profile's 365–385 nm band. Fixes where PPFD and DLI are computed. Records alternatives Q, R and S. No other decision changes; the module class, its strap `0b010`, its E-number `E0003` and the header contract are untouched, and no other module class is affected.
 
 - **rev 4 (2026-08-07)** — Widens the module ID to **8 bits** and separates the identifier from its transport, discharging the obligation rev 2 placed on the next carrier revision. Decision 6 fixes the encoding, the reserved address block and the sensor/actuator ranges; it deliberately does not fix one transport for every module — the 3-bit strap remains valid where 3 bits suffice, and an I²C EEPROM carries the full range from carrier `E0001-000100`. Decision 5 gains the per-carrier-revision form. `E0001-000100` **does not supersede `E0001-000002`**; both stay in service, each with its own firmware image. Records alternatives M to P — widening the parallel field, an I²C port expander, an SPI shift register, a resistor ladder. Settles the deferred actuator ID-space question in favour of a namespace rather than separate pins. Existing M01–M07 identifiers keep their numeric values.
 
@@ -102,9 +104,10 @@ Zone count is not an architectural decision — it is a deployment-time choice m
    - Airflow is **not** measured by this module. The Renesas FS3000 anemometer moved to M06-VENTILATION in rev 2: air *state* at the plant and air *transport* through the cabinet are different measured quantities with different valid locations, and a single module cannot hold both without a displaced sensor.
    - All I²C on one bus, all sensors board-mounted at canopy. No leads, no displaced sensors. In apartment-scale deployments: one instance. In larger deployments: multiple instances per zone, populated as the zone requires.
 
-   **M02-LIGHT — photic environment sensing.**
-   - ams OSRAM AS7341 — 11-channel spectral sensor. I²C. Provides per-channel intensity (validates spectrum from multi-channel LED driver per ADR-0003 decision 11) and integrated PPFD proxy for DLI accounting (ADR-0003 decision 12).
-   - LiteOn LTR390 (or Vishay VEML6075) — UV-A intensity. I²C. Independent verification that the UV-A channel from ADR-0003 decision 11 is operating.
+   **M02-LIGHT — photic environment sensing.** *(Both parts replaced in rev 5; see alternatives Q and R.)*
+   - ams OSRAM **AS7343** — 14-channel spectral sensor: eleven filtered VIS/NIR bands from 405 nm to 855 nm, plus clear and flicker. I²C. Provides per-channel intensity, which validates the spectrum commanded from the multi-channel LED driver (ADR-0003 decision 11), and the basis for the PPFD reconstruction that feeds DLI accounting (ADR-0003 decision 12). *Replaces the AS7341 named in rev 1–4:* the AS7341's highest filtered band is centred at 680 nm with a 706 nm half-maximum and its next channel is NIR at 910 nm, so the **730 nm far-red** channel of decision 11 falls in a blind band and cannot be validated by the very sensor whose justification is validating that spectrum. The AS7343's F8 band is centred at 745 nm with 60 nm FWHM, placing 730 nm inside its half-maximum span, and its F1 band at 405 nm closes the lower PAR edge at 400 nm. Same vendor, same OLGA-8 package, same 1.8 V supply, same `0x39` address.
+   - ams OSRAM **AS7331** — UV-A/B/C spectral sensor; the UV-A channel is centred at 360 nm. I²C, address selected from `0x74`–`0x77` by two strapped pins. Independent verification that the UV-A channel of decision 11 is operating. *Replaces the LTR390 / VEML6075 pair named in rev 1–4:* the Vishay VEML6075 was terminated by its manufacturer in 2019 and is not selectable, and the LiteOn LTR390's UV response peaks at 300–350 nm, which is the shoulder of the 365–385 nm band the profile specifies rather than the band itself. It runs at 2.7–3.6 V, so it takes the carrier's 3.3 V directly and adds no module-local rail.
+   - **PPFD is reconstructed on the node; DLI is integrated at the gateway.** The eleven bands are a spectral measurement, not a photon count: PPFD is a weighted sum of the bands whose coefficients are identified per luminaire spectrum at commissioning and carried in the deployment profile, as M06's velocity profile coefficient is. DLI is a multi-hour integral against wall-clock time, and the node holds neither a wall clock nor integration state across a reset; decision 7 gives it no deployment identity either. DLI is therefore a gateway-side derived value under the soft-sensor pattern of ADR-0016 decision 5, published as first-class telemetry alongside the measured subjects.
    - Simplest module in the catalog. Apartment-scale: one instance under the LED fixture. Larger deployments: per-fixture or per-zone instances.
 
    **M03-ANALYTICS — hydroponic solution sensing.** *Most complex board in the set; significant analog mixed-signal content.*
@@ -258,6 +261,12 @@ Zone count is not an architectural decision — it is a deployment-time choice m
 
 **P. Resistor ladder into an ADC pin.** *Rejected:* cheapest in parts and pins, but 256 codes demand ratiometric accuracy across tolerance, temperature and ADC error that a divider cannot deliver. Workable at 8–16 codes, which is the field size this revision exists to escape.
 
+**Q. Keep the AS7341 on M02 and accept the far-red blind band.** Report the 730 nm channel as unverified, or infer it from the driver's commanded duty rather than from a measurement. *Rejected:* decision 11 of ADR-0003 puts far-red in the flowering spectrum for fruit set, and this decision's justification for putting a spectral sensor on M02 at all is validation of that spectrum. A sensor that cannot see one of the four commanded channels does not validate it, and inferring a channel from its own command is not an independent measurement. The substitution is cheap: the AS7343 is the same vendor, the same OLGA-8 package and pinout, the same 1.7–1.98 V supply, the same `0x39` address and the same digital-pin ratings, so it costs a driver rather than a board.
+
+**R. Keep the LTR390 for UV-A.** *Rejected:* its UV response peaks at 300–350 nm while ADR-0003 decision 11 specifies a 365–385 nm trace, so it measures the shoulder of the band and its in-band responsivity is not stated. Its fixed `0x53` address additionally sits inside the `0x50`–`0x57` block decision 6 reserves for the EEPROM transport — harmless while M02 identifies by strap, but it forecloses that address on this module for as long as the part is fitted. The VEML6075 offered alongside it since rev 1 was terminated by Vishay in 2019 (last-time-buy 2019-05-31) and has not been replaced by a part measuring UV-A and UV-B separately.
+
+**S. A discrete far-red photodiode with an interference filter, beside the AS7341.** *Rejected:* it adds an analog chain — photodiode, transimpedance amplifier, and one of the two ADC channels decision 5 allots — to recover a single band that a 14-channel part already carries, and it creates a second calibration path with no reference shared with the spectral sensor. It also reopens the mixed-signal segregation concern that this taxonomy confines to M03.
+
 ## Consequences
 
 ### Positive
@@ -269,6 +278,7 @@ Zone count is not an architectural decision — it is a deployment-time choice m
 - *(rev 4)* Identity as data rather than as wiring: a module class is programmed, not laid out, and the field widens again without touching hardware. The 8-bit space ends the field-exhaustion problem for both sensor and actuator classes, and returns three pins to the header's general-purpose pool.
 - Partial-BOM mechanism gives operators a finely-graded specialization tool without requiring new PCB designs.
 - Time-series + model principle keeps sensor count proportional to operational need, not to area to be covered.
+- *(rev 5)* M02's complement can observe every channel ADR-0003 decision 11 commands, so "the spectral sensor validates the commanded spectrum" becomes a claim the hardware supports rather than one it partly contradicts. Both parts are current at one vendor, and the UV part needs no module-local rail.
 
 ### Negative
 
@@ -278,6 +288,9 @@ Zone count is not an architectural decision — it is a deployment-time choice m
 - *(rev 4)* **Two concurrent carrier revisions.** `E0001-000002` stays in service, so the project maintains two carrier designs, two firmware images and two identification transports at once. Where the pin map reallocates the strap pins, a mismatched pairing is an electrical fault one way and a misidentification the other (decision 6) — neither recoverable in software. Every built node must record its carrier revision, and flashing becomes a step that can be got wrong. Which instance is paired with which is the ERP's integration record (ADR-0021 d6), not a new mechanism. The strap transport is transitional and expected to be superseded after Phase 1 bring-up; this ADR does not schedule it.
 - *(rev 4)* Where the EEPROM transport is used, identity depends on the I²C bus; a bus fault takes it with it, where a strap pattern survived one. An unreadable ID is *unidentified* — never a guessed class.
 - *(rev 4)* One EEPROM on modules that adopt it, against the strap resistors it replaces.
+- *(rev 5)* The AS7343 carries fourteen channels against six ADCs, so a full set needs **three** integration cycles where the AS7341 needed two; M02's publication rate falls accordingly. Its register map and SMUX configuration are not the AS7341's, so the driver is new work rather than a rename, and the reference code and application notes for the two parts are not interchangeable.
+- *(rev 5)* Both M02 parts are single-sourced at ams OSRAM. The VEML6075's termination is the standing lesson: a named part is a supply commitment, and this taxonomy names parts.
+- *(rev 5)* PPFD on the node depends on coefficients that are a property of the luminaire, not of the module. A fixture change or a spectrum phase change invalidates them, and the module cannot detect either.
 - On-node aggregation in M04-PLANT is a non-trivial firmware concern. Memory budget on STM32F405 is comfortable (192 KB RAM vs 1.5 KB per frame), but firmware design needs care.
 
 ## Deferred decisions
@@ -289,6 +302,7 @@ Zone count is not an architectural decision — it is a deployment-time choice m
 - **`node_role` and `zone` representation in IndustryFlow data model** — touches ADR-IF-0001.
 - **PCB schematics, gerbers, and BOMs for all seven modules** — published in the hardware reference repository under CERN-OHL-S. Specification artifacts, not ADRs.
 - **M07 irradiance quantity and range.** Whether ambient irradiance is reported as PPFD, for direct comparability with M02-LIGHT inside, or as broadband irradiance or illuminance. The quantities are not interchangeable and must not be mixed in one time series. M02's sensor is calibrated for a narrowband luminaire spectrum at closed-space levels and cannot be assumed usable under broadband sunlight orders of magnitude brighter. The indoor/outdoor variant split adds a second, separate question on the same part: full sunlight and room light are orders of magnitude apart, so whether one part serves both variants — or the variants populate different parts, or need different footprints — is unresolved and must be settled before the footprint is committed.
+- **Reference instrument for the PPFD reconstruction** *(rev 5)*. Decision 4 makes M02's PPFD coefficients a commissioning output identified against a reference, and the project owns no quantum sensor. Whether one is purchased, borrowed for commissioning, offered as part of the survey kit (decision 9 of ADR-0016), or the coefficients are taken from the luminaire's published spectral power distribution and never measured, is unresolved. It bounds the accuracy of every DLI figure the platform reports, and the same question will return for M07's irradiance sensor.
 - **M07 barometric duplication across variants.** Barometric pressure reads effectively the same in a room and outside it, so a deployment carrying both M07 variants measures it twice. Which instance carries the sensor, whether the other leaves the footprint unpopulated, and which instance the deployment profile names as the pressure source for M06's density computation and every SCD41's pressure compensation.
 - **Magnetic compatibility between the vane encoder and the heading reference.** Where the purchased encoder reads its tracks magnetically, its field must not reach M07's magnetometer. Mast-to-base separation is expected to settle this, but it is a check at model selection rather than an assumption.
 - **Magnetic distortion calibration for M07.** Whether hard-iron and soft-iron coefficients are established on site with the assembly mast-mounted, or beforehand at the risk of the installed environment invalidating them. The coefficients belong to the deployment, not to the module design.
@@ -314,7 +328,9 @@ Zone count is not an architectural decision — it is a deployment-time choice m
 - ST LSM303AGR accelerometer / magnetometer datasheet.
 - ADR-0016: Empirical survey and state-space modeling — survey-phase instrumentation density and inventory return.
 - ADR-0019: Purchased-part (SP) identification — applies if wind instrumentation is procured rather than built.
-- ams OSRAM AS7341 datasheet.
+- ams OSRAM AS7343 datasheet (DS001046) — 14-channel spectral sensor; supersedes the AS7341 on M02 in rev 5.
+- ams OSRAM AS7331 datasheet (DS001047) — UV-A/B/C spectral sensor; supersedes the LTR390 / VEML6075 pair on M02 in rev 5.
+- Vishay product termination notice, VEML6075 — last-time-buy 2019-05-31, last shipment 2019-12-31.
 - Melexis MLX90640 datasheet.
 - Texas Instruments LMP7721 datasheet — femtoampere-bias-current op-amp for the pH front-end.
 - Analog Devices AD5933 datasheet — impedance analyzer for EC.

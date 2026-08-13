@@ -8,7 +8,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Date:** 2026-08-06
 - **E-number:** `E0002` · module-ID strap `0b001`
 - **Governing ADRs:** ADR-0014 (rev 3), ADR-0002 (rev 3), ADR-0003, ADR-0016, ADR-0017 (rev 2), ADR-0018
-- **Companions:** `M05-SAFETY-specification.md`, `M06-VENTILATION-specification.md`, `M07-AMBIENT-specification.md`
+- **Companions:** `M02-LIGHT-specification.md`, `M05-SAFETY-specification.md`, `M06-VENTILATION-specification.md`, `M07-AMBIENT-specification.md`
 - **Supersedes:** the M01 sections of `M01-M06-air-nodes-specification.md` (2026-08-03), split into this document and `M06-VENTILATION-specification.md` on 2026-08-04
 
 Rationale for the decisions applied here is in the governing ADRs and is not restated.
@@ -174,7 +174,7 @@ node that identifies as another module class; neither ERC nor the 1:1 printout d
 | Bus | I2C1, single local segment, all devices board-mounted |
 | Speed | 100 kHz standard mode. Platform default set by the shared carrier driver, not by any device on this module: U1 supports fast mode plus, U2 up to 3.4 MHz, U3 up to 400 kHz |
 | Pull-ups | R4, R5 = 4.7 kΩ to 3.3 V, on the module. The carrier carries none |
-| Pull-up ownership | Not stated in the header contract (ADR-0014 d5). Every sensor module must carry its own; the rule exists in `E0002` and `E0006` and in no document. O-42 |
+| Pull-up ownership | Not stated in the header contract (ADR-0014 d5). Every sensor module must carry its own; the rule exists in `E0002` and `E0006` and in no document. O-51 |
 | Sizing check | 4.7 kΩ sinks 0.70 mA, against U1's 390 Ω floor and U3's 3 mA test condition. Rise time at 100 kHz admits ≈ 250 pF, against three devices on board traces |
 | Population | R4 and R5 are fitted in every population (§3.3) |
 
@@ -549,8 +549,9 @@ The board is machine-assembled; U1 and U3 are not hand-solderable with the equip
 
 ## 12. Open items
 
-Continues the `O-` namespace shared with the M05, M06 and M07 specifications. O-2, O-4, O-6,
-O-8, O-10 and O-11 are M06's; O-12 to O-24 are M07's; O-25 to O-31 are M05's.
+Continues the `O-` namespace shared with the M02, M05, M06 and M07 specifications. O-2, O-4,
+O-6, O-8, O-10, O-11 and **O-42** are M06's; O-12 to O-24 are M07's; O-25 to O-31 are M05's;
+O-52 to O-62 are M02's.
 
 | ID | Item | Blocks |
 |----|------|--------|
@@ -568,7 +569,8 @@ O-8, O-10 and O-11 are M06's; O-12 to O-24 are M07's; O-25 to O-31 are M05's.
 | O-39 | Neither ADR-0003 d7 nor the profile instance states a VPD uncertainty limit; §6.1 gives ±1.3…±2.9 % in band, ±6.7 % on humid excursion | Profile validity, U1 part grade |
 | O-40 | ADR-0003 d7 does not state air VPD or leaf VPD | Profile interpretation |
 | ~~O-41~~ | ~~SCD41's specified range starts at 400 ppm~~ — closed 2026-08-05 by §6.3: depletion is reported outside the specified accuracy band, no part change required | — |
-| O-42 | Pull-up ownership and value are not in the header contract (ADR-0014 d5). The rule exists in two boards and no document | Next module designed against the contract |
+| ~~O-42~~ | ~~Pull-up ownership~~ — **renumbered to O-51** on 2026-08-13. `O-42` was already M06's (module-ID bit 1 unrouted, `M06-VENTILATION-specification.md`, 2026-08-04) and this file duplicated it on 2026-08-06. The number stays M06's; the item moves | — |
+| O-51 | Pull-up ownership and value are not in the header contract (ADR-0014 d5). The rule exists in three boards and no document | Next module designed against the contract |
 | O-43 | Module-local rails are outside ADR-0002 d3 and the header contract. One instance is not a pattern; revisit at the second | ADR-0014 / ADR-0002 revision |
 | O-44 | Carrier runs in pulse-skipping at node load; rail ripple against U3's 30 mV limit has never been measured, and no instrument is available. Design is dimensioned against the datasheet, not the rail | Confidence in §7.4, not the design |
 | O-45 | U3 temperature offset uncalibrated; U3's T and RH are invalid until V7 is executed | U3 T/RH validity |
