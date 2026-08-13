@@ -9,7 +9,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Date:** 2026-08-04
 - **E-number:** `E0008` · module-ID strap `0b110`
 - **Governing ADRs:** ADR-0014 (rev 3), ADR-0002 (rev 3), ADR-0003, ADR-0016, ADR-0017 (rev 2), ADR-0018
-- **Companions:** `M01-CLIMATE-specification.md`, `M05-SAFETY-specification.md`, `M07-AMBIENT-specification.md`
+- **Companions:** `M01-CLIMATE-specification.md`, `M02-LIGHT-specification.md`, `M05-SAFETY-specification.md`, `M07-AMBIENT-specification.md`
 - **History:** Split out of `M01-M06-air-nodes-specification.md` (2026-08-03) on 2026-08-04; M01's half became `M01-CLIMATE-specification.md`
 
 Rationale for the decisions applied here is in the governing ADRs and is not restated.
@@ -177,8 +177,9 @@ U2 and U3. Node draw on `+12 V` not measured; the reference figure is M05's 0.25
 
 ## 11. Open items
 
-Continues the `O-` namespace shared with the M01, M05 and M07 specifications. O-3, O-5, O-7,
-O-9 and O-32 to O-41 are M01's; O-12 to O-24 are M07's; O-25 to O-31 are M05's.
+Continues the `O-` namespace shared with the M01, M02, M05 and M07 specifications. O-3, O-5,
+O-7, O-9, O-32 to O-41 and O-43 to O-51 are M01's; O-12 to O-24 are M07's; O-25 to O-31 are
+M05's; O-52 to O-62 are M02's.
 
 | ID | Item | Blocks |
 |----|------|--------|
