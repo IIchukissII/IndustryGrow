@@ -1,0 +1,11 @@
+LicenseRef-WeAct-unstated
+
+Copyright WeAct Studio.
+
+Applies to third-party reference documentation published by WeAct Studio at
+https://github.com/WeActStudio/WeActStudio.STM32F4_64Pin_CoreBoard and retained
+in this repository under SP0005 (REGISTRY.md).
+
+WeAct Studio publishes that material without a stated licence. No licence grant
+is asserted or implied by its presence here, and it is not covered by this
+project's own licences. All rights in it remain with WeAct Studio.

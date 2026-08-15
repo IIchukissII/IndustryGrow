@@ -60,7 +60,7 @@ Conventions:
 | `SP0002` | DIN-rail miniature circuit breaker (MCB), cabinet mains input | no | Rating and curve per deployment in the BOM. Distinct from the board's on-board `+12 V` input fuse, which is an MPN line in E0006's BOM, not an SP device. |
 | `SP0003` | DIN-rail SELV power supply, `+12 V` output, OVP/OCP | no | Output power/current per deployment in the BOM. Phase 1 is `+12 V` only; a `+24 V` supply for the power section is a separate later SP entry (ADR-0018). |
 | `SP0004` | Gateway SBC — Raspberry Pi 3B+ / 4 / 5 class | yes (vendor serial / gateway identity) | The one SP part with per-instance identity: its vendor serial and the ATECC-bound gateway certificate are the instance key (ADR-0019 decision 2; ADR-0004 / ADR-0007). Specific model in the BOM. |
-| `SP0005` | STM32F405RGT6 core board (WeAct-class) | no | Hosted on every carrier (E0001). Resolves ADR-0017's WeAct deferred item (ADR-0019 decision 7). |
+| `SP0005` | STM32F405RGT6 core board (WeAct-class) | no | Hosted on every carrier (E0001). Resolves ADR-0017's WeAct deferred item (ADR-0019 decision 7). Vendor snapshot: `SP0005-D-coreboard-snapshot.zip`. |
 
 ### Document layers on the SP axis (naming convention)
 
@@ -100,6 +100,12 @@ the slug (a version-less `SP` root, ADR-0019 d2): `<parent-root>-D-<slug>[-src].
 | `SP0004-D-rp5-case-src.zip` | `SP0004` gateway (Raspberry Pi 5) | Printed-case design source; slug-revisioned (`-rp5-case`). Licensing inherits the `store/**` default. |
 | `E0006-000001-D-case-src.zip` | `E0006-000001` M05-SAFETY board | Enclosure design source (Inventor `.ipt` + STEP `.stp`); slug-revisioned (`-case`). Licensing inherits the `store/**` default. |
 | `E0002-000001-D-case-src.zip` | `E0002-000001` M01-CLIMATE board | Enclosure design source (Inventor `.ipt`, bottom and top halves). Slug-revisioned (`-case`). Licensing inherits the `store/**` default. |
+
+### Vendor reference documents (SP parts)
+
+| Object | Serves | Contents |
+|--------|--------|----------|
+| `SP0005-D-coreboard-snapshot.zip` | `SP0005` | V1.1 schematic `SP0005-S-v11.pdf`, V1.1 board shape `SP0005-D-outline-v11.pdf`, V1.0 3D `SP0005-D-3d-v10.step`. Upstream [WeActStudio.STM32F4_64Pin_CoreBoard](https://github.com/WeActStudio/WeActStudio.STM32F4_64Pin_CoreBoard); WeAct copyright, licence unstated (`REUSE.toml`). Required by ADR-0002 rev 3 d4. |
 
 ### Firmware document layer `F` (E-modules)
 
