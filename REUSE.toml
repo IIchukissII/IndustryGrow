@@ -28,6 +28,15 @@ precedence = "override"
 SPDX-FileCopyrightText = "2026 The IndustryGrow contributors"
 SPDX-License-Identifier = "AGPL-3.0-or-later"
 
+# Vendor reference document retained per ADR-0002 rev 3 d4 (REGISTRY.md). Third-party
+# content: WeAct publishes it with no licence stated, so it is neither project
+# copyright nor CERN-OHL-S and must override the store/** default above.
+[[annotations]]
+path = "store/SP0005-D-coreboard-snapshot.zip"
+precedence = "override"
+SPDX-FileCopyrightText = "WeAct Studio"
+SPDX-License-Identifier = "LicenseRef-WeAct-unstated"
+
 # Project images/logos, ADR figures, the roadmap figure, and this manifest itself
 # (no inline-comment option for the binary PNGs; SVGs kept uniform with them).
 [[annotations]]
