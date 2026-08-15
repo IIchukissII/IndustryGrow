@@ -15,6 +15,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 ## Revision history
 
 - **rev 3 (2026-05-16)** — Gateway side only: the rev-2 persistent SQLite local buffer becomes an in-memory ring buffer and the gateway hardware minimum drops to Raspberry Pi 3B+, following ADR-0004 rev 1's stateless-edge reframing. The smart-node side (carrier, WeAct core board, ATECC608, sensor-module header) is unchanged from rev 2. See decision 6, decision 8, and alternative J. Earlier revisions: rev 1 placed the MCU directly on the carrier (alternative D); rev 2 specified a Pi 5 with a persistent SQLite buffer (alternative J).
+- **Amendments** — decision 10 (2026-08-15): WeAct publishes no gerbers and no licence; corrects the premises of decisions 2 and 4.
 
 ## Context and problem
 
@@ -86,6 +87,8 @@ The smart-node side (carrier PCB, WeAct core board, F405/F412/F446 drop-in, ATEC
 
 9. **Domain mapping.** Each Cyphal node belongs to exactly one IndustryFlow `module` within the cabinet `machine`. Subject-IDs identify *what data*; Node-ID identifies *which physical node*; gateway resolves Node-ID → module assignment via configuration. Tagging by `production_unit_id` (slot) is applied at the gateway based on node-to-slot mapping, not encoded in the CAN frame.
 
+10. **WeAct publishes no gerbers and no licence** *(added 2026-08-15)*. Decisions 2 and 4 assume both. The snapshot is what upstream does publish — V1.1 schematic, V1.1 board outline, V1.0 STEP — filed as `store/SP0005-D-coreboard-snapshot.zip` (`REGISTRY.md`) with WeAct copyright and `LicenseRef-WeAct-unstated`, not the project's CERN-OHL-S default. Decision 2's board selection and decision 4's retention requirement stand.
+
 ## Alternatives considered
 
 **A. Two-tier hardware — BluePill prototype + custom STM32G4 production (initial ADR-0002 draft).** *Rejected.* Price gap small, two carriers introduced engineering and documentation cost, mixed-grade buses introduced lowest-common-denominator caveats, dependency on BluePill clone supply was a long-tail risk, contradicted uniformity principle.
@@ -144,7 +147,6 @@ The smart-node side (carrier PCB, WeAct core board, F405/F412/F446 drop-in, ATEC
 - **ADR-0010** — Operational policy for commercial managed deployments: QA pipeline, supply chain control, lifecycle, warranty.
 - **ADR-0014** — Sensor node taxonomy (exists; now cites rev 3, smart-node side unchanged).
 - **Carrier PCB schematic + gerbers + BOM** — published in hardware reference repository under CERN-OHL-S.
-- **WeAct core board snapshot** — schematic + gerbers retained at known-good version in hardware reference repository.
 - **IndustryFlow-side audit-trail schema** — touches platform roadmap, not this ADR.
 
 ## References
