@@ -99,7 +99,7 @@ the slug (a version-less `SP` root, ADR-0019 d2): `<parent-root>-D-<slug>[-src].
 |--------|--------|------|
 | `SP0004-D-rp5-case-src.zip` | `SP0004` gateway (Raspberry Pi 5) | Printed-case design source; slug-revisioned (`-rp5-case`). Licensing inherits the `store/**` default. |
 | `E0006-000001-D-case-src.zip` | `E0006-000001` M05-SAFETY board | Enclosure design source (Inventor `.ipt` + STEP `.stp`); slug-revisioned (`-case`). Licensing inherits the `store/**` default. |
-| `E0002-000001-D-case-src.zip` | `E0002-000001` M01-CLIMATE board | Enclosure design source (Inventor `.ipt`, bottom and top halves). Slug-revisioned (`-case`). Licensing inherits the `store/**` default. |
+| `E0002-000001-D-case-src.zip` | `E0002-000001` M01-CLIMATE board | Enclosure design source (Inventor `.ipt` + STEP `.stp`, bottom and top halves; assembly render). Slug-revisioned (`-case`). Licensing inherits the `store/**` default. |
 
 ### Vendor reference documents (SP parts)
 
