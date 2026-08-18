@@ -37,6 +37,20 @@ precedence = "override"
 SPDX-FileCopyrightText = "WeAct Studio"
 SPDX-License-Identifier = "LicenseRef-WeAct-unstated"
 
+# Third-party EDA library content for the ams OSRAM AS7331 (E0003 / M02-LIGHT),
+# obtained from SnapEDA. Symbol, footprint and 3D model are not project work, so
+# they must override the store/** default above rather than be published as
+# project copyright under CERN-OHL-S. Same treatment as the WeAct snapshot.
+# Modifications made to the delivered files are listed in the licence text.
+# NOTE: industrygrow.kicad_sym is a project library that currently holds only
+# this vendor symbol. Revisit this annotation when the first project-authored
+# symbol is added - the file becomes mixed-provenance at that point.
+[[annotations]]
+path = ["store/industrygrow.pretty/PQFN50P365X260X119-16N.kicad_mod", "store/industrygrow.kicad_sym", "store/industrygrow.3dshapes/AS7331.step"]
+precedence = "override"
+SPDX-FileCopyrightText = "SnapEDA"
+SPDX-License-Identifier = "LicenseRef-SnapEDA-unstated"
+
 # Project images/logos, ADR figures, the roadmap figure, and this manifest itself
 # (no inline-comment option for the binary PNGs; SVGs kept uniform with them).
 [[annotations]]
