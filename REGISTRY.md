@@ -147,7 +147,7 @@ four or five objects, not fourteen.
 
 | Board version | Package | Loose `D` / `L` faces |
 |---------------|---------|-----------------------|
-| `E0001-000002` (carrier v0.0.2) | `E0001-000002-D-fab.zip` | `-D-pos.csv`, `-D.png`, `-D-pinmap.md`, `-L.csv` |
+| `E0001-000003` (carrier v0.0.3) | `E0001-000003-D-fab.zip` | `-D-pos.csv`, `-D.png`, `-D-pinmap.md`, `-L.csv` |
 | `E0002-000001` (M01 v0.0.1) | `E0002-000001-D-fab.zip` | `-D-pos.csv`, `-D.png`, `-L.csv` |
 | `E0006-000001` (M05 v0.0.1) | `E0006-000001-D-fab.zip` | `-D-pos.csv`, `-D.png`, `-L.csv` |
 
@@ -171,6 +171,7 @@ that version (ADR-0017 d17); live versions and serials otherwise remain off this
 |---------|--------|----------------|----------------|
 | `E0001-000001` (carrier v0.0.1) | `BLOCKED` | `E0001-000001-BLOCKED.zip` | **Layout only.** The PCB **mirrors the WeAct core-board socket footprint** — reverses the pin order on the sockets, so every WeAct signal lands on the wrong net; the board as laid out is unbuildable. The archive holds the defective layout (`.kicad_pcb`) and every fabrication output derived from it (gerbers, drills, placement `-D-pos`, render `-D.png`). |
 | `E0001-000001` (carrier v0.0.1) | `SUPERSEDED` | `E0001-000001-SUPERSEDED.zip` | **Sources, by the relayout `E0001-000002`.** The v0.0.1 design faces kept loose after the layout was `BLOCKED` — schematic (`.kicad_sch`), project files (`.kicad_pro`, `.kicad_prl`), BOM (`-L.csv`), and pin map (`-D-pinmap.md`) — are replaced by `E0001-000002`, which reissues the full face set. No defect: the relayout corrects the mirrored footprint that blocked the v0.0.1 *layout*; these sources were always valid. The carrier firmware `-F.*` stays loose — independent axis (ADR-0017 d16), not withdrawn despite sharing the `E0001-000001` prefix. |
+| `E0001-000002` (carrier v0.0.2) | `SUPERSEDED` | `E0001-000002-SUPERSEDED.zip` | **Full face set, by `E0001-000003`.** `STRAP_1` (PA6) was unrouted to the MCU in the schematic *and* the layout: net `STRAP_1` held a single pad — sensor-module Header B pin 4 — and the WeAct socket pad for PA6 was unconnected. Module-ID bit 1 therefore always read 0. Benign for M01 (`0b001`) and M05 (`0b101`), both bench-verified on this carrier, but it prevents self-identification for M02 (`0b010`), M03, M06 and M07. No other defect: boards fabricated to v0.0.2 stay serviceable once the link is added by hand, together with clearing `E0001_STRAP1_UNROUTED` / `E0001_MODULE_ID_READABLE_MASK` in firmware. All nine faces are archived because supersession reissues the complete face set (ADR-0017 d17), including faces byte-identical to v0.0.2 (`-L.csv`, `-D-pos.csv`, `-D.png`). The carrier firmware `-F.*` stays loose — independent axis (ADR-0017 d16). |
 
 The step-by-step archival procedure (confirm scope → bundle → `git rm` the loose objects → record
 the row above → ship via PR) lives with the rule in **ADR-0017 decision 17**. This registry holds
@@ -181,5 +182,5 @@ only the record: one row per withdrawal, above.
 - ADR-0017 (rev 1) — component / document / instance identification (E-numbers, two-axis model; firmware `F` layer rooted on the carrier E0001, decision 16; withdrawn-version archival, decision 17).
 - ADR-0019 — purchased-part (SP) identification.
 - ADR-0000 — single source of truth; vendor SKU and price live in the BOM, not here.
-- ADR-0014 (rev 5) — sensor-module taxonomy (M01–M07). The module ID is 8-bit (rev 4); the 3-bit strap carries `0x01`–`0x07` and is the transport for every module built on `E0001-000002`. M02's parts revised in rev 5.
+- ADR-0014 (rev 5) — sensor-module taxonomy (M01–M07). The module ID is 8-bit (rev 4); the 3-bit strap carries `0x01`–`0x07` and is the transport for every module built on `E0001-000003`. M02's parts revised in rev 5.
 - ADR-0018 — cabinet power distribution (E0006 / M05, the S0 meter, the SELV supply).

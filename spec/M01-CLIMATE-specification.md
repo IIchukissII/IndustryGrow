@@ -19,7 +19,7 @@ Values marked `verify` are not confirmed against the manufacturer datasheet.
 Requirements for the M01-CLIMATE sensor module: sensor complement, measurement accuracy,
 electrical, thermal, mechanical and firmware requirements, and their verification.
 
-Not specified here: carrier design (`store/E0001-000002-D-pinmap.md`), cultivation setpoints
+Not specified here: carrier design (`store/E0001-000003-D-pinmap.md`), cultivation setpoints
 (ADR-0003), gateway-side handling of published subjects (ADR-0014 d7).
 
 ## 2. Identification

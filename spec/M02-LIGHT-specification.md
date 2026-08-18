@@ -19,7 +19,7 @@ Values marked `verify` are not confirmed against the manufacturer datasheet.
 Requirements for the M02-LIGHT sensor module: sensor complement, measured quantities and their
 derivation, electrical, optical, mechanical and firmware requirements, and their verification.
 
-Not specified here: carrier design (`store/E0001-000002-D-pinmap.md`), cultivation setpoints
+Not specified here: carrier design (`store/E0001-000003-D-pinmap.md`), cultivation setpoints
 (ADR-0003 and `profiles/strawberry-day-neutral-v1.json`), the luminaire and its multi-channel
 driver (no actuator module exists), gateway-side handling of published subjects (ADR-0014 d7).
 
