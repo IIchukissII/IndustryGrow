@@ -110,7 +110,7 @@ firmware/
 ├── common/                       ← runs identically whichever module is fitted
 │   ├── node/       main.c node.h  ← boot → strap → personality dispatch; the seam
 │   ├── carrier/    e0001.{h,c}    ← the E0001 carrier (PARENT): pins, LEDs, straps,
-│   │                                ATECC608/identity seam (from E0001-000002-D-pinmap)
+│   │                                ATECC608/identity seam (from E0001-000003-D-pinmap)
 │   ├── platform/   clock.{h,c}    ← 168 MHz clock, SysTick, micros (SoC, below the carrier)
 │   ├── drivers/    can i2c uart   ← bxCAN, I2C1, debug UART (register-level)
 │   └── cyphal/     cyphal registers ← node skeleton: Heartbeat/GetInfo/register/ExecuteCommand
@@ -235,4 +235,4 @@ Documented for both ST-Link (`openocd` / `st-flash`) and WeAct USB DFU
 - `spec/M01-CLIMATE-specification.md` — M01 sensor complement, accuracies, VPD,
   CO₂ handling and firmware requirements (§10).
 - `spec/M05-SAFETY-specification.md` — the as-built form of that document class.
-- `store/E0001-000002-D-pinmap.md` — carrier pin map (the BSP source of truth).
+- `store/E0001-000003-D-pinmap.md` — carrier pin map (the BSP source of truth).

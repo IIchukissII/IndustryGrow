@@ -20,7 +20,7 @@ Requirements for the M07-AMBIENT sensor module in both deployment variants: sens
 measured quantities, interfaces, environmental, mechanical and firmware requirements, and their
 verification.
 
-Not specified here: carrier design (`store/E0001-000002-D-pinmap.md`), field-bus changes for an
+Not specified here: carrier design (`store/E0001-000003-D-pinmap.md`), field-bus changes for an
 outdoor run (ADR-0002, O-14), gateway-side handling of published subjects (ADR-0014 d7).
 
 ## 2. Identification

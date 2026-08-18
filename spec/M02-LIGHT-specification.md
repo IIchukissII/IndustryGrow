@@ -5,8 +5,8 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 # M02-LIGHT — module specification
 
-- **Status:** Working specification, pre-schematic capture. `E0003` not laid out, not fabricated
-- **Date:** 2026-08-13
+- **Status:** Working specification. `E0003-000001` schematic captured; not laid out, not fabricated
+- **Date:** 2026-08-18
 - **E-number:** `E0003` · module-ID strap `0b010`
 - **Governing ADRs:** ADR-0014 (rev 5), ADR-0002 (rev 3), ADR-0003, ADR-0005 (rev 1), ADR-0016, ADR-0017 (rev 2)
 - **Companions:** `M01-CLIMATE-specification.md`, `M05-SAFETY-specification.md`, `M06-VENTILATION-specification.md`, `M07-AMBIENT-specification.md`
@@ -19,7 +19,7 @@ Values marked `verify` are not confirmed against the manufacturer datasheet.
 Requirements for the M02-LIGHT sensor module: sensor complement, measured quantities and their
 derivation, electrical, optical, mechanical and firmware requirements, and their verification.
 
-Not specified here: carrier design (`store/E0001-000002-D-pinmap.md`), cultivation setpoints
+Not specified here: carrier design (`store/E0001-000003-D-pinmap.md`), cultivation setpoints
 (ADR-0003 and `profiles/strawberry-day-neutral-v1.json`), the luminaire and its multi-channel
 driver (no actuator module exists), gateway-side handling of published subjects (ADR-0014 d7).
 
@@ -53,9 +53,9 @@ Mean canopy PPFD follows from the DLI target and the photoperiod: 17–20 mol·m
 | Clear channel (unfiltered Si) | U1 | 0…65 535 counts | As above | Relative |
 | PPFD (derived, §6.2) | U1 | — | 295–347 µmol·m⁻²·s⁻¹ mean over the photoperiod; 0…full scale across the 30 min ramps; 0 in the dark period | Dominated by the reconstruction coefficients, O-52 |
 | Flicker flag, 50 / 60 Hz | U1 | Flags; buffered data to 2 kHz (`verify`) | No flicker expected from a DC-driven fixture; an asserted flag is a driver fault indication | Flag, not a measurement |
-| UV-A irradiance, 360 ±50 nm | U2 | `verify` | Trace level per profile; absolute value not set by the profile | `verify` |
-| UV-B irradiance, 300 ±20 nm | U2 | `verify` | Expected zero from the fixture; a non-zero reading is a lamp fault | `verify` |
-| UV-C irradiance, 260 ±20 nm | U2 | `verify` | Expected zero from the fixture; a non-zero reading is a lamp fault | `verify` |
+| UV-A irradiance, 315…410 nm | U2 | Full scale 170 µW/cm² at GAIN 2048×, 3.49·10⁵ µW/cm² at 1× | Trace level per profile; absolute value not set by the profile | 385 counts/(µW/cm²) at GAIN 2048×, t_int 64 ms |
+| UV-B irradiance, 283…315 nm | U2 | Full scale 189 µW/cm² at GAIN 2048×, 3.86·10⁵ µW/cm² at 1× | Expected zero from the fixture; a non-zero reading is a lamp fault | 347 counts/(µW/cm²) at GAIN 2048×, t_int 64 ms |
+| UV-C irradiance, 235…285 nm | U2 | Full scale 83 µW/cm² at GAIN 2048×, 1.69·10⁵ µW/cm² at 1× | Expected zero from the fixture; a non-zero reading is a lamp fault | 794 counts/(µW/cm²) at GAIN 2048×, t_int 64 ms |
 
 Publication rate: seconds. The full channel set requires **three integration cycles** — U1 has
 six ADCs and fourteen channels, and the SMUX maps at most six per cycle (§6.1).
@@ -67,10 +67,10 @@ All sensors board-mounted; no leads, no cable-borne I²C.
 
 | | U1 AS7343 | U2 AS7331 | **Module** |
 |---|---|---|---|
-| Temperature | −30…+85 °C operating free-air | `verify` | **−30…+85 °C**, pending U2 |
-| Humidity | 5…85 %RH non-condensing | `verify` | **5…85 %RH non-condensing**, pending U2 |
-| MSL | 3, 168 h floor life | `verify` | **3**, pending U2 |
-| Reflow body temperature | 260 °C peak; ≤ 60 s above 217 °C, ≤ 50 s above 230 °C | `verify` | Per U1 |
+| Temperature | −30…+85 °C operating free-air | −40…+85 °C operating ambient | **−30…+85 °C**, set by U1 |
+| Humidity | 5…85 %RH non-condensing | 5…85 %RH non-condensing | **5…85 %RH non-condensing** |
+| MSL | 3, 168 h floor life | 3, 168 h floor life | **3** |
+| Reflow body temperature | 260 °C peak; ≤ 60 s above 217 °C, ≤ 50 s above 230 °C | 260 °C peak, IPC/JEDEC J-STD-020 | **260 °C peak** |
 
 §3 places the module in the growing volume, which M01 §3 admits may condense on excursions.
 That is outside U1's stated operating conditions, not merely outside its accuracy. The
@@ -109,10 +109,14 @@ A population without U1 has no function and is not a defined configuration.
 | # | Device | Ordering part | Function | Rail | I²C address | Address type |
 |---|--------|---------------|----------|------|-------------|--------------|
 | U1 | ams OSRAM AS7343 | `AS7343-DLGM` | 11 filtered bands 405…855 nm, clear, flicker | **1.8 V** | `0x39` | Fixed |
-| U2 | ams OSRAM AS7331 | `verify` | UV-A / UV-B / UV-C irradiance | 3.3 V (2.7…3.6 V) | `0x74` | Strapped, A0/A1; `0x74`…`0x77` available |
+| U2 | ams OSRAM AS7331 | `AS7331-AQFM` | UV-A / UV-B / UV-C irradiance | 3.3 V (2.7…3.6 V) | `0x74` | Strapped, A0/A1; `0x74`…`0x77` available |
 
 Both parts are named by ADR-0014 d4 as revised in rev 5. LCSC / JLCPCB ordering codes and stock
 are unconfirmed for both. O-62.
+
+U2's slave address is `(1,1,1,0,1,A1,A0)`; A0 and A1 are tied low on the module, giving `0x74`.
+U2 additionally requires an external reference resistor at its REXT pin (§7.4) — a precision part,
+not a jellybean.
 
 U2's address is strapped to `0x74`, outside the `0x50`–`0x57` block ADR-0014 rev 4 d6 reserves
 for the module-ID EEPROM. M02 identifies by strap (§5) and carries no EEPROM.
@@ -125,7 +129,7 @@ computation (§6.2), whose band is 400…700 nm.
 | # | Package | Body size | Notes |
 |---|---------|-----------|-------|
 | U1 | OLGA-8 | 3.10 × 2.00 × 1.00 mm | The optical aperture is not concentric with the package. Its offset from the package centre shall be taken from the AS7343 package outline drawing and not from the AS7341's. `verify`, O-62 |
-| U2 | `verify` | `verify` | `verify` |
+| U2 | OLGA16 | 2.60 × 3.65 × 1.09 mm | 16 pads, 0.5 mm pitch. The optical aperture is not concentric with the package; its offset shall be taken from the AS7331 package outline drawing. Acceptance angle ±10° (M9) |
 
 Every footprint shall be checked against the physical part with a 1:1 paper printout before
 ordering (V6). The check shall include U1's aperture position relative to the pads — the
@@ -161,7 +165,7 @@ the store documents. M02 is the first Phase-1 module affected. O-42.
 | | Requirement |
 |---|---|
 | Bus | I2C1, single local segment, all devices board-mounted |
-| Speed | 100 kHz standard mode. Platform default set by the shared carrier driver, not by any device on this module: U1 supports 400 kHz, U2 `verify` |
+| Speed | 100 kHz standard mode. Platform default set by the shared carrier driver, not by any device on this module: both U1 and U2 support 400 kHz fast mode. **U2 does not support clock stretching** — the driver shall not rely on it |
 | Pull-ups | 4.7 kΩ to 3.3 V, on the module. The carrier carries none. O-51 |
 | Sizing check | 4.7 kΩ sinks 0.70 mA, against U1's 6 mA sink condition for V_OL = 0.4 V. Rise time at 100 kHz admits ≈ 250 pF, against two devices on board traces and U1's 10 pF input capacitance |
 | Population | Pull-ups are fitted in every population (§3.3) |
@@ -187,7 +191,9 @@ above V_DD. The device pin description instead directs that SCL, SDA and INT be 
 3.3 V segment is confirmed with the vendor or a level translator is fitted; the choice changes
 the schematic. O-56.
 
-U2 is supplied at 3.3 V and raises no level question.
+U2 is supplied at 3.3 V and raises no level question: its digital pins are referenced to V_DDD,
+with V_IH ≥ 0.7 · V_DDD, V_IL ≤ 0.3 · V_DDD, V_OL ≤ 0.4 V at 3 mA and an input/output absolute
+maximum of V_DD + 0.5 V.
 
 ## 6. Measurement requirements
 
@@ -281,8 +287,8 @@ ADR-0014 rev 5 changed the complement to obtain.
 | Item | Requirement |
 |------|-------------|
 | Profile band | 365…385 nm UV-A trace (ADR-0003 d11) |
-| U2 UV-A channel | 360 ±50 nm — the profile band lies inside it |
-| U2 UV-B, UV-C channels | 300 ±20 nm and 260 ±20 nm. The fixture commands neither; both are expected to read zero |
+| U2 UV-A channel | Responsivity spans ≈ 315…410 nm, peak ≈ 340 nm — the profile band lies inside it |
+| U2 UV-B, UV-C channels | ≈ 283…315 nm (peak ≈ 295 nm) and ≈ 235…285 nm (peak ≈ 250 nm). The fixture commands neither; both are expected to read zero |
 | Published | Per-channel irradiance as measured, three subjects (§10.1) |
 | Fault use | A non-zero UV-B or UV-C reading indicates emission the profile does not command and is an alerting condition at the gateway, not a control input |
 
@@ -294,7 +300,7 @@ ADR-0014 rev 5 changed the complement to obtain.
 |---|---|
 | Node draw on `+12 V` | Not measured. O-59 |
 | Reference figure | M05 node, 0.25 W (254 mW at 12.12 V, 2026-08-02) |
-| Module contribution | Sub-milliwatt at U1 (§7.2); U2 `verify`. M02 is the lowest-draw module in the catalog; node draw is the carrier and MCU |
+| Module contribution | Sub-milliwatt at U1 (§7.2). **U2 dominates the module**: 2 mA maximum active and 970 µA maximum in standby against U1's 280 µA, ≈ 6.6 mW at 3.3 V. Node draw is still mostly the carrier and MCU |
 | Burst reflected to `+12 V` | None. No device on this module has a burst load of the SCD41 class |
 
 ### 7.2 Device currents
@@ -302,7 +308,7 @@ ADR-0014 rev 5 changed the complement to obtain.
 | # | Device | Sleep | Idle | Active | Rail |
 |---|--------|-------|------|--------|------|
 | U1 | AS7343 | 0.7 µA typ / 5 µA max | 40 µA typ / 60 µA max | 210 µA typ / **280 µA max** | 1.8 V |
-| U2 | AS7331 | `verify` | `verify` | `verify` | 3.3 V |
+| U2 | AS7331 | 1 µA max (power down) | 970 µA max (standby) | 1.42 mA typ / **2 mA max** | 3.3 V |
 
 U1's figures are stated at V_DD = 1.8 V and exclude current through the LDR pin, which this
 module does not use. §7.3 supplies 1.8 V, so they apply as written.
@@ -320,6 +326,16 @@ overshoot shall be shown to stay inside it. Below nominal the margin is 100 mV t
 minimum. Load is 280 µA maximum, three orders below U3's rating, so no droop budget applies.
 Local decoupling 100 nF at U1's V_DD pin, plus U3's input and output capacitors per its
 datasheet (`verify`). O-62.
+
+### 7.4 U2 supply and reference
+
+| Item | Requirement |
+|------|-------------|
+| Supply pins | V_DDA (pin 3) and V_DDD (pin 10), each decoupled 100 nF at the pin |
+| Common rail | Both shall be fed from the **same** 3.3 V rail. `V_DDA − V_DDD` has a ±0.3 V **absolute maximum**, so two independent regulators are not permitted |
+| Grounds | V_SSA (pins 1, 2, 5, 6, 15, 16) and V_SSD (pin 11) are separate nets, routed separately and joined by a single 0 Ω link placed beside the device |
+| REXT | 3.3 MΩ ±1 % (3.267…3.333 MΩ), TCR ≤ 50 ppm/K, from pin 4 to V_DDA. The device does not operate without it, and it sets the internal reference — its tolerance enters every irradiance reading |
+| Placement | REXT and the supply decoupling shall sit on the same PCB side as U2. The analog supply shall be placed as close to U2 as the layout allows |
 
 **M02 is the second module to generate a rail of its own.** O-43 records that module-local
 rails sit outside ADR-0002 d3 and the header contract, and that one instance is not a pattern —
@@ -342,12 +358,13 @@ the installation.
 |----|-------------|-----------|
 | M1 | An **achromatic diffuser** shall be placed above U1's aperture unless the AS7343's own application optical requirements show its integrated diffuser to be sufficient for a hemispherical source. Which applies is unconfirmed | `verify`, O-61 |
 | M2 | Any diffuser fitted under M1 sits in the measurement path of every band of §6.2; its spectral transmission shall be flat across 400…700 nm to within `verify`, or its transmission curve shall be folded into `c_i` | §6.2, O-61 |
-| M3 | U1's aperture is not concentric with the package; the enclosure window shall be aligned to the aperture, not to the package outline | §4.1 |
+| M3 | Neither U1's nor U2's aperture is concentric with its package; each enclosure window shall be aligned to the aperture, not to the package outline | §4.1 |
 | M4 | No conformal coating over U1's aperture or U2's optical window | §4.1 |
 | M5 | Conformal coating on all other areas. Installed in the growing volume: condensation possible on excursions | §3.1 |
 | M6 | The sensing face shall be mounted in the canopy plane, normal to the fixture axis, unshaded by foliage or structure. Shading is the failure mode this module cannot detect | §3, ADR-0014 d7 |
 | M7 | Mounted at canopy height; height adjusted as the canopy grows, recorded as deployment metadata. A height change invalidates the §6.2 coefficients | §6.2, ADR-0014 d7 |
 | M8 | Seats on the carrier header pair 2×12 + 2×8, supported at both ends; no standoffs required | Pin map, header section |
+| M9 | U2's angle of incidence is specified as **±10°**. The sensing face and any window above U2 shall hold the source inside that cone, or the UV readings are not the quantity §6.4 defines | §4.1, O-61 |
 
 M5 and M1 conflict in the same way M01's M4 does: a coating step over a diffuser is a coating
 step over the measurement path. The diffuser is fitted after coating or masked during it. O-61.
@@ -357,11 +374,12 @@ step over the measurement path. The diffuser is fitted after coating or masked d
 | Item | Requirement |
 |------|-------------|
 | Module-ID strap | `0b010` — STRAP_0 low, STRAP_1 high, STRAP_2 low. Subject to O-42 (§5) |
-| Power-on delay | U1 NAKs deterministically during initialization after V_DD crosses its POR threshold. The boot probe shall not issue a transaction before that interval has elapsed. Interval `verify` |
-| Boot probe addresses | `0x39`, `0x74`. An ACK is not identification (M01 §10 precedent); each probe shall be backed by a device-specific read — U1's and U2's ID registers (`verify`) |
+| Power-on delay | U1 NAKs deterministically during initialization after V_DD crosses its POR threshold. The boot probe shall not issue a transaction before that interval has elapsed. Interval `verify`. U2 needs 1.2 ms typ / 2 ms max from power-down to the first measurement |
+| Boot probe addresses | `0x39`, `0x74`. An ACK is not identification (M01 §10 precedent); each probe shall be backed by a device-specific read. U2's is **AGEN at `0x02`, reset value `0x21`** (DEVID `0b0010` in bits 7:4, MUT `0b0001` in bits 3:0); U1's ID register is `verify` |
 | Re-probe interval | ≈ 60 s (ADR-0014 d8) |
 | Publish rule | Responders only; partial populations require no rebuild |
 | SMUX | Configured after every power-up, before the first measurement is started. Reference configuration from the vendor application note for the AS7343 — the AS7341's does not apply |
+| U2 power-up state | U2 resets into power-down with `OSR:PD = 1` and into the CONFIGURATION state. Firmware shall clear `PD`, write CREG1..CREG3, then switch `OSR:DOS` to MEASUREMENT; the control registers are not writable from the measurement state |
 | Acquisition | Three integration cycles per full channel set (§6.1); flicker detection mapped to its own ADC when used |
 | Autorange | AGAIN and `t_int` adjusted to hold the brightest mapped channel between 10 % and 90 % of full scale. The setting in force is published with the sample |
 | Derived | PPFD per §6.2, from coefficients read out of the deployment profile, over F1…F7 only |
@@ -410,6 +428,8 @@ gateway's concern.
 | V7 | §5 | Module-ID readback of `0b010` on the carrier revision in use. O-42 |
 | V8 | §9 M1, M2 | Band counts with and without the fitted diffuser under the same fixture setting; the ratio per band is the diffuser's transmission term for §6.2 |
 | V9 | §7.3 | U1's V_DD measured at the pin under load and during U3's start-up transient, against the 1.98 V absolute maximum |
+| V10 | §7.4 | `V_DDA − V_DDD` measured at U2's pins at power-up and in steady state, against the ±0.3 V absolute maximum. REXT measured in circuit against 3.267…3.333 MΩ |
+| V11 | §10 | U2 identified by reading AGEN at `0x02` and matching `0x21`, not by address ACK alone |
 
 ## 12. Open items
 
@@ -430,16 +450,17 @@ collision with M06's O-42.
 | O-59 | Node power unmeasured | Distribution-board sizing, O-31 |
 | O-60 | U1 responsivity temperature coefficient not established; T2 unquantified | Absolute PPFD stability |
 | O-61 | Whether U1's integrated diffuser suffices or an external achromatic diffuser is required, its spectral transmission flatness, and its order against the conformal-coating step. Any diffuser sits in the measurement path of every band | Enclosure design, §6.2 coefficients, M1/M2/M5 |
-| O-62 | `verify` values in this document: all U2 electrical, optical and package figures; U1's `t_int` formula, AGAIN range, aperture offset, POR interval and ID register; U3 capacitor values; LCSC / JLCPCB ordering codes and stock for both sensors | `L` release |
+| O-62 | `verify` values in this document, reduced 2026-08-18 by the AS7331 datasheet (DS001047 v4-00): U2's electrical, optical and package figures are now stated. Outstanding: U1's `t_int` formula, AGAIN range, aperture offset, POR interval and ID register; U2's aperture offset; U3 capacitor values; LCSC / JLCPCB ordering codes and stock for both sensors and for the REXT and strap-link resistors | `L` release |
 
 ## 13. Maturity
 
-**Pre-schematic.** Both sensors are fixed by ADR-0014 rev 5. U1's figures are from its
-datasheet; U2's are not yet.
+**Schematic captured, O-56 open.** Both sensors are fixed by ADR-0014 rev 5 and both are now
+stated from their datasheets. `store/E0003-000001.kicad_sch` carries U1, U2, the 1.8 V rail, the
+I²C pull-ups and the module-ID straps; no layout exists.
 
 | Rung | Content | Reached when |
 |------|---------|--------------|
-| **Pre-schematic** ← here | Complement and requirements fixed; values estimated or `verify` | ADR-0014 rev 5 fixes both parts ✔ |
-| **Schematic captured** | Parts fixed to ordering part numbers; schematic exists; component values determined | U2 ordering part resolved; O-56 decided |
+| **Pre-schematic** | Complement and requirements fixed; values estimated or `verify` | ADR-0014 rev 5 fixes both parts ✔ |
+| **Schematic captured** ← here | Parts fixed to ordering part numbers; schematic exists; component values determined | U2 ordering part resolved ✔ (`AS7331-AQFM`); schematic exists ✔. **O-56 is not decided** — U1's digital pins sit on the 3.3 V segment with no translator fitted |
 | **Schematic-frozen** | Remaining `verify` resolved, footprints checked against physical parts. `L` releases here | O-62 closed; V6 executed |
 | **As-built** | Estimates replaced by measured values; verification §11 executed | `E0003` fabricated and bench-verified; O-59 measured |

@@ -20,7 +20,7 @@ Values marked `verify` are not confirmed against the manufacturer datasheet.
 Requirements for the M06-VENTILATION sensor module: sensor complement, measured quantities and
 their derivation, electrical, mechanical and firmware requirements, and their verification.
 
-Not specified here: carrier design (`store/E0001-000002-D-pinmap.md`), fan control (no actuator
+Not specified here: carrier design (`store/E0001-000003-D-pinmap.md`), fan control (no actuator
 module exists), gateway-side handling of published subjects (ADR-0014 d7).
 
 ## 2. Identification

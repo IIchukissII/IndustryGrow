@@ -222,14 +222,14 @@ def test_a_listed_document_carries_its_key_read_into_fields(client):
         d["object_key"]: d for d in client.get("/api/v1/store-documents", headers=AUTH).json()
     }
 
-    fab = by_key["E0001-000002-D-fab.zip"]
+    fab = by_key["E0001-000003-D-fab.zip"]
     assert (fab["root"], fab["version"], fab["layer"], fab["slug"]) == (
         "E0001",
-        "000002",
+        "000003",
         "D",
         "fab",
     )
-    assert fab["version_label"] == "v0.0.2"
+    assert fab["version_label"] == "v0.0.3"
     # One indivisible manufacturing deliverable, not a folder of gerbers (d18).
     assert fab["packaged"] and fab["kind"] == "fabrication package"
 
@@ -238,6 +238,7 @@ def test_a_listed_document_carries_its_key_read_into_fields(client):
     # `.zip` the reader has to call an "archive".
     assert by_key["E0001-000001-BLOCKED.zip"]["status"] == "BLOCKED"
     assert by_key["E0001-000001-SUPERSEDED.zip"]["status"] == "SUPERSEDED"
+    assert by_key["E0001-000002-SUPERSEDED.zip"]["status"] == "SUPERSEDED"
 
     # Same E prefix, different axis: the firmware is not swept into the board's
     # withdrawn v0.0.1 set (d16, d17) and its version is the codebase's.

@@ -1,0 +1,29 @@
+LicenseRef-SnapEDA-unstated
+
+Copyright SnapEDA.
+
+Applies to third-party EDA library content obtained from SnapEDA
+(https://www.snapeda.com/parts/AS7331-AQFT/ams/view-part/) for the ams OSRAM
+AS7331 and retained in this repository:
+
+  store/industrygrow.pretty/PQFN50P365X260X119-16N.kicad_mod
+  store/industrygrow.kicad_sym
+  store/industrygrow.3dshapes/AS7331.step
+
+The delivered package (AS7331-AQFT.zip) carries no licence text, so the terms
+under which it is supplied are unstated here. No licence grant is asserted or
+implied by its presence in this repository, and it is not covered by this
+project's own licences. All rights remain with SnapEDA and, for the 3D model,
+with its upstream author, which may be the manufacturer rather than SnapEDA.
+
+The footprint and symbol have been modified from the delivered versions: the
+pads were given a solder-mask layer and an explicit mask expansion in place of
+16 unfilled mask polygons, a 3D model reference was added, the symbol was
+renamed AS7331-AQFT to AS7331, its stacked VSSA pins were un-hidden so they no
+longer form an implicit global net, and SnapEDA's price and availability
+properties were removed.
+
+store/industrygrow.kicad_sym is a project symbol library that today holds only
+this vendor-derived symbol. When the first project-authored symbol is added to
+it, its annotation in REUSE.toml must be revisited: the file will then be of
+mixed provenance and this blanket attribution will no longer be correct.
