@@ -140,6 +140,7 @@ aperture does not appear in the schematic.
 | # | Part | LCSC | Function |
 |---|------|------|----------|
 | U3 | `TLV70018DCKR` | C133796 | 1.8 V rail for U1 VDD (§7.3). Same part as M01's U4 |
+| U4 | `PCA9306DCUR` | `verify`, O-62 | Two-bit bidirectional I²C level translator between the 3.3 V segment and U1's 1.8 V sub-segment (§5.2). VSSOP-8, 2.3 × 2 mm |
 
 ## 5. Interfaces
 
@@ -164,17 +165,18 @@ the store documents. M02 is the first Phase-1 module affected. O-42.
 
 | | Requirement |
 |---|---|
-| Bus | I2C1, single local segment, all devices board-mounted |
+| Bus | I2C1, two segments joined by U4 (§5.2), all devices board-mounted. U2 and the header sit on the 3.3 V segment; U1 alone sits on the 1.8 V sub-segment |
 | Speed | 100 kHz standard mode. Platform default set by the shared carrier driver, not by any device on this module: both U1 and U2 support 400 kHz fast mode. **U2 does not support clock stretching** — the driver shall not rely on it |
-| Pull-ups | 4.7 kΩ to 3.3 V, on the module. The carrier carries none. O-51 |
-| Sizing check | 4.7 kΩ sinks 0.70 mA, against U1's 6 mA sink condition for V_OL = 0.4 V. Rise time at 100 kHz admits ≈ 250 pF, against two devices on board traces and U1's 10 pF input capacitance |
-| Population | Pull-ups are fitted in every population (§3.3) |
+| Pull-ups | Both segments carry their own, on the module; the carrier carries none. O-51. 3.3 V segment: R8, R9, 4.7 kΩ to 3.3 V. 1.8 V sub-segment: R1, R2, 4.7 kΩ to 1.8 V |
+| Sizing check | 4.7 kΩ sinks 0.70 mA at 3.3 V and 0.38 mA at 1.8 V, against U1's 6 mA sink condition for V_OL = 0.4 V. Rise time at 100 kHz admits ≈ 250 pF per segment, against board traces, U1's 10 pF input capacitance and U4's channel capacitance |
+| Population | Both pull-up pairs are fitted in every population (§3.3) |
 | Address separation | `0x39` and `0x74`; no device on this module occupies `0x50`–`0x57` |
 
 ### 5.2 Logic levels at U1
 
 U1 has **no VDDIO pin**. Its digital pins are referenced to GND, and the device is supplied at
-1.8 V (§7.3) while the carrier drives the segment at 3.3 V.
+1.8 V (§7.3) while the carrier drives the segment at 3.3 V. U4 separates U1 onto its own 1.8 V
+sub-segment, so U1's pins never leave the 1.8 V domain.
 
 | | Value | Source |
 |---|---|---|
@@ -185,11 +187,20 @@ U1 has **no VDDIO pin**. Its digital pins are referenced to GND, and the device 
 | Input pin capacitance | 10 pF | Electrical characteristics |
 | Leakage into SCL / SDA / INT | ±5 µA | Electrical characteristics |
 
-A 3.3 V segment satisfies V_IH and stays inside the 3.6 V digital-pin rating with the pins
-above V_DD. The device pin description instead directs that SCL, SDA and INT be pulled up to
-1.8 V, and no recommended-operating-condition table covers pin voltages above V_DD. Either the
-3.3 V segment is confirmed with the vendor or a level translator is fitted; the choice changes
-the schematic. O-56.
+A 3.3 V segment would satisfy V_IH and stay inside the 3.6 V digital-pin rating with the pins
+above V_DD, but the device pin description directs that SCL, SDA and INT be pulled up to 1.8 V
+and no recommended-operating-condition table covers pin voltages above V_DD. U4 removes the
+question.
+
+| U4 | Requirement |
+|---|---|
+| Part | `PCA9306`, two-bit bidirectional pass-FET translator with an internal charge pump (§4.2) |
+| V_REF1 / V_REF2 | 1.8 V / 3.3 V, an explicitly stated combination: V_REF1 1.2…3.3 V, V_REF2 1.8…5.5 V. **V_REF1 ≤ V_REF2 shall hold** |
+| Channels | SCL and SDA only. U1's `INT`, `GPIO` and `LDR` are unrouted (§5), so no third channel is required |
+| EN | Pulled to V_REF2 through R10, 200 kΩ, per the datasheet application diagram. The bus is not isolated in normal operation |
+| R_ON | 3.5 Ω typical. At the 3.3 V segment's 0.70 mA sink current it adds ≈ 2 mV to the 0.4 V V_OL that U1 presents to the segment |
+| Pull-ups | Required on both sides; sized in §5.1 |
+| Decoupling | 100 nF at V_REF2 (C6) |
 
 U2 is supplied at 3.3 V and raises no level question: its digital pins are referenced to V_DDD,
 with V_IH ≥ 0.7 · V_DDD, V_IL ≤ 0.3 · V_DDD, V_OL ≤ 0.4 V at 3 mA and an input/output absolute
@@ -317,15 +328,16 @@ module does not use. §7.3 supplies 1.8 V, so they apply as written.
 
 | Rail | Source | Consumer | Reason |
 |------|--------|----------|--------|
-| 3.3 V | Header | U2, pull-ups, straps, U3 input | — |
-| 1.8 V | U3, from 3.3 V | U1 V_DD only | U1's V_DD range is 1.7…1.98 V, and 1.98 V is also its **absolute maximum**. 3.3 V destroys the device |
+| 3.3 V | Header | U2, U4 V_REF2, the 3.3 V pull-ups, straps, U3 input | — |
+| 1.8 V | U3, from 3.3 V | U1 V_DD, U4 V_REF1, the 1.8 V pull-ups | U1's V_DD range is 1.7…1.98 V, and 1.98 V is also its **absolute maximum**. 3.3 V destroys the device |
 
 U1's supply has no headroom above nominal: 1.8 V nominal against a 1.98 V absolute maximum
 leaves 180 mV, so the regulator's initial accuracy, load and line regulation and its transient
 overshoot shall be shown to stay inside it. Below nominal the margin is 100 mV to the 1.7 V
-minimum. Load is 280 µA maximum, three orders below U3's rating, so no droop budget applies.
-Local decoupling 100 nF at U1's V_DD pin, plus U3's input and output capacitors per its
-datasheet (`verify`). O-62.
+minimum. Load is 280 µA maximum at U1, plus up to 0.77 mA drawn by R1 and R2 while both bus
+lines are held low and U4's V_REF1 current — under 1.1 mA in all, two orders below U3's 200 mA
+rating, so no droop budget applies. Local decoupling 100 nF at U1's V_DD pin, plus U3's input
+and output capacitors per its datasheet (`verify`). O-62.
 
 ### 7.4 U2 supply and reference
 
@@ -423,7 +435,7 @@ gateway's concern.
 | V2 | §6.1, T1 | One full 24 h cycle logged: no channel saturated and none below 10 % of full scale at any point of either 30 min ramp or the photoperiod. U1 die temperature proxy and canopy air temperature recorded against a reference thermometer |
 | V3 | §6.3 | Each fixture channel driven alone at full output; the band counts recorded per channel. The 730 nm far-red channel shall register on F8 |
 | V4 | §6.4 | The fixture's UV-A channel driven alone at full output; U2's three channels recorded against dark. UV-B and UV-C shall stay at dark level |
-| V5 | §5.2 | U1 addressed over ≥ 1 h at the 3.3 V segment with zero bus errors, or the level translator fitted. O-56 |
+| V5 | §5.2 | U1's SCL and SDA measured idling at the 1.8 V rail, not at 3.3 V, and U1 addressed through U4 over ≥ 1 h at 100 kHz with zero bus errors |
 | V6 | §4.1 | 1:1 paper printout against the physical part, both devices, including U1's aperture offset relative to the pads |
 | V7 | §5 | Module-ID readback of `0b010` on the carrier revision in use. O-42 |
 | V8 | §9 M1, M2 | Band counts with and without the fitted diffuser under the same fixture setting; the ratio per band is the diffuser's transmission term for §6.2 |
@@ -444,23 +456,23 @@ collision with M06's O-42.
 | ~~O-53~~ | ~~U2's fixed `0x53` inside the reserved `0x50`–`0x57` block~~ — closed 2026-08-13 by ADR-0014 rev 5: U2 is the AS7331, strapped to `0x74`. No device on this module occupies the block | — |
 | ~~O-54~~ | ~~ADR-0014 d4's alternative UV part, the Vishay VEML6075, was terminated in 2019~~ — closed 2026-08-13 by ADR-0014 rev 5, which removes it and the LTR390 from d4 | — |
 | ~~O-55~~ | ~~730 nm far-red unobservable, and the UV-A band on the shoulder of the UV sensor's response~~ — closed 2026-08-13 by ADR-0014 rev 5: F8 at 745 nm covers 730 nm (§6.3) and the AS7331's UV-A channel is centred at 360 nm (§6.4) | — |
-| O-56 | U1's digital pins operated at 3.3 V, above V_DD, inside the 3.6 V absolute maximum but against the device pin description, which directs pull-up to 1.8 V, and outside any recommended-operating-condition table | Schematic capture, level-translation decision |
+| ~~O-56~~ | ~~U1's digital pins operated at 3.3 V, above V_DD, inside the 3.6 V absolute maximum but against the device pin description~~ — closed 2026-08-19 by fitting U4 (`PCA9306`) in `store/E0003-000001.kicad_sch`: U1 sits on a 1.8 V sub-segment with its own pull-ups (§5.1, §5.2) | — |
 | O-57 | Condensation on excursions places U1 outside its 5–85 %RH non-condensing operating conditions. Post-excursion validity and recovery undefined, as for O-47 | Excursion handling, data validity |
 | O-58 | DLI is integrated at the gateway (§3.2). Restart and gap policy across a gateway restart or a telemetry outage is unspecified | Gateway control loop, ADR-0015 |
 | O-59 | Node power unmeasured | Distribution-board sizing, O-31 |
 | O-60 | U1 responsivity temperature coefficient not established; T2 unquantified | Absolute PPFD stability |
 | O-61 | Whether U1's integrated diffuser suffices or an external achromatic diffuser is required, its spectral transmission flatness, and its order against the conformal-coating step. Any diffuser sits in the measurement path of every band | Enclosure design, §6.2 coefficients, M1/M2/M5 |
-| O-62 | `verify` values in this document, reduced 2026-08-18 by the AS7331 datasheet (DS001047 v4-00): U2's electrical, optical and package figures are now stated. Outstanding: U1's `t_int` formula, AGAIN range, aperture offset, POR interval and ID register; U2's aperture offset; U3 capacitor values; LCSC / JLCPCB ordering codes and stock for both sensors and for the REXT and strap-link resistors | `L` release |
+| O-62 | `verify` values in this document, reduced 2026-08-18 by the AS7331 datasheet (DS001047 v4-00): U2's electrical, optical and package figures are now stated. Outstanding: U1's `t_int` formula, AGAIN range, aperture offset, POR interval and ID register; U2's aperture offset; U3 capacitor values; LCSC / JLCPCB ordering codes and stock for both sensors, for U4, and for the REXT and strap-link resistors | `L` release |
 
 ## 13. Maturity
 
-**Schematic captured, O-56 open.** Both sensors are fixed by ADR-0014 rev 5 and both are now
-stated from their datasheets. `store/E0003-000001.kicad_sch` carries U1, U2, the 1.8 V rail, the
-I²C pull-ups and the module-ID straps; no layout exists.
+**Schematic captured.** Both sensors are fixed by ADR-0014 rev 5 and both are now stated from
+their datasheets. `store/E0003-000001.kicad_sch` carries U1, U2, the 1.8 V rail, U4 with both
+I²C pull-up pairs, and the module-ID straps; no layout exists.
 
 | Rung | Content | Reached when |
 |------|---------|--------------|
 | **Pre-schematic** | Complement and requirements fixed; values estimated or `verify` | ADR-0014 rev 5 fixes both parts ✔ |
-| **Schematic captured** ← here | Parts fixed to ordering part numbers; schematic exists; component values determined | U2 ordering part resolved ✔ (`AS7331-AQFM`); schematic exists ✔. **O-56 is not decided** — U1's digital pins sit on the 3.3 V segment with no translator fitted |
+| **Schematic captured** ← here | Parts fixed to ordering part numbers; schematic exists; component values determined | U2 ordering part resolved ✔ (`AS7331-AQFM`); schematic exists ✔; O-56 closed ✔ (U4 fitted). U4's ordering code is still `verify` (O-62) |
 | **Schematic-frozen** | Remaining `verify` resolved, footprints checked against physical parts. `L` releases here | O-62 closed; V6 executed |
 | **As-built** | Estimates replaced by measured values; verification §11 executed | `E0003` fabricated and bench-verified; O-59 measured |
