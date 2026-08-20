@@ -159,8 +159,8 @@ Schematic: `store/E0002-000001.kicad_sch`.
 No other header signal is claimed. `GPIO_1`/`GPIO_2` (PA9/PA10) are not used, so USART1 remains
 available as the carrier debug console throughout boot and run (pin map note 6).
 
-Module-ID bit 1 (`STRAP_1`, PA6) is unrouted on carrier revision `E0001-000001`
-(`firmware/common/carrier/e0001.h`). M01's pattern has bit 1 = 0 and reads correctly on that
+Module-ID bit 1 (`STRAP_1`, PA6) reaches the MCU from carrier revision `E0001-000003`
+(`firmware/common/carrier/e0001.h`). M01's pattern has bit 1 = 0 and reads correctly on every
 revision.
 
 The strap bit index equals the strap signal index: `STRAP_0` is bit 0. `0b001` is therefore

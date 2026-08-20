@@ -176,7 +176,7 @@ Implemented in `firmware/nodes/m05_safety/`.
 
 | Item | Requirement |
 |------|-------------|
-| Module-ID strap | `0b101`; bit 1 = 0, unaffected by the unrouted `STRAP_1` on `E0001-000001` |
+| Module-ID strap | `0b101`; bit 1 = 0, so the pattern reads correctly on every carrier revision |
 | Boot probe, publication, re-probe interval | ADR-0014 d8 |
 | Leak excitation | Shares PA9 with the carrier debug console (pin map note 2) |
 | Leak excitation state | Gated, pin resting low (pin map note 3) |

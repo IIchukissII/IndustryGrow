@@ -156,10 +156,10 @@ available as the carrier debug console throughout boot and run (pin map note 6).
 `GPIO` and `LDR` pins are not routed to the header; `LDR` and `GPIO` are left unconnected per
 the device pin description, and §10 polls.
 
-**M02's strap pattern has bit 1 = 1.** Module-ID bit 1 (`STRAP_1`, PA6) is unrouted on carrier
-revision `E0001-000001` (`firmware/common/carrier/e0001.h`), on which M02 reads back as `0b000`
-— the reserved value, not another class. Whether `E0001-000002` routes PA6 is not recorded in
-the store documents. M02 is the first Phase-1 module affected. O-42.
+**M02's strap pattern has bit 1 = 1.** Module-ID bit 1 (`STRAP_1`, PA6) reaches the MCU from
+carrier revision `E0001-000003` (`firmware/common/carrier/e0001.h`). `E0001-000001` and
+`E0001-000002` carry it only with the `J6` pad 4 → `J3` pad 15 link added by hand; without that
+link M02 reads back as `0b000` — the reserved value, not another class.
 
 ### 5.1 I²C bus
 
@@ -385,7 +385,7 @@ step over the measurement path. The diffuser is fitted after coating or masked d
 
 | Item | Requirement |
 |------|-------------|
-| Module-ID strap | `0b010` — STRAP_0 low, STRAP_1 high, STRAP_2 low. Subject to O-42 (§5) |
+| Module-ID strap | `0b010` — STRAP_0 low, STRAP_1 high, STRAP_2 low |
 | Power-on delay | U1 NAKs deterministically during initialization after V_DD crosses its POR threshold. The boot probe shall not issue a transaction before that interval has elapsed. Interval `verify`. U2 needs 1.2 ms typ / 2 ms max from power-down to the first measurement |
 | Boot probe addresses | `0x39`, `0x74`. An ACK is not identification (M01 §10 precedent); each probe shall be backed by a device-specific read. U2's is **AGEN at `0x02`, reset value `0x21`** (DEVID `0b0010` in bits 7:4, MUT `0b0001` in bits 3:0); U1's ID register is `verify` |
 | Re-probe interval | ≈ 60 s (ADR-0014 d8) |
@@ -437,7 +437,7 @@ gateway's concern.
 | V4 | §6.4 | The fixture's UV-A channel driven alone at full output; U2's three channels recorded against dark. UV-B and UV-C shall stay at dark level |
 | V5 | §5.2 | U1's SCL and SDA measured idling at the 1.8 V rail, not at 3.3 V, and U1 addressed through U4 over ≥ 1 h at 100 kHz with zero bus errors |
 | V6 | §4.1 | 1:1 paper printout against the physical part, both devices, including U1's aperture offset relative to the pads |
-| V7 | §5 | Module-ID readback of `0b010` on the carrier revision in use. O-42 |
+| V7 | §5 | Module-ID readback of `0b010` on the carrier in use |
 | V8 | §9 M1, M2 | Band counts with and without the fitted diffuser under the same fixture setting; the ratio per band is the diffuser's transmission term for §6.2 |
 | V9 | §7.3 | U1's V_DD measured at the pin under load and during U3's start-up transient, against the 1.98 V absolute maximum |
 | V10 | §7.4 | `V_DDA − V_DDD` measured at U2's pins at power-up and in steady state, against the ±0.3 V absolute maximum. REXT measured in circuit against 3.267…3.333 MΩ |
