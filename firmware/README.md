@@ -169,11 +169,11 @@ standard node skeleton (ADR-0005 d5), no sensor publications yet:
 2. `bxCAN1` on **PB8 (RX) / PB9 (TX)**, AF9, 500 kbit/s; CAN-activity LED on **PA2**.
 3. libcanard + o1heap up; publish **`uavcan.node.Heartbeat.1`** at 1 Hz; answer
    **`uavcan.node.GetInfo.1`** and the **register** interface (`Access`/`List`).
-4. Module-ID strap self-check: read **STRAP_0 = PA5**, **STRAP_2 = PA7**; expect
-   `0b1·1` for M05. **STRAP_1 (PA6) is unrouted to the MCU on `E0001-000001`**
-   (see the pin-map note / the tracked carrier fix), so bit 1 is read as a
-   pulled-down `0`, which matches M05's `0b101` — flagged in code, not silently
-   assumed. Status LED on **PA1** signals identity OK / mismatch.
+4. Module-ID strap self-check: read **STRAP_0 = PA5**, **STRAP_1 = PA6**,
+   **STRAP_2 = PA7**; expect `0b101` for M05. PA6 reaches the MCU from carrier
+   `E0001-000003`; on an older carrier without the hand-added `J6.4`→`J3.15`
+   link bit 1 reads a pulled-down `0`, which still matches M05's `0b101`. Status
+   LED on **PA1** signals identity OK / mismatch.
 5. Optional debug log over **USART1 (PA9/PA10)**.
 
 **Verification path:** cross-compile, flash the WeAct board over its ST-Link

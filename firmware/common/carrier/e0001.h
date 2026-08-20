@@ -43,17 +43,18 @@
  * is mounted on the carrier; the expected value per node lives in that node. */
 #define E0001_STRAP_GPIO      GPIOA
 #define E0001_STRAP0_PIN      5u
-#define E0001_STRAP1_PIN      6u  /* unrouted on E0001-000001 — see gap below */
+#define E0001_STRAP1_PIN      6u
 #define E0001_STRAP2_PIN      7u
 
-/* KNOWN HARDWARE GAP (carrier rev E0001-000001): STRAP_1 (PA6) is unrouted to
- * the MCU (PCB diverged from the pin map), so module-ID bit 1 always reads the
- * pull-down 0. This is a CARRIER-LEVEL fact — every node inherits it until a
- * carrier respin routes PA6. Bits 0 and 2 are the only reliably-readable bits,
- * so a node compares the readable bits (see E0001_MODULE_ID_READABLE_MASK).
- * Benign for M05 (0b101, bit1=0); breaks M02/M03/M06 (bit1=1) self-ID. */
-#define E0001_STRAP1_UNROUTED         1u
-#define E0001_MODULE_ID_READABLE_MASK 0x5u /* bits 0 and 2 (bit 1 unreadable) */
+/* STRAP_1 (PA6) reaches the MCU from carrier v0.0.3 (E0001-000003), so all
+ * three module-ID bits are readable and every sensor class 0x01..0x07 is
+ * selectable. On E0001-000001/-000002 the net STRAP_1 held a single pad
+ * (Header B.4) and the WeAct socket pad for PA6 was unconnected, so bit 1 read
+ * the pull-down 0; such a board needs the J6.4 -> J3.15 link added by hand
+ * before bit 1 means anything. Boards without that link identify M01 (0b001)
+ * and M05 (0b101) correctly and no other class. */
+#define E0001_STRAP1_UNROUTED         0u
+#define E0001_MODULE_ID_READABLE_MASK 0x7u /* all three bits readable */
 
 /* --- Secure element / node identity IC: ATECC608 on I2C2 (PB10 = SCL,
  * PB11 = SDA), per the pin map and ADR-0007. This is the carrier's per-instance
@@ -83,8 +84,7 @@
 /* Bring up GPIO clocks and configure LEDs + straps. Call after clock_init(). */
 void e0001_init(void);
 
-/* Read the 3-bit module-ID strap pattern (bit0=STRAP_0 .. bit2=STRAP_2).
- * Bit 1 is forced to 0 on E0001-000001 (STRAP_1/PA6 unrouted, see above). */
+/* Read the 3-bit module-ID strap pattern (bit0=STRAP_0 .. bit2=STRAP_2). */
 uint8_t e0001_read_module_id(void);
 
 void e0001_led_status(bool on);

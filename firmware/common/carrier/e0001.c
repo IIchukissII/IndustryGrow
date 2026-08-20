@@ -43,7 +43,7 @@ uint8_t e0001_read_module_id(void)
     uint32_t idr = E0001_STRAP_GPIO->IDR;
     uint8_t id = 0u;
     if (idr & (1u << E0001_STRAP0_PIN)) id |= 1u << 0u;
-    if (idr & (1u << E0001_STRAP1_PIN)) id |= 1u << 1u; /* always 0 on E0001-000001 */
+    if (idr & (1u << E0001_STRAP1_PIN)) id |= 1u << 1u;
     if (idr & (1u << E0001_STRAP2_PIN)) id |= 1u << 2u;
     return id;
 }
