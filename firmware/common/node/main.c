@@ -66,11 +66,10 @@ int main(void)
     } else {
         uart_puts(" -> UNIDENTIFIED (no personality claims this ID)\r\n");
     }
-    /* NOTE: STRAP_1 (PA6, bit 1) is unrouted to the MCU on E0001-000001 and
-     * reads the pull-down 0, so a class whose bit 1 is 1 can never be selected
-     * on that carrier. M01 (0x01) and M05 (0x05) both have bit 1 = 0 and are
-     * unaffected; M02/M03/M06/M07 are not selectable there at all. This is a
-     * carrier-level fact -- see common/carrier/e0001.h and the pin map. */
+    /* All three strap bits are read. A carrier older than E0001-000003 without
+     * the hand-added STRAP_1 link reads bit 1 as the pull-down 0, so it reads
+     * every bit-1 class (M02/M03/M06/M07) with that bit cleared and can select
+     * only M01 (0x01) and M05 (0x05) -- see common/carrier/e0001.h. */
     e0001_led_status(node != NULL);
 
     /* bxCAN peripheral + 500 kbit/s bit-timing self-test (internal loopback). */

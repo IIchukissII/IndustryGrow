@@ -14,8 +14,8 @@
 /* Module-ID strap pattern for M05-SAFETY (ADR-0014 d6: 0b101). */
 #define M05_MODULE_ID 0x5u
 
-/* On carrier rev E0001-000001, STRAP_1 (PA6 / bit 1) is unrouted and reads 0
- * (E0001_STRAP1_UNROUTED). M05's bit 1 is 0, so a direct compare passes — but
- * that is luck, not a true read of bit 1. See firmware/common/carrier/e0001.h. */
+/* M05's bit 1 is 0, so the pattern also compares correctly on a carrier older
+ * than E0001-000003 whose STRAP_1 (PA6) never reaches the MCU. That match is
+ * not evidence that bit 1 was read. See firmware/common/carrier/e0001.h. */
 
 #endif /* IGROW_M05_MODULE_ID_H */

@@ -29,9 +29,8 @@
  */
 #define M01_MODULE_ID 0x01u
 
-/* On carrier rev E0001-000001, STRAP_1 (PA6 / bit 1) is unrouted and reads 0
- * (E0001_STRAP1_UNROUTED); whether E0001-000002 routes it is unrecorded. M01's
- * bit 1 is 0 either way, so a direct compare is correct on both -- but it is
+/* M01's bit 1 is 0, so the pattern also compares correctly on a carrier older
+ * than E0001-000003 whose STRAP_1 (PA6) never reaches the MCU. That match is
  * not evidence that bit 1 was read. See firmware/common/carrier/e0001.h. */
 
 #endif /* IGROW_M01_MODULE_ID_H */
