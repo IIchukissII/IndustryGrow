@@ -65,6 +65,8 @@ The threat model otherwise stays:
 
 5. **Firewall: outbound to IndustryFlow only.** No inbound TCP/UDP except SSH on the internal apartment/site interface. Outbound restricted to IndustryFlow's endpoints via iptables or nftables. No general internet access from the gateway.
 
+> **Amendment (2026-08-20, bounded — ADR-0000 d9).** "The internal apartment/site interface" is the *set* of LAN-facing management NICs, not one baked interface. A reference Pi has several (Wi-Fi `wlan0`, USB/legacy Ethernet `eth0`, Pi 5 onboard `end0`); binding SSH to a single one — whichever carried the default route at provision time — silently locked the operator out when the box was later reached over a different NIC. The rendered ruleset therefore accepts SSH on `iifname { wlan0, eth0, end0 }`, always unioned with the live default-route interface. Scope is unchanged: still LAN-facing only (no uplink/WAN interface), still key-only (decision 2), and the CAN interfaces (`can*`/`vcan*`) are excluded. This resolves the singular/plural ambiguity in "interface"; it does not widen the boundary decision 6 draws.
+
 6. **No service exposes data on the apartment/site LAN.** The gateway is not a server to the LAN. Local debug interfaces (if introduced) bind to `127.0.0.1` only and are reached via SSH port-forwarding when needed.
 
 7. **Minimum-privilege service users.** The gateway service (Pycyphal-based) runs as a dedicated unprivileged user with access only to the CAN interfaces and its configuration directory. No root operations during normal runtime.
