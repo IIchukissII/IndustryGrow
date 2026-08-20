@@ -61,6 +61,8 @@ The threat model otherwise stays:
 
 3. **fail2ban** configured with strict thresholds on SSH and on any exposed services (if any are introduced later).
 
+> **Amendment (2026-08-20, bounded — ADR-0000 d9).** The strict thresholds do not apply to the management LAN. The ban list is persisted and re-applied at service start, and `bantime.increment` escalates ×2 to a one-week ceiling, so a few mistyped key attempts remove the operator's own workstation from the gateway for hours and a reboot does not clear it — on the bench this presented twice as an unreachable gateway (ICMP answering, every TCP port silently dropped by a source-specific rule in a second `f2b-table`, while the ruleset under `inet industrygrow` read as correct). The jail therefore renders an `ignoreip` covering loopback and the directly-attached subnets of decision 5's management NIC set, taken from the kernel's link routes at provision time and extendable via `IGROW_F2B_IGNOREIP`. Scope is unchanged for every other source: thresholds, escalation, and the jail itself are untouched. The exemption is acceptable only because SSH is key-only (decision 2) — against a key-only sshd, credential brute force is not the threat fail2ban is buying protection from, and log-noise suppression does not justify a self-lockout that is indistinguishable from dead hardware.
+
 4. **Unattended security updates** via `unattended-upgrades`. Automatic install of security patches, daily reboot window scheduled during photoperiod-off hours.
 
 5. **Firewall: outbound to IndustryFlow only.** No inbound TCP/UDP except SSH on the internal apartment/site interface. Outbound restricted to IndustryFlow's endpoints via iptables or nftables. No general internet access from the gateway.

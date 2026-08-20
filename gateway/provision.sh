@@ -58,6 +58,7 @@ load_env() {
     IGROW_SSH_IFACES="wlan0 eth0 end0"  # mgmt NICs SSH may arrive on (a set)
     IGROW_LAN_IFACE=""   # empty = auto-detect from the default route (below)
     IGROW_SSH_PORT="22"
+    IGROW_F2B_IGNOREIP=""  # empty = derive the mgmt LAN subnets (below)
     IGROW_CAN_IFACE="vcan0"
     IGROW_CAN_BITRATE="500000"
     IGROW_CAN_HAT="off"
@@ -109,7 +110,22 @@ load_env() {
     local set_body
     set_body="$(printf '%s\n' ${ifaces} | awk 'NF' | sort -u | sed 's/.*/"&"/' | paste -sd, - | sed 's/,/, /g')"
     IGROW_SSH_IFACES_NFT="{ ${set_body} }"
+
+    # fail2ban must not be able to ban the operator off the management LAN
+    # (ADR-0004 d3, as amended). Take the directly-attached subnet of each
+    # management NIC from the kernel's own link routes, so this tracks whatever
+    # the LAN actually is rather than a baked subnet. A NIC that is down
+    # contributes nothing, which is correct — it is not a path to anywhere.
+    local nets="" iface
+    for iface in $(printf '%s\n' ${ifaces} | awk 'NF' | sort -u); do
+        nets="${nets} $(ip -4 route show dev "${iface}" proto kernel scope link \
+            2>/dev/null | awk '{print $1}')"
+    done
+    IGROW_F2B_IGNOREIP_RENDERED="$(printf '%s\n' 127.0.0.1/8 ::1 \
+        ${IGROW_F2B_IGNOREIP} ${nets} | awk 'NF' | sort -u | paste -sd' ' -)"
+
     log "config: SSH ifaces=${IGROW_SSH_IFACES_NFT} CAN=${IGROW_CAN_IFACE} buffer=${IGROW_PERSISTENT_BUFFER}"
+    log "config: fail2ban ignoreip=${IGROW_F2B_IGNOREIP_RENDERED}"
 }
 
 apt_base() {
@@ -300,9 +316,12 @@ harden_ssh() {
 }
 
 setup_fail2ban() {
-    # ADR-0004 d3
-    log "configuring fail2ban (strict SSH thresholds)"
-    install -m 0644 "${FILES_DIR}/fail2ban/jail.local" /etc/fail2ban/jail.local
+    # ADR-0004 d3 — strict thresholds everywhere except the management LAN,
+    # which is rendered in the same way the nftables SSH set is (setup_firewall).
+    log "configuring fail2ban (strict SSH thresholds; ignoreip=${IGROW_F2B_IGNOREIP_RENDERED})"
+    sed -e "s|^ignoreip .*|ignoreip = ${IGROW_F2B_IGNOREIP_RENDERED}|" \
+        "${FILES_DIR}/fail2ban/jail.local" > /etc/fail2ban/jail.local
+    chmod 0644 /etc/fail2ban/jail.local
     systemctl enable fail2ban
     systemctl restart fail2ban
 }
