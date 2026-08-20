@@ -115,9 +115,9 @@ Both instruments are external, in their own weatherproof housings, cabled to the
 | Header A GPIO or PWM pin, timer-capable | Anemometer pulse input from U5 |
 | Header B pins 3–5 — STRAP_0..2 | Tied to `0b111` |
 
-Module-ID bit 1 (`STRAP_1`, PA6) is unrouted on carrier revision `E0001-000001`; M07's pattern
-has bit 1 = 1 and reads back as `0b101` on that revision. M07 requires a carrier that routes
-PA6, or a firmware override. O-42 (shared with M06).
+Module-ID bit 1 (`STRAP_1`, PA6) reaches the MCU from carrier revision `E0001-000003`.
+`E0001-000001` and `E0001-000002` carry it only with the `J6` pad 4 → `J3` pad 15 link added by
+hand; without that link M07's pattern reads back as `0b101`.
 
 1-Wire is not part of the ADR-0014 d5 header contract. O-18.
 
@@ -198,7 +198,7 @@ The indoor variant inherits the M01–M05 indoor assumptions; nothing in this se
 
 | Item | Requirement |
 |------|-------------|
-| Module-ID strap | `0b111`, subject to O-42 |
+| Module-ID strap | `0b111` |
 | Boot probe addresses | `0x44`, BMP390 `verify`, `0x62`, U4 `verify`, U7 `verify` |
 | Re-probe interval | ≈ 60 s (ADR-0014 d8) |
 | Publish rule | Responders only. Neither the unpopulated wind group nor the variant split requires a firmware variant |

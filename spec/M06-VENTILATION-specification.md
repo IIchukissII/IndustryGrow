@@ -81,9 +81,10 @@ family does not support that, a second bus or a different part is required. O-10
 | Header A pin 4 / 5 — I2C_SCL, I2C_SDA | U1…U4 |
 | Header B pins 3–5 — STRAP_0..2 | Tied to `0b110` |
 
-Module-ID bit 1 (`STRAP_1`, PA6) is unrouted on carrier revision `E0001-000001`
-(`firmware/common/carrier/e0001.h`); M06's pattern has bit 1 = 1, so it reads back as `0b100`
-on that revision. M06 requires a carrier that routes PA6, or a firmware override. O-42.
+Module-ID bit 1 (`STRAP_1`, PA6) reaches the MCU from carrier revision `E0001-000003`
+(`firmware/common/carrier/e0001.h`). `E0001-000001` and `E0001-000002` carry it only with the
+`J6` pad 4 → `J3` pad 15 link added by hand; without that link M06's pattern reads back as
+`0b100`.
 
 ### 5.1 I²C bus
 
@@ -157,7 +158,7 @@ U2 and U3. Node draw on `+12 V` not measured; the reference figure is M05's 0.25
 
 | Item | Requirement |
 |------|-------------|
-| Module-ID strap | `0b110`, subject to O-42 |
+| Module-ID strap | `0b110` |
 | Boot probe addresses | `0x28`, `0x44`, two SDP addresses `verify` |
 | Re-probe interval | ≈ 60 s (ADR-0014 d8) |
 | Publish rule | Responders only; partial populations require no rebuild |
@@ -173,7 +174,7 @@ U2 and U3. Node draw on `+12 V` not measured; the reference figure is M05's 0.25
 | V1 | §6.1 | `k` identified at commissioning against a reference; method undefined, O-4 |
 | V2 | §6.3 | Leakage characteristic fitted over ≥ 3 fan operating points |
 | V3 | §4 | U2 and U3 addressable simultaneously on one segment (O-10) |
-| V4 | §5 | Module-ID readback on the carrier revision in use (O-42) |
+| V4 | §5 | Module-ID readback of `0b110` on the carrier in use |
 
 ## 11. Open items
 
@@ -190,7 +191,7 @@ M05's; O-52 to O-62 are M02's.
 | O-8 | Functional-subsystem enumeration has no canonical home — ADR-0001 d7 contains no list, yet ADR-0002, ADR-0014 and ADR-0017 each restate one | Adding `ventilation` to the enumeration |
 | O-10 | SDP8xx part selection: two ranges, two distinct I²C addresses on one bus | Schematic capture |
 | O-11 | Flow excitation for leakage identification in Phase 1 — no fan control exists | Commissioning method |
-| O-42 | Module-ID bit 1 is unrouted on `E0001-000001`, so M06 reads back as `0b100`. Whether `E0001-000002` routes PA6 is not recorded in the store documents | Bring-up, carrier revision selection |
+| ~~O-42~~ | ~~Module-ID bit 1 is unrouted on `E0001-000001`, so M06 reads back as `0b100`~~ — closed 2026-08-20: `E0001-000003` routes PA6, the `E0001-000002` boards in service carry the hand link, and the carrier firmware reads all three strap bits | — |
 
 ## 12. Maturity
 
