@@ -55,6 +55,7 @@ detect_lan_iface() { ip route show default 2>/dev/null | awk '/default/ {print $
 
 # Load defaults, then the installed env file (operator edits win).
 load_env() {
+    IGROW_SSH_IFACES="wlan0 eth0 end0"  # mgmt NICs SSH may arrive on (a set)
     IGROW_LAN_IFACE=""   # empty = auto-detect from the default route (below)
     IGROW_SSH_PORT="22"
     IGROW_CAN_IFACE="vcan0"
@@ -95,9 +96,20 @@ load_env() {
         # Honor an explicit setting (the operator knows the intended management
         # iface, e.g. wlan0 while recovering over a temporary eth0 cable). Only
         # warn — do not override, or we'd fight the operator's end-state choice.
-        warn "configured LAN iface '${IGROW_LAN_IFACE}' is not the current default-route iface '${detected}'; honoring the explicit setting — SSH will be allowed on '${IGROW_LAN_IFACE}'"
+        warn "configured LAN iface '${IGROW_LAN_IFACE}' is not the current default-route iface '${detected}'; honoring the explicit setting — SSH will also be allowed on '${IGROW_LAN_IFACE}'"
     fi
-    log "config: LAN=${IGROW_LAN_IFACE} CAN=${IGROW_CAN_IFACE} buffer=${IGROW_PERSISTENT_BUFFER}"
+
+    # SSH is allowed on the SET of LAN-facing management interfaces, not one baked
+    # name (ADR-0004 d5, as amended). Default covers every way the Pi is reached —
+    # Wi-Fi (wlan0), USB/legacy Ethernet (eth0), Pi 5 onboard (end0). The live
+    # default-route iface and any explicit IGROW_LAN_IFACE are always unioned in,
+    # so the current management path can never be excluded (lockout-safe).
+    local ifaces="${IGROW_SSH_IFACES:-wlan0 eth0 end0} ${IGROW_LAN_IFACE} ${detected}"
+    # Dedup, drop empties, and render as an nftables set: { "a", "b", "c" }.
+    local set_body
+    set_body="$(printf '%s\n' ${ifaces} | awk 'NF' | sort -u | sed 's/.*/"&"/' | paste -sd, - | sed 's/,/, /g')"
+    IGROW_SSH_IFACES_NFT="{ ${set_body} }"
+    log "config: SSH ifaces=${IGROW_SSH_IFACES_NFT} CAN=${IGROW_CAN_IFACE} buffer=${IGROW_PERSISTENT_BUFFER}"
 }
 
 apt_base() {
@@ -316,7 +328,7 @@ setup_firewall() {
     # ADR-0004 d5/d6 — default-deny inbound except SSH on LAN; egress OPEN at bring-up.
     log "rendering + installing nftables ruleset (egress open at bring-up; prod=egress-locked)"
     local rendered=/etc/nftables.conf
-    sed -e "s/^define LAN_IFACE = .*/define LAN_IFACE = \"${IGROW_LAN_IFACE}\"/" \
+    sed -e "s|^define SSH_IFACES = .*|define SSH_IFACES = ${IGROW_SSH_IFACES_NFT}|" \
         -e "s/^define SSH_PORT = .*/define SSH_PORT = ${IGROW_SSH_PORT}/" \
         "${FILES_DIR}/nftables/industrygrow-gateway.nft" > "${rendered}"
     chmod 0644 "${rendered}"

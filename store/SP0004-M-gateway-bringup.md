@@ -92,7 +92,7 @@ The script is **idempotent** — safe to re-run after editing
 | SSH | Drop-in `00-industrygrow-hardening.conf` (read before cloud-init's `50-`; sshd is first-value-wins): key-only, no root, no passwords. sshd stays enabled. | ADR-0004 d2 |
 | fail2ban | Strict SSH thresholds, journald backend. | ADR-0004 d3 |
 | unattended-upgrades | Security patches on; reboot disabled unless `IGROW_UNATTENDED_REBOOT_TIME` set. | ADR-0004 d4 |
-| Firewall | nftables default-deny inbound except SSH on the LAN iface (auto-detected); egress open at bring-up. | ADR-0004 d5/d6 |
+| Firewall | nftables default-deny inbound except SSH on the LAN-facing mgmt interfaces (`wlan0`/`eth0`/`end0` + default route); egress open at bring-up. | ADR-0004 d5/d6 |
 | journald | Persistent, `SystemMaxUse=100M`. | ADR-0004 d11 |
 
 ---
@@ -106,7 +106,7 @@ provisioning):
 | Concern | Bring-up (now) | Production target | Source |
 |---------|----------------|-------------------|--------|
 | SSH daemon | Enabled (key-only, no root). | Disabled by default, re-enabled per-op. | ADR-0004 d2 |
-| Inbound | default-deny except SSH on the LAN iface. | unchanged. | ADR-0004 d6 |
+| Inbound | default-deny except SSH on the LAN-facing mgmt interfaces. | unchanged. | ADR-0004 d6 |
 | Outbound | Open (apt/pip/DNS need it; IndustryFlow doesn't exist yet). | Locked to IndustryFlow only. | ADR-0004 d5 |
 | Reboot window | Disabled (`IGROW_UNATTENDED_REBOOT_TIME` empty; photoperiod undefined). | Set once photoperiod is known. | ADR-0004 d4 |
 | Local store | RAM-only on SD (`IGROW_PERSISTENT_BUFFER=off`). | Bounded buffer on SSD/NVMe. | ADR-0020 |
@@ -115,12 +115,18 @@ The production egress lock-down lives commented in
 `files/nftables/industrygrow-gateway.nft`, gated on `IGROW_INDUSTRYFLOW_ENDPOINT`.
 **Do not enable it before IndustryFlow exists** — it would sever apt/pip.
 
-**LAN interface.** `provision.sh` allows SSH on the interface carrying the default
-route (`eth0` is not assumed — WiFi is `wlan0`, Pi 5 onboard Ethernet is `end0`).
-Leave `IGROW_LAN_IFACE` empty to auto-detect, or set it explicitly to pin a
-specific interface. **If you ever lock yourself out**, recover from the local
-console: `sudo systemctl stop nftables && sudo nft flush ruleset`, fix
-`IGROW_LAN_IFACE`, and re-run.
+**SSH interfaces.** `provision.sh` allows SSH on the *set* of LAN-facing
+management NICs — `IGROW_SSH_IFACES` (default `wlan0 eth0 end0`), always unioned
+with the live default-route interface and any `IGROW_LAN_IFACE`. Moving the cable
+between ports or falling back to Wi-Fi therefore does not lock you out; the CAN
+interfaces are never in the set. Set `IGROW_SSH_IFACES` only to add an interface
+the default list misses. **If you ever do lock yourself out** (e.g. a box
+provisioned before this change, pinned to one interface), the boot-medium
+recovery needs no console: mount the FAT boot partition on another machine and
+append `systemd.mask=nftables.service` to `cmdline.txt` (single line) — SSH is
+reachable on the next boot with the firewall skipped, key-only; then re-run
+`provision.sh` and remove the token. From a local console instead:
+`sudo systemctl stop nftables && sudo nft flush ruleset`, then re-run.
 
 ---
 

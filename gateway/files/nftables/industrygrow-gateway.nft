@@ -6,8 +6,12 @@
 # Rendered by provision.sh (the two `define` lines below are substituted from
 # /etc/industrygrow/gateway.env) and installed as /etc/nftables.conf.
 #
-# INBOUND: default-deny, except SSH on the LAN interface only. The gateway is not
-#   a server to the LAN (ADR-0004 rev 1 decision 6: no service exposed to the LAN).
+# INBOUND: default-deny, except SSH on the LAN-facing management interfaces. The
+#   gateway is not a server to the LAN (ADR-0004 rev 1 decision 6: no service
+#   exposed to the LAN). SSH is allowed on every management NIC the box may be
+#   reached over — Wi-Fi and wired alike — not one baked interface, so moving the
+#   cable or falling back to Wi-Fi never locks the operator out (ADR-0004 d5, as
+#   amended). The CAN interfaces (can*/vcan*) are deliberately NOT in the set.
 #
 # OUTBOUND: OPEN at bring-up. ADR-0004 rev 1 decision 5 ("outbound to IndustryFlow
 #   only") is the PRODUCTION / roadmap-stage-11 target. IndustryFlow does not exist
@@ -17,7 +21,7 @@
 
 flush ruleset
 
-define LAN_IFACE = "eth0"
+define SSH_IFACES = { "wlan0", "eth0", "end0" }
 define SSH_PORT = 22
 
 table inet industrygrow {
@@ -32,9 +36,11 @@ table inet industrygrow {
         ip protocol icmp accept
         ip6 nexthdr ipv6-icmp accept
 
-        # SSH on the LAN interface only (bring-up posture; ADR-0004 d2/d6).
-        # Production posture (ADR-0004 d2) keeps sshd OFF by default — see Manual.
-        iifname $LAN_IFACE tcp dport $SSH_PORT ct state new accept
+        # SSH on the LAN-facing management interfaces (bring-up posture; ADR-0004
+        # d2/d5/d6). Production posture (ADR-0004 d2) keeps sshd OFF by default —
+        # see Manual. The set is rendered by provision.sh; it always includes the
+        # live default-route interface, so it is lockout-safe on any path.
+        iifname $SSH_IFACES tcp dport $SSH_PORT ct state new accept
     }
 
     chain forward {
