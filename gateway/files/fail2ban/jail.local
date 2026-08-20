@@ -9,6 +9,12 @@
 
 [DEFAULT]
 backend         = systemd
+# Never ban the management LAN (ADR-0004 d3, as amended). Rendered by
+# provision.sh from the management NICs' own link routes; IGROW_F2B_IGNOREIP
+# adds sources the derivation cannot see. Bans are persisted and re-applied on
+# start, and escalate x2 to a week, so without this a mistyped key attempt
+# takes the operator off their own gateway across reboots.
+ignoreip        = 127.0.0.1/8 ::1
 bantime         = 1h
 findtime        = 10m
 maxretry        = 3
