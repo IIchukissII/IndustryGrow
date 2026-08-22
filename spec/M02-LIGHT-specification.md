@@ -116,7 +116,8 @@ are unconfirmed for both. O-62.
 
 U3's slave address is `(1,1,1,0,1,A1,A0)`; A0 and A1 are tied low on the module, giving `0x74`.
 U3 additionally requires an external reference resistor at its REXT pin (§7.4) — a precision part,
-not a jellybean.
+not a jellybean, and one no single 0805 reaches within its TCR limit, so it is built from a series
+pair (R4 + R11).
 
 U3's address is strapped to `0x74`, outside the `0x50`–`0x57` block ADR-0014 rev 4 d6 reserves
 for the module-ID EEPROM. M02 identifies by strap (§5) and carries no EEPROM.
@@ -346,7 +347,8 @@ and output capacitors per its datasheet (`verify`). O-62.
 | Supply pins | V_DDA (pin 3) and V_DDD (pin 10), each decoupled 100 nF at the pin |
 | Common rail | Both shall be fed from the **same** 3.3 V rail. `V_DDA − V_DDD` has a ±0.3 V **absolute maximum**, so two independent regulators are not permitted |
 | Grounds | V_SSA (pins 1, 2, 5, 6, 15, 16) and V_SSD (pin 11) are separate nets, routed separately and joined by a single 0 Ω link placed beside the device |
-| REXT | 3.3 MΩ ±1 % (3.267…3.333 MΩ), TCR ≤ 50 ppm/K, from pin 4 to V_DDA. The device does not operate without it, and it sets the internal reference — its tolerance enters every irradiance reading |
+| REXT | 3.3 MΩ (3.267…3.333 MΩ), TCR ≤ 50 ppm/K, from pin 4 to V_DDA — DS001047 v4-00 §5, Figure 6, where the TCR limit is the condition on the guaranteed parameter. The device does not operate without it, and it sets the internal reference — its tolerance enters every irradiance reading |
+| REXT implementation | **Two 1.65 MΩ ±0.5 % resistors in series**, R4 + R11, both 0805, TCR ≤ 25 ppm/K. Thin-film precision stops at ~3 MΩ in every 0805 series and at 3.01 MΩ even in 1210 (Vishay TNPW e3), so no single part reaches 3.3 MΩ within the TCR limit. The pair gives 3.300 MΩ nominal, 3.2835…3.3165 MΩ worst case. **±0.5 % is required, not ±1 %**: two ±1 % parts land on 3.267…3.333 MΩ, exactly the window edges with no margin for ageing or solder shift |
 | Placement | REXT and the supply decoupling shall sit on the same PCB side as U3. The analog supply shall be placed as close to U3 as the layout allows |
 
 **M02 is the second module to generate a rail of its own.** O-43 records that module-local
@@ -462,7 +464,7 @@ collision with M06's O-42.
 | O-59 | Node power unmeasured | Distribution-board sizing, O-31 |
 | O-60 | U4 responsivity temperature coefficient not established; T2 unquantified | Absolute PPFD stability |
 | O-61 | Whether U4's integrated diffuser suffices or an external achromatic diffuser is required, its spectral transmission flatness, and its order against the conformal-coating step. Any diffuser sits in the measurement path of every band | Enclosure design, §6.2 coefficients, M1/M2/M5 |
-| O-62 | `verify` values in this document, reduced 2026-08-18 by the AS7331 datasheet (DS001047 v4-00): U3's electrical, optical and package figures are now stated. Outstanding: U4's `t_int` formula, AGAIN range, aperture offset, POR interval and ID register; U3's aperture offset; U2 capacitor values; LCSC / JLCPCB ordering codes and stock for both sensors, for U1, and for the REXT and strap-link resistors | `L` release |
+| O-62 | `verify` values in this document, reduced 2026-08-18 by the AS7331 datasheet (DS001047 v4-00): U3's electrical, optical and package figures are now stated. Outstanding: U4's `t_int` formula, AGAIN range, aperture offset, POR interval and ID register; U3's aperture offset; U2 capacitor values; LCSC / JLCPCB ordering codes and stock for both sensors, for U1, and for the REXT pair (1.65 MΩ ±0.5 %, TCR ≤ 25 ppm/K, 0805 — the value and grade are fixed by §7.4, only the ordering code is open) and strap-link resistors | `L` release |
 
 ## 13. Maturity
 
@@ -472,8 +474,9 @@ I²C pull-up pairs, and the module-ID straps.
 
 **Layout drawn and DRC-clean.** `E0003-000001-D-src.zip` holds a two-layer board on the
 same 104.902 × 46.990 mm envelope as `E0002-000001`, with J1/J2 at the same positions relative
-to the outline, so the module mates and cases alike. All 113 pads match the schematic netlist
-and §7.4's placement requirement is met — R4, R5, C5, C6 and U3 are all on `B.Cu`. Custom design
+to the outline, so the module mates and cases alike. All 115 pads match the schematic netlist
+and §7.4's placement requirement is met — R4, R11, R5, C5, C6 and U3 are all on `B.Cu`, the REXT
+pair sitting in the run between R4 and U3 pin 4. Custom design
 rules are in the package's `.kicad_dru`, scoped to U1 and U3, whose 0.5 mm pitch puts their pads
 inside the 0.2 mm board default. DRC reports **0 violations and 0 unconnected items**, matching
 `E0002-000001`. `Net-(U2-EN)` (the 1.8 V LDO enable) crosses the GND track between U2.1 and U2.3
