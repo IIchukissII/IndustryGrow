@@ -13,7 +13,7 @@ live in [`LICENSES/`](LICENSES/), named by SPDX identifier (REUSE convention).
 
 | Part of the repository | Contents | License | SPDX ID |
 |------------------------|----------|---------|---------|
-| `store/` | Hardware reference designs — carrier PCB (`E0001-000001.*`), BOM, gerbers, fab data | CERN Open Hardware Licence v2 – Strongly Reciprocal | [`CERN-OHL-S-2.0`](LICENSES/CERN-OHL-S-2.0.txt) |
+| `store/` | Hardware reference designs — carrier and sensor-module PCBs, BOMs, placement, renders, and the `-S-src.zip` / `-D-src.zip` design-source and `-D-fab.zip` fabrication packages (ADR-0017 d18/d19) | CERN Open Hardware Licence v2 – Strongly Reciprocal | [`CERN-OHL-S-2.0`](LICENSES/CERN-OHL-S-2.0.txt) |
 | `store/E0001-*-F.hex`, `-F-src.zip` | Firmware release artifacts (ADR-0017 `F` layer) — reference firmware, not hardware design | GNU Affero General Public License v3.0 or later | [`AGPL-3.0-or-later`](LICENSES/AGPL-3.0-or-later.txt) |
 | `firmware/` | Reference smart-node firmware (C / libcanard), build and release tooling | GNU Affero General Public License v3.0 or later | [`AGPL-3.0-or-later`](LICENSES/AGPL-3.0-or-later.txt) |
 | `firmware/dsdl/` | DSDL type vocabulary (`industryflow.greenhouse.*`) — the protocol layer, kept permissive so any implementation can speak it | Apache License 2.0 | [`Apache-2.0`](LICENSES/Apache-2.0.txt) |
@@ -45,15 +45,28 @@ directory. See `REUSE.toml`.
 > relicensing question to the files that actually need contributor consent instead
 > of growing it.
 
-## Declared but not yet present in this repository
+## Third-party content
 
-Per ADR-0001:
+Content the project did not author keeps its own terms, annotated in
+[`REUSE.toml`](REUSE.toml) with `precedence = "override"` so it wins over the
+directory defaults above. **Neither item below carries a licence grant** — both are
+published by their originator with no licence stated, so neither is covered by this
+project's licences and neither may be treated as though it were.
 
-- **Commercial closed modules** → proprietary EULA, built only against open-core
-  plugin interfaces and not part of this open repository.
+| Object | Origin | SPDX ID |
+|--------|--------|---------|
+| `store/SP0005-D-coreboard-snapshot.zip` | WeAct STM32F4 core-board schematic, board outline and 3D model, retained per ADR-0002 rev 3 d4 | [`LicenseRef-WeAct-unstated`](LICENSES/LicenseRef-WeAct-unstated.txt) |
+| `store/industrygrow.kicad_sym`, `store/industrygrow.pretty/PQFN50P365X260X119-16N.kicad_mod`, `store/industrygrow.3dshapes/AS7331.step` | SnapEDA EDA library content for the ams OSRAM AS7331 (`E0003` / M02-LIGHT) | [`LicenseRef-SnapEDA-unstated`](LICENSES/LicenseRef-SnapEDA-unstated.txt) |
 
-The WeAct STM32F4 core board snapshot, if vendored, retains its upstream
-open-hardware license.
+The SnapEDA footprint and symbol have been modified from the delivered versions; the
+changes are enumerated in the licence text. `store/industrygrow.kicad_sym` currently
+holds only this vendor symbol — when the first project-authored symbol is added the
+file becomes mixed-provenance and its annotation must be revisited.
+
+## Declared but not present in this repository
+
+Per ADR-0001, **commercial closed modules** carry a proprietary EULA, are built only
+against open-core plugin interfaces, and are not part of this repository.
 
 ## SPDX / REUSE
 
@@ -61,10 +74,10 @@ Per-file SPDX information follows the [REUSE](https://reuse.software) specificat
 
 - Markdown documents carry inline `SPDX-FileCopyrightText` / `SPDX-License-Identifier`
   headers (HTML comments).
-- Files that cannot carry a comment — the KiCad sources and generated fab outputs in
-  `store/`, the images in `img/` and the figure directories, the strict-JSON profiles
-  in `profiles/`, and `.gitmodules` / `.gitignore` / `REUSE.toml` itself — are
-  annotated in [`REUSE.toml`](REUSE.toml).
+- Files that cannot carry a comment — the design-source and fabrication packages and
+  generated outputs in `store/`, the images in `img/` and the figure directories, the
+  strict-JSON profiles in `profiles/`, and `.gitmodules` / `.gitignore` / `REUSE.toml`
+  itself — are annotated in [`REUSE.toml`](REUSE.toml).
 - `REUSE.toml` also sets a per-tree default with `precedence = "closest"` for
   `store/**` and `erp/**`, so a file carrying its own header always wins over the
   directory default.
