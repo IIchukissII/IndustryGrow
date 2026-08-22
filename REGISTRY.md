@@ -38,7 +38,7 @@ Conventions:
 |----------|-------------|------------|-------|
 | `E0001` | Universal carrier | electrical | One bare design, one assembly — no real variant (ADR-0017 decision 4). Hosts the WeAct core board (`SP0005`). |
 | `E0002` | M01-CLIMATE sensor module | electrical | Module-ID strap `0b001`. Air *state* at the canopy: SHT45, BME688, SCD41 — all board-mounted. Airflow moved to `E0008` (ADR-0014 rev 2). Specification: `spec/M01-CLIMATE-specification.md`. |
-| `E0003` | M02-LIGHT sensor module | electrical | Module-ID strap `0b010`. Photic: AS7343 14-channel spectral + AS7331 UV-A/B/C (both fixed by ADR-0014 rev 5). Schematic captured as `E0003-000001`; not yet laid out. Specification: `spec/M02-LIGHT-specification.md`. |
+| `E0003` | M02-LIGHT sensor module | electrical | Module-ID strap `0b010`. Photic: AS7343 14-channel spectral + AS7331 UV-A/B/C (both fixed by ADR-0014 rev 5). Schematic captured and laid out as `E0003-000001`; not yet fabricated. Specification: `spec/M02-LIGHT-specification.md`. |
 | `E0004` | M03-ANALYTICS sensor module | electrical (mixed-signal) | Module-ID strap `0b011`. Hydroponic solution: pH (LMP7721 front-end), EC (AD5933), DS18B20, ADuM isolation. |
 | `E0005` | M04-PLANT sensor module | electrical | Module-ID strap `0b100`. Plant-level: MLX90640 thermal imager. |
 | `E0006` | M05-SAFETY / cabinet distribution + monitoring board | electrical | Module-ID strap `0b101`. Sense-only. Single INA226 on the `+12 V` SELV bus, TMP117, reed, leak, on-board input fuse, DIN-meter S0 input (ADR-0018). Node draw measured 0.25 W with carrier. Specification: `spec/M05-SAFETY-specification.md`. |
@@ -106,6 +106,37 @@ the slug (a version-less `SP` root, ADR-0019 d2): `<parent-root>-D-<slug>[-src].
 | Object | Serves | Contents |
 |--------|--------|----------|
 | `SP0005-D-coreboard-snapshot.zip` | `SP0005` | V1.1 schematic `SP0005-S-v11.pdf`, V1.1 board shape `SP0005-D-outline-v11.pdf`, V1.0 3D `SP0005-D-3d-v10.step`. Upstream [WeActStudio.STM32F4_64Pin_CoreBoard](https://github.com/WeActStudio/WeActStudio.STM32F4_64Pin_CoreBoard); WeAct copyright, licence unstated (`REUSE.toml`). Required by ADR-0002 rev 3 d4. |
+
+### Design-source packages on the `S` / `D` layers (E-modules)
+
+Per **ADR-0017 decision 19**, a board version's editable CAD files are packaged by
+document layer — two objects per version, no loose `.kicad_*` objects. Applied
+retroactively to every board in the store.
+
+| Package | Members |
+|---------|---------|
+| `Exxxx-VVVVVV-S-src.zip` | `Exxxx-VVVVVV.kicad_sch`, `.kicad_pro`, `.kicad_prl` |
+| `Exxxx-VVVVVV-D-src.zip` | `Exxxx-VVVVVV.kicad_pcb`, `.kicad_dru` (where fitted), `.kicad_pro`, `.kicad_prl` |
+
+Members keep the bare identifier stem, the `-S-` / `-D-` infix belonging to the key
+— KiCad resolves a project by shared file stem. `.kicad_pro` / `.kicad_prl` are
+project-level and appear in both, so each package opens standalone. `.kicad_dru`
+is design source, not generated output: without it a DRC run reports violations
+the board does not have.
+
+| Board version | `.kicad_dru` scope |
+|---------------|--------------------|
+| `E0001-000003` (carrier v0.0.3) | — |
+| `E0002-000001` (M01 v0.0.1) | U5, XDFN4 pad pitch |
+| `E0003-000001` (M02 v0.0.1) | U1, U3, 0.5 mm pitch |
+| `E0006-000001` (M05 v0.0.1) | — |
+
+`E0007-000001` has no entry: its schematic is QElectroTech (`-S.qet`), one file and
+already one object.
+
+The shared libraries — `fp-lib-table`, `sym-lib-table`, `industrygrow.kicad_sym`,
+`industrygrow.pretty`, `industrygrow.3dshapes` — are project-wide, not per-version,
+and stay loose. Licensing inherits the `store/**` CERN-OHL-S default.
 
 ### Firmware document layer `F` (E-modules)
 

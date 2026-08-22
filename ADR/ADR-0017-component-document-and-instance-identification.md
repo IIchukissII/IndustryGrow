@@ -43,6 +43,9 @@ numbered decision, reverses nothing, and qualifies decision 15):
   object whose key names its status, `BLOCKED` or `SUPERSEDED`.
 - **decision 18 (2026-07-18)** — The live fabrication package (gerber layer set plus
   drill files) is one object, `Exxxx-VVVVVV-D-fab.zip`.
+- **decision 19 (2026-08-22)** — The editable design sources of a board version are
+  packaged by document layer, `Exxxx-VVVVVV-S-src.zip` and `Exxxx-VVVVVV-D-src.zip`,
+  closing the gap that had them stored with no layer letter at all.
 
 ## Context and problem
 
@@ -166,6 +169,7 @@ The single key to every code that can occupy the trailing slot of an identifier:
 | `BLOCKED` | Withdrawn artifact set — defective, never to be fabricated or relied on | status token | decision 17 |
 | `SUPERSEDED` | Withdrawn artifact set — replaced, no defect | status token | decision 17 |
 | `-fab` | Fabrication package: the gerber layer set plus drill files, one object | `D`-layer package descriptor | decision 18 |
+| `-src` | Design-source package: the editable CAD files of one document layer, one object | `S`- / `D`-layer package descriptor | decision 19 |
 
 ### Module designation (E-numbers)
 
@@ -214,6 +218,8 @@ The single key to every code that can occupy the trailing slot of an identifier:
     > **Bounded exception (decision 17, added 2026-06-21).** One-object-per-identifier governs *live* objects only. A **withdrawn** artifact set — blocked (defective) or superseded, possibly just the defective layout-and-fabrication subset of a version — collapses to a single archive object `Exxxx-VVVVVV-{BLOCKED,SUPERSEDED}.zip`, retaining the artifacts for history while removing the per-file clutter the flat store would otherwise carry for dead objects. The archive is a frozen container for dead artifacts, not a live document, so it does not reopen the no-container-objects rule for current work.
     >
     > **Bounded exception (decision 18, added 2026-07-18).** A second, *live* set collapses to one object: the **fabrication package** — the gerber and drill set of a board version — is a single `Exxxx-VVVVVV-D-fab.zip` object, not loose per-file objects. Unlike the withdrawn archive this is a current, in-use artifact; it is one object because the package is one indivisible manufacturing deliverable (decision 18), not because its contents are dead. The other `D`-layer faces (placement `-D-pos.csv`, render `-D.png`, pin map `-D-pinmap.md`) and the BOM `-L.csv` stay loose.
+    >
+    > **Bounded exception (decision 19, added 2026-08-22).** A third, *live* set collapses: the **design-source package** — the editable CAD files a board version is drawn in — is one object per document layer, `Exxxx-VVVVVV-S-src.zip` and `Exxxx-VVVVVV-D-src.zip`. The files do not open singly, so no member has a lifecycle of its own; the layer letter, absent while they were stored loose, is restored by the packaging.
 
 ### Firmware document layer
 
@@ -254,6 +260,20 @@ The single key to every code that can occupy the trailing slot of an identifier:
 
     Recorded as an additive in-place amendment (a bounded qualification of decision 15, like decision 17), not a fresh revision — a bounded in-place amendment under ADR-0000 d9, added 2026-07-18 and listed in the revision history above. The concrete descriptor (`-D-fab`) and the per-board fab-object record live in `REGISTRY.md` (the *what*); this decision is the *why*.
 
+### Design-source package
+
+19. **The editable design sources of a board version are packaged by document layer: `Exxxx-VVVVVV-S-src.zip` and `Exxxx-VVVVVV-D-src.zip`.** A board is drawn in a CAD project whose files are not independently openable — a schematic without its project settings has no netclasses or symbol library table, a layout without its board rules gives a DRC result the board does not have. The set per layer is what is usable, so the set per layer is the object.
+
+    - **This closes a gap, not a new category.** The sources were stored as `E0003-000001.kicad_sch`, `E0003-000001.kicad_pcb` — the one artifact class carrying no document-layer letter, against the `Exxxx-VVVVVV-L` form of decision 1 and decision 15's own example `E0001-000001-D-Top_Layer.gtl`. An omission, never a decision. The letter was always applicable: the layer classifies which artifact about an identity, and a schematic is `S`, a layout is `D`.
+
+    - **The split is by layer.** `S` takes the schematic; `D` takes the layout and the board's design rules, which set what its DRC result means. Project settings belong to neither alone and are carried in both, so each package opens standalone. One archive for the whole project would have no correct key — either letter misfiles the other half.
+
+    - **Members keep the bare identifier stem**, as decision 18 requires of gerber members, and here also because the CAD tool resolves a project by shared file stem: a member renamed to carry the infix would not open.
+
+    - **The loose per-file objects are removed** — keeping both would put identical content under two keys with nothing holding them equal. Applied retroactively to `E0001-000003`, `E0002-000001`, `E0003-000001` and `E0006-000001`, as decision 18 was applied to `E0001-000002`.
+
+    A bounded in-place amendment under ADR-0000 d9, added 2026-08-22 and listed in the revision history above. The descriptor, member list and per-board record live in `REGISTRY.md` and `CONTRIBUTING.md`; this decision is the *why*. Cost in alternative I and the negative consequences.
+
 ## Alternatives considered
 
 **A. A flat identifier — a single serial namespace that does not separate type, instance, and position.** *Rejected:* cannot express that one design has many instances (ADR-0014) or that an instance moves between positions and deployments (ADR-0016) without overloading a single number, and loses the ability to address type-level documents and per-instance documents distinctly. The type/instance/position split is the whole point.
@@ -271,6 +291,8 @@ The single key to every code that can occupy the trailing slot of an identifier:
 **G. File firmware per node module (`E000x-F`), under the module whose personality it runs.** The initial convention (a maintainer call recorded in `REGISTRY.md`, 2026-06-17): the M05 image filed under `E0006`. *Rejected on rev 1:* it conflates the built binary with the codebase. The firmware is one shared tree (`firmware/`) selected at runtime by the module-ID strap, so rooting `F` per-module means a single change to shared code bumps the `F` version of every module that embeds it — the same count-into-identity leak that decision 8 and alternative D reject for serial-into-version. The carrier (`E0001`) is the single codebase's hardware home and the constant across node types, so `F` roots there (decision 16); per-type images, if ever built, are version *variants* of that one root, not new roots.
 
 **H. Keep the fabrication outputs as loose per-file objects** (one object per gerber and drill, the store's original rule). *Rejected on the decision-18 amendment:* the gerber/drill set is one indivisible manufacturing deliverable with no per-file lifecycle — the ~11 objects only ever move, version, and re-spin together, so per-file addressing carries clutter without a single query that benefits from it. A gerber is never fetched, superseded, or licensed apart from its set. The set's identity is the package, so the package is the object (decision 18). The genuinely separable faces — placement, render, pin map, BOM — are *not* swept into the zip precisely because they *are* separately consumed (alternative retained only for those). This is the same bounded packaging move decision 17 makes for withdrawn sets, applied to a live one.
+
+**I. Keep the design sources loose, with no document-layer letter** (the store's state before decision 19). *Rejected on the amendment:* the one artifact class outside decision 1's `Exxxx-VVVVVV-L` form, and nothing on record chose it — the files never received a letter. The variant that letters them and keeps them loose (`Exxxx-VVVVVV-S.kicad_sch`, `Exxxx-VVVVVV-D.kicad_pcb`) satisfies the form but makes objects of project settings and board rules, which open nothing alone; the usable unit is the set per layer, so that is the object. This alternative's one real merit is kept on record as a negative consequence: loose text files diff in review, a package does not.
 
 ## Consequences
 
@@ -292,6 +314,7 @@ The single key to every code that can occupy the trailing slot of an identifier:
 - **Calibration requires dating/sequencing discipline in the suffix** (decision 11) — a process requirement, not just a format choice, with a validity-period policy still to set.
 - **Treating M03 probes as their own instances** adds traceability bookkeeping for consumables; justified by their independent calibration and replacement life, but it is extra records.
 - **The integration identifier has no suffix slot by design.** Operators must understand that the durable document key is the instance (`Exxxx-VVVVVV-NNNNNN`), not the current position — counterintuitive for anyone used to position-centric records.
+- **Packaging the design sources (decision 19) ends line-by-line diffing of schematic and layout changes.** The CAD files are text and diffed in a pull request; inside `-S-src.zip` / `-D-src.zip` a change is one binary object. Design review moves to the CAD tool's own comparison, and the commit message carries what the diff no longer shows.
 
 ## Relationship to other ADRs
 
