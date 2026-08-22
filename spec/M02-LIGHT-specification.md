@@ -470,15 +470,16 @@ collision with M06's O-42.
 their datasheets. `store/E0003-000001.kicad_sch` carries U4, U3, the 1.8 V rail, U1 with both
 I²C pull-up pairs, and the module-ID straps.
 
-**Layout drawn, not yet clean.** `store/E0003-000001.kicad_pcb` is a two-layer board on the
+**Layout drawn and DRC-clean.** `E0003-000001-D-src.zip` holds a two-layer board on the
 same 104.902 × 46.990 mm envelope as `E0002-000001`, with J1/J2 at the same positions relative
 to the outline, so the module mates and cases alike. All 113 pads match the schematic netlist
 and §7.4's placement requirement is met — R4, R5, C5, C6 and U3 are all on `B.Cu`. Custom design
-rules are in `store/E0003-000001.kicad_dru`, scoped to U1 and U3, whose 0.5 mm pitch puts their
-pads inside the 0.2 mm board default. Open before the layout can be released: one unrouted
-connection on `Net-(U2-EN)` (U2.1→U2.3, the 1.8 V LDO enable), single-spoke thermal relief on
-J1.8, J2.8 and U1.1, and 10 isolated `GND` pour islands. The module stays at **Schematic
-captured** until these close together with O-62.
+rules are in the package's `.kicad_dru`, scoped to U1 and U3, whose 0.5 mm pitch puts their pads
+inside the 0.2 mm board default. DRC reports **0 violations and 0 unconnected items**, matching
+`E0002-000001`. `Net-(U2-EN)` (the 1.8 V LDO enable) crosses the GND track between U2.1 and U2.3
+on `F.Cu` through a via pair; J1.8, J2.8 and U1.1 take a solid zone connection, the 2.54 mm
+header pitch leaving no room for a second thermal spoke at 0.5 mm gap. The module stays at
+**Schematic captured** until O-62 closes.
 
 | Rung | Content | Reached when |
 |------|---------|--------------|

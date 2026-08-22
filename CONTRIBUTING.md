@@ -194,6 +194,16 @@ To edit: extract both packages into `store/`, work, close KiCad, repack, delete 
 extracted files. `.gitignore` does not mask them, so `git status` shows any left
 behind.
 
+**Normalise to LF before packing.** KiCad writes LF, and git no longer normalises
+these files now that they live inside archives — whatever endings you pack are
+permanent. On Windows `core.autocrlf` converts anything that has passed through a
+checkout, so run this first:
+
+```powershell
+Get-ChildItem store\E000?-??????.kicad_* | ForEach-Object {
+  [IO.File]::WriteAllText($_.FullName, ([IO.File]::ReadAllText($_.FullName) -replace "`r`n","`n")) }
+```
+
 ```powershell
 'E0001-000003','E0002-000001','E0003-000001','E0006-000001' | ForEach-Object {
   $s = @("store\$_.kicad_sch","store\$_.kicad_pro","store\$_.kicad_prl") | Where-Object { Test-Path $_ }
