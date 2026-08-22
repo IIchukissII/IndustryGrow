@@ -3,6 +3,9 @@
 #
 # The store is a flat document keyspace (ADR-0017 d1/d15). Markdown documents that
 # live here (e.g. the M Manual SP0004-M-gateway-bringup.md) keep CRLF per the repo
-# doc convention. Scoped to *.md so CRLF never touches the binary / generated
-# hardware design files (gerbers, KiCad, drill, PNG), which git treats as binary.
+# doc convention. Scoped to *.md so CRLF never touches the packaged and generated
+# artifacts (.zip, gerbers, drill, PNG), which are binary. Since ADR-0017 d19 the
+# KiCad sources are inside -S-src.zip / -D-src.zip and no loose .kicad_* object
+# remains; a file extracted from a package for editing is working state, not a
+# tracked object, and needs no attribute either.
 *.md text eol=crlf

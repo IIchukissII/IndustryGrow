@@ -174,3 +174,34 @@ tracks the package by its object key.
 The placement `-D-pos.csv`, the render `-D.png`, the pin map `-D-pinmap.md` and the
 BOM `-L.csv` stay loose — each is separately consumed, and this split matches the
 fab house's own upload flow: one gerber zip, a separate CPL, a separate BOM.
+
+### Design-source package contents
+
+A board version's editable CAD files ship as two objects, one per document layer
+(ADR-0017 decision 19): `Exxxx-VVVVVV-S-src.zip` (schematic) and
+`Exxxx-VVVVVV-D-src.zip` (layout). There are no loose `.kicad_*` objects.
+
+| Package | Members |
+|---------|---------|
+| `-S-src.zip` | `Exxxx-VVVVVV.kicad_sch`, `.kicad_pro`, `.kicad_prl` |
+| `-D-src.zip` | `Exxxx-VVVVVV.kicad_pcb`, `.kicad_dru` (where fitted), `.kicad_pro`, `.kicad_prl` |
+
+Members keep the bare identifier stem — the infix belongs to the key, and KiCad
+resolves a project by shared file stem. `.kicad_pro` / `.kicad_prl` go in both so
+each package opens standalone; keep `.kicad_dru` with the layout.
+
+To edit: extract both packages into `store/`, work, close KiCad, repack, delete the
+extracted files. `.gitignore` does not mask them, so `git status` shows any left
+behind.
+
+```powershell
+'E0001-000003','E0002-000001','E0003-000001','E0006-000001' | ForEach-Object {
+  $s = @("store\$_.kicad_sch","store\$_.kicad_pro","store\$_.kicad_prl") | Where-Object { Test-Path $_ }
+  Compress-Archive -Path $s -DestinationPath "store\$_-S-src.zip" -Force
+  $d = @("store\$_.kicad_pcb","store\$_.kicad_dru","store\$_.kicad_pro","store\$_.kicad_prl") | Where-Object { Test-Path $_ }
+  Compress-Archive -Path $d -DestinationPath "store\$_-D-src.zip" -Force }
+```
+
+The packages open against the store's shared libraries, which stay loose. Do not
+sweep them into a package: they carry their own SnapEDA attribution in
+`REUSE.toml`, and `reuse lint` does not check inside archives.

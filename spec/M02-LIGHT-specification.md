@@ -5,7 +5,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 # M02-LIGHT — module specification
 
-- **Status:** Working specification. `E0003-000001` schematic captured; not laid out, not fabricated
+- **Status:** Working specification. `E0003-000001` schematic captured and laid out; not fabricated
 - **Date:** 2026-08-21
 - **E-number:** `E0003` · module-ID strap `0b010`
 - **Governing ADRs:** ADR-0014 (rev 5), ADR-0002 (rev 3), ADR-0003, ADR-0005 (rev 1), ADR-0016, ADR-0017 (rev 2)
@@ -468,7 +468,17 @@ collision with M06's O-42.
 
 **Schematic captured.** Both sensors are fixed by ADR-0014 rev 5 and both are now stated from
 their datasheets. `store/E0003-000001.kicad_sch` carries U4, U3, the 1.8 V rail, U1 with both
-I²C pull-up pairs, and the module-ID straps; no layout exists.
+I²C pull-up pairs, and the module-ID straps.
+
+**Layout drawn, not yet clean.** `store/E0003-000001.kicad_pcb` is a two-layer board on the
+same 104.902 × 46.990 mm envelope as `E0002-000001`, with J1/J2 at the same positions relative
+to the outline, so the module mates and cases alike. All 113 pads match the schematic netlist
+and §7.4's placement requirement is met — R4, R5, C5, C6 and U3 are all on `B.Cu`. Custom design
+rules are in `store/E0003-000001.kicad_dru`, scoped to U1 and U3, whose 0.5 mm pitch puts their
+pads inside the 0.2 mm board default. Open before the layout can be released: one unrouted
+connection on `Net-(U2-EN)` (U2.1→U2.3, the 1.8 V LDO enable), single-spoke thermal relief on
+J1.8, J2.8 and U1.1, and 10 isolated `GND` pour islands. The module stays at **Schematic
+captured** until these close together with O-62.
 
 | Rung | Content | Reached when |
 |------|---------|--------------|
