@@ -3,7 +3,6 @@ SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
-
 # IndustryGrow
 
 [![REUSE status](https://github.com/IIchukissII/IndustryGrow/actions/workflows/reuse.yml/badge.svg)](https://github.com/IIchukissII/IndustryGrow/actions/workflows/reuse.yml)
@@ -24,144 +23,143 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 ## Purpose
 
-IndustryGrow turns a growing space into a measured, controllable system. It provides the
-field hardware, firmware, and edge software that sense a cultivation environment and run its
-control loops. Its companion platform, **IndustryFlow**, stores history, runs analytics, and
-distributes cultivation profiles.
+IndustryGrow turns a growing space into a measured, controllable system: the field hardware,
+firmware and edge software that sense a cultivation environment and run its control loops. Its
+companion platform, **IndustryFlow**, stores history, runs analytics and distributes profiles.
 
-The project is **open-core**: the same architecture serves community self-builders and
-commercial managed deployments. Hardware designs and reference firmware are open; the
-defensible value is not the sensors (commodity) but the expertise to *identify* a deployment's
-dynamics and operate it efficiently afterward.
+**Open-core**, one architecture for self-builders and commercial deployments alike. Hardware
+designs and reference firmware are open; the defensible value is not the sensors (commodity)
+but the expertise to *identify* a deployment's dynamics and operate it efficiently.
 </td>
 </tr>
 </table>
 
 ## Core concept
 
-- **One architecture, all scales.** Apartment cabinet and a 200 m² greenhouse use identical
-  PCB designs, firmware, and data types. Scaling means *multiplying node instances across
-  zones* — never introducing new node classes.
-- **Profile as the single mutation channel.** A *cultivation profile* (signed, versioned JSON)
-  is the only way to change how a deployment behaves. Human edits, ML-generated
-  optimizations, and community contributions all flow through profile versioning — one audit
-  trail, one rollback path.
-- **Autonomous edge.** The gateway runs control loops *locally* against a cached profile.
-  The cloud is an observer and profile source, never a real-time commander — plants keep
-  growing through network outages.
-- **Safety is hardware, separate from control.** The over-temperature interlock at the heating
-  actuator cuts power independently of any software. The profile defines *operating* parameters;
-  hardware defines *survival* parameters. The two never overlap.
-- **Sensor density is temporal.** Dense coverage during an empirical *survey*, a reduced-order
-  state-space model is *identified*, then most sensors return to inventory for the lean
-  *operating* phase. Profiles carry the model alongside the setpoints.
+- **One architecture, all scales.** Cabinet and 200 m² greenhouse share PCB designs, firmware and
+  data types. Scaling multiplies node *instances* across zones; it never adds node classes.
+- **Profile as the single mutation channel.** A signed, versioned JSON *cultivation profile* is
+  the only way to change how a deployment behaves — human edits, ML optimizations and community
+  contributions all flow through it. One audit trail, one rollback path.
+- **Autonomous edge.** The gateway runs control loops locally against a cached profile; the cloud
+  observes and supplies profiles but never commands in real time. Plants keep growing through outages.
+- **Safety is hardware.** The over-temperature interlock cuts power independently of software.
+  Profiles define *operating* parameters, hardware defines *survival* parameters, never both.
+- **Sensor density is temporal.** Dense coverage during an empirical *survey* identifies a
+  reduced-order state-space model; most sensors then return to inventory for the lean *operating*
+  phase. Profiles carry the model alongside the setpoints.
 
 ## Technology
 
 | Layer | Choice |
 |-------|--------|
-| Field bus | Cyphal application protocol over classic CAN @ 500 kbit/s, linear topology |
-| Smart-node MCU | WeAct STM32F4 64-pin Core Board (STM32F405RGT6; F412/F446 drop-in) |
-| Node carrier PCB | Custom integration board: CAN transceiver, ATECC608 secure element, sensor-module header |
-| Gateway | Raspberry Pi (3B+ minimum, Pi 4/5 for higher traffic) + isolated 2-channel CAN HAT |
+| Field bus | Cyphal over classic CAN @ 500 kbit/s, linear topology |
+| Smart-node MCU | WeAct STM32F4 64-pin core board (STM32F405RGT6; F412/F446 drop-in) |
+| Node carrier PCB | Custom integration board: CAN transceiver, ATECC608 secure element, two-header sensor-module interface |
+| Node firmware | Embedded C with libcanard — **one image**, node personality selected at runtime by the module-ID strap |
+| Gateway | Raspberry Pi (3B+ minimum, 4/5 for higher traffic) + isolated 2-channel CAN HAT |
 | Gateway software | Python / asyncio, SocketCAN + Pycyphal + Nunavut-generated DSDL bindings |
-| Cloud link | mTLS to IndustryFlow; gateway is a **stateless edge** in steady state (audit trail on platform). Pre-cloud, and for buffering/survey, it keeps a bounded local store per ADR-0020 |
-| Node firmware | Embedded C with libcanard |
-| Identity & security | Per-node ATECC608 hardware identity; signed firmware; trusted in-cabinet CAN domain |
+| Cloud link | mTLS to IndustryFlow; stateless edge in steady state, with a bounded local store for buffering and survey (ADR-0020) |
+| Identity & security | Per-node ATECC608 hardware identity, operator CA, signed firmware and profiles |
 
-> Hardware design files live in `store/` under the ADR-0017 identification scheme
-> (carrier = `E0001`, v0.0.1 → `E0001-000001.*`); see [`REGISTRY.md`](REGISTRY.md)
-> for the E-number map. PCBs are authored in **KiCad 10** (will not open in
-> earlier versions); cabinet distribution schematics (`.qet`, e.g. `E0007`) are
-> drawn in **QElectroTech**.
+> PCBs are authored in **KiCad 10** and will not open in earlier versions; cabinet distribution
+> schematics (`E0007`) use **QElectroTech**. Design files live in `store/` under the ADR-0017
+> scheme, packaged per document layer as `Exxxx-VVVVVV-S-src.zip` / `-D-src.zip` (d19) —
+> [`CONTRIBUTING.md`](CONTRIBUTING.md) has the unpack/repack procedure.
 
-### Sensor module catalog
+## Sensor modules
 
 Seven reusable PCB designs, one functional subsystem each. Instances are specialized by
-populated-BOM, not by new designs.
+populated BOM, never by new designs.
 
-| Module | Subsystem | Key sensing |
-|--------|-----------|-------------|
-| M01-CLIMATE | Air environment | Temp/RH, gas/VOC, CO₂ |
-| M02-LIGHT | Photic environment | 11-channel spectral, UV-A |
-| M03-ANALYTICS | Hydroponic solution | pH, EC, solution temperature |
-| M04-PLANT | Plant-level | Canopy thermal imaging |
-| M05-SAFETY | Power & monitoring | +12 V bus current, reported cabinet temp, door, leak (report/alert) |
-| M06-VENTILATION | Air transport | Duct velocity, filter Δp, envelope↔ambient Δp, in-stream T/RH |
-| M07-AMBIENT | Boundary conditions | Ambient T/RH, barometric pressure, ambient CO₂, irradiance, wind (outdoor, deployment scale) |
+| Module | E-number | Subsystem | Key sensing | State |
+|--------|----------|-----------|-------------|-------|
+| M01-CLIMATE | `E0002` | Air environment | Temp/RH, gas/VOC, CO₂ | Laid out, PCBA ordered |
+| M02-LIGHT | `E0003` | Photic environment | 14-channel spectral, UV-A/B/C | Laid out, DRC-clean |
+| M03-ANALYTICS | `E0004` | Hydroponic solution | pH, EC, solution temperature | Blocked on ADR-0006 |
+| M04-PLANT | `E0005` | Plant-level | Canopy thermal imaging | Blocked on bulk-transport decision |
+| M05-SAFETY | `E0006` | Power & monitoring | +12 V bus current, cabinet temp, door, leak | **Fabricated, bench-verified** |
+| M06-VENTILATION | `E0008` | Air transport | Duct velocity, filter Δp, envelope↔ambient Δp, in-stream T/RH | Specified, not laid out |
+| M07-AMBIENT | `E0009` | Boundary conditions | Ambient T/RH, barometric, ambient CO₂, irradiance, wind | Specified, not laid out |
 
-> M01 measures air *state* at the plant; M06 measures air *transport* through the
-> cabinet. The split is why airflow is no longer an M01 quantity (ADR-0014 rev 2).
-> M07's "ambient" is whatever the growing enclosure exchanges with *one step out* — the
-> weather for a greenhouse, the surrounding room for a cabinet — so it ships as **indoor
-> and outdoor variants of one design**, differing in populated BOM and housing, never in
-> PCB, strap, or firmware.
-> **M06 and M07 are defined, not scheduled** — neither is laid out or fabricated, and
-> Phase 1 remains the M01–M05 set. Their working specifications live in
-> [`spec/`](spec/).
+Plus the universal carrier `E0001` (v0.0.3, released) that every module mounts on, and the
+cabinet distribution case `E0007`.
+
+> M01 measures air *state* at the plant, M06 air *transport* through the cabinet — which is why
+> airflow left M01 (ADR-0014 rev 2). M07's "ambient" is whatever the enclosure exchanges with one
+> step out: the weather for a greenhouse, the room for a cabinet. It ships as indoor and outdoor
+> variants of one design — same PCB, strap and firmware, different populated BOM and housing.
 
 ## Project status
 
 | Phase | Scope | State |
 |-------|-------|-------|
-| Phase 1 | Hardware + firmware bring-up; the 5 sensor nodes M01–M05 + gateway; standalone, no cloud | In progress |
+| Phase 1 | Hardware + firmware bring-up; M01–M05 + gateway; standalone, no cloud | In progress |
 | Phase 2 | Cloud integration: mTLS ingestion, profile sync, audit trail | Blocked on IndustryFlow prerequisites |
 | Phase 3 | Community profile registry, predictive ML, multi-cabinet coordination | Planned |
 
-The dependency-ordered build sequence (14 stages, with the real cross-stage dependencies) lives in [`project/ROADMAP.md`](project/ROADMAP.md).
+## Where things are
 
-## Documentation
-
-| Read | For |
-|------|-----|
+| Path | Contents |
+|------|----------|
 | [`MOTIVATION.md`](MOTIVATION.md) | **Why** — the gap IndustryGrow is built to close |
-| [`project/RESEARCH.md`](project/RESEARCH.md) | **What's open** — the research directions (L1–L7) the gap opens |
-| [`project/ROADMAP.md`](project/ROADMAP.md) | **When** — the dependency-ordered build sequence |
-| [Architecture decision records](#architecture-decision-records) | **How** — the design decisions, the source of truth |
-| [`spec/`](spec/) | Module specifications — sensor complement, power, bus, thermal and mechanical, per module class. As-built for built modules (M05), pre-schematic for the rest |
-| [`REGISTRY.md`](REGISTRY.md) | The hardware E-number / instance map |
+| [`ADR/`](ADR/) | **How** — architecture decision records, the source of truth, plus `GLOSSARY.md` |
+| [`project/`](project/) | **When** — `ROADMAP.md` (14 dependency-ordered stages), `RESEARCH.md` (open directions L1–L7) |
+| [`spec/`](spec/) | Module specifications: sensor complement, power, bus, thermal, mechanical |
+| [`REGISTRY.md`](REGISTRY.md) | The E-number / SP-number identifier map |
+| [`store/`](store/) | Hardware design and release artifacts, flat, keyed by identifier (ADR-0017) |
+| [`firmware/`](firmware/) | Node firmware (C, libcanard) and the `industryflow.greenhouse` DSDL vocabulary |
+| [`gateway/`](gateway/) | Gateway provisioning, hardening, identity, profile-pull client |
+| [`erp/`](erp/) | Instance-and-integration ERP — the pre-cloud system of record (ADR-0021/0022) |
+| [`pki/`](pki/), [`signing/`](signing/), [`profiles/`](profiles/) | Operator CA (ADR-0024), profile signing (ADR-0025), profile instances |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | Contribution licensing, DCO sign-off, working with the store |
 
 ## Architecture decision records
 
-ADRs are the source of truth for the design. Present in this repository:
+ADRs are the source of truth for the design. Status follows the lifecycle in ADR-0000 d7;
+the project maintainers are the accepting authority.
 
-- **ADR-0000** (rev 1) — Decision records and the single-source-of-truth discipline (adds the cross-project ADR namespace) · *Accepted*
-- **ADR-0001** (rev 1) — Project framing: open-core cultivation platform on IndustryFlow · *Accepted*
-- **ADR-0002** (rev 3) — Field bus architecture · *Accepted*
-- **ADR-0003** — Strawberry day-neutral cultivation profile (reference profile) · *Proposed*
-- **ADR-0004** (rev 1) — Gateway host hardening & stateless-edge operation · *Accepted*
-- **ADR-0005** (rev 1) — DSDL foundation: `industryflow.greenhouse` vocabulary, standard-type reuse, port-ID allocation · *Accepted*
-- **ADR-0007** (rev 1) — PKI, hardware identity, and provisioning (ATECC608 secure element; adds identity across operators) · *Accepted*
-- **ADR-0014** (rev 2) — Sensor node taxonomy and module decomposition (adds M06-VENTILATION and M07-AMBIENT; module-ID field exhausted) · *Accepted*
-- **ADR-0015** — Gateway profile caching and local control loops · *Accepted*
-- **ADR-0016** (rev 1) — Empirical survey and state-space modeling · *Proposed*
-- **ADR-0017** (rev 2) — Component, document, and instance identification scheme (firmware `F` layer rooted on the carrier; extends the taxonomy to M01–M07) · *Accepted*
-- **ADR-0018** (rev 1) — Cabinet-level power distribution and consumption metering · *Proposed*
-- **ADR-0019** — Purchased-part (SP) identification · *Accepted*
-- **ADR-0020** — Gateway persistence model (local store as lifecycle-dependent data sink) · *Accepted*
-- **ADR-0021** (rev 3) — Instance-and-integration ERP: the pre-cloud system of record (where it runs; machine identity binding) · *Accepted*
-- **ADR-0022** (rev 1) — Instance-and-integration ERP: the machine- and operator-facing API (machine binding route; the pull is a pure read) · *Accepted*
-- **ADR-0023** — The type registry as a machine-readable interface · *Accepted*
-- **ADR-0024** — Operator CA bootstrap and the root-key ceremony · *Accepted*
-- **ADR-0025** — Deployment-profile signing and gateway verification · *Accepted*
-- **ADR-0026** — ERP backup and restore across two stores · *Accepted*
+| ADR | Subject | Status |
+|-----|---------|--------|
+| 0000 (rev 2) | Decision records and the single-source-of-truth discipline | Accepted |
+| 0001 (rev 1) | Project framing: open-core cultivation platform on IndustryFlow | Accepted |
+| 0002 (rev 3) | Field bus architecture — Cyphal/CAN, carrier PCB, stateless-edge gateway | Accepted |
+| 0003 | Strawberry day-neutral cultivation profile (reference profile) | Proposed |
+| 0004 (rev 1) | Gateway host hardening, firmware signing, stateless-edge operation | Accepted |
+| 0005 (rev 1) | DSDL foundation — type vocabulary, standard-type reuse, port-ID allocation | Accepted |
+| 0007 (rev 1) | PKI, hardware identity, and provisioning (ATECC608) | Accepted |
+| 0014 (rev 5) | Sensor node taxonomy and module decomposition — M01–M07, 8-bit module ID | Accepted |
+| 0015 | Gateway profile caching and local control loops | Accepted |
+| 0016 (rev 1) | Empirical survey, state-space modeling, sensor density management | Proposed |
+| 0017 (rev 2) | Component, document, and instance identification — d17/d18/d19 amendments | Accepted |
+| 0018 (rev 1) | Cabinet-level power distribution and consumption metering | Proposed |
+| 0019 | Purchased-part (SP) identification | Accepted |
+| 0020 | Gateway persistence model — local store as lifecycle-dependent data sink | Accepted |
+| 0021 (rev 3) | Instance-and-integration ERP: the pre-cloud system of record | Accepted |
+| 0022 (rev 2) | Instance-and-integration ERP: the machine- and operator-facing API | Accepted |
+| 0023 | The type registry as a machine-readable interface | Accepted |
+| 0024 | Operator CA bootstrap and the root-key ceremony | Accepted |
+| 0025 | Deployment-profile signing and gateway verification | Accepted |
+| 0026 | ERP backup and restore across two stores | Accepted |
+| 00XX | Environmental actuators — humidification and CO₂ enrichment | **Draft**, unnumbered |
 
-Status follows the lifecycle in **ADR-0000** (decision 7); the project maintainers are
-the accepting authority.
-
-Planned / not yet written: ADR-0006 (mechanical/hydroponic), ADR-0008 (deployment
-topology), ADR-0009 (profile schema), ADR-0010 (commercial operations),
-ADR-IF-0001 (IndustryFlow `production_unit`).
+Planned, not yet written: ADR-0006 (mechanical / hydroponic topology), ADR-0008 (deployment
+topology), ADR-0009 (profile schema), ADR-0010 (commercial operations), ADR-IF-0001
+(IndustryFlow `production_unit`). Numbers are assigned at commit, never pre-reserved.
 
 ## Licensing
 
-Open-core; license per part of the repo — see [`LICENSE.md`](LICENSE.md) for the
-authoritative mapping, with full texts in [`LICENSES/`](LICENSES/).
+Open-core, licensed per part of the repository. [`LICENSE.md`](LICENSE.md) is the authoritative
+mapping; full texts are in [`LICENSES/`](LICENSES/).
 
-- Hardware designs in `store/` (carrier + sensor modules): **CERN-OHL-S-2.0**
-- ADRs & documentation (`ADR/`, `README`, `REGISTRY.md`, `spec/`): **CC-BY-SA-4.0**
-- Reference firmware (`firmware/`, node sources): **AGPL-3.0-or-later**
-- DSDL protocol layer (`firmware/dsdl/`): **Apache-2.0**
-- ERP application (`erp/`) and operator CA tooling (`pki/`): **AGPL-3.0-or-later**
-- DSDL / protocol layer (`firmware/dsdl/`, the `industryflow.greenhouse.*` types): **Apache-2.0**
-- WeAct core board snapshot retained under its upstream open-hardware license
+| Part | Licence |
+|------|---------|
+| Hardware designs (`store/`) | `CERN-OHL-S-2.0` |
+| Documentation (`ADR/`, `spec/`, `project/`, `README.md`, `REGISTRY.md`) | `CC-BY-SA-4.0` |
+| Firmware, ERP, gateway clients, CA and signing tooling | `AGPL-3.0-or-later` |
+| DSDL protocol layer (`firmware/dsdl/`) | `Apache-2.0` — permissive, so any implementation can speak it |
+
+Third-party content keeps its own terms, annotated in [`REUSE.toml`](REUSE.toml): the WeAct
+core-board snapshot and the SnapEDA CAD for the AS7331 are both published with **no licence
+stated**, so neither is covered by this project's licences. Compliance is CI-enforced — run
+`reuse lint` before opening a pull request.
