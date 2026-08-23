@@ -128,7 +128,7 @@ the project maintainers are the accepting authority.
 | 0004 (rev 1) | Gateway host hardening, firmware signing, stateless-edge operation | Accepted |
 | 0005 (rev 1) | DSDL foundation — type vocabulary, standard-type reuse, port-ID allocation | Accepted |
 | 0007 (rev 1) | PKI, hardware identity, and provisioning (ATECC608) | Accepted |
-| 0014 (rev 5) | Sensor node taxonomy and module decomposition — M01–M07, 8-bit module ID | Accepted |
+| 0014 (rev 6) | Sensor node taxonomy and module decomposition — M01–M07, 8-bit module ID | Proposed |
 | 0015 | Gateway profile caching and local control loops | Accepted |
 | 0016 (rev 1) | Empirical survey, state-space modeling, sensor density management | Proposed |
 | 0017 (rev 2) | Component, document, and instance identification — d17/d18/d19 amendments | Accepted |
