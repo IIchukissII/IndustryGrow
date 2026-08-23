@@ -408,8 +408,8 @@ the installation.
 
 | ID | Requirement | Reference |
 |----|-------------|-----------|
-| M1 | An **achromatic diffuser shall be placed above U4's aperture.** DS001046 v6-00 §11.3 states it as a requirement, and the device has no integrated diffuser — the built-in feature is an aperture. The datasheet's optical characteristics are stated for the full response *including* a diffuser (note 1 to §6), so without one the responsivity behind §6.2's coefficients does not apply. Bulk diffuser, meeting at least the minimum scatter curve of Figure 66: non-zero response out to ≈ ±70°, against a cosine reference reaching ±90° | §6.2, O-71 |
-| M2 | The diffuser sits in the measurement path of every band of §6.2. DS001046 v6-00 requires it to be **achromatic** but publishes no numeric flatness tolerance, so either the selected part's transmission is flat across 400…700 nm within a tolerance recorded at selection, or its transmission curve is folded into `c_i` | §6.2, O-71 |
+| M1 | An **achromatic diffuser shall be placed above U4's aperture.** DS001046 v6-00 §11.3 states it as a requirement, and the device has no integrated diffuser — the built-in feature is an aperture. The datasheet's optical characteristics are stated for the full response *including* a diffuser (note 1 to §6), so without one the responsivity behind §6.2's coefficients does not apply. **Kimoto OptSaver L-57**, a volume diffuser; parameters and the reason for choosing it over the 100 PBU are below | §6.2, §9.1 |
+| M2 | The diffuser sits in the measurement path of every band of §6.2. The L-57 transmits **60 %**, a constant that enters every band and is absorbed by `c_i` at V1 rather than corrected separately. Residual wavelength dependence is folded into `c_i` the same way | §6.2, V1 |
 | M3 | Neither U4's nor U3's aperture is concentric with its package; each enclosure window shall be aligned to the aperture, not to the package outline | §4.1 |
 | M4 | No conformal coating over U4's aperture or U3's optical window | §4.1 |
 | M5 | Conformal coating on all other areas. Installed in the growing volume: condensation possible on excursions | §3.1 |
@@ -424,6 +424,31 @@ and a position file for each side (ADR-0017 d18), and assembly takes two placeme
 earlier revisions took one plus through-hole headers. The cost is accepted: a sensing face
 carrying nothing but the two apertures needs no clearance check, no masking and no per-part
 shading assessment against the enclosure window, which is what keeps final assembly simple.
+
+### 9.1 Diffuser
+
+AS7343 UG001009 v2-00 §4 names the two parts ams OSRAM ship on the evaluation kit and gives
+their parameters. Both are Kimoto films:
+
+| Parameter | 100 PBU | **OptSaver L-57** |
+|---|---|---|
+| Thickness | 125 µm | **100 µm** |
+| Transmission | 66 % | **60 %** |
+| Haze | 89.5 % | **93.1 %** |
+| Half-angle | 35.5° | **57°** |
+
+**L-57 is specified.** The guide separates surface diffusers, which suit a fixed geometry and
+buy transmission by narrowing the radiation pattern, from volume diffusers, which are nearly
+Lambertian and achromatic and give a reading that does not depend on the direction of the
+incoming light. M7 adjusts the module's height as the canopy grows and ADR-0003 d11 changes the
+spectrum by phase, so neither the geometry nor the spectral content is fixed — the case the
+guide assigns to the volume type. The 100 PBU's spectral response additionally varies with
+incidence angle (UG001009 Figure 17); the L-57 is the part the guide offers for better angular
+consistency at otherwise similar figures, and its 57° half-angle sits closer to the ±70° that
+DS001046 Figure 66 asks for than the 100 PBU's 35.5°.
+
+The 6 percentage points of transmission given up against the 100 PBU cost nothing here: §6.1
+autoranges on AGAIN and `t_int`, and the loss is a constant inside `c_i`.
 
 M5 and M1 conflict in the same way M01's M4 does: a coating step over a diffuser is a coating
 step over the measurement path. The diffuser is fitted after coating or masked during it. O-61.
@@ -489,7 +514,7 @@ gateway's concern.
 
 | ID | Verifies | Method |
 |----|----------|--------|
-| V1 | §6.2 | `c_i` identified against a reference quantum sensor in the canopy plane at ≥ 3 fixture output levels, per profile phase spectrum. The project owns no quantum sensor; procedure and instrument undefined, O-52 |
+| V1 | §6.2 | `c_i` identified against a reference quantum sensor in the canopy plane at ≥ 3 fixture output levels, per profile phase spectrum, **with the M1 diffuser and the enclosure window fitted** — the coefficients absorb the whole optical stack, so identifying them without it measures a different instrument. The project owns no quantum sensor; procedure and instrument undefined, O-52 |
 | V2 | §6.1, T1 | One full 24 h cycle logged: no channel saturated and none below 10 % of full scale at any point of either 30 min ramp or the photoperiod. U4 die temperature proxy and canopy air temperature recorded against a reference thermometer |
 | V3 | §6.3 | Each fixture channel driven alone at full output; the band counts recorded per channel. The 730 nm far-red channel shall register on F8 |
 | V4 | §6.4 | The fixture's UV-A channel driven alone at full output; U3's UV channel recorded against dark. Each remaining fixture channel then driven alone at full output; the UV channel shall stay at dark level, which is the visible-rejection claim of §6.4 measured rather than assumed |
@@ -523,7 +548,7 @@ collision with M06's O-42.
 | ~~O-61~~ | ~~Whether U4's integrated diffuser suffices or an external one is required~~ — closed 2026-08-23: DS001046 v6-00 §11.3 requires an achromatic diffuser and the device has no integrated one; the optical characteristics already assume a diffuser is fitted. Minimum scatter characteristic in Figure 66, now carried by M1. Part selection moves to O-71; the coating-order conflict is resolved in §9 | — |
 | ~~O-62~~ | ~~`verify` values in this document~~ — closed 2026-08-23 against DS001046 v6-00 (AS7343), DS001043 v5-00 (TSL2585), SCPS206B (TCA9543A) and SBVS121 (TLV700). U4: `t_int` formula confirmed as written, AGAIN 0.5×…2048× at CFG1 `0xC6`, aperture Ø0.900 mm at 0.609 mm offset, POR 200 µs typical, `ID` `0x5A` = `0x81`. U3: `ID` `0x92` = `0x5C`. U2 capacitors stated in §7.3. Ordering codes in §4.2. The one item that cannot close from a datasheet — U3's photodiode-group offset — moves to O-70 | — |
 | O-70 | DS001043 v5-00 dimensions the TSL2585 die as centred within ±75 µm but does not dimension the photodiode group, so U3's aperture offset from the package centre is unstated. Establish it by measurement against the physical part, with V6 | Enclosure window alignment, M3, V6 |
-| O-71 | Select the diffuser: a bulk achromatic part meeting at least Figure 66's minimum scatter curve (M1), with its transmission across 400…700 nm recorded at selection and any residual wavelength dependence folded into `c_i` (M2). ams OSRAM refer to an optical design guide not in the datasheet | Enclosure design, §6.2 coefficients, V1 |
+| ~~O-71~~ | ~~Diffuser not selected~~ — closed 2026-08-23 from AS7343 UG001009 v2-00 §4, the guide DS001046 §11.3 points at: **Kimoto OptSaver L-57**, with the 100 PBU as the alternative. Parameters and rationale in §9.1 | — |
 | ~~O-72~~ | ~~U4 fed straight from the 1.8 V rail, without DS001046 §11.1's series filter~~ — closed 2026-08-23: R5 (22 Ω) and C6 (4.7 µF) fitted, the filtered node is `+1V8_U4`, and C7 moved to the device side of R5 (§7.3) | — |
 | ~~O-63~~ | ~~AS7331 CAD content still in the repository and still attributed~~ — closed 2026-08-23: `E0003-000001` references none of it, so the footprint, the 3D model and `LicenseRef-SnapEDA-unstated` are removed with their `LICENSE.md` and `REUSE.toml` rows | — |
 | ~~O-64~~ | ~~U3's angular response not stated as an acceptance half-angle~~ — closed 2026-08-23 from DS001043 v5-00 Figures 13 and 14: half maximum at ≈ ±45° on both axes, now carried by M9. The figures are the photopic channel's; M9 records that the UV channel is not separately characterised | — |
@@ -565,5 +590,5 @@ with it. R1 and R4 are re-used as channel 1's pull-up pair rather than left as g
 |------|---------|--------------|
 | **Pre-schematic** | Complement and requirements fixed; values estimated or `verify` | ADR-0014 rev 6 fixes both parts ✔ |
 | **Schematic captured** ← here | Parts fixed to ordering part numbers; schematic exists; component values determined | U3 ordering part resolved ✔ (`TSL25853PM`); U1 resolved ✔ (`TCA9543APWR`); schematic exists ✔ |
-| **Schematic-frozen** | Remaining `verify` resolved, footprints checked against physical parts. `L` releases here | O-60, O-61, O-62, O-64 and O-66 closed ✔; O-70, O-71 and O-72 open; V6 not executed |
+| **Schematic-frozen** | Remaining `verify` resolved, footprints checked against physical parts. `L` releases here | O-60, O-61, O-62, O-64, O-66, O-71 and O-72 closed ✔; O-70 open; V6 not executed |
 | **As-built** | Estimates replaced by measured values; verification §11 executed | `E0003` fabricated and bench-verified; O-59 measured |
