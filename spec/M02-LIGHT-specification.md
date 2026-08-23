@@ -130,7 +130,7 @@ measures the visible spectrum with eleven bands.
 
 | # | Package | Body size | Notes |
 |---|---------|-----------|-------|
-| U4 | OLGA-8 | 3.10 × 2.00 × 1.00 mm | Aperture **Ø0.900 mm, centred 0.609 mm from the package centre** along the 3.10 mm axis — DS001046 v6-00 Figure 67, `℄ PART to ℄ ALS`. Not concentric with the package, and not the AS7341's offset |
+| U4 | OLGA-8 | 3.10 × 2.00 × 1.00 mm | Aperture **Ø0.900 mm, centred 0.609 mm from the package centre** along the 3.10 mm axis — DS001046 v6-00 Figure 67, `℄ PART to ℄ ALS`. Not concentric with the package, and not the AS7341's offset. Half cone angle on the sensor **40°** (DS001046 v6-00 §7) |
 | U3 | OLGA-6 | 2.00 × 1.00 × 0.35 mm | 6 pads in 2 rows × 3 columns; 0.650 mm column pitch along the long axis, 0.525 mm between rows; pads 0.400 × 0.275 mm. The photodiode group sits at the pin-1 end and is **not** concentric with the package. Land pattern per DS001043 v5-00 Figure 96; package outline Figure 95. The drawing dimensions the die as centred within ±75 µm but does not dimension the photodiode group, so its offset is a measurement, O-70. Angular response: half maximum at ≈ ±45° on both axes, M9 |
 
 Every footprint shall be checked against the physical part with a 1:1 paper printout before
@@ -402,8 +402,8 @@ the installation.
 
 | ID | Requirement | Reference |
 |----|-------------|-----------|
-| M1 | An **achromatic diffuser** shall be placed above U4's aperture unless the AS7343's own application optical requirements show its integrated diffuser to be sufficient for a hemispherical source. Which applies is unconfirmed | `verify`, O-61 |
-| M2 | Any diffuser fitted under M1 sits in the measurement path of every band of §6.2; its spectral transmission shall be flat across 400…700 nm to within `verify`, or its transmission curve shall be folded into `c_i` | §6.2, O-61 |
+| M1 | An **achromatic diffuser shall be placed above U4's aperture.** DS001046 v6-00 §11.3 states it as a requirement, and the device has no integrated diffuser — the built-in feature is an aperture. The datasheet's optical characteristics are stated for the full response *including* a diffuser (note 1 to §6), so without one the responsivity behind §6.2's coefficients does not apply. Bulk diffuser, meeting at least the minimum scatter curve of Figure 66: non-zero response out to ≈ ±70°, against a cosine reference reaching ±90° | §6.2, O-71 |
+| M2 | The diffuser sits in the measurement path of every band of §6.2. DS001046 v6-00 requires it to be **achromatic** but publishes no numeric flatness tolerance, so either the selected part's transmission is flat across 400…700 nm within a tolerance recorded at selection, or its transmission curve is folded into `c_i` | §6.2, O-71 |
 | M3 | Neither U4's nor U3's aperture is concentric with its package; each enclosure window shall be aligned to the aperture, not to the package outline | §4.1 |
 | M4 | No conformal coating over U4's aperture or U3's optical window | §4.1 |
 | M5 | Conformal coating on all other areas. Installed in the growing volume: condensation possible on excursions | §3.1 |
@@ -514,9 +514,11 @@ collision with M06's O-42.
 | O-58 | DLI is integrated at the gateway (§3.2). Restart and gap policy across a gateway restart or a telemetry outage is unspecified | Gateway control loop, ADR-0015 |
 | O-59 | Node power unmeasured | Distribution-board sizing, O-31 |
 | ~~O-60~~ | ~~U4 responsivity temperature coefficient not established~~ — closed 2026-08-23: DS001046 v6-00 states none, so T2's conditional is not met and no coefficient is applied. Auto zero (`0xDE`) covers offset drift only, and is now a firmware requirement (§10). Absolute PPFD stability against temperature is an empirical question V2 already instruments | — |
-| O-61 | Whether U4's integrated diffuser suffices or an external achromatic diffuser is required, its spectral transmission flatness, and its order against the conformal-coating step. Any diffuser sits in the measurement path of every band | Enclosure design, §6.2 coefficients, M1/M2/M5 |
+| ~~O-61~~ | ~~Whether U4's integrated diffuser suffices or an external one is required~~ — closed 2026-08-23: DS001046 v6-00 §11.3 requires an achromatic diffuser and the device has no integrated one; the optical characteristics already assume a diffuser is fitted. Minimum scatter characteristic in Figure 66, now carried by M1. Part selection moves to O-71; the coating-order conflict is resolved in §9 | — |
 | ~~O-62~~ | ~~`verify` values in this document~~ — closed 2026-08-23 against DS001046 v6-00 (AS7343), DS001043 v5-00 (TSL2585), SCPS206B (TCA9543A) and SBVS121 (TLV700). U4: `t_int` formula confirmed as written, AGAIN 0.5×…2048× at CFG1 `0xC6`, aperture Ø0.900 mm at 0.609 mm offset, POR 200 µs typical, `ID` `0x5A` = `0x81`. U3: `ID` `0x92` = `0x5C`. U2 capacitors stated in §7.3. Ordering codes in §4.2. The one item that cannot close from a datasheet — U3's photodiode-group offset — moves to O-70 | — |
 | O-70 | DS001043 v5-00 dimensions the TSL2585 die as centred within ±75 µm but does not dimension the photodiode group, so U3's aperture offset from the package centre is unstated. Establish it by measurement against the physical part, with V6 | Enclosure window alignment, M3, V6 |
+| O-71 | Select the diffuser: a bulk achromatic part meeting at least Figure 66's minimum scatter curve (M1), with its transmission across 400…700 nm recorded at selection and any residual wavelength dependence folded into `c_i` (M2). ams OSRAM refer to an optical design guide not in the datasheet | Enclosure design, §6.2 coefficients, V1 |
+| O-72 | DS001046 v6-00 §11.1 supplies U4 through a 22 Ω series resistor into 4.7 µF at the V_DD pin, isolating it from the bus supply. `E0003-000001` has neither: U4 takes the module 1.8 V rail directly with 100 nF local (C7), and the rail's 4.7 µF (C3) sits at U2, across the board. Supply noise reaching a 14-channel ADC is the exposure | §7.3, PPFD noise floor |
 | ~~O-63~~ | ~~AS7331 CAD content still in the repository and still attributed~~ — closed 2026-08-23: `E0003-000001` references none of it, so the footprint, the 3D model and `LicenseRef-SnapEDA-unstated` are removed with their `LICENSE.md` and `REUSE.toml` rows | — |
 | ~~O-64~~ | ~~U3's angular response not stated as an acceptance half-angle~~ — closed 2026-08-23 from DS001043 v5-00 Figures 13 and 14: half maximum at ≈ ±45° on both axes, now carried by M9. The figures are the photopic channel's; M9 records that the UV channel is not separately characterised | — |
 | O-65 | U1 has no reset line: RESET is tied to V_CC (§5.2), so a channel stuck low is recoverable only by a node power cycle. Whether a GPIO from the header shall drive RESET instead is a layout-affecting decision, and the header has four spare GPIO | Firmware recovery path, §10, layout |
@@ -557,5 +559,5 @@ with it. R1 and R4 are re-used as channel 1's pull-up pair rather than left as g
 |------|---------|--------------|
 | **Pre-schematic** | Complement and requirements fixed; values estimated or `verify` | ADR-0014 rev 6 fixes both parts ✔ |
 | **Schematic captured** ← here | Parts fixed to ordering part numbers; schematic exists; component values determined | U3 ordering part resolved ✔ (`TSL25853PM`); U1 resolved ✔ (`TCA9543APWR`); schematic exists ✔ |
-| **Schematic-frozen** | Remaining `verify` resolved, footprints checked against physical parts. `L` releases here | O-60, O-62, O-64 and O-66 closed ✔; O-61 and O-70 open; V6 not executed |
+| **Schematic-frozen** | Remaining `verify` resolved, footprints checked against physical parts. `L` releases here | O-60, O-61, O-62, O-64 and O-66 closed ✔; O-70, O-71 and O-72 open; V6 not executed |
 | **As-built** | Estimates replaced by measured values; verification §11 executed | `E0003` fabricated and bench-verified; O-59 measured |
