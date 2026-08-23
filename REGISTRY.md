@@ -38,7 +38,7 @@ Conventions:
 |----------|-------------|------------|-------|
 | `E0001` | Universal carrier | electrical | One bare design, one assembly — no real variant (ADR-0017 decision 4). Hosts the WeAct core board (`SP0005`). |
 | `E0002` | M01-CLIMATE sensor module | electrical | Module-ID strap `0b001`. Air *state* at the canopy: SHT45, BME688, SCD41 — all board-mounted. Airflow moved to `E0008` (ADR-0014 rev 2). Specification: `spec/M01-CLIMATE-specification.md`. |
-| `E0003` | M02-LIGHT sensor module | electrical | Module-ID strap `0b010`. Photic: AS7343 14-channel spectral + AS7331 UV-A/B/C (both fixed by ADR-0014 rev 5). Schematic captured and laid out as `E0003-000001`; not yet fabricated. Specification: `spec/M02-LIGHT-specification.md`. |
+| `E0003` | M02-LIGHT sensor module | electrical | Module-ID strap `0b010`. Photic: AS7343 14-channel spectral + TSL2585 UV-A, separated by a TCA9543A I2C switch since both answer at 0x39 (ADR-0014 rev 6). `E0003-000001` schematic carries this complement; the layout does not and is being redrawn. Not yet fabricated. Specification: `spec/M02-LIGHT-specification.md`. |
 | `E0004` | M03-ANALYTICS sensor module | electrical (mixed-signal) | Module-ID strap `0b011`. Hydroponic solution: pH (LMP7721 front-end), EC (AD5933), DS18B20, ADuM isolation. |
 | `E0005` | M04-PLANT sensor module | electrical | Module-ID strap `0b100`. Plant-level: MLX90640 thermal imager. |
 | `E0006` | M05-SAFETY / cabinet distribution + monitoring board | electrical | Module-ID strap `0b101`. Sense-only. Single INA226 on the `+12 V` SELV bus, TMP117, reed, leak, on-board input fuse, DIN-meter S0 input (ADR-0018). Node draw measured 0.25 W with carrier. Specification: `spec/M05-SAFETY-specification.md`. |

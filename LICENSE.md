@@ -56,12 +56,13 @@ project's licences and neither may be treated as though it were.
 | Object | Origin | SPDX ID |
 |--------|--------|---------|
 | `store/SP0005-D-coreboard-snapshot.zip` | WeAct STM32F4 core-board schematic, board outline and 3D model, retained per ADR-0002 rev 3 d4 | [`LicenseRef-WeAct-unstated`](LICENSES/LicenseRef-WeAct-unstated.txt) |
-| `store/industrygrow.kicad_sym`, `store/industrygrow.pretty/PQFN50P365X260X119-16N.kicad_mod`, `store/industrygrow.3dshapes/AS7331.step` | SnapEDA EDA library content for the ams OSRAM AS7331 (`E0003` / M02-LIGHT) | [`LicenseRef-SnapEDA-unstated`](LICENSES/LicenseRef-SnapEDA-unstated.txt) |
+| `store/industrygrow.pretty/PQFN50P365X260X119-16N.kicad_mod`, `store/industrygrow.3dshapes/AS7331.step` | SnapEDA EDA library content for the ams OSRAM AS7331 (`E0003` / M02-LIGHT) | [`LicenseRef-SnapEDA-unstated`](LICENSES/LicenseRef-SnapEDA-unstated.txt) |
 
-The SnapEDA footprint and symbol have been modified from the delivered versions; the
-changes are enumerated in the licence text. `store/industrygrow.kicad_sym` currently
-holds only this vendor symbol — when the first project-authored symbol is added the
-file becomes mixed-provenance and its annotation must be revisited.
+The SnapEDA footprint has been modified from the delivered version; the changes are
+enumerated in the licence text. The SnapEDA symbol was removed from
+`store/industrygrow.kicad_sym` on 2026-08-23, when ADR-0014 rev 6 withdrew the AS7331;
+that library is now project work under `CERN-OHL-S-2.0`. The footprint and 3D model are
+retained while the `E0003` layout still references them.
 
 ## Declared but not present in this repository
 
