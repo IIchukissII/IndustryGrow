@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0006: Cabinet decomposition and hydroponic topology
 
 - **ID:** ADR-0006
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-08-23
 - **Project:** IndustryGrow
 - **Parent:** ADR-0001

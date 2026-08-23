@@ -75,7 +75,7 @@ populated BOM, never by new designs.
 | Module | E-number | Subsystem | Key sensing | State |
 |--------|----------|-----------|-------------|-------|
 | M01-CLIMATE | `E0002` | Air environment | Temp/RH, gas/VOC, CO₂ | Laid out, PCBA ordered |
-| M02-LIGHT | `E0003` | Photic environment | 14-channel spectral, UV-A/B/C | Laid out, DRC-clean |
+| M02-LIGHT | `E0003` | Photic environment | 14-channel spectral, UV-A | Laid out, DRC-clean |
 | M03-ANALYTICS | `E0004` | Hydroponic solution | pH, EC, solution temperature | Topology fixed (ADR-0006); front-end ADR open |
 | M04-PLANT | `E0005` | Plant-level | Canopy thermal imaging | Blocked on bulk-transport decision |
 | M05-SAFETY | `E0006` | Power & monitoring | +12 V bus current, cabinet temp, door, leak | **Fabricated, bench-verified** |
@@ -127,9 +127,9 @@ the project maintainers are the accepting authority.
 | 0003 | Strawberry day-neutral cultivation profile (reference profile) | Proposed |
 | 0004 (rev 1) | Gateway host hardening, firmware signing, stateless-edge operation | Accepted |
 | 0005 (rev 1) | DSDL foundation — type vocabulary, standard-type reuse, port-ID allocation | Accepted |
-| 0006 | Cabinet decomposition and hydroponic topology — container feed, two solution loops | Proposed |
+| 0006 | Cabinet decomposition and hydroponic topology — container feed, two solution loops | Accepted |
 | 0007 (rev 1) | PKI, hardware identity, and provisioning (ATECC608) | Accepted |
-| 0014 (rev 6) | Sensor node taxonomy and module decomposition — M01–M07, 8-bit module ID | Proposed |
+| 0014 (rev 6) | Sensor node taxonomy and module decomposition — M01–M07, 8-bit module ID | Accepted |
 | 0015 | Gateway profile caching and local control loops | Accepted |
 | 0016 (rev 1) | Empirical survey, state-space modeling, sensor density management | Proposed |
 | 0017 (rev 2) | Component, document, and instance identification — d17/d18/d19 amendments | Accepted |
