@@ -362,6 +362,12 @@ lines are held low — under 2.2 mA in all, two orders below U2's 200 mA rating,
 budget applies. Local decoupling 100 nF at U4's V_DD pin (C7), 100 nF at U3's V_DD pin (C5) and
 100 nF at U1's V_CC pin (C4).
 
+**U4 sits behind a supply filter**, per DS001046 v6-00 §11.1: R5, 22 Ω, in series from the
+1.8 V rail into C6, 4.7 µF, at U4's V_DD, with C7's 100 nF on the same side. The filtered node
+is `+1V8_U4`; U3 and U1 stay on the unfiltered rail. Drop across R5 is 6.2 mV at U4's 280 µA
+maximum, against 100 mV of headroom to the 1.7 V minimum. M10 keeps R5, C6 and C7 on the
+opposite face from U4, so all three reach it through the via that serves U4's V_DD.
+
 U2's own capacitors, per TLV700 (SBVS121): the output is stable on an **effective** capacitance
 of 0.1 µF or more with ESR under 200 mΩ — effective meaning after bias and temperature derating,
 not the nameplate — and the datasheet characterises the part at C_OUT = 1 µF. An input capacitor
@@ -518,7 +524,7 @@ collision with M06's O-42.
 | ~~O-62~~ | ~~`verify` values in this document~~ — closed 2026-08-23 against DS001046 v6-00 (AS7343), DS001043 v5-00 (TSL2585), SCPS206B (TCA9543A) and SBVS121 (TLV700). U4: `t_int` formula confirmed as written, AGAIN 0.5×…2048× at CFG1 `0xC6`, aperture Ø0.900 mm at 0.609 mm offset, POR 200 µs typical, `ID` `0x5A` = `0x81`. U3: `ID` `0x92` = `0x5C`. U2 capacitors stated in §7.3. Ordering codes in §4.2. The one item that cannot close from a datasheet — U3's photodiode-group offset — moves to O-70 | — |
 | O-70 | DS001043 v5-00 dimensions the TSL2585 die as centred within ±75 µm but does not dimension the photodiode group, so U3's aperture offset from the package centre is unstated. Establish it by measurement against the physical part, with V6 | Enclosure window alignment, M3, V6 |
 | O-71 | Select the diffuser: a bulk achromatic part meeting at least Figure 66's minimum scatter curve (M1), with its transmission across 400…700 nm recorded at selection and any residual wavelength dependence folded into `c_i` (M2). ams OSRAM refer to an optical design guide not in the datasheet | Enclosure design, §6.2 coefficients, V1 |
-| O-72 | DS001046 v6-00 §11.1 supplies U4 through a 22 Ω series resistor into 4.7 µF at the V_DD pin, isolating it from the bus supply. `E0003-000001` has neither: U4 takes the module 1.8 V rail directly with 100 nF local (C7), and the rail's 4.7 µF (C3) sits at U2, across the board. Supply noise reaching a 14-channel ADC is the exposure | §7.3, PPFD noise floor |
+| ~~O-72~~ | ~~U4 fed straight from the 1.8 V rail, without DS001046 §11.1's series filter~~ — closed 2026-08-23: R5 (22 Ω) and C6 (4.7 µF) fitted, the filtered node is `+1V8_U4`, and C7 moved to the device side of R5 (§7.3) | — |
 | ~~O-63~~ | ~~AS7331 CAD content still in the repository and still attributed~~ — closed 2026-08-23: `E0003-000001` references none of it, so the footprint, the 3D model and `LicenseRef-SnapEDA-unstated` are removed with their `LICENSE.md` and `REUSE.toml` rows | — |
 | ~~O-64~~ | ~~U3's angular response not stated as an acceptance half-angle~~ — closed 2026-08-23 from DS001043 v5-00 Figures 13 and 14: half maximum at ≈ ±45° on both axes, now carried by M9. The figures are the photopic channel's; M9 records that the UV channel is not separately characterised | — |
 | O-65 | U1 has no reset line: RESET is tied to V_CC (§5.2), so a channel stuck low is recoverable only by a node power cycle. Whether a GPIO from the header shall drive RESET instead is a layout-affecting decision, and the header has four spare GPIO | Firmware recovery path, §10, layout |
@@ -552,7 +558,7 @@ between pads both clear the 0.2 mm board default, so the rules are removed rathe
 U2's ground leaves eastward and turns south: routed west it crossed the only corridor an IN-to-EN
 strap can use, and left the pad one thermal spoke short of the board minimum.
 
-Designator gaps R5, R11 and C6 are deliberate: those parts served the AS7331 and are withdrawn
+R5 and C6 are re-used for U4's supply filter (§7.3); R11 stays a deliberate gap. Those three served the AS7331 and were withdrawn
 with it. R1 and R4 are re-used as channel 1's pull-up pair rather than left as gaps.
 
 | Rung | Content | Reached when |
