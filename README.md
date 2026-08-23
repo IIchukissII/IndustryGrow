@@ -76,7 +76,7 @@ populated BOM, never by new designs.
 |--------|----------|-----------|-------------|-------|
 | M01-CLIMATE | `E0002` | Air environment | Temp/RH, gas/VOC, CO₂ | Laid out, PCBA ordered |
 | M02-LIGHT | `E0003` | Photic environment | 14-channel spectral, UV-A/B/C | Laid out, DRC-clean |
-| M03-ANALYTICS | `E0004` | Hydroponic solution | pH, EC, solution temperature | Blocked on ADR-0006 |
+| M03-ANALYTICS | `E0004` | Hydroponic solution | pH, EC, solution temperature | Topology fixed (ADR-0006); front-end ADR open |
 | M04-PLANT | `E0005` | Plant-level | Canopy thermal imaging | Blocked on bulk-transport decision |
 | M05-SAFETY | `E0006` | Power & monitoring | +12 V bus current, cabinet temp, door, leak | **Fabricated, bench-verified** |
 | M06-VENTILATION | `E0008` | Air transport | Duct velocity, filter Δp, envelope↔ambient Δp, in-stream T/RH | Specified, not laid out |
@@ -127,6 +127,7 @@ the project maintainers are the accepting authority.
 | 0003 | Strawberry day-neutral cultivation profile (reference profile) | Proposed |
 | 0004 (rev 1) | Gateway host hardening, firmware signing, stateless-edge operation | Accepted |
 | 0005 (rev 1) | DSDL foundation — type vocabulary, standard-type reuse, port-ID allocation | Accepted |
+| 0006 | Cabinet decomposition and hydroponic topology — container feed, two solution loops | Proposed |
 | 0007 (rev 1) | PKI, hardware identity, and provisioning (ATECC608) | Accepted |
 | 0014 (rev 5) | Sensor node taxonomy and module decomposition — M01–M07, 8-bit module ID | Accepted |
 | 0015 | Gateway profile caching and local control loops | Accepted |
@@ -143,7 +144,7 @@ the project maintainers are the accepting authority.
 | 0026 | ERP backup and restore across two stores | Accepted |
 | 00XX | Environmental actuators — humidification and CO₂ enrichment | **Draft**, unnumbered |
 
-Planned, not yet written: ADR-0006 (mechanical / hydroponic topology), ADR-0008 (deployment
+Planned, not yet written: ADR-0008 (deployment
 topology), ADR-0009 (profile schema), ADR-0010 (commercial operations), ADR-IF-0001
 (IndustryFlow `production_unit`). Numbers are assigned at commit, never pre-reserved.
 
