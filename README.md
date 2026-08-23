@@ -161,6 +161,6 @@ mapping; full texts are in [`LICENSES/`](LICENSES/).
 | DSDL protocol layer (`firmware/dsdl/`) | `Apache-2.0` — permissive, so any implementation can speak it |
 
 Third-party content keeps its own terms, annotated in [`REUSE.toml`](REUSE.toml): the WeAct
-core-board snapshot and the SnapEDA CAD for the AS7331 are both published with **no licence
-stated**, so neither is covered by this project's licences. Compliance is CI-enforced — run
-`reuse lint` before opening a pull request.
+core-board snapshot is published with **no licence stated**, so it is not covered by this
+project's licences. Compliance is CI-enforced — run `reuse lint` before opening a pull
+request.

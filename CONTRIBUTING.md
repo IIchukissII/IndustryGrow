@@ -213,5 +213,5 @@ Get-ChildItem store\E000?-??????.kicad_* | ForEach-Object {
 ```
 
 The packages open against the store's shared libraries, which stay loose. Do not
-sweep them into a package: they carry their own SnapEDA attribution in
-`REUSE.toml`, and `reuse lint` does not check inside archives.
+sweep them into a package: `reuse lint` does not check inside archives, so any
+file needing its own attribution has to stay outside one.
