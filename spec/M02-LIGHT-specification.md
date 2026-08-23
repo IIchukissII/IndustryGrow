@@ -392,7 +392,7 @@ to be revisited at the second. This is the second. O-43 is now due.
 | ID | Requirement | Reference |
 |----|-------------|-----------|
 | T1 | The board sits in the beam at 65…76 W/m² PAR (§3) plus the fixture's non-PAR emission. Steady-state rise above canopy air shall be recorded at bring-up, not assumed | §3, V2 |
-| T2 | U4's responsivity temperature coefficient shall be applied if the datasheet states one, over the range established by T1 | `verify`, O-60 |
+| T2 | **DS001046 v6-00 publishes no responsivity temperature coefficient**, only note 1 to its electrical characteristics: functionality varies with temperature across the operating range. No coefficient is applied. What the device does provide is auto zero of the spectral-engine **offsets** (§10) — that tracks offset drift, not responsivity. Responsivity against temperature stays uncharacterised, and V2 is the measurement that would quantify it | §10, V2 |
 
 No heat source of consequence exists on the board: total sensor dissipation is below 1 mW, and
 U2 dissipates 1.5 V × 572 µA = 0.86 mW. Incident radiation dominates, and it is a property of
@@ -434,6 +434,7 @@ step over the measurement path. The diffuser is fitted after coating or masked d
 | Publish rule | Responders only; partial populations require no rebuild |
 | SMUX | Configured after every power-up, before the first measurement is started. Reference configuration from the vendor application note for the AS7343 — the AS7341's does not apply |
 | U3 power-up state | U3 resets with its ALS disabled. Firmware shall set `PON`, configure the UV modulator gain and integration time, then set `AEN`. The UV channel is read at its own gain, independent of the photopic and IR channels |
+| Auto zero | `AZ_CONFIG` (`0xDE`) sets how often the spectral-engine offsets are reset to track device temperature. `AZ_NTH_ITERATION` defaults to 255 iterations; one auto zero takes 15 ms typical. Firmware shall set the interval explicitly rather than inherit the default, and shall carry the 15 ms in the acquisition budget |
 | Acquisition | Three integration cycles per full channel set (§6.1); flicker detection mapped to its own ADC when used |
 | Autorange | AGAIN and `t_int` adjusted to hold the brightest mapped channel between 10 % and 90 % of full scale. The setting in force is published with the sample |
 | Derived | PPFD per §6.2, from coefficients read out of the deployment profile, over F1…F7 only |
@@ -512,7 +513,7 @@ collision with M06's O-42.
 | O-57 | Condensation on excursions places U4 outside its 5–85 %RH non-condensing operating conditions. Post-excursion validity and recovery undefined, as for O-47 | Excursion handling, data validity |
 | O-58 | DLI is integrated at the gateway (§3.2). Restart and gap policy across a gateway restart or a telemetry outage is unspecified | Gateway control loop, ADR-0015 |
 | O-59 | Node power unmeasured | Distribution-board sizing, O-31 |
-| O-60 | U4 responsivity temperature coefficient not established; T2 unquantified | Absolute PPFD stability |
+| ~~O-60~~ | ~~U4 responsivity temperature coefficient not established~~ — closed 2026-08-23: DS001046 v6-00 states none, so T2's conditional is not met and no coefficient is applied. Auto zero (`0xDE`) covers offset drift only, and is now a firmware requirement (§10). Absolute PPFD stability against temperature is an empirical question V2 already instruments | — |
 | O-61 | Whether U4's integrated diffuser suffices or an external achromatic diffuser is required, its spectral transmission flatness, and its order against the conformal-coating step. Any diffuser sits in the measurement path of every band | Enclosure design, §6.2 coefficients, M1/M2/M5 |
 | ~~O-62~~ | ~~`verify` values in this document~~ — closed 2026-08-23 against DS001046 v6-00 (AS7343), DS001043 v5-00 (TSL2585), SCPS206B (TCA9543A) and SBVS121 (TLV700). U4: `t_int` formula confirmed as written, AGAIN 0.5×…2048× at CFG1 `0xC6`, aperture Ø0.900 mm at 0.609 mm offset, POR 200 µs typical, `ID` `0x5A` = `0x81`. U3: `ID` `0x92` = `0x5C`. U2 capacitors stated in §7.3. Ordering codes in §4.2. The one item that cannot close from a datasheet — U3's photodiode-group offset — moves to O-70 | — |
 | O-70 | DS001043 v5-00 dimensions the TSL2585 die as centred within ±75 µm but does not dimension the photodiode group, so U3's aperture offset from the package centre is unstated. Establish it by measurement against the physical part, with V6 | Enclosure window alignment, M3, V6 |
@@ -556,5 +557,5 @@ with it. R1 and R4 are re-used as channel 1's pull-up pair rather than left as g
 |------|---------|--------------|
 | **Pre-schematic** | Complement and requirements fixed; values estimated or `verify` | ADR-0014 rev 6 fixes both parts ✔ |
 | **Schematic captured** ← here | Parts fixed to ordering part numbers; schematic exists; component values determined | U3 ordering part resolved ✔ (`TSL25853PM`); U1 resolved ✔ (`TCA9543APWR`); schematic exists ✔ |
-| **Schematic-frozen** | Remaining `verify` resolved, footprints checked against physical parts. `L` releases here | O-62, O-64 and O-66 closed ✔; O-60, O-61 and O-70 open; V6 not executed |
+| **Schematic-frozen** | Remaining `verify` resolved, footprints checked against physical parts. `L` releases here | O-60, O-62, O-64 and O-66 closed ✔; O-61 and O-70 open; V6 not executed |
 | **As-built** | Estimates replaced by measured values; verification §11 executed | `E0003` fabricated and bench-verified; O-59 measured |
