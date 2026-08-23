@@ -3,17 +3,19 @@ SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
-# ADR-0014 (rev 5): Sensor node taxonomy and module decomposition
+# ADR-0014 (rev 6): Sensor node taxonomy and module decomposition
 
-- **ID:** ADR-0014 (rev 5)
-- **Status:** Accepted
-- **Date:** 2026-05-16 (rev 1: 2026-06-14; rev 2: 2026-08-03; rev 3: 2026-08-04; rev 4: 2026-08-07; rev 5: 2026-08-13)
+- **ID:** ADR-0014 (rev 6)
+- **Status:** Proposed
+- **Date:** 2026-05-16 (rev 1: 2026-06-14; rev 2: 2026-08-03; rev 3: 2026-08-04; rev 4: 2026-08-07; rev 5: 2026-08-13; rev 6: 2026-08-23)
 - **Project:** IndustryGrow
 - **Parent:** ADR-0001
 - **Companions:** ADR-0002 (rev 3), ADR-0003, ADR-0005 (rev 1), ADR-0016, ADR-0017 (rev 2), ADR-0019
-- **Supersedes:** ADR-0014 (initial draft, 2026-05-16), ADR-0014 (rev 1, 2026-06-14), ADR-0014 (rev 2, 2026-08-03), ADR-0014 (rev 3, 2026-08-04), ADR-0014 (rev 4, 2026-08-07)
+- **Supersedes:** ADR-0014 (initial draft, 2026-05-16), ADR-0014 (rev 1, 2026-06-14), ADR-0014 (rev 2, 2026-08-03), ADR-0014 (rev 3, 2026-08-04), ADR-0014 (rev 4, 2026-08-07), ADR-0014 (rev 5, 2026-08-13)
 
 ## Revision history
+
+- **rev 6 (2026-08-23)** — Bounded to **decision 4's M02-LIGHT entry only**. The **AS7331** becomes the ams OSRAM **TSL2585**, and a TI **TCA9543A** two-channel I²C switch joins the entry. The AS7331 is not procurable: ams lists both ordering codes as pre-production, Digi-Key lists it Active at zero stock behind a 16-week factory lead, Farnell lists it as no longer manufactured, and all seven JLCPCB listings hold zero stock. The TSL2585's UV-A channel spans 315–400 nm and is characterised at 365 nm. Its address is fixed at `0x39` — the AS7343's — so the two parts take separate switch channels. **M02 loses UV-B and UV-C**, and the UV-A quantity changes from calibrated irradiance to a typical-value responsivity. Records alternatives T to X. No other decision changes; the module class, its strap `0b010`, its E-number `E0003` and the header contract are untouched, and no other module class is affected.
 
 - **rev 5 (2026-08-13)** — Bounded in-place amendment (ADR-0000 d9) to **decision 4's M02-LIGHT entry only**. Replaces both named parts: the AS7341 becomes the **AS7343**, because the AS7341 cannot observe the 730 nm far-red channel ADR-0003 d11 commands — its highest filtered band is 680 nm with a 706 nm half-maximum and its next channel is NIR at 910 nm — and the LTR390 / VEML6075 pair becomes the **AS7331**, because the VEML6075 was terminated by its manufacturer in 2019 and the LTR390's UV response peaks at 300–350 nm rather than on the profile's 365–385 nm band. Fixes where PPFD and DLI are computed. Records alternatives Q, R and S. No other decision changes; the module class, its strap `0b010`, its E-number `E0003` and the header contract are untouched, and no other module class is affected.
 
@@ -104,9 +106,12 @@ Zone count is not an architectural decision — it is a deployment-time choice m
    - Airflow is **not** measured by this module. The Renesas FS3000 anemometer moved to M06-VENTILATION in rev 2: air *state* at the plant and air *transport* through the cabinet are different measured quantities with different valid locations, and a single module cannot hold both without a displaced sensor.
    - All I²C on one bus, all sensors board-mounted at canopy. No leads, no displaced sensors. In apartment-scale deployments: one instance. In larger deployments: multiple instances per zone, populated as the zone requires.
 
-   **M02-LIGHT — photic environment sensing.** *(Both parts replaced in rev 5; see alternatives Q and R.)*
+   **M02-LIGHT — photic environment sensing.** *(Both parts replaced in rev 5; the UV part replaced again in rev 6 — see alternatives Q, R and T.)*
    - ams OSRAM **AS7343** — 14-channel spectral sensor: eleven filtered VIS/NIR bands from 405 nm to 855 nm, plus clear and flicker. I²C. Provides per-channel intensity, which validates the spectrum commanded from the multi-channel LED driver (ADR-0003 decision 11), and the basis for the PPFD reconstruction that feeds DLI accounting (ADR-0003 decision 12). *Replaces the AS7341 named in rev 1–4:* the AS7341's highest filtered band is centred at 680 nm with a 706 nm half-maximum and its next channel is NIR at 910 nm, so the **730 nm far-red** channel of decision 11 falls in a blind band and cannot be validated by the very sensor whose justification is validating that spectrum. The AS7343's F8 band is centred at 745 nm with 60 nm FWHM, placing 730 nm inside its half-maximum span, and its F1 band at 405 nm closes the lower PAR edge at 400 nm. Same vendor, same OLGA-8 package, same 1.8 V supply, same `0x39` address.
-   - ams OSRAM **AS7331** — UV-A/B/C spectral sensor; the UV-A channel is centred at 360 nm. I²C, address selected from `0x74`–`0x77` by two strapped pins. Independent verification that the UV-A channel of decision 11 is operating. *Replaces the LTR390 / VEML6075 pair named in rev 1–4:* the Vishay VEML6075 was terminated by its manufacturer in 2019 and is not selectable, and the LiteOn LTR390's UV response peaks at 300–350 nm, which is the shoulder of the 365–385 nm band the profile specifies rather than the band itself. It runs at 2.7–3.6 V, so it takes the carrier's 3.3 V directly and adds no module-local rail.
+   - ams OSRAM **TSL2585** *(rev 6)* — ambient light sensor carrying a band-pass filtered UV-A photodiode spanning 315–400 nm, alongside photopic and IR photodiodes and on-chip flicker detection. I²C, address fixed at `0x39`. Independent verification that the UV-A channel of decision 11 is operating. *Replaces the AS7331 named in rev 5,* which is not procurable — see alternative T. The UV channel is characterised against a 365 nm source at 82.8 counts/(µW·cm⁻²), inside the 365–385 nm band ADR-0003 decision 11 specifies; its UV-to-photopic channel ratio under a 2700 K white source is 0.0 %, so visible output from the luminaire does not enter the UV reading. V_DD is 1.7–1.98 V, taken from the 1.8 V rail the module already generates for the AS7343; V_DD/IO is a separate supply spanning 1.62–3.3 V. Operating range −30…+85 °C, which is the range the AS7343 already sets for this module.
+     - **UV-B and UV-C leave M02.** The AS7331 carried both; the TSL2585 carries neither, and no procurable part carries them (alternative V). ADR-0003 decision 11 commands a UV-A trace only, so no commanded quantity is lost. What is withdrawn is the fault indication a non-zero UV-B or UV-C reading gave — emission the profile does not command.
+     - **UV-A changes from an absolute to a relative quantity.** The AS7331 reported calibrated per-band irradiance. The TSL2585's UV responsivity is a typical value with neither minimum nor maximum, so per-part absolute accuracy is not guaranteed without an in-system calibration. No control loop is affected: the PPFD band of ADR-0003 decision 12 is 400–700 nm, and UV-A enters no loop.
+   - TI **TCA9543A** *(rev 6)* — two-channel bidirectional translating I²C switch; V_CC 1.65–5.5 V, address `0x70`–`0x73` from A0/A1. The AS7343 and the TSL2585 both answer at `0x39`, and one address cannot carry two devices on one segment (alternative X), so each takes its own switch channel. The switch also performs the 3.3 V ↔ 1.8 V translation, withdrawing the PCA9306 the module fitted for the AS7343 alone. It is a bus element, not a sensor: it measures nothing and publishes nothing.
    - **PPFD is reconstructed on the node; DLI is integrated at the gateway.** The eleven bands are a spectral measurement, not a photon count: PPFD is a weighted sum of the bands whose coefficients are identified per luminaire spectrum at commissioning and carried in the deployment profile, as M06's velocity profile coefficient is. DLI is a multi-hour integral against wall-clock time, and the node holds neither a wall clock nor integration state across a reset; decision 7 gives it no deployment identity either. DLI is therefore a gateway-side derived value under the soft-sensor pattern of ADR-0016 decision 5, published as first-class telemetry alongside the measured subjects.
    - Simplest module in the catalog. Apartment-scale: one instance under the LED fixture. Larger deployments: per-fixture or per-zone instances.
 
@@ -267,6 +272,25 @@ Zone count is not an architectural decision — it is a deployment-time choice m
 
 **S. A discrete far-red photodiode with an interference filter, beside the AS7341.** *Rejected:* it adds an analog chain — photodiode, transimpedance amplifier, and one of the two ADC channels decision 5 allots — to recover a single band that a 14-channel part already carries, and it creates a second calibration path with no reference shared with the spectral sensor. It also reopens the mixed-signal segregation concern that this taxonomy confines to M03.
 
+**T. Keep the AS7331 and wait for supply.** *(rev 6)* *Rejected:* the part is not procurable on any surveyed channel.
+
+| Channel | State, 2026-08-23 |
+|---|---|
+| ams OSRAM | `AS7331-AQFM` and `AS7331-AQFT` both listed **pre-production** |
+| Digi-Key | Active, **0 in stock**, 16-week factory lead, $9.16 at quantity 1 |
+| Farnell / Newark | **No Longer Manufactured** |
+| JLCPCB / LCSC | **0 in stock across all seven listings**; three of them consign-lane entries (minimum 439 pieces at a per-part handling fee, not a purchase) |
+
+An order placed against a listed stock position was refunded rather than fulfilled. The two ordering codes differ only in reel quantity — 1000 pieces against 5000 — so the second is not a second source.
+
+**U. Another integrated UV part.** *(rev 6)* *Rejected:* the category is not populated. Every integrated UV sensor surveyed besides the TSL2585 is withdrawn or unprocurable — LTR390-UV-01 (Digi-Key: Discontinued; LCSC: no longer manufactured), VEML6070, VEML6075, Si1133, GUVA-C32SM, GUVB-C31SM and ML8511 are each marked obsolete or no longer manufactured by at least one of Digi-Key and LCSC. The LTR390 additionally fails on the spectral ground rev 5 recorded under alternative R.
+
+**V. Discrete GaN or SiC photodiodes with an analog front end,** covering UV-A, UV-B and UV-C by choice of diode. *(rev 6)* *Rejected:* every Genicom surface-mount digital part is discontinued; the surviving TO-46 and TO-5 devices are $21–132 each at zero stock and are raw photodiodes, not measuring devices. A UV-A trace at the canopy yields sub-nanoamp photocurrents, requiring a guarded transimpedance stage and a calibration path with no reference shared with the spectral sensor. This is the mixed-signal content decision 4 confines to M03, reopened on the module the same decision calls the simplest in the catalog — the ground on which alternative S was rejected.
+
+**W. Move the AS7343 off `0x39`.** *(rev 6)* *Rejected:* the AS7343's address is fixed rather than strapped, and it is the only spectral part satisfying ADR-0003 decision 11 that holds distributor stock.
+
+**X. Isolate one device with the PCA9306 enable input instead of adding a switch.** *(rev 6)* *Rejected:* the PCA9306 is a transparent pass-FET pair. Disabling it removes the AS7343 from the bus but leaves the TSL2585 answering `0x39` whenever it is enabled, so one translator cannot separate two devices sharing one address in both directions. A second translator with its own enable spends header GPIO to do what one addressable switch does over the bus already present.
+
 ## Consequences
 
 ### Positive
@@ -291,6 +315,9 @@ Zone count is not an architectural decision — it is a deployment-time choice m
 - *(rev 5)* The AS7343 carries fourteen channels against six ADCs, so a full set needs **three** integration cycles where the AS7341 needed two; M02's publication rate falls accordingly. Its register map and SMUX configuration are not the AS7341's, so the driver is new work rather than a rename, and the reference code and application notes for the two parts are not interchangeable.
 - *(rev 5)* Both M02 parts are single-sourced at ams OSRAM. The VEML6075's termination is the standing lesson: a named part is a supply commitment, and this taxonomy names parts.
 - *(rev 5)* PPFD on the node depends on coefficients that are a property of the luminaire, not of the module. A fixture change or a spectrum phase change invalidates them, and the module cannot detect either.
+- *(rev 6)* **M02 gains a bus level.** Every AS7343 and TSL2585 transaction is preceded by a channel-selection write to the switch. A firmware fault that leaves the wrong channel selected presents as one sensor silently absent rather than as a bus error, and the sensor-presence probe of decision 4 must run per channel.
+- *(rev 6)* **The rev 5 single-source lesson is unresolved, not discharged.** Both sensors remain ams OSRAM parts, and the AS7331's withdrawal is the second termination to strike this module's UV position after the VEML6075's. No procurable second source for UV-A exists to name.
+- *(rev 6)* Emission outside the commanded UV-A band is no longer observable at M02. Any future requirement for UV-B or UV-C monitoring reopens alternative V and the mixed-signal question with it.
 - On-node aggregation in M04-PLANT is a non-trivial firmware concern. Memory budget on STM32F405 is comfortable (192 KB RAM vs 1.5 KB per frame), but firmware design needs care.
 
 ## Deferred decisions
