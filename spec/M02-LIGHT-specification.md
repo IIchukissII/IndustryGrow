@@ -369,7 +369,7 @@ budget applies. Local decoupling 100 nF at U4's V_DD pin (C7), 100 nF at U3's V_
 | I/O supply | The digital pins take 1.62…3.3 V independently of V_DD. This module holds them at 1.8 V (§5.2) |
 | VSYNC / GPIO (pin 2) | Unconnected. The pin is open-drain, and the reset state of `VSYNC_GPIO_INT` (0xF8, reset `0x02`) shall be confirmed to leave it an output rather than an enabled input before the layout is frozen. `verify`, O-66 |
 | INT (pin 5) | Unconnected. Open-drain output, unused, as U4's INT is |
-| Placement | Decoupling on the same PCB side as U3, at the pin |
+| Placement | **The sensing face carries the optical parts and nothing else.** C5 sits on the opposite face, directly behind U3, and the decoupling loop closes through vias. Keeping the face clear of every other part is an optical requirement (§9 M6) and outranks a same-side decoupling loop |
 
 **M02 is the second module to generate a rail of its own.** O-43 records that module-local
 rails sit outside ADR-0002 d3 and the header contract, and that one instance is not a pattern —
@@ -399,6 +399,7 @@ the installation.
 | M7 | Mounted at canopy height; height adjusted as the canopy grows, recorded as deployment metadata. A height change invalidates the §6.2 coefficients | §6.2, ADR-0014 d7 |
 | M8 | Seats on the carrier header pair 2×12 + 2×8, supported at both ends; no standoffs required | Pin map, header section |
 | M9 | U3's angular response is not stated as an acceptance half-angle in DS001043 v5-00. Until it is established from the datasheet's angular characteristic, no window or aperture above U3 shall restrict its field of view more than the window above U4 does | `verify`, O-64 |
+| M10 | **The sensing face carries U3 and U4 and no other part.** Every other component, the header pair included, sits on the opposite face. Nothing but the two apertures may stand in the canopy's line of sight | §7.4, M6 |
 
 M5 and M1 conflict in the same way M01's M4 does: a coating step over a diffuser is a coating
 step over the measurement path. The diffuser is fitted after coating or masked during it. O-61.
@@ -500,6 +501,8 @@ collision with M06's O-42.
 | O-64 | U3's angular response is not stated as an acceptance half-angle. Until it is read off the datasheet's angular characteristic, M9 constrains no window geometry and the UV reading's dependence on source angle is unquantified | M9, enclosure design, V4 |
 | O-65 | U1 has no reset line: RESET is tied to V_CC (§5.2), so a channel stuck low is recoverable only by a node power cycle. Whether a GPIO from the header shall drive RESET instead is a layout-affecting decision, and the header has four spare GPIO | Firmware recovery path, §10, layout |
 | O-66 | U3's VSYNC/GPIO pin (pin 2) is left unconnected. The reset state of `VSYNC_GPIO_INT` (0xF8, reset `0x02`) shall be confirmed to leave the pin an open-drain output and not an enabled input before the layout is frozen | §7.4, layout |
+| O-68 | `E0003-000001` is double-sided SMT — the bottom face carries U3 and U4, the top everything else. Earlier revisions were single-sided SMT plus through-hole headers. Two paste stencils and two placement passes; the fab package and the assembly quote both change | `-D-fab` package, ADR-0017 d18, order cost |
+| O-69 | The `GND` pour is on `F.Cu` only. The sensor face has no plane behind it, one board thickness from the luminaire's driver. U3's and U4's grounds reach the top pour through vias | EMC, sensor face |
 
 ## 13. Maturity
 
@@ -507,13 +510,25 @@ collision with M06's O-42.
 datasheets. `store/E0003-000001.kicad_sch` carries U4, U3, U1, the 1.8 V rail, all three I²C
 pull-up pairs and the module-ID straps.
 
-**The layout is stale.** `E0003-000001-D-src.zip` holds the two-layer board drawn against the
-ADR-0014 rev 5 complement: it places the AS7331's OLGA-16 footprint, the PCA9306's VSSOP-8 and
-the REXT pair, none of which are on the schematic any more. It is DRC-clean against a netlist
-that no longer exists. The board envelope, 104.902 × 46.990 mm with J1/J2 positioned as on
-`E0002-000001`, and the custom design rules in the package's `.kicad_dru` both carry over; the
-placement and routing do not. Re-layout is the next work, and until it lands the `-D` package
-shall not be read as describing this module.
+**Layout drawn and clean.** `E0003-000001-D-src.zip` holds a two-layer board on the same
+104.902 × 46.990 mm envelope as `E0002-000001`, with J1/J2 at the same positions relative to the
+outline, so the modules and cases interchange.
+
+| Item | Value |
+|---|---|
+| `B.Cu` | U3 and U4 only. U3 at (152.87, 80.79), U4 at (161.13, 80.88) — 8.3 mm apart on one axis, so both sample the same point in the canopy plane |
+| `F.Cu` | Every other part, plus J1/J2 |
+| `GND` pour | `F.Cu` only. O-69 |
+| Tracks | 0.2 mm throughout; 13 vias |
+| DRC | **0 violations, 0 unconnected pads** |
+| Schematic parity | **0 issues** |
+
+`E0003-000001.kicad_dru` is empty. The two 0.13 mm waivers it carried existed for the PCA9306's
+and the AS7331's 0.5 mm pitch; TSSOP-14 at 0.65 mm and the OLGA-6 land pattern at 0.25 mm
+between pads both clear the 0.2 mm board default, so the rules are removed rather than re-scoped.
+
+U2's ground leaves eastward and turns south: routed west it crossed the only corridor an IN-to-EN
+strap can use, and left the pad one thermal spoke short of the board minimum.
 
 Designator gaps R5, R11 and C6 are deliberate: those parts served the AS7331 and are withdrawn
 with it. R1 and R4 are re-used as channel 1's pull-up pair rather than left as gaps.
