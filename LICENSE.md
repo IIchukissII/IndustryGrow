@@ -56,13 +56,11 @@ project's licences and neither may be treated as though it were.
 | Object | Origin | SPDX ID |
 |--------|--------|---------|
 | `store/SP0005-D-coreboard-snapshot.zip` | WeAct STM32F4 core-board schematic, board outline and 3D model, retained per ADR-0002 rev 3 d4 | [`LicenseRef-WeAct-unstated`](LICENSES/LicenseRef-WeAct-unstated.txt) |
-| `store/industrygrow.pretty/PQFN50P365X260X119-16N.kicad_mod`, `store/industrygrow.3dshapes/AS7331.step` | SnapEDA EDA library content for the ams OSRAM AS7331 (`E0003` / M02-LIGHT) | [`LicenseRef-SnapEDA-unstated`](LICENSES/LicenseRef-SnapEDA-unstated.txt) |
 
-The SnapEDA footprint has been modified from the delivered version; the changes are
-enumerated in the licence text. The SnapEDA symbol was removed from
-`store/industrygrow.kicad_sym` on 2026-08-23, when ADR-0014 rev 6 withdrew the AS7331;
-that library is now project work under `CERN-OHL-S-2.0`. The footprint and 3D model are
-retained while the `E0003` layout still references them.
+The SnapEDA EDA library content for the ams OSRAM AS7331 — symbol, footprint and 3D
+model — was removed on 2026-08-23. ADR-0014 rev 6 withdrew the part from M02-LIGHT and
+`E0003-000001` no longer references any of it, so the repository carries no SnapEDA
+content and `LicenseRef-SnapEDA-unstated` is retired.
 
 ## Declared but not present in this repository
 
