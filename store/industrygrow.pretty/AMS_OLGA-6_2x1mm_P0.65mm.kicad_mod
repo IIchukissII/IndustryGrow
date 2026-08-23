@@ -1,0 +1,175 @@
+(footprint "AMS_OLGA-6_2x1mm_P0.65mm"
+	(version 20260206)
+	(generator "pcbnew")
+	(generator_version "10.0")
+	(layer "F.Cu")
+	(descr "ams OSRAM OLGA-6, 2.0x1.0x0.35 mm, 0.65 mm column pitch, 0.525 mm row pitch; land pattern per TSL2585 DS001043 v5-00 Figure 96")
+	(tags "OLGA LGA ams OSRAM TSL2585 optical")
+	(property "Reference" "REF**"
+		(at 0 -1.4 0)
+		(layer "F.SilkS")
+		(uuid "3ff6c057-23bb-069d-1995-3340320fa951")
+		(effects
+			(font
+				(size 0.7 0.7)
+				(thickness 0.12)
+			)
+		)
+	)
+	(property "Value" "AMS_OLGA-6_2x1mm_P0.65mm"
+		(at 0 1.4 0)
+		(layer "F.Fab")
+		(uuid "97dfc65f-7428-3f60-c606-bda3f75a6a6b")
+		(effects
+			(font
+				(size 0.7 0.7)
+				(thickness 0.12)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "f9c7af7e-bcbf-098b-9f5f-37361d1b168b")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Description" "ams OSRAM OLGA-6 optical package, 2.0 x 1.0 x 0.35 mm"
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "97864e87-8fe1-29a3-d4c3-5681c3ad4b12")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(attr smd)
+	(duplicate_pad_numbers_are_jumpers no)
+	(fp_line
+		(start -1 -0.62)
+		(end 1 -0.62)
+		(stroke
+			(width 0.12)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "3a464558-e784-493b-bf2a-c192a7c6b0e8")
+	)
+	(fp_line
+		(start -1 0.62)
+		(end 1 0.62)
+		(stroke
+			(width 0.12)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "06e13ffb-0f22-67f1-db41-9a9137e4e65b")
+	)
+	(fp_circle
+		(center 1.25 -0.62)
+		(end 1.35 -0.62)
+		(stroke
+			(width 0.12)
+			(type default)
+		)
+		(fill yes)
+		(layer "F.SilkS")
+		(uuid "4b905fa6-9af7-7ac4-d0c9-1a9dea467450")
+	)
+	(fp_rect
+		(start -1.25 -0.75)
+		(end 1.25 0.75)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(fill no)
+		(layer "F.CrtYd")
+		(uuid "793ff64f-83b4-1b5d-467a-0d017c4cb99b")
+	)
+	(fp_rect
+		(start -1 -0.5)
+		(end 1 0.5)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(fill no)
+		(layer "F.Fab")
+		(uuid "c2242e2c-1219-0bab-af9f-9488fb7bb1bb")
+	)
+	(fp_poly
+		(pts
+			(xy 1 -0.5) (xy 0.7 -0.5) (xy 1 -0.2)
+		)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(fill yes)
+		(layer "F.Fab")
+		(uuid "c3213591-0ede-0ade-48b7-43401737fe83")
+	)
+	(fp_text user "aperture at pin-1 end"
+		(at 0 0 0)
+		(layer "Rescue")
+		(uuid "02b3dce9-8c61-8972-31fd-cf1a0594d6c2")
+		(effects
+			(font
+				(size 0.3 0.3)
+				(thickness 0.05)
+			)
+		)
+	)
+	(pad "1" smd roundrect
+		(at 0.65 -0.2625)
+		(size 0.4 0.275)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(roundrect_rratio 0.125)
+		(uuid "25db8179-f8db-d1a4-e873-9feb9761cd3c")
+	)
+	(pad "2" smd roundrect
+		(at 0 -0.2625)
+		(size 0.4 0.275)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(roundrect_rratio 0.125)
+		(uuid "94a6730d-b13e-381f-22cd-e21c13a52749")
+	)
+	(pad "3" smd roundrect
+		(at -0.65 -0.2625)
+		(size 0.4 0.275)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(roundrect_rratio 0.125)
+		(uuid "5e86a8eb-2030-3acc-007c-b4bd7d77a251")
+	)
+	(pad "4" smd roundrect
+		(at -0.65 0.2625)
+		(size 0.4 0.275)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(roundrect_rratio 0.125)
+		(uuid "f0c9bd08-7d74-6231-757f-08f3ce165aab")
+	)
+	(pad "5" smd roundrect
+		(at 0 0.2625)
+		(size 0.4 0.275)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(roundrect_rratio 0.125)
+		(uuid "06630832-316f-2ab2-2195-7b8053772ca6")
+	)
+	(pad "6" smd roundrect
+		(at 0.65 0.2625)
+		(size 0.4 0.275)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(roundrect_rratio 0.125)
+		(uuid "3ffcfbda-f9aa-bdc0-31d4-9d66a63fbb5d")
+	)
+	(embedded_fonts no)
+)

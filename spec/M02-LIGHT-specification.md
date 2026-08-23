@@ -5,10 +5,10 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 # M02-LIGHT — module specification
 
-- **Status:** Working specification. `E0003-000001` schematic captured and laid out; not fabricated
-- **Date:** 2026-08-21
+- **Status:** Working specification. `E0003-000001` schematic carries the ADR-0014 rev 6 complement; the layout does not
+- **Date:** 2026-08-23
 - **E-number:** `E0003` · module-ID strap `0b010`
-- **Governing ADRs:** ADR-0014 (rev 5), ADR-0002 (rev 3), ADR-0003, ADR-0005 (rev 1), ADR-0016, ADR-0017 (rev 2)
+- **Governing ADRs:** ADR-0014 (rev 6), ADR-0002 (rev 3), ADR-0003, ADR-0005 (rev 1), ADR-0016, ADR-0017 (rev 2)
 - **Companions:** `M01-CLIMATE-specification.md`, `M05-SAFETY-specification.md`, `M06-VENTILATION-specification.md`, `M07-AMBIENT-specification.md`
 
 Rationale for the decisions applied here is in the governing ADRs and is not restated.
@@ -53,9 +53,7 @@ Mean canopy PPFD follows from the DLI target and the photoperiod: 17–20 mol·m
 | Clear channel (unfiltered Si) | U4 | 0…65 535 counts | As above | Relative |
 | PPFD (derived, §6.2) | U4 | — | 295–347 µmol·m⁻²·s⁻¹ mean over the photoperiod; 0…full scale across the 30 min ramps; 0 in the dark period | Dominated by the reconstruction coefficients, O-52 |
 | Flicker flag, 50 / 60 Hz | U4 | Flags; buffered data to 2 kHz (`verify`) | No flicker expected from a DC-driven fixture; an asserted flag is a driver fault indication | Flag, not a measurement |
-| UV-A irradiance, 315…410 nm | U3 | Full scale 170 µW/cm² at GAIN 2048×, 3.49·10⁵ µW/cm² at 1× | Trace level per profile; absolute value not set by the profile | 385 counts/(µW/cm²) at GAIN 2048×, t_int 64 ms |
-| UV-B irradiance, 283…315 nm | U3 | Full scale 189 µW/cm² at GAIN 2048×, 3.86·10⁵ µW/cm² at 1× | Expected zero from the fixture; a non-zero reading is a lamp fault | 347 counts/(µW/cm²) at GAIN 2048×, t_int 64 ms |
-| UV-C irradiance, 235…285 nm | U3 | Full scale 83 µW/cm² at GAIN 2048×, 1.69·10⁵ µW/cm² at 1× | Expected zero from the fixture; a non-zero reading is a lamp fault | 794 counts/(µW/cm²) at GAIN 2048×, t_int 64 ms |
+| UV-A irradiance, 315…400 nm | U3 | 0…65 535 counts, 20-bit ADC with gain 0.5×…4096× | Trace level per profile; absolute value not set by the profile | 82.8 counts/(µW·cm⁻²) at 365 nm, gain 1024×. **Typical only**, §6.4 |
 
 Publication rate: seconds. The full channel set requires **three integration cycles** — U4 has
 six ADCs and fourteen channels, and the SMUX maps at most six per cycle (§6.1).
@@ -65,9 +63,9 @@ All sensors board-mounted; no leads, no cable-borne I²C.
 
 ### 3.1 Environmental envelope of the populated module
 
-| | U4 AS7343 | U3 AS7331 | **Module** |
+| | U4 AS7343 | U3 TSL2585 | **Module** |
 |---|---|---|---|
-| Temperature | −30…+85 °C operating free-air | −40…+85 °C operating ambient | **−30…+85 °C**, set by U4 |
+| Temperature | −30…+85 °C operating free-air | −30…+85 °C operating free-air | **−30…+85 °C**, set by both sensors |
 | Humidity | 5…85 %RH non-condensing | 5…85 %RH non-condensing | **5…85 %RH non-condensing** |
 | MSL | 3, 168 h floor life | 3, 168 h floor life | **3** |
 | Reflow body temperature | 260 °C peak; ≤ 60 s above 217 °C, ≤ 50 s above 230 °C | 260 °C peak, IPC/JEDEC J-STD-020 | **260 °C peak** |
@@ -96,7 +94,9 @@ channel — U3 measures UV only.
 ### 3.3 Partial populations
 
 Optional parts shall be footprints that can be left unpopulated with no other change to the
-board. U3 shall not sit in the I²C pull-up path or in the sense path of any other part.
+board. U3 shall not sit in the I²C pull-up path or in the sense path of any other part. U1 and
+U2 are not optional: U1 carries U4's bus segment (§5.2) and U2 carries the rail both sensors run
+on (§7.3), so neither may be depopulated with U3.
 
 A partially populated configuration takes its own assembly E-number (ADR-0017 rev 2 d4) and
 requires no firmware change; the boot probe registers responders only (§10).
@@ -109,28 +109,29 @@ A population without U4 has no function and is not a defined configuration.
 | # | Device | Ordering part | Function | Rail | I²C address | Address type |
 |---|--------|---------------|----------|------|-------------|--------------|
 | U4 | ams OSRAM AS7343 | `AS7343-DLGM` | 11 filtered bands 405…855 nm, clear, flicker | **1.8 V** | `0x39` | Fixed |
-| U3 | ams OSRAM AS7331 | `AS7331-AQFM` | UV-A / UV-B / UV-C irradiance | 3.3 V (2.7…3.6 V) | `0x74` | Strapped, A0/A1; `0x74`…`0x77` available |
+| U3 | ams OSRAM TSL2585 | `TSL25853PM` | UV-A 315…400 nm, photopic, IR, flicker | **1.8 V** | `0x39` | Fixed |
 
-Both parts are named by ADR-0014 d4 as revised in rev 5. LCSC / JLCPCB ordering codes and stock
-are unconfirmed for both. O-62.
+Both parts are named by ADR-0014 d4 as revised in rev 6. Neither address is selectable, and they
+are the same address: **U3 and U4 collide, and are separated onto two channels of U1** (§5.2).
+This is the reason a bus switch is on the module at all.
 
-U3's slave address is `(1,1,1,0,1,A1,A0)`; A0 and A1 are tied low on the module, giving `0x74`.
-U3 additionally requires an external reference resistor at its REXT pin (§7.4) — a precision part,
-not a jellybean, and one no single 0805 reaches within its TCR limit, so it is built from a series
-pair (R4 + R11).
+Neither device occupies the `0x50`–`0x57` block ADR-0014 rev 4 d6 reserves for the module-ID
+EEPROM; U1 sits at `0x70` (§4.2). M02 identifies by strap (§5) and carries no EEPROM.
 
-U3's address is strapped to `0x74`, outside the `0x50`–`0x57` block ADR-0014 rev 4 d6 reserves
-for the module-ID EEPROM. M02 identifies by strap (§5) and carries no EEPROM.
+U3 requires no external reference component. The AS7331 named in ADR-0014 rev 5 required a
+precision REXT pair; that part and both resistors are withdrawn with it (§12, O-63).
 
 U4 is the primary photic source. U3 measures UV only and contributes nothing to the PPFD
-computation (§6.2), whose band is 400…700 nm.
+computation (§6.2), whose band is 400…700 nm. U3's photopic and IR channels are not published
+(§10.1): they exist on the die to support the vendor's UV-index algorithm, and U4 already
+measures the visible spectrum with eleven bands.
 
 ### 4.1 Packages
 
 | # | Package | Body size | Notes |
 |---|---------|-----------|-------|
 | U4 | OLGA-8 | 3.10 × 2.00 × 1.00 mm | The optical aperture is not concentric with the package. Its offset from the package centre shall be taken from the AS7343 package outline drawing and not from the AS7341's. `verify`, O-62 |
-| U3 | OLGA16 | 2.60 × 3.65 × 1.09 mm | 16 pads, 0.5 mm pitch. The optical aperture is not concentric with the package; its offset shall be taken from the AS7331 package outline drawing. Acceptance angle ±10° (M9) |
+| U3 | OLGA-6 | 2.00 × 1.00 × 0.35 mm | 6 pads in 2 rows × 3 columns; 0.650 mm column pitch along the long axis, 0.525 mm between rows; pads 0.400 × 0.275 mm. The photodiode group sits at the pin-1 end and is **not** concentric with the package. Land pattern per DS001043 v5-00 Figure 96; package outline Figure 95. Angular response `verify`, O-64 |
 
 Every footprint shall be checked against the physical part with a 1:1 paper printout before
 ordering (V6). The check shall include U4's aperture position relative to the pads — the
@@ -140,7 +141,7 @@ aperture does not appear in the schematic.
 
 | # | Part | LCSC | Function |
 |---|------|------|----------|
-| U1 | `PCA9306DCUR` | `verify`, O-62 | Two-bit bidirectional I²C level translator between the 3.3 V segment and U4's 1.8 V sub-segment (§5.2). VSSOP-8, 2.3 × 2 mm |
+| U1 | `TCA9543APWR` | C2653307 | Two-channel bidirectional translating I²C switch (§5.2). Separates U3 and U4, which share `0x39`, and performs the 3.3 V ↔ 1.8 V translation the PCA9306 previously performed for U4 alone. TSSOP-14, address `0x70` with A0 and A1 to GND |
 | U2 | `TLV70018DCKR` | C133796 | 1.8 V rail for U4 VDD (§7.3). Same part as M01's U4 |
 
 ## 5. Interfaces
@@ -166,18 +167,24 @@ link M02 reads back as `0b000` — the reserved value, not another class.
 
 | | Requirement |
 |---|---|
-| Bus | I2C1, two segments joined by U1 (§5.2), all devices board-mounted. U3 and the header sit on the 3.3 V segment; U4 alone sits on the 1.8 V sub-segment |
-| Speed | 100 kHz standard mode. Platform default set by the shared carrier driver, not by any device on this module: both U4 and U3 support 400 kHz fast mode. **U3 does not support clock stretching** — the driver shall not rely on it |
-| Pull-ups | Both segments carry their own, on the module; the carrier carries none. O-51. 3.3 V segment: R2, R3, 4.7 kΩ to 3.3 V. 1.8 V sub-segment: R6, R7, 4.7 kΩ to 1.8 V |
-| Sizing check | 4.7 kΩ sinks 0.70 mA at 3.3 V and 0.38 mA at 1.8 V, against U4's 6 mA sink condition for V_OL = 0.4 V. Rise time at 100 kHz admits ≈ 250 pF per segment, against board traces, U4's 10 pF input capacitance and U1's channel capacitance |
-| Population | Both pull-up pairs are fitted in every population (§3.3) |
-| Address separation | `0x39` and `0x74`; no device on this module occupies `0x50`–`0x57` |
+| Bus | I2C1, **one master segment and two switched channels**, all devices board-mounted. The header and U1's own interface sit on the 3.3 V master segment; U4 sits alone on channel 0 and U3 alone on channel 1, both at 1.8 V |
+| Speed | 100 kHz standard mode. Platform default set by the shared carrier driver, not by any device on this module: U4 supports 400 kHz, U3 1 MHz, U1 400 kHz. **U1 is the slowest device on the module and sets the ceiling at 400 kHz** |
+| Pull-ups | Every segment carries its own, on the module; the carrier carries none. O-51. Master: R2, R3, 4.7 kΩ to 3.3 V. Channel 0: R6, R7, 4.7 kΩ to 1.8 V. Channel 1: R1, R4, 4.7 kΩ to 1.8 V |
+| Sizing check | 4.7 kΩ sinks 0.70 mA at 3.3 V and 0.38 mA at 1.8 V, against the 6 mA sink condition both sensors state for V_OL = 0.4 V, and against U3's stated 500 Ω pull-up minimum. Rise time at 100 kHz admits ≈ 250 pF per segment, against board traces, the 10 pF input capacitance each sensor presents and U1's channel capacitance |
+| Population | All three pull-up pairs are fitted in every population (§3.3). Channel 1's pair stays fitted with U3 absent: it terminates a switched channel, not a sensor |
+| Address separation | **None on the device addresses.** U3 and U4 are both `0x39` and are separated topologically by U1 (§5.2). U1 is `0x70`. No device on this module occupies `0x50`–`0x57` |
 
-### 5.2 Logic levels at U4
+### 5.2 Address separation and logic levels
 
-U4 has **no VDDIO pin**. Its digital pins are referenced to GND, and the device is supplied at
-1.8 V (§7.3) while the carrier drives the segment at 3.3 V. U1 separates U4 onto its own 1.8 V
-sub-segment, so U4's pins never leave the 1.8 V domain.
+Two devices at one address cannot share a segment. U1 gives each its own channel, and firmware
+selects exactly one channel per transaction (§10). **U1 powers up with both channels
+deselected**, so `0x39` is unreachable until firmware writes U1's control register — a missing
+channel selection presents as both sensors absent, not as a bus error (O-65).
+
+The same switch performs the level translation. U4 has **no VDDIO pin**: its digital pins are
+referenced to GND and the device is supplied at 1.8 V (§7.3) while the carrier drives the master
+segment at 3.3 V. U3 does have a separate I/O supply range, 1.62…3.3 V, and could have taken
+3.3 V directly; it is held at 1.8 V so that both channels share one rail and one analysis.
 
 | | Value | Source |
 |---|---|---|
@@ -193,19 +200,23 @@ above V_DD, but the device pin description directs that SCL, SDA and INT be pull
 and no recommended-operating-condition table covers pin voltages above V_DD. U1 removes the
 question.
 
+U3's limits are the same numbers, from its own datasheet: V_IH 1.26 V, V_IL 0.54 V, V_OL 0.4 V
+at 6 mA sink, input capacitance 10 pF, leakage ±5 µA, digital I/O absolute maximum 3.6 V.
+
 | U1 | Requirement |
 |---|---|
-| Part | `PCA9306`, two-bit bidirectional pass-FET translator with an internal charge pump (§4.2) |
-| V_REF1 / V_REF2 | 1.8 V / 3.3 V, an explicitly stated combination: V_REF1 1.2…3.3 V, V_REF2 1.8…5.5 V. **V_REF1 ≤ V_REF2 shall hold** |
-| Channels | SCL and SDA only. U4's `INT`, `GPIO` and `LDR` are unrouted (§5), so no third channel is required |
-| EN | Pulled to V_REF2 through R1, 200 kΩ, per the datasheet application diagram. The bus is not isolated in normal operation |
-| R_ON | 3.5 Ω typical. At the 3.3 V segment's 0.70 mA sink current it adds ≈ 2 mV to the 0.4 V V_OL that U4 presents to the segment |
-| Pull-ups | Required on both sides; sized in §5.1 |
-| Decoupling | 100 nF at V_REF2 (C4) |
-
-U3 is supplied at 3.3 V and raises no level question: its digital pins are referenced to V_DDD,
-with V_IH ≥ 0.7 · V_DDD, V_IL ≤ 0.3 · V_DDD, V_OL ≤ 0.4 V at 3 mA and an input/output absolute
-maximum of V_DD + 0.5 V.
+| Part | `TCA9543A`, two-channel bidirectional translating pass-gate switch with interrupt logic and reset (§4.2) |
+| V_CC | **1.8 V**, from U2. The pass-gate clamp V_pass shall sit at or below the lowest bus voltage on the device; at V_CC 1.65…1.95 V the datasheet states V_pass 0.5…1.1 V, below the 1.8 V channel rails. Each segment reaches its own high level through its own pull-up, not through the switch |
+| Master side | SCL, SDA at 3.3 V. U1's inputs are 5.5 V tolerant and take V_IH = 0.7 · V_CC = 1.26 V, so a 3.3 V master drives a 1.8 V-powered switch with no further translator |
+| Address | `0x70`. A0 and A1 tied to GND |
+| RESET | Tied to V_CC. No GPIO is routed to it; the state machine is recovered by a power cycle (§10) |
+| INT0, INT1 | Tied to V_CC. Both are inputs, neither sensor's interrupt is routed (§5), and a floating input is not permitted |
+| INT | Output, unconnected |
+| Channels | Channel 0 — SC0, SD0 — carries U4. Channel 1 — SC1, SD1 — carries U3 |
+| R_ON | 10 Ω min / 25 Ω typ / **70 Ω max** at V_CC 1.65…1.95 V — two decades above the PCA9306's 3.5 Ω. At the 1.08 mA a channel and the master segment sink together it adds 76 mV worst case to the low level a sensor presents to the carrier, against a 0.99 V V_IL at the MCU. Both sensors state V_OL at a 6 mA sink; actual sink is 1.08 mA, so the device contribution is far below 0.4 V |
+| Capacitance | C_io(OFF) 19 pF max on SCL/SDA, 8 pF max on the channel pins; inside the ≈ 250 pF per-segment budget of §5.1 |
+| Pull-ups | Required on the master side and on each channel; sized in §5.1 |
+| Decoupling | 100 nF at V_CC (C4) |
 
 ## 6. Measurement requirements
 
@@ -299,10 +310,11 @@ ADR-0014 rev 5 changed the complement to obtain.
 | Item | Requirement |
 |------|-------------|
 | Profile band | 365…385 nm UV-A trace (ADR-0003 d11) |
-| U3 UV-A channel | Responsivity spans ≈ 315…410 nm, peak ≈ 340 nm — the profile band lies inside it |
-| U3 UV-B, UV-C channels | ≈ 283…315 nm (peak ≈ 295 nm) and ≈ 235…285 nm (peak ≈ 250 nm). The fixture commands neither; both are expected to read zero |
-| Published | Per-channel irradiance as measured, three subjects (§10.1) |
-| Fault use | A non-zero UV-B or UV-C reading indicates emission the profile does not command and is an alerting condition at the gateway, not a control input |
+| U3 UV channel | Band-pass filtered UV-A photodiode spanning 315…400 nm. The profile band lies inside it |
+| Responsivity | 82.8 counts/(µW·cm⁻²) at 365 nm, ALS gain 1024×. **Typical only — the datasheet states neither minimum nor maximum**, so this is a nominal scale factor, not a guaranteed accuracy |
+| Visible rejection | UV-to-photopic channel ratio 0.0 % under a 2700 K white source; UV-to-IR ratio 0.2 % under a 940 nm source. The luminaire's visible and far-red output does not enter the UV reading |
+| Published | UV-A as one subject (§10.1), scaled by the nominal responsivity above |
+| UV-B, UV-C | **Not measured.** ADR-0014 rev 6 withdraws both with the AS7331, and ADR-0003 d11 commands a UV-A trace only. The out-of-band emission check the AS7331's UV-B and UV-C channels supported no longer exists on this module |
 
 ## 7. Power
 
@@ -312,7 +324,7 @@ ADR-0014 rev 5 changed the complement to obtain.
 |---|---|
 | Node draw on `+12 V` | Not measured. O-59 |
 | Reference figure | M05 node, 0.25 W (254 mW at 12.12 V, 2026-08-02) |
-| Module contribution | Sub-milliwatt at U4 (§7.2). **U3 dominates the module**: 2 mA maximum active and 970 µA maximum in standby against U4's 280 µA, ≈ 6.6 mW at 3.3 V. Node draw is still mostly the carrier and MCU |
+| Module contribution | 572 µA maximum with both sensors active and U1 switching (§7.2), all on the 1.8 V rail — ≈ 1.03 mW, drawn from 3.3 V through U2 as ≈ 1.89 mW. **No device dominates**: the AS7331 that did, at 2 mA and 3.3 V, is withdrawn by ADR-0014 rev 6. Node draw is still mostly the carrier and MCU |
 | Burst reflected to `+12 V` | None. No device on this module has a burst load of the SCD41 class |
 
 ### 7.2 Device currents
@@ -320,36 +332,44 @@ ADR-0014 rev 5 changed the complement to obtain.
 | # | Device | Sleep | Idle | Active | Rail |
 |---|--------|-------|------|--------|------|
 | U4 | AS7343 | 0.7 µA typ / 5 µA max | 40 µA typ / 60 µA max | 210 µA typ / **280 µA max** | 1.8 V |
-| U3 | AS7331 | 1 µA max (power down) | 970 µA max (standby) | 1.42 mA typ / **2 mA max** | 3.3 V |
+| U3 | TSL2585 | 0.7 µA typ / 5 µA max | 60 µA typ | 235 µA typ / **290 µA max** | 1.8 V |
+| U1 | TCA9543A | 0.4 µA typ / 0.55 µA max | — | 2 µA at 100 kHz | 1.8 V |
 
 U4's figures are stated at V_DD = 1.8 V and exclude current through the LDR pin, which this
-module does not use. §7.3 supplies 1.8 V, so they apply as written.
+module does not use. U3's active figure is the ALS state at gain 128× with three modulators
+running; its idle figure is `LOWPOWER_IDLE = 1`. U1's operating figure is taken at its 1.65 V
+column, the nearest tabulated point below the 1.8 V rail. §7.3 supplies 1.8 V, so all three
+apply as written.
 
 ### 7.3 Module-local 1.8 V rail
 
 | Rail | Source | Consumer | Reason |
 |------|--------|----------|--------|
-| 3.3 V | Header | U3, U1 V_REF2, the 3.3 V pull-ups, straps, U2 input | — |
-| 1.8 V | U2, from 3.3 V | U4 V_DD, U1 V_REF1, the 1.8 V pull-ups | U4's V_DD range is 1.7…1.98 V, and 1.98 V is also its **absolute maximum**. 3.3 V destroys the device |
+| 3.3 V | Header | The master-segment pull-ups, straps, U2 input | — |
+| 1.8 V | U2, from 3.3 V | U4 V_DD, **U3 V_DD**, U1 V_CC, U1 RESET / INT0 / INT1, both channel pull-up pairs | U4's V_DD range is 1.7…1.98 V and 1.98 V is also its **absolute maximum** — 3.3 V destroys it. U3's range is the same 1.7…1.98 V. U1's V_CC additionally sets the pass-gate clamp (§5.2) |
 
 U4's supply has no headroom above nominal: 1.8 V nominal against a 1.98 V absolute maximum
 leaves 180 mV, so the regulator's initial accuracy, load and line regulation and its transient
 overshoot shall be shown to stay inside it. Below nominal the margin is 100 mV to the 1.7 V
-minimum. Load is 280 µA maximum at U4, plus up to 0.77 mA drawn by R6 and R7 while both bus
-lines are held low and U1's V_REF1 current — under 1.1 mA in all, two orders below U2's 200 mA
-rating, so no droop budget applies. Local decoupling 100 nF at U4's V_DD pin, plus U2's input
-and output capacitors per its datasheet (`verify`). O-62.
+minimum. The same window now covers U3, which shares the rail. Load is 280 µA at U4, 290 µA at
+U3 and 2 µA at U1, plus up to 1.54 mA drawn by the two channel pull-up pairs while all four bus
+lines are held low — under 2.2 mA in all, two orders below U2's 200 mA rating, so no droop
+budget applies. Local decoupling 100 nF at U4's V_DD pin (C7), 100 nF at U3's V_DD pin (C5) and
+100 nF at U1's V_CC pin (C4), plus U2's input and output capacitors per its datasheet
+(`verify`). O-62.
 
-### 7.4 U3 supply and reference
+### 7.4 U3 supply
 
 | Item | Requirement |
 |------|-------------|
-| Supply pins | V_DDA (pin 3) and V_DDD (pin 10), each decoupled 100 nF at the pin |
-| Common rail | Both shall be fed from the **same** 3.3 V rail. `V_DDA − V_DDD` has a ±0.3 V **absolute maximum**, so two independent regulators are not permitted |
-| Grounds | V_SSA (pins 1, 2, 5, 6, 15, 16) and V_SSD (pin 11) are separate nets, routed separately and joined by a single 0 Ω link placed beside the device |
-| REXT | 3.3 MΩ (3.267…3.333 MΩ), TCR ≤ 50 ppm/K, from pin 4 to V_DDA — DS001047 v4-00 §5, Figure 6, where the TCR limit is the condition on the guaranteed parameter. The device does not operate without it, and it sets the internal reference — its tolerance enters every irradiance reading |
-| REXT implementation | **Two 1.65 MΩ ±0.5 % resistors in series**, R4 + R11, both 0805, TCR ≤ 25 ppm/K. Thin-film precision stops at ~3 MΩ in every 0805 series and at 3.01 MΩ even in 1210 (Vishay TNPW e3), so no single part reaches 3.3 MΩ within the TCR limit. The pair gives 3.300 MΩ nominal, 3.2835…3.3165 MΩ worst case. **±0.5 % is required, not ±1 %**: two ±1 % parts land on 3.267…3.333 MΩ, exactly the window edges with no margin for ageing or solder shift |
-| Placement | REXT and the supply decoupling shall sit on the same PCB side as U3. The analog supply shall be placed as close to U3 as the layout allows |
+| Supply pin | V_DD (pin 1), decoupled 100 nF at the pin (C5) |
+| Range | 1.7…1.8…1.98 V, the same window as U4 and from the same rail (§7.3). 1.98 V is also the **absolute maximum** |
+| Ground | V_SS (pin 3). **One ground net.** The AS7331's split V_SSA / V_SSD, its ±0.3 V rail-to-rail absolute maximum and the 0 Ω joining link are withdrawn with the part; the module has no analog ground |
+| External reference | **None.** The device needs no REXT and no precision component of any kind |
+| I/O supply | The digital pins take 1.62…3.3 V independently of V_DD. This module holds them at 1.8 V (§5.2) |
+| VSYNC / GPIO (pin 2) | Unconnected. The pin is open-drain, and the reset state of `VSYNC_GPIO_INT` (0xF8, reset `0x02`) shall be confirmed to leave it an output rather than an enabled input before the layout is frozen. `verify`, O-66 |
+| INT (pin 5) | Unconnected. Open-drain output, unused, as U4's INT is |
+| Placement | Decoupling on the same PCB side as U3, at the pin |
 
 **M02 is the second module to generate a rail of its own.** O-43 records that module-local
 rails sit outside ADR-0002 d3 and the header contract, and that one instance is not a pattern —
@@ -363,7 +383,7 @@ to be revisited at the second. This is the second. O-43 is now due.
 | T2 | U4's responsivity temperature coefficient shall be applied if the datasheet states one, over the range established by T1 | `verify`, O-60 |
 
 No heat source of consequence exists on the board: total sensor dissipation is below 1 mW, and
-U2 dissipates 1.5 V × 280 µA = 0.42 mW. Incident radiation dominates, and it is a property of
+U2 dissipates 1.5 V × 572 µA = 0.86 mW. Incident radiation dominates, and it is a property of
 the installation.
 
 ## 9. Optical and mechanical requirements
@@ -378,7 +398,7 @@ the installation.
 | M6 | The sensing face shall be mounted in the canopy plane, normal to the fixture axis, unshaded by foliage or structure. Shading is the failure mode this module cannot detect | §3, ADR-0014 d7 |
 | M7 | Mounted at canopy height; height adjusted as the canopy grows, recorded as deployment metadata. A height change invalidates the §6.2 coefficients | §6.2, ADR-0014 d7 |
 | M8 | Seats on the carrier header pair 2×12 + 2×8, supported at both ends; no standoffs required | Pin map, header section |
-| M9 | U3's angle of incidence is specified as **±10°**. The sensing face and any window above U3 shall hold the source inside that cone, or the UV readings are not the quantity §6.4 defines | §4.1, O-61 |
+| M9 | U3's angular response is not stated as an acceptance half-angle in DS001043 v5-00. Until it is established from the datasheet's angular characteristic, no window or aperture above U3 shall restrict its field of view more than the window above U4 does | `verify`, O-64 |
 
 M5 and M1 conflict in the same way M01's M4 does: a coating step over a diffuser is a coating
 step over the measurement path. The diffuser is fitted after coating or masked during it. O-61.
@@ -388,18 +408,20 @@ step over the measurement path. The diffuser is fitted after coating or masked d
 | Item | Requirement |
 |------|-------------|
 | Module-ID strap | `0b010` — STRAP_0 low, STRAP_1 high, STRAP_2 low |
-| Power-on delay | U4 NAKs deterministically during initialization after V_DD crosses its POR threshold. The boot probe shall not issue a transaction before that interval has elapsed. Interval `verify`. U3 needs 1.2 ms typ / 2 ms max from power-down to the first measurement |
-| Boot probe addresses | `0x39`, `0x74`. An ACK is not identification (M01 §10 precedent); each probe shall be backed by a device-specific read. U3's is **AGEN at `0x02`, reset value `0x21`** (DEVID `0b0010` in bits 7:4, MUT `0b0001` in bits 3:0); U4's ID register is `verify` |
+| Power-on delay | U4 NAKs deterministically during initialization after V_DD crosses its POR threshold. The boot probe shall not issue a transaction before that interval has elapsed. Interval `verify`. U3 is ready to receive I²C commands 0.5 ms after power-on. U1 releases from power-on reset above V_PORR 1.5 V |
+| Bus channel | **U1 powers up with both channels deselected.** Firmware shall write U1's control register to select exactly one channel before addressing a sensor, and shall not leave both channels selected — `0x39` answers on both (§5.2). Channel 0 is U4, channel 1 is U3 |
+| Boot probe addresses | `0x70` on the master segment, then `0x39` on each channel in turn. An ACK is not identification (M01 §10 precedent); each probe shall be backed by a device-specific read. U3's identification register and U4's are both `verify`, O-62. Probing `0x39` without a channel selected shall be treated as a U1 fault, not as two absent sensors |
 | Re-probe interval | ≈ 60 s (ADR-0014 d8) |
 | Publish rule | Responders only; partial populations require no rebuild |
 | SMUX | Configured after every power-up, before the first measurement is started. Reference configuration from the vendor application note for the AS7343 — the AS7341's does not apply |
-| U3 power-up state | U3 resets into power-down with `OSR:PD = 1` and into the CONFIGURATION state. Firmware shall clear `PD`, write CREG1..CREG3, then switch `OSR:DOS` to MEASUREMENT; the control registers are not writable from the measurement state |
+| U3 power-up state | U3 resets with its ALS disabled. Firmware shall set `PON`, configure the UV modulator gain and integration time, then set `AEN`. The UV channel is read at its own gain, independent of the photopic and IR channels |
 | Acquisition | Three integration cycles per full channel set (§6.1); flicker detection mapped to its own ADC when used |
 | Autorange | AGAIN and `t_int` adjusted to hold the brightest mapped channel between 10 % and 90 % of full scale. The setting in force is published with the sample |
 | Derived | PPFD per §6.2, from coefficients read out of the deployment profile, over F1…F7 only |
 | Not derived | DLI. Owned by the gateway (§3.2, ADR-0014 d4) |
 | Deployment constants | `c_i` per §6.2 read from the deployment profile, not compiled in |
-| Rail failure | Failure of U2 removes U4 from the bus. The boot probe handles this as absence; *not fitted*, *failed* and *unpowered* remain indistinguishable (O-37) |
+| Rail failure | Failure of U2 removes U4, U3 **and U1** from the bus, so the module presents as a single absent device at `0x70` rather than as two absent sensors. The boot probe handles this as absence; *not fitted*, *failed* and *unpowered* remain indistinguishable (O-37) |
+| U1 recovery | U1's RESET is tied to V_CC (§5.2), so a stuck channel is recoverable only by a node power cycle. Firmware shall report a channel that does not respond rather than attempt a reset it has no line for (O-65) |
 | Role and zone | Not held by the node; assigned by the gateway (ADR-0014 d7) |
 | Node directory | `firmware/nodes/m02_light/` — does not exist |
 | Node-ID | 96 is M05's, 97 is M01's; M02 takes **98**, static for bring-up (ADR-0005 d6) |
@@ -416,12 +438,20 @@ register entries. M05 holds 4096–4102; M01 holds 4112–4121.
 | 4129 | PPFD | derived, §6.2 | `industryflow.greenhouse.light.PhotonFluxDensity` (mol·m⁻²·s⁻¹) |
 | 4130 | Flicker flags | U4 | `industryflow.greenhouse.light.FlickerStatus` |
 | 4131 | UV-A irradiance | U3 | `industryflow.greenhouse.light.Irradiance` (W·m⁻²) |
-| 4132 | UV-B irradiance | U3 | `industryflow.greenhouse.light.Irradiance` (W·m⁻²) |
-| 4133 | UV-C irradiance | U3 | `industryflow.greenhouse.light.Irradiance` (W·m⁻²) |
+| ~~4132~~ | ~~UV-B irradiance~~ — retired 2026-08-23 by ADR-0014 rev 6; U3 has no UV-B channel | — | — |
+| ~~4133~~ | ~~UV-C irradiance~~ — retired 2026-08-23 by ADR-0014 rev 6; U3 has no UV-C channel | — | — |
 
-Six subjects, not one record: a partial population must be able to omit U3's three
+Four subjects, not one record: a partial population must be able to omit U3's one
 (ADR-0005 d8). U4's channels are one device read in one acquisition and are not separable, so
 they are one subject.
+
+**4132 and 4133 are retired, not reassigned.** The identifiers stay withdrawn so that a gateway
+holding an older register set cannot silently bind a new quantity to an identifier it already
+knows as UV-B or UV-C.
+
+4131 keeps `Irradiance` in W·m⁻², computed from the nominal responsivity of §6.4. That figure is
+typical-only, so the subject carries a nominal rather than a guaranteed absolute value; §6.4
+states the limit and V4 measures it.
 
 The `light` sub-namespace is named by ADR-0005 d1 and contains no files. All four types are
 minted because the standard set carries no spectral, photon-flux, irradiance or flicker sample
@@ -436,13 +466,14 @@ gateway's concern.
 | V1 | §6.2 | `c_i` identified against a reference quantum sensor in the canopy plane at ≥ 3 fixture output levels, per profile phase spectrum. The project owns no quantum sensor; procedure and instrument undefined, O-52 |
 | V2 | §6.1, T1 | One full 24 h cycle logged: no channel saturated and none below 10 % of full scale at any point of either 30 min ramp or the photoperiod. U4 die temperature proxy and canopy air temperature recorded against a reference thermometer |
 | V3 | §6.3 | Each fixture channel driven alone at full output; the band counts recorded per channel. The 730 nm far-red channel shall register on F8 |
-| V4 | §6.4 | The fixture's UV-A channel driven alone at full output; U3's three channels recorded against dark. UV-B and UV-C shall stay at dark level |
-| V5 | §5.2 | U4's SCL and SDA measured idling at the 1.8 V rail, not at 3.3 V, and U4 addressed through U1 over ≥ 1 h at 100 kHz with zero bus errors |
+| V4 | §6.4 | The fixture's UV-A channel driven alone at full output; U3's UV channel recorded against dark. Each remaining fixture channel then driven alone at full output; the UV channel shall stay at dark level, which is the visible-rejection claim of §6.4 measured rather than assumed |
+| V5 | §5.2 | Both channels' SCL and SDA measured idling at the 1.8 V rail, not at 3.3 V; each sensor addressed through its own U1 channel over ≥ 1 h at 100 kHz with zero bus errors. The low level presented to the carrier measured against the 76 mV R_ON budget |
+| V11 | §5.2, §10 | With one channel selected, `0x39` answers once and once only. With both channels selected, the bus fault is observed and recorded — this is the failure the topology exists to prevent, and it shall be seen once deliberately |
 | V6 | §4.1 | 1:1 paper printout against the physical part, both devices, including U4's aperture offset relative to the pads |
 | V7 | §5 | Module-ID readback of `0b010` on the carrier in use |
 | V8 | §9 M1, M2 | Band counts with and without the fitted diffuser under the same fixture setting; the ratio per band is the diffuser's transmission term for §6.2 |
 | V9 | §7.3 | U4's V_DD measured at the pin under load and during U2's start-up transient, against the 1.98 V absolute maximum |
-| V10 | §7.4 | `V_DDA − V_DDD` measured at U3's pins at power-up and in steady state, against the ±0.3 V absolute maximum. REXT measured in circuit against 3.267…3.333 MΩ |
+| V10 | §7.3, §7.4 | U3's V_DD measured at the pin under load and during U2's start-up transient, against the 1.98 V absolute maximum — the same measurement V9 makes at U4, on the shared rail |
 | V11 | §10 | U3 identified by reading AGEN at `0x02` and matching `0x21`, not by address ACK alone |
 
 ## 12. Open items
@@ -455,38 +486,41 @@ collision with M06's O-42.
 | ID | Item | Blocks |
 |----|------|--------|
 | O-52 | PPFD reconstruction coefficients `c_i`: identification procedure, reference instrument, and per-phase-spectrum validity. The project owns no reference quantum sensor | PPFD accuracy, deployment profile, V1 |
-| ~~O-53~~ | ~~U3's fixed `0x53` inside the reserved `0x50`–`0x57` block~~ — closed 2026-08-13 by ADR-0014 rev 5: U3 is the AS7331, strapped to `0x74`. No device on this module occupies the block | — |
+| ~~O-53~~ | ~~U3's fixed `0x53` inside the reserved `0x50`–`0x57` block~~ — closed 2026-08-13 by ADR-0014 rev 5. Still closed after ADR-0014 rev 6: U3 is now the TSL2585 at `0x39` and U1 sits at `0x70`, so no device on this module occupies the block | — |
 | ~~O-54~~ | ~~ADR-0014 d4's alternative UV part, the Vishay VEML6075, was terminated in 2019~~ — closed 2026-08-13 by ADR-0014 rev 5, which removes it and the LTR390 from d4 | — |
 | ~~O-55~~ | ~~730 nm far-red unobservable, and the UV-A band on the shoulder of the UV sensor's response~~ — closed 2026-08-13 by ADR-0014 rev 5: F8 at 745 nm covers 730 nm (§6.3) and the AS7331's UV-A channel is centred at 360 nm (§6.4) | — |
-| ~~O-56~~ | ~~U4's digital pins operated at 3.3 V, above V_DD, inside the 3.6 V absolute maximum but against the device pin description~~ — closed 2026-08-19 by fitting U1 (`PCA9306`) in `store/E0003-000001.kicad_sch`: U4 sits on a 1.8 V sub-segment with its own pull-ups (§5.1, §5.2) | — |
+| ~~O-56~~ | ~~U4's digital pins operated at 3.3 V, above V_DD, inside the 3.6 V absolute maximum but against the device pin description~~ — closed 2026-08-19 by fitting U1 in `store/E0003-000001.kicad_sch`: U4 sits on its own 1.8 V segment with its own pull-ups (§5.1, §5.2). The part at U1 became the `TCA9543A` on 2026-08-23 (ADR-0014 rev 6); the item stays closed, since the translation it required is still performed | — |
 | O-57 | Condensation on excursions places U4 outside its 5–85 %RH non-condensing operating conditions. Post-excursion validity and recovery undefined, as for O-47 | Excursion handling, data validity |
 | O-58 | DLI is integrated at the gateway (§3.2). Restart and gap policy across a gateway restart or a telemetry outage is unspecified | Gateway control loop, ADR-0015 |
 | O-59 | Node power unmeasured | Distribution-board sizing, O-31 |
 | O-60 | U4 responsivity temperature coefficient not established; T2 unquantified | Absolute PPFD stability |
 | O-61 | Whether U4's integrated diffuser suffices or an external achromatic diffuser is required, its spectral transmission flatness, and its order against the conformal-coating step. Any diffuser sits in the measurement path of every band | Enclosure design, §6.2 coefficients, M1/M2/M5 |
-| O-62 | `verify` values in this document, reduced 2026-08-18 by the AS7331 datasheet (DS001047 v4-00): U3's electrical, optical and package figures are now stated. Outstanding: U4's `t_int` formula, AGAIN range, aperture offset, POR interval and ID register; U3's aperture offset; U2 capacitor values; LCSC / JLCPCB ordering codes and stock for both sensors, for U1, and for the REXT pair (1.65 MΩ ±0.5 %, TCR ≤ 25 ppm/K, 0805 — the value and grade are fixed by §7.4, only the ordering code is open) and strap-link resistors | `L` release |
+| O-62 | `verify` values in this document, restated 2026-08-23 against DS001043 v5-00 (TSL2585) and SCPS206B (TCA9543A): U3's electrical, package and land-pattern figures and U1's electrical figures are now stated. Outstanding: U4's `t_int` formula, AGAIN range, aperture offset, POR interval and ID register; U3's identification register and the position of its photodiode group relative to the pads; U2 capacitor values; ordering codes and stock for U4 and for the strap-link resistors. U3 is `TSL25853PM` and U1 is `C2653307`, both stocked (§4, §4.2) | `L` release |
+| O-63 | The AS7331 CAD content withdrawn by ADR-0014 rev 6 is still in the repository and still attributed: `store/industrygrow.kicad_sym`, `store/industrygrow.pretty/PQFN50P365X260X119-16N.kicad_mod`, `store/industrygrow.3dshapes/AS7331.step`, with their rows in `LICENSE.md` and `REUSE.toml`. Removal waits on the layout, which still references the footprint | `LICENSE.md` accuracy, store hygiene |
+| O-64 | U3's angular response is not stated as an acceptance half-angle. Until it is read off the datasheet's angular characteristic, M9 constrains no window geometry and the UV reading's dependence on source angle is unquantified | M9, enclosure design, V4 |
+| O-65 | U1 has no reset line: RESET is tied to V_CC (§5.2), so a channel stuck low is recoverable only by a node power cycle. Whether a GPIO from the header shall drive RESET instead is a layout-affecting decision, and the header has four spare GPIO | Firmware recovery path, §10, layout |
+| O-66 | U3's VSYNC/GPIO pin (pin 2) is left unconnected. The reset state of `VSYNC_GPIO_INT` (0xF8, reset `0x02`) shall be confirmed to leave the pin an open-drain output and not an enabled input before the layout is frozen | §7.4, layout |
 
 ## 13. Maturity
 
-**Schematic captured.** Both sensors are fixed by ADR-0014 rev 5 and both are now stated from
-their datasheets. `store/E0003-000001.kicad_sch` carries U4, U3, the 1.8 V rail, U1 with both
-I²C pull-up pairs, and the module-ID straps.
+**Schematic captured.** Both sensors are fixed by ADR-0014 rev 6 and both are stated from their
+datasheets. `store/E0003-000001.kicad_sch` carries U4, U3, U1, the 1.8 V rail, all three I²C
+pull-up pairs and the module-ID straps.
 
-**Layout drawn and DRC-clean.** `E0003-000001-D-src.zip` holds a two-layer board on the
-same 104.902 × 46.990 mm envelope as `E0002-000001`, with J1/J2 at the same positions relative
-to the outline, so the module mates and cases alike. All 115 pads match the schematic netlist
-and §7.4's placement requirement is met — R4, R11, R5, C5, C6 and U3 are all on `B.Cu`, the REXT
-pair sitting in the run between R4 and U3 pin 4. Custom design
-rules are in the package's `.kicad_dru`, scoped to U1 and U3, whose 0.5 mm pitch puts their pads
-inside the 0.2 mm board default. DRC reports **0 violations and 0 unconnected items**, matching
-`E0002-000001`. `Net-(U2-EN)` (the 1.8 V LDO enable) crosses the GND track between U2.1 and U2.3
-on `F.Cu` through a via pair; J1.8, J2.8 and U1.1 take a solid zone connection, the 2.54 mm
-header pitch leaving no room for a second thermal spoke at 0.5 mm gap. The module stays at
-**Schematic captured** until O-62 closes.
+**The layout is stale.** `E0003-000001-D-src.zip` holds the two-layer board drawn against the
+ADR-0014 rev 5 complement: it places the AS7331's OLGA-16 footprint, the PCA9306's VSSOP-8 and
+the REXT pair, none of which are on the schematic any more. It is DRC-clean against a netlist
+that no longer exists. The board envelope, 104.902 × 46.990 mm with J1/J2 positioned as on
+`E0002-000001`, and the custom design rules in the package's `.kicad_dru` both carry over; the
+placement and routing do not. Re-layout is the next work, and until it lands the `-D` package
+shall not be read as describing this module.
+
+Designator gaps R5, R11 and C6 are deliberate: those parts served the AS7331 and are withdrawn
+with it. R1 and R4 are re-used as channel 1's pull-up pair rather than left as gaps.
 
 | Rung | Content | Reached when |
 |------|---------|--------------|
-| **Pre-schematic** | Complement and requirements fixed; values estimated or `verify` | ADR-0014 rev 5 fixes both parts ✔ |
-| **Schematic captured** ← here | Parts fixed to ordering part numbers; schematic exists; component values determined | U3 ordering part resolved ✔ (`AS7331-AQFM`); schematic exists ✔; O-56 closed ✔ (U1 fitted). U1's ordering code is still `verify` (O-62) |
+| **Pre-schematic** | Complement and requirements fixed; values estimated or `verify` | ADR-0014 rev 6 fixes both parts ✔ |
+| **Schematic captured** ← here | Parts fixed to ordering part numbers; schematic exists; component values determined | U3 ordering part resolved ✔ (`TSL25853PM`); U1 resolved ✔ (`TCA9543APWR`); schematic exists ✔ |
 | **Schematic-frozen** | Remaining `verify` resolved, footprints checked against physical parts. `L` releases here | O-62 closed; V6 executed |
 | **As-built** | Estimates replaced by measured values; verification §11 executed | `E0003` fabricated and bench-verified; O-59 measured |
