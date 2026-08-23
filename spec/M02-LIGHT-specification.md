@@ -52,7 +52,7 @@ Mean canopy PPFD follows from the DLI target and the photoperiod: 17–20 mol·m
 | Spectral counts, 11 bands, 405…855 nm | U4 | 0…65 535 counts per band, 16-bit | 10…90 % of full scale, held there by autorange (§6.1); zero in the dark period | Relative between bands; absolute only through §6.2 |
 | Clear channel (unfiltered Si) | U4 | 0…65 535 counts | As above | Relative |
 | PPFD (derived, §6.2) | U4 | — | 295–347 µmol·m⁻²·s⁻¹ mean over the photoperiod; 0…full scale across the 30 min ramps; 0 in the dark period | Dominated by the reconstruction coefficients, O-52 |
-| Flicker flag, 50 / 60 Hz | U4 | Flags; buffered data to 2 kHz (`verify`) | No flicker expected from a DC-driven fixture; an asserted flag is a driver fault indication | Flag, not a measurement |
+| Flicker flag, 50 / 60 Hz | U4 | Flags; ADC5 integrates over `t_int_FD = FD_TIME × 2.78 µs`, FD_TIME 11-bit, raw data optionally written to the FIFO | No flicker expected from a DC-driven fixture; an asserted flag is a driver fault indication | Flag, not a measurement |
 | UV-A irradiance, 315…400 nm | U3 | 0…65 535 counts, 20-bit ADC with gain 0.5×…4096× | Trace level per profile; absolute value not set by the profile | 82.8 counts/(µW·cm⁻²) at 365 nm, gain 1024×. **Typical only**, §6.4 |
 
 Publication rate: seconds. The full channel set requires **three integration cycles** — U4 has
@@ -130,8 +130,8 @@ measures the visible spectrum with eleven bands.
 
 | # | Package | Body size | Notes |
 |---|---------|-----------|-------|
-| U4 | OLGA-8 | 3.10 × 2.00 × 1.00 mm | The optical aperture is not concentric with the package. Its offset from the package centre shall be taken from the AS7343 package outline drawing and not from the AS7341's. `verify`, O-62 |
-| U3 | OLGA-6 | 2.00 × 1.00 × 0.35 mm | 6 pads in 2 rows × 3 columns; 0.650 mm column pitch along the long axis, 0.525 mm between rows; pads 0.400 × 0.275 mm. The photodiode group sits at the pin-1 end and is **not** concentric with the package. Land pattern per DS001043 v5-00 Figure 96; package outline Figure 95. Angular response `verify`, O-64 |
+| U4 | OLGA-8 | 3.10 × 2.00 × 1.00 mm | Aperture **Ø0.900 mm, centred 0.609 mm from the package centre** along the 3.10 mm axis — DS001046 v6-00 Figure 67, `℄ PART to ℄ ALS`. Not concentric with the package, and not the AS7341's offset |
+| U3 | OLGA-6 | 2.00 × 1.00 × 0.35 mm | 6 pads in 2 rows × 3 columns; 0.650 mm column pitch along the long axis, 0.525 mm between rows; pads 0.400 × 0.275 mm. The photodiode group sits at the pin-1 end and is **not** concentric with the package. Land pattern per DS001043 v5-00 Figure 96; package outline Figure 95. The drawing dimensions the die as centred within ±75 µm but does not dimension the photodiode group, so its offset is a measurement, O-70. Angular response `verify`, O-64 |
 
 Every footprint shall be checked against the physical part with a 1:1 paper printout before
 ordering (V6). The check shall include U4's aperture position relative to the pads — the
@@ -143,6 +143,11 @@ aperture does not appear in the schematic.
 |---|------|------|----------|
 | U1 | `TCA9543APWR` | C2653307 | Two-channel bidirectional translating I²C switch (§5.2). Separates U3 and U4, which share `0x39`, and performs the 3.3 V ↔ 1.8 V translation the PCA9306 previously performed for U4 alone. TSSOP-14, address `0x70` with A0 and A1 to GND |
 | U2 | `TLV70018DCKR` | C133796 | 1.8 V rail for U4 VDD (§7.3). Same part as M01's U4 |
+
+Sensor ordering codes: U3 `TSL25853PM` is LCSC `C17428292`; U4 `AS7343-DLGM` is `C19085986`,
+31 in stock at 2026-08-23 and the module's dominant BOM line. Passives: the 4.7 kΩ 0805
+pull-ups are `C17673` and the 0 Ω 0805 strap links `C17477`, both JLCPCB **Basic** library, so
+neither draws an extended-part loading fee.
 
 ## 5. Interfaces
 
@@ -227,8 +232,8 @@ at 6 mA sink, input capacitance 10 pF, leakage ±5 µA, digital I/O absolute max
 | ADC | Six independent 16-bit light-to-frequency converters; full scale 65 535 counts per channel |
 | Channel mapping | SMUX, configured after every power-up before any measurement is started |
 | Cycles per full set | **Three.** Eleven filtered bands + clear + flicker exceeds six ADCs by more than one cycle |
-| Integration time | `t_int = (ATIME + 1) × (ASTEP + 1) × 2.78 µs` (`verify`) |
-| Gain | AGAIN, 0.5× … 2048× (`verify`) |
+| Integration time | `t_int = (ATIME + 1) × (ASTEP + 1) × 2.78 µs` — DS001046 v6-00 §7 note 4. ATIME at `0x81`, ASTEP at `0xD4`/`0xD5`; neither may be 0 |
+| Gain | AGAIN 0.5× … 2048×, 13 steps, CFG1 register `0xC6` bits AGAIN[4:0] |
 | Autorange | Firmware shall hold the brightest mapped channel between 10 % and 90 % of full scale by adjusting AGAIN and `t_int` (§10) |
 | Published with every sample | The AGAIN and `t_int` in force. Counts without them are not a measurement |
 
@@ -355,8 +360,15 @@ minimum. The same window now covers U3, which shares the rail. Load is 280 µA a
 U3 and 2 µA at U1, plus up to 1.54 mA drawn by the two channel pull-up pairs while all four bus
 lines are held low — under 2.2 mA in all, two orders below U2's 200 mA rating, so no droop
 budget applies. Local decoupling 100 nF at U4's V_DD pin (C7), 100 nF at U3's V_DD pin (C5) and
-100 nF at U1's V_CC pin (C4), plus U2's input and output capacitors per its datasheet
-(`verify`). O-62.
+100 nF at U1's V_CC pin (C4).
+
+U2's own capacitors, per TLV700 (SBVS121): the output is stable on an **effective** capacitance
+of 0.1 µF or more with ESR under 200 mΩ — effective meaning after bias and temperature derating,
+not the nameplate — and the datasheet characterises the part at C_OUT = 1 µF. An input capacitor
+is not required for stability, but 0.1…1 µF low-ESR is recommended and becomes necessary above
+2 Ω source impedance. The board fits C1 + C2 = 2 × 10 µF at the input and C3 = 4.7 µF at the
+output, both far above the minimum after derating. Both shall sit as close to the pins as the
+layout allows, with the output capacitor's ground returned directly to U2's GND pin.
 
 ### 7.4 U3 supply
 
@@ -401,6 +413,12 @@ the installation.
 | M9 | U3's angular response is not stated as an acceptance half-angle in DS001043 v5-00. Until it is established from the datasheet's angular characteristic, no window or aperture above U3 shall restrict its field of view more than the window above U4 does | `verify`, O-64 |
 | M10 | **The sensing face carries U3 and U4 and no other part.** Every other component, the header pair included, sits on the opposite face. Nothing but the two apertures may stand in the canopy's line of sight | §7.4, M6 |
 
+**M10 makes the board double-sided SMT.** The `-D-fab` package therefore carries a paste layer
+and a position file for each side (ADR-0017 d18), and assembly takes two placement passes where
+earlier revisions took one plus through-hole headers. The cost is accepted: a sensing face
+carrying nothing but the two apertures needs no clearance check, no masking and no per-part
+shading assessment against the enclosure window, which is what keeps final assembly simple.
+
 M5 and M1 conflict in the same way M01's M4 does: a coating step over a diffuser is a coating
 step over the measurement path. The diffuser is fitted after coating or masked during it. O-61.
 
@@ -409,9 +427,9 @@ step over the measurement path. The diffuser is fitted after coating or masked d
 | Item | Requirement |
 |------|-------------|
 | Module-ID strap | `0b010` — STRAP_0 low, STRAP_1 high, STRAP_2 low |
-| Power-on delay | U4 NAKs deterministically during initialization after V_DD crosses its POR threshold. The boot probe shall not issue a transaction before that interval has elapsed. Interval `verify`. U3 is ready to receive I²C commands 0.5 ms after power-on. U1 releases from power-on reset above V_PORR 1.5 V |
+| Power-on delay | U4 NAKs deterministically for **200 µs typical** after V_DD crosses its POR threshold, and interrupts shall be ignored across that window (DS001046 v6-00 §8). U3 is ready to receive I²C commands 0.5 ms after power-on. U1 releases from power-on reset above V_PORR 1.5 V. The boot probe shall not issue a transaction before the longest of the three has elapsed |
 | Bus channel | **U1 powers up with both channels deselected.** Firmware shall write U1's control register to select exactly one channel before addressing a sensor, and shall not leave both channels selected — `0x39` answers on both (§5.2). Channel 0 is U4, channel 1 is U3 |
-| Boot probe addresses | `0x70` on the master segment, then `0x39` on each channel in turn. An ACK is not identification (M01 §10 precedent); each probe shall be backed by a device-specific read. U3's identification register and U4's are both `verify`, O-62. Probing `0x39` without a channel selected shall be treated as a U1 fault, not as two absent sensors |
+| Boot probe addresses | `0x70` on the master segment, then `0x39` on each channel in turn. An ACK is not identification (M01 §10 precedent); each probe shall be backed by a device-specific read: **U4 `ID` at `0x5A` reads `0x81`** (with `REVID` `0x59` and `AUXID` `0x58`), **U3 `ID` at `0x92` reads `0x5C`** (with `REV_ID` `0x91` = `0x11`). Probing `0x39` without a channel selected shall be treated as a U1 fault, not as two absent sensors |
 | Re-probe interval | ≈ 60 s (ADR-0014 d8) |
 | Publish rule | Responders only; partial populations require no rebuild |
 | SMUX | Configured after every power-up, before the first measurement is started. Reference configuration from the vendor application note for the AS7343 — the AS7341's does not apply |
@@ -496,12 +514,13 @@ collision with M06's O-42.
 | O-59 | Node power unmeasured | Distribution-board sizing, O-31 |
 | O-60 | U4 responsivity temperature coefficient not established; T2 unquantified | Absolute PPFD stability |
 | O-61 | Whether U4's integrated diffuser suffices or an external achromatic diffuser is required, its spectral transmission flatness, and its order against the conformal-coating step. Any diffuser sits in the measurement path of every band | Enclosure design, §6.2 coefficients, M1/M2/M5 |
-| O-62 | `verify` values in this document, restated 2026-08-23 against DS001043 v5-00 (TSL2585) and SCPS206B (TCA9543A): U3's electrical, package and land-pattern figures and U1's electrical figures are now stated. Outstanding: U4's `t_int` formula, AGAIN range, aperture offset, POR interval and ID register; U3's identification register and the position of its photodiode group relative to the pads; U2 capacitor values; ordering codes and stock for U4 and for the strap-link resistors. U3 is `TSL25853PM` and U1 is `C2653307`, both stocked (§4, §4.2) | `L` release |
+| ~~O-62~~ | ~~`verify` values in this document~~ — closed 2026-08-23 against DS001046 v6-00 (AS7343), DS001043 v5-00 (TSL2585), SCPS206B (TCA9543A) and SBVS121 (TLV700). U4: `t_int` formula confirmed as written, AGAIN 0.5×…2048× at CFG1 `0xC6`, aperture Ø0.900 mm at 0.609 mm offset, POR 200 µs typical, `ID` `0x5A` = `0x81`. U3: `ID` `0x92` = `0x5C`. U2 capacitors stated in §7.3. Ordering codes in §4.2. The one item that cannot close from a datasheet — U3's photodiode-group offset — moves to O-70 | — |
+| O-70 | DS001043 v5-00 dimensions the TSL2585 die as centred within ±75 µm but does not dimension the photodiode group, so U3's aperture offset from the package centre is unstated. Establish it by measurement against the physical part, with V6 | Enclosure window alignment, M3, V6 |
 | ~~O-63~~ | ~~AS7331 CAD content still in the repository and still attributed~~ — closed 2026-08-23: `E0003-000001` references none of it, so the footprint, the 3D model and `LicenseRef-SnapEDA-unstated` are removed with their `LICENSE.md` and `REUSE.toml` rows | — |
 | O-64 | U3's angular response is not stated as an acceptance half-angle. Until it is read off the datasheet's angular characteristic, M9 constrains no window geometry and the UV reading's dependence on source angle is unquantified | M9, enclosure design, V4 |
 | O-65 | U1 has no reset line: RESET is tied to V_CC (§5.2), so a channel stuck low is recoverable only by a node power cycle. Whether a GPIO from the header shall drive RESET instead is a layout-affecting decision, and the header has four spare GPIO | Firmware recovery path, §10, layout |
 | O-66 | U3's VSYNC/GPIO pin (pin 2) is left unconnected. The reset state of `VSYNC_GPIO_INT` (0xF8, reset `0x02`) shall be confirmed to leave the pin an open-drain output and not an enabled input before the layout is frozen | §7.4, layout |
-| O-68 | `E0003-000001` is double-sided SMT — the bottom face carries U3 and U4, the top everything else. Earlier revisions were single-sided SMT plus through-hole headers. Two paste stencils and two placement passes; the fab package and the assembly quote both change | `-D-fab` package, ADR-0017 d18, order cost |
+| ~~O-68~~ | ~~`E0003-000001` is double-sided SMT, changing the fab package and the assembly quote~~ — closed 2026-08-23: not a question to resolve. Double-sided assembly is the consequence of M10 and the cost is accepted (§9) | — |
 | O-69 | The `GND` pour is on `F.Cu` only. The sensor face has no plane behind it, one board thickness from the luminaire's driver. U3's and U4's grounds reach the top pour through vias | EMC, sensor face |
 
 ## 13. Maturity
@@ -537,5 +556,5 @@ with it. R1 and R4 are re-used as channel 1's pull-up pair rather than left as g
 |------|---------|--------------|
 | **Pre-schematic** | Complement and requirements fixed; values estimated or `verify` | ADR-0014 rev 6 fixes both parts ✔ |
 | **Schematic captured** ← here | Parts fixed to ordering part numbers; schematic exists; component values determined | U3 ordering part resolved ✔ (`TSL25853PM`); U1 resolved ✔ (`TCA9543APWR`); schematic exists ✔ |
-| **Schematic-frozen** | Remaining `verify` resolved, footprints checked against physical parts. `L` releases here | O-62 closed; V6 executed |
+| **Schematic-frozen** | Remaining `verify` resolved, footprints checked against physical parts. `L` releases here | O-62 closed ✔; O-60, O-61, O-64, O-66 and O-70 open; V6 not executed |
 | **As-built** | Estimates replaced by measured values; verification §11 executed | `E0003` fabricated and bench-verified; O-59 measured |
