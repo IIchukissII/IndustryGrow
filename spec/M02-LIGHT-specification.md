@@ -131,7 +131,7 @@ measures the visible spectrum with eleven bands.
 | # | Package | Body size | Notes |
 |---|---------|-----------|-------|
 | U4 | OLGA-8 | 3.10 × 2.00 × 1.00 mm | Aperture **Ø0.900 mm, centred 0.609 mm from the package centre** along the 3.10 mm axis — DS001046 v6-00 Figure 67, `℄ PART to ℄ ALS`. Not concentric with the package, and not the AS7341's offset |
-| U3 | OLGA-6 | 2.00 × 1.00 × 0.35 mm | 6 pads in 2 rows × 3 columns; 0.650 mm column pitch along the long axis, 0.525 mm between rows; pads 0.400 × 0.275 mm. The photodiode group sits at the pin-1 end and is **not** concentric with the package. Land pattern per DS001043 v5-00 Figure 96; package outline Figure 95. The drawing dimensions the die as centred within ±75 µm but does not dimension the photodiode group, so its offset is a measurement, O-70. Angular response `verify`, O-64 |
+| U3 | OLGA-6 | 2.00 × 1.00 × 0.35 mm | 6 pads in 2 rows × 3 columns; 0.650 mm column pitch along the long axis, 0.525 mm between rows; pads 0.400 × 0.275 mm. The photodiode group sits at the pin-1 end and is **not** concentric with the package. Land pattern per DS001043 v5-00 Figure 96; package outline Figure 95. The drawing dimensions the die as centred within ±75 µm but does not dimension the photodiode group, so its offset is a measurement, O-70. Angular response: half maximum at ≈ ±45° on both axes, M9 |
 
 Every footprint shall be checked against the physical part with a 1:1 paper printout before
 ordering (V6). The check shall include U4's aperture position relative to the pads — the
@@ -379,8 +379,8 @@ layout allows, with the output capacitor's ground returned directly to U2's GND 
 | Ground | V_SS (pin 3). **One ground net.** The AS7331's split V_SSA / V_SSD, its ±0.3 V rail-to-rail absolute maximum and the 0 Ω joining link are withdrawn with the part; the module has no analog ground |
 | External reference | **None.** The device needs no REXT and no precision component of any kind |
 | I/O supply | The digital pins take 1.62…3.3 V independently of V_DD. This module holds them at 1.8 V (§5.2) |
-| VSYNC / GPIO (pin 2) | Unconnected. The pin is open-drain, and the reset state of `VSYNC_GPIO_INT` (0xF8, reset `0x02`) shall be confirmed to leave it an output rather than an enabled input before the layout is frozen. `verify`, O-66 |
-| INT (pin 5) | Unconnected. Open-drain output, unused, as U4's INT is |
+| VSYNC / GPIO (pin 2) | Unconnected, and safe so. At reset `VSYNC_GPIO_INT` (`0xF8`) = `0x02`: `VSYNC_GPIO_IN_EN` = 0, so the pin is not an input, and `VSYNC_GPIO_OUT` = 1 leaves the open-drain output released HIGH — the datasheet's stated default, chosen to draw nothing through a pull-up. Firmware shall not set `VSYNC_GPIO_IN_EN` while the net is unconnected |
+| INT (pin 5) | Unconnected. Open-drain output, unused, as U4's INT is; at reset `INT_IN_EN` = 0, so it is not an input either |
 | Placement | **The sensing face carries the optical parts and nothing else.** C5 sits on the opposite face, directly behind U3, and the decoupling loop closes through vias. Keeping the face clear of every other part is an optical requirement (§9 M6) and outranks a same-side decoupling loop |
 
 **M02 is the second module to generate a rail of its own.** O-43 records that module-local
@@ -410,7 +410,7 @@ the installation.
 | M6 | The sensing face shall be mounted in the canopy plane, normal to the fixture axis, unshaded by foliage or structure. Shading is the failure mode this module cannot detect | §3, ADR-0014 d7 |
 | M7 | Mounted at canopy height; height adjusted as the canopy grows, recorded as deployment metadata. A height change invalidates the §6.2 coefficients | §6.2, ADR-0014 d7 |
 | M8 | Seats on the carrier header pair 2×12 + 2×8, supported at both ends; no standoffs required | Pin map, header section |
-| M9 | U3's angular response is not stated as an acceptance half-angle in DS001043 v5-00. Until it is established from the datasheet's angular characteristic, no window or aperture above U3 shall restrict its field of view more than the window above U4 does | `verify`, O-64 |
+| M9 | U3's normalized angular response falls to half maximum at **≈ ±45°** on both axes, near-symmetric (DS001043 v5-00 Figures 13, 14). No window or aperture above U3 shall clip inside that cone. Both figures characterise the **photopic** channel against a white LED; the UV channel is not separately characterised, so the photopic curve is the bound window design shall use | §4.1 |
 | M10 | **The sensing face carries U3 and U4 and no other part.** Every other component, the header pair included, sits on the opposite face. Nothing but the two apertures may stand in the canopy's line of sight | §7.4, M6 |
 
 **M10 makes the board double-sided SMT.** The `-D-fab` package therefore carries a paste layer
@@ -517,9 +517,9 @@ collision with M06's O-42.
 | ~~O-62~~ | ~~`verify` values in this document~~ — closed 2026-08-23 against DS001046 v6-00 (AS7343), DS001043 v5-00 (TSL2585), SCPS206B (TCA9543A) and SBVS121 (TLV700). U4: `t_int` formula confirmed as written, AGAIN 0.5×…2048× at CFG1 `0xC6`, aperture Ø0.900 mm at 0.609 mm offset, POR 200 µs typical, `ID` `0x5A` = `0x81`. U3: `ID` `0x92` = `0x5C`. U2 capacitors stated in §7.3. Ordering codes in §4.2. The one item that cannot close from a datasheet — U3's photodiode-group offset — moves to O-70 | — |
 | O-70 | DS001043 v5-00 dimensions the TSL2585 die as centred within ±75 µm but does not dimension the photodiode group, so U3's aperture offset from the package centre is unstated. Establish it by measurement against the physical part, with V6 | Enclosure window alignment, M3, V6 |
 | ~~O-63~~ | ~~AS7331 CAD content still in the repository and still attributed~~ — closed 2026-08-23: `E0003-000001` references none of it, so the footprint, the 3D model and `LicenseRef-SnapEDA-unstated` are removed with their `LICENSE.md` and `REUSE.toml` rows | — |
-| O-64 | U3's angular response is not stated as an acceptance half-angle. Until it is read off the datasheet's angular characteristic, M9 constrains no window geometry and the UV reading's dependence on source angle is unquantified | M9, enclosure design, V4 |
+| ~~O-64~~ | ~~U3's angular response not stated as an acceptance half-angle~~ — closed 2026-08-23 from DS001043 v5-00 Figures 13 and 14: half maximum at ≈ ±45° on both axes, now carried by M9. The figures are the photopic channel's; M9 records that the UV channel is not separately characterised | — |
 | O-65 | U1 has no reset line: RESET is tied to V_CC (§5.2), so a channel stuck low is recoverable only by a node power cycle. Whether a GPIO from the header shall drive RESET instead is a layout-affecting decision, and the header has four spare GPIO | Firmware recovery path, §10, layout |
-| O-66 | U3's VSYNC/GPIO pin (pin 2) is left unconnected. The reset state of `VSYNC_GPIO_INT` (0xF8, reset `0x02`) shall be confirmed to leave the pin an open-drain output and not an enabled input before the layout is frozen | §7.4, layout |
+| ~~O-66~~ | ~~U3's VSYNC/GPIO reset state unconfirmed~~ — closed 2026-08-23: `0xF8` reset `0x02` sets `VSYNC_GPIO_IN_EN` = 0 and `VSYNC_GPIO_OUT` = 1, an open-drain output released HIGH. `INT_IN_EN` = 0 likewise. Leaving both pins unconnected is correct (§7.4) | — |
 | ~~O-68~~ | ~~`E0003-000001` is double-sided SMT, changing the fab package and the assembly quote~~ — closed 2026-08-23: not a question to resolve. Double-sided assembly is the consequence of M10 and the cost is accepted (§9) | — |
 | O-69 | The `GND` pour is on `F.Cu` only. The sensor face has no plane behind it, one board thickness from the luminaire's driver. U3's and U4's grounds reach the top pour through vias | EMC, sensor face |
 
@@ -556,5 +556,5 @@ with it. R1 and R4 are re-used as channel 1's pull-up pair rather than left as g
 |------|---------|--------------|
 | **Pre-schematic** | Complement and requirements fixed; values estimated or `verify` | ADR-0014 rev 6 fixes both parts ✔ |
 | **Schematic captured** ← here | Parts fixed to ordering part numbers; schematic exists; component values determined | U3 ordering part resolved ✔ (`TSL25853PM`); U1 resolved ✔ (`TCA9543APWR`); schematic exists ✔ |
-| **Schematic-frozen** | Remaining `verify` resolved, footprints checked against physical parts. `L` releases here | O-62 closed ✔; O-60, O-61, O-64, O-66 and O-70 open; V6 not executed |
+| **Schematic-frozen** | Remaining `verify` resolved, footprints checked against physical parts. `L` releases here | O-62, O-64 and O-66 closed ✔; O-60, O-61 and O-70 open; V6 not executed |
 | **As-built** | Estimates replaced by measured values; verification §11 executed | `E0003` fabricated and bench-verified; O-59 measured |
