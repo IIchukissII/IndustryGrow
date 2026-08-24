@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # M05-SAFETY — module specification
 
 - **Status:** As-built. `E0006-000001` fabricated and bench-verified 2026-08-02
-- **Date:** 2026-08-04 (measurements 2026-08-02; restructured to specification form 2026-08-04, no technical change)
+- **Date:** 2026-08-24 · measurements 2026-08-02
 - **E-number:** `E0006` · module-ID strap `0b101`
 - **Governing ADRs:** ADR-0018, ADR-0014 (rev 3), ADR-0002 (rev 3), ADR-0017 (rev 2)
 - **Companions:** `M01-CLIMATE-specification.md`, `M02-LIGHT-specification.md`, `M06-VENTILATION-specification.md`, `M07-AMBIENT-specification.md`
@@ -43,9 +43,9 @@ Not specified here:
 
 | Published quantity | Sensor | Sensor range | Expected operating range | Accuracy |
 |--------------------|--------|--------------|--------------------------|----------|
-| `+12 V` SELV bus voltage | U2 INA226 | Per part (`verify`) | 12.0–12.2 V; measured 12.12 V | `verify` |
-| `+12 V` bus current | U2 INA226 across R1 = 0.1 Ω | 0…0.8192 A (±81.92 mV) | 20.9 mA per node; 5 nodes in Phase 1 | `verify` |
-| Electrical-bay air temperature | U1 TMP117 | −55…+150 °C (`verify`) | 20…40 °C; measured ≈ 27 °C at bring-up | ±0.1 °C (`verify`) |
+| `+12 V` SELV bus voltage | U2 INA226 | 0…36 V | 12.0–12.2 V; measured 12.12 V | ±19.6 mV at 12.12 V (±0.16 %): gain 0.1 % max plus ±7.5 mV max offset. 1.25 mV/LSB |
+| `+12 V` bus current | U2 INA226 across R1 = 0.1 Ω | ±0.8192 A (±81.92 mV) | 20.9 mA per node; 5 nodes in Phase 1 | ±121 µA at 20.9 mA (±0.58 % of reading): gain 0.1 % max plus ±100 µA from the ±10 µV max shunt offset, which dominates at this load. 25 µA/LSB |
+| Electrical-bay air temperature | U1 TMP117 | −55…+150 °C | 20…40 °C; measured ≈ 27 °C at bring-up | ±0.1 °C max over −20…+50 °C, which contains the expected range. 7.8125 m°C/LSB |
 | Cabinet door state | Reed switch on a lead | Open / closed | — | — |
 | Leak state | Leak strip, ADC + gated excitation | Dry / wet | — | — |
 | Actuator energy | DIN kWh meter `SP0001`, S0 pulse input | Per meter | Per deployment | Meter class |
@@ -91,7 +91,7 @@ are in `store/E0006-000001-D-pinmap.md`; firmware constants shall come from that
 |---|---|
 | Devices | U1, U2 — both board-mounted on I²C1 |
 | Configured speed | 100 kHz standard mode (`firmware/common/drivers/i2c.c`, PCLK1 42 MHz, `CCR = 210`) |
-| Set by | The shared carrier driver. Both devices are rated 400 kHz or better (`verify`); M05 does not constrain the shared rate — M01 does |
+| Set by | The shared carrier driver. Both devices are rated 400 kHz or better; M05 does not constrain the shared rate — M01 does |
 | Segment capacitance | Two devices on short board traces; below the 400 pF limit |
 
 ## 6. Power budget
@@ -106,11 +106,17 @@ are in `store/E0006-000001-D-pinmap.md`; firmware constants shall come from that
 | Bus current through R1 | 20.9 mA |
 | Bus power | **254 mW ≈ 0.25 W** |
 
-Whole node — carrier, WeAct core board, CAN transceiver, both sensors. Per-device figures for
-U1 and U2 are `verify` and are microamp-class on 3.3 V. O-30.
+Whole node — carrier, WeAct core board, CAN transceiver, both sensors.
 
-0.25 W is the reference figure for a node on this platform until each module is measured. M01
-and M06 exceed it (SCD41 bursts to 205 mA on 3.3 V); M02 does not.
+| Device | Quiescent, 3.3 V | Condition |
+|---|---|---|
+| U2 INA226 | 330 µA typ / 420 µA max = **1.09 mW** typ | Continuous conversion |
+| U1 TMP117 | 16 µA typ / 22 µA max = **53 µW** typ | 1 Hz duty, 8-average mode, which is how the firmware reads it |
+
+Together 1.14 mW, 0.4 % of the node's 254 mW — closes O-30.
+
+0.25 W is the platform's reference figure for a node until each module class is measured on its
+own. No other module has been.
 
 ### 6.2 Board's own continuous loads
 
@@ -177,6 +183,8 @@ Implemented in `firmware/nodes/m05_safety/`.
 | Item | Requirement |
 |------|-------------|
 | Module-ID strap | `0b101`; bit 1 = 0, so the pattern reads correctly on every carrier revision |
+| Node-ID | **96**, static for bring-up (ADR-0005 d6). M01 takes 97 |
+| Publication rate | 1 s for every subject of §9.1 |
 | Boot probe, publication, re-probe interval | ADR-0014 d8 |
 | Leak excitation | Shares PA9 with the carrier debug console (pin map note 2) |
 | Leak excitation state | Gated, pin resting low (pin map note 3) |
@@ -186,6 +194,24 @@ Implemented in `firmware/nodes/m05_safety/`.
 | Message timestamps | `uavcan.time.SynchronizedTimestamp` = 0 (UNKNOWN). No synchronization master publishes on this bus, and a node's uptime is not a network time base |
 | Port introspection | `uavcan.node.port.List` (7510) every 10 s at OPTIONAL priority |
 | Health | Heartbeat health is the worse of identity and sensor state. CAUTION when U2 is present and its reads fail, since metering is the board's purpose; ADVISORY for U1. Three consecutive failed cycles is the threshold |
+
+### 9.1 Published subjects
+
+Baked defaults in the unregulated range. ADR-0005 d7 makes these `uavcan.pub.<name>.id` register
+entries; the firmware does not yet carry them. M01 holds 4112–4121.
+
+| ID | Quantity | Source | Type |
+|----|----------|--------|------|
+| 4096 | `+12 V` bus voltage | U2 | `uavcan.si.sample.voltage.Scalar` (V) |
+| 4097 | `+12 V` bus current | U2 | `uavcan.si.sample.electric_current.Scalar` (A) |
+| 4098 | Bus power | U2, derived | `uavcan.si.sample.power.Scalar` (W) |
+| 4099 | Electrical-bay air temperature | U1 | `uavcan.si.sample.temperature.Scalar` (K) |
+| 4100 | Door state | Reed | `industryflow.greenhouse.safety.DoorStatus` |
+| 4101 | Leak state | Leak strip | `industryflow.greenhouse.safety.LeakStatus` |
+| 4102 | Actuator energy | `SP0001` S0 | `uavcan.si.sample.energy.Scalar` (J) |
+
+Seven subjects, not one record: a channel's absence has to be expressible on its own
+(ADR-0005 d8). Energy is joule, not watt-hour, for the reason ADR-0005 rev 1 gives.
 
 ## 10. Verification
 
@@ -208,7 +234,7 @@ O-6, O-8, O-10, O-11, O-42 are M06's; O-12 to O-24 are M07's; O-52 to O-62 are M
 | O-27 | Thermal coupling of U1 to R1's pour and to D6 uncharacterized (T1) | Validity of the bay-health reading |
 | O-28 | U1 offset against true bay air unquantified; no reference thermometer at bring-up (T2) | Commissioning method |
 | O-29 | F1 is an 0805 SMD fuse; a blown input fuse is a rework job, not a field swap | Serviceability, next `E0006` revision |
-| O-30 | Per-device power figures for U1 and U2 unconfirmed against datasheets | `L` release completeness |
+| ~~O-30~~ | ~~Per-device power figures for U1 and U2 unconfirmed against datasheets~~ — closed 2026-08-24 by §6.1 from the device datasheets: 330 µA and 16 µA typ | — |
 | O-31 | One distribution board meters ≈ 39 nodes and conducts ≈ 48 against ADR-0014 d1's "50+ instances"; whether ADR-0018 d2's "one central board per machine" means per cabinet or per deployment is unstated | Scaling, ADR-0018 d2 reading |
 
 Recorded elsewhere and not duplicated: the `STRAP_0`/`STRAP_1` schematic naming defect, carried
