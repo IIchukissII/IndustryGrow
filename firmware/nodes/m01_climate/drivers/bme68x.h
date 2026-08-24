@@ -63,14 +63,21 @@ bool bme68x_is_bme688(void);
 /* Start one forced-mode conversion. `ambient_celsius` sets the heater resistance
  * for the target setpoint -- the hotplate is driven to a temperature ABOVE
  * ambient, so the code that reaches 320 C depends on where it starts. Feed it
- * U1's reading; 25 C is the datasheet reference if nothing better is known. */
-int bme68x_trigger(float ambient_celsius);
+ * U1's reading; 25 C is the datasheet reference if nothing better is known.
+ *
+ * `run_gas` false takes the pressure and secondary T/RH WITHOUT lighting the
+ * hotplate: no heater profile is programmed and the gas step is disabled. That
+ * is the configuration the barometer alone needs, and the barometer is the role
+ * this part is load-bearing for (spec 6.3). `ambient_celsius` is then unused. */
+int bme68x_trigger(float ambient_celsius, bool run_gas);
 
 /* Milliseconds from bme68x_trigger() to a completed conversion, from the
- * datasheet timing of the configured oversampling plus the heater dwell. The
- * caller waits this out in its own loop rather than blocking here: it is ~190 ms
- * against a 1 s publish cycle, and the Cyphal TX queue must keep flushing. */
-uint32_t bme68x_meas_duration_ms(void);
+ * datasheet timing of the configured oversampling, plus the gas step and heater
+ * dwell when `run_gas` was set. The caller waits this out in its own loop rather
+ * than blocking here: it is ~190 ms with the heater against a 1 s publish cycle,
+ * and the Cyphal TX queue must keep flushing. Pass the same `run_gas` the
+ * trigger was given -- without the hotplate the conversion is ~20 ms. */
+uint32_t bme68x_meas_duration_ms(bool run_gas);
 
 /* Read and compensate the completed conversion. Returns 0 on success, <0 on a
  * bus error or if the device has not finished. */
