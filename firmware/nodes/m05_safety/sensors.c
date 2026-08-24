@@ -58,8 +58,16 @@ static void probe(void)
     s_tmp117 = i2c_probe(TMP117_ADDR);
 }
 
+/* What this personality publishes, for uavcan.node.port.List. */
+static const uint16_t M05_SUBJECTS[] = {
+    SUBJ_BUS_VOLTAGE, SUBJ_BUS_CURRENT, SUBJ_BUS_POWER, SUBJ_CABINET_TEMP,
+    SUBJ_DOOR, SUBJ_LEAK, SUBJ_ENERGY,
+};
+
 void m05_sensors_init(void)
 {
+    cyphal_declare_publishers(M05_SUBJECTS,
+                              (uint8_t)(sizeof(M05_SUBJECTS) / sizeof(M05_SUBJECTS[0])));
     /* Last console output on this personality: leak_init() claims PA9 (GPIO_1,
      * shared with USART1_TX) as the leak excitation drive, so the debug UART
      * goes silent from here. Everything the common boot path printed still
@@ -83,7 +91,7 @@ void m05_sensors_init(void)
 static void pub_voltage(float v)
 {
     uavcan_si_sample_voltage_Scalar_1_0 m = {0};
-    m.timestamp.microsecond = now_ts();
+    m.timestamp.microsecond = cyphal_timestamp_usec();
     m.volt = v;
     uint8_t b[uavcan_si_sample_voltage_Scalar_1_0_SERIALIZATION_BUFFER_SIZE_BYTES_];
     size_t sz = sizeof(b);
@@ -95,7 +103,7 @@ static void pub_voltage(float v)
 static void pub_current(float a)
 {
     uavcan_si_sample_electric_current_Scalar_1_0 m = {0};
-    m.timestamp.microsecond = now_ts();
+    m.timestamp.microsecond = cyphal_timestamp_usec();
     m.ampere = a;
     uint8_t b[uavcan_si_sample_electric_current_Scalar_1_0_SERIALIZATION_BUFFER_SIZE_BYTES_];
     size_t sz = sizeof(b);
@@ -107,7 +115,7 @@ static void pub_current(float a)
 static void pub_power(float w)
 {
     uavcan_si_sample_power_Scalar_1_0 m = {0};
-    m.timestamp.microsecond = now_ts();
+    m.timestamp.microsecond = cyphal_timestamp_usec();
     m.watt = w;
     uint8_t b[uavcan_si_sample_power_Scalar_1_0_SERIALIZATION_BUFFER_SIZE_BYTES_];
     size_t sz = sizeof(b);
@@ -119,7 +127,7 @@ static void pub_power(float w)
 static void pub_temperature(float kelvin)
 {
     uavcan_si_sample_temperature_Scalar_1_0 m = {0};
-    m.timestamp.microsecond = now_ts();
+    m.timestamp.microsecond = cyphal_timestamp_usec();
     m.kelvin = kelvin;
     uint8_t b[uavcan_si_sample_temperature_Scalar_1_0_SERIALIZATION_BUFFER_SIZE_BYTES_];
     size_t sz = sizeof(b);
@@ -136,7 +144,7 @@ static void pub_door(void)
      * confirmed on the bench against a fitted reed. */
     bool engaged = (GPIOA->IDR & (1u << REED_PIN)) == 0u;
     industryflow_greenhouse_safety_DoorStatus_1_0 m = {0};
-    m.timestamp.microsecond = now_ts();
+    m.timestamp.microsecond = cyphal_timestamp_usec();
     m.engaged = engaged;
     m.valid = true;
     uint8_t b[industryflow_greenhouse_safety_DoorStatus_1_0_SERIALIZATION_BUFFER_SIZE_BYTES_];
@@ -149,7 +157,7 @@ static void pub_door(void)
 static void pub_leak(void)
 {
     industryflow_greenhouse_safety_LeakStatus_1_0 m = {0};
-    m.timestamp.microsecond = now_ts();
+    m.timestamp.microsecond = cyphal_timestamp_usec();
     m.wet = leak_is_wet();
     m.valid = true; /* TODO: false until gated excitation is actually driven */
     uint8_t b[industryflow_greenhouse_safety_LeakStatus_1_0_SERIALIZATION_BUFFER_SIZE_BYTES_];
@@ -162,7 +170,7 @@ static void pub_leak(void)
 static void pub_energy(void)
 {
     uavcan_si_sample_energy_Scalar_1_0 m = {0};
-    m.timestamp.microsecond = now_ts();
+    m.timestamp.microsecond = cyphal_timestamp_usec();
     m.joule = s0_energy_joule();
     uint8_t b[uavcan_si_sample_energy_Scalar_1_0_SERIALIZATION_BUFFER_SIZE_BYTES_];
     size_t sz = sizeof(b);

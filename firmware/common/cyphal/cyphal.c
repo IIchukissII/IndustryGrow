@@ -21,6 +21,7 @@
 #include "uavcan/node/ExecuteCommand_1_0.h"
 #include "uavcan/_register/Access_1_0.h" /* namespace stropped: register -> _register */
 #include "uavcan/_register/List_1_0.h"
+#include "uavcan/node/port/List_1_0.h"
 
 #include "registers.h"
 #include "e0001.h" /* CMSIS: NVIC_SystemReset */
@@ -32,8 +33,14 @@
 #include <string.h>
 
 /* --- memory: a fixed o1heap arena feeds libcanard's allocator --- */
-#define CYPHAL_HEAP_SIZE 4096u
-#define CYPHAL_TX_QUEUE_CAP 24u
+/* The queue has to hold the largest single transfer, not the busiest second:
+ * libcanard pushes a whole transfer or none of it. uavcan.node.port.List is the
+ * largest thing this node sends -- two 64-byte service masks are unavoidable
+ * even when every list is otherwise empty -- and at 7 payload bytes per classic
+ * CAN frame that is ~26 frames. At the previous capacity of 24 the push failed
+ * and, since tx_push() discards the result, failed silently. */
+#define CYPHAL_HEAP_SIZE 8192u
+#define CYPHAL_TX_QUEUE_CAP 40u
 
 static uint8_t s_arena[CYPHAL_HEAP_SIZE] __attribute__((aligned(O1HEAP_ALIGNMENT)));
 static O1HeapInstance *s_heap;
@@ -46,6 +53,14 @@ static CanardRxSubscription s_list_sub;
 static CanardRxSubscription s_execcmd_sub;
 static bool s_pending_reset; /* set by ExecuteCommand RESTART, acted on after TX flush */
 static const char *s_node_name = "org.industrygrow.node"; /* set by cyphal_init() */
+
+/* Personality-reported health, and the subjects it publishes. Both are set by
+ * the strap-selected personality; the skeleton owns neither. */
+static uint8_t s_personality_health; /* uavcan.node.Health value, 0 = NOMINAL */
+static const uint16_t *s_pub_subjects;
+static uint8_t s_pub_subject_count;
+static uint8_t s_portlist_tid;
+static uint64_t s_next_portlist_us;
 
 static uint8_t s_hb_tid;       /* heartbeat transfer-id (5-bit, wraps) */
 static uint64_t s_start_us;    /* for uptime */
@@ -133,6 +148,7 @@ void cyphal_init(uint8_t node_id, const char *node_name, const char *description
 
     s_start_us = micros64();
     s_next_hb_us = s_start_us + 1000000u;
+    s_next_portlist_us = s_start_us + 2000000u; /* offset from the heartbeat tick */
 }
 
 static void tx_push(const CanardTransferMetadata *meta, size_t size, const void *payload)
@@ -154,6 +170,74 @@ void cyphal_publish(uint16_t subject_id, uint8_t *transfer_id,
     *transfer_id = (uint8_t)((*transfer_id + 1u) & CANARD_TRANSFER_ID_MAX);
 }
 
+uint64_t cyphal_timestamp_usec(void)
+{
+    /* No uavcan.time.Synchronization source is subscribed on this bus, so there
+     * is no network time base to report. See the header: 0 is the type's own
+     * value for "not known", and it is the only honest one here. */
+    return 0u;
+}
+
+void cyphal_set_health(uint8_t health)
+{
+    s_personality_health = health;
+}
+
+void cyphal_declare_publishers(const uint16_t *subject_ids, uint8_t count)
+{
+    s_pub_subjects = subject_ids;
+    s_pub_subject_count = count;
+}
+
+/* uavcan.node.port.List, subject 7510, at least every 10 s at OPTIONAL priority.
+ *
+ * The buffer is static and large: SubjectIDList reserves 2**15 bits against a
+ * future widening of the subject range, and the serialization buffer must hold
+ * the reserved extent even though the sparse list actually sent is a few dozen
+ * bytes. Stack is the wrong place for it. */
+static void publish_port_list(void)
+{
+    static uint8_t buf[uavcan_node_port_List_1_0_SERIALIZATION_BUFFER_SIZE_BYTES_];
+    uavcan_node_port_List_1_0 m;
+    memset(&m, 0, sizeof(m));
+
+    /* Publishers: the personality's subjects plus the two the skeleton owns. */
+    uavcan_node_port_SubjectIDList_1_0_select_sparse_list_(&m.publishers);
+    uint8_t n = 0;
+    m.publishers.sparse_list.elements[n++].value = uavcan_node_Heartbeat_1_0_FIXED_PORT_ID_;
+    m.publishers.sparse_list.elements[n++].value = uavcan_node_port_List_1_0_FIXED_PORT_ID_;
+    for (uint8_t i = 0; (i < s_pub_subject_count) && (n < 255u); i++) {
+        m.publishers.sparse_list.elements[n++].value = s_pub_subjects[i];
+    }
+    m.publishers.sparse_list.count = n;
+
+    /* Subscribers: none. The node consumes no subjects, only services. */
+    uavcan_node_port_SubjectIDList_1_0_select_sparse_list_(&m.subscribers);
+    m.subscribers.sparse_list.count = 0;
+
+    /* Servers: the three the skeleton answers. Clients: none. */
+    nunavutSetBit(m.servers.mask_bitpacked_, sizeof(m.servers.mask_bitpacked_),
+                  uavcan_node_GetInfo_1_0_FIXED_PORT_ID_, true);
+    nunavutSetBit(m.servers.mask_bitpacked_, sizeof(m.servers.mask_bitpacked_),
+                  uavcan_register_Access_1_0_FIXED_PORT_ID_, true);
+    nunavutSetBit(m.servers.mask_bitpacked_, sizeof(m.servers.mask_bitpacked_),
+                  uavcan_node_ExecuteCommand_1_0_FIXED_PORT_ID_, true);
+
+    size_t sz = sizeof(buf);
+    if (uavcan_node_port_List_1_0_serialize_(&m, buf, &sz) < 0) {
+        return;
+    }
+    const CanardTransferMetadata meta = {
+        .priority = CanardPriorityOptional,
+        .transfer_kind = CanardTransferKindMessage,
+        .port_id = uavcan_node_port_List_1_0_FIXED_PORT_ID_,
+        .remote_node_id = CANARD_NODE_ID_UNSET,
+        .transfer_id = s_portlist_tid,
+    };
+    tx_push(&meta, sz, buf);
+    s_portlist_tid = (uint8_t)((s_portlist_tid + 1u) & CANARD_TRANSFER_ID_MAX);
+}
+
 static void publish_heartbeat(void)
 {
     uavcan_node_Heartbeat_1_0 hb;
@@ -164,8 +248,12 @@ static void publish_heartbeat(void)
      * reports a plausible unique_id either way. ADVISORY is the Health value
      * for exactly this: "a minor failure that does not prevent the subsystem
      * from performing any of its real-time functions". */
-    hb.health.value = s_identity_anchored ? uavcan_node_Health_1_0_NOMINAL
-                                          : uavcan_node_Health_1_0_ADVISORY;
+    const uint8_t identity_health = s_identity_anchored ? uavcan_node_Health_1_0_NOMINAL
+                                                        : uavcan_node_Health_1_0_ADVISORY;
+    /* The worse of the skeleton's view and the personality's. A node whose
+     * sensors have stopped answering is not NOMINAL, whatever its identity. */
+    hb.health.value = (s_personality_health > identity_health) ? s_personality_health
+                                                              : identity_health;
     hb.mode.value = uavcan_node_Mode_1_0_OPERATIONAL;
     /* Why this node last restarted (RCC_CSR flags, latched at boot). Lets the
      * gateway tell a watchdog recovery from a power cut or a probe-induced
@@ -360,6 +448,10 @@ static void pump_rx(void)
 
 void cyphal_spin(void)
 {
+    if (micros64() >= s_next_portlist_us) {
+        s_next_portlist_us += 10000000u; /* MAX_PUBLICATION_PERIOD */
+        publish_port_list();
+    }
     if (micros64() >= s_next_hb_us) {
         s_next_hb_us += 1000000u;
         publish_heartbeat();

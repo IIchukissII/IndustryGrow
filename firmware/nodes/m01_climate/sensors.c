@@ -18,6 +18,7 @@
 /* Standard SI sample types where one fits, project climate types where none
  * does (ADR-0005 d2/d3). Temperature is kelvin and VPD is pascal because the
  * wire is SI base units and °C/kPa are a gateway display concern. */
+#include "uavcan/node/Heartbeat_1_0.h" /* Health constants */
 #include "uavcan/si/sample/temperature/Scalar_1_0.h"
 #include "uavcan/si/sample/pressure/Scalar_1_0.h"
 #include "industryflow/greenhouse/climate/RelativeHumidity_1_0.h"
@@ -131,17 +132,57 @@ static bool s_sweep_valid;
 static float s_sweep_ohm[GAS_STEPS];
 #endif
 
+/* Consecutive failed read cycles per device, U1/U2/U3. A device that probed
+ * present and then stops answering is a fault; a device that was never fitted
+ * is not (spec 3.3). The probe cannot tell those apart on its own -- that is
+ * O-37 -- but the transition can: only a device already flagged present is
+ * counted here. */
+static uint8_t s_fail[3];
+
+#define FAIL_DEGRADED 3u /* consecutive cycles before the node calls it a fault */
+
 static float s_ambient_c = DEFAULT_AMBIENT_C;
 static uint16_t s_pressure_hpa = FALLBACK_PRESSURE_HPA;
 
 static uint64_t now_ts(void) { return micros64(); }
+
+static void note_read(uint8_t dev, bool ok)
+{
+    if (ok) {
+        s_fail[dev] = 0u;
+    } else if (s_fail[dev] < 255u) {
+        s_fail[dev]++;
+    }
+}
+
+/* What the node reports about itself. U1 is the primary: without it there is no
+ * VPD and no admissible T/RH, so its loss is CAUTION. U2 and U3 losing their
+ * reads costs subjects, not the module's purpose, so that is ADVISORY.
+ *
+ * The case this exists for is a device that answers its address and then never
+ * yields a reading. Before this the node published nothing and still reported
+ * NOMINAL, which is the one state a consumer cannot act on. */
+static void report_health(void)
+{
+    uint8_t health = uavcan_node_Health_1_0_NOMINAL;
+    if (s_u2 && (s_fail[1] >= FAIL_DEGRADED)) {
+        health = uavcan_node_Health_1_0_ADVISORY;
+    }
+    if (s_u3 && (s_fail[2] >= FAIL_DEGRADED)) {
+        health = uavcan_node_Health_1_0_ADVISORY;
+    }
+    if (s_u1 && (s_fail[0] >= FAIL_DEGRADED)) {
+        health = uavcan_node_Health_1_0_CAUTION;
+    }
+    cyphal_set_health(health);
+}
 
 /* --- Publication helpers ------------------------------------------------ */
 
 static void pub_temperature(uint16_t subject, uint8_t *tid, float kelvin)
 {
     uavcan_si_sample_temperature_Scalar_1_0 m = {0};
-    m.timestamp.microsecond = now_ts();
+    m.timestamp.microsecond = cyphal_timestamp_usec();
     m.kelvin = kelvin;
     uint8_t b[uavcan_si_sample_temperature_Scalar_1_0_SERIALIZATION_BUFFER_SIZE_BYTES_];
     size_t sz = sizeof(b);
@@ -153,7 +194,7 @@ static void pub_temperature(uint16_t subject, uint8_t *tid, float kelvin)
 static void pub_pressure(uint16_t subject, uint8_t *tid, float pascal)
 {
     uavcan_si_sample_pressure_Scalar_1_0 m = {0};
-    m.timestamp.microsecond = now_ts();
+    m.timestamp.microsecond = cyphal_timestamp_usec();
     m.pascal = pascal;
     uint8_t b[uavcan_si_sample_pressure_Scalar_1_0_SERIALIZATION_BUFFER_SIZE_BYTES_];
     size_t sz = sizeof(b);
@@ -165,7 +206,7 @@ static void pub_pressure(uint16_t subject, uint8_t *tid, float pascal)
 static void pub_humidity(uint16_t subject, uint8_t *tid, float ratio)
 {
     industryflow_greenhouse_climate_RelativeHumidity_1_0 m = {0};
-    m.timestamp.microsecond = now_ts();
+    m.timestamp.microsecond = cyphal_timestamp_usec();
     m.ratio = ratio;
     uint8_t b[industryflow_greenhouse_climate_RelativeHumidity_1_0_SERIALIZATION_BUFFER_SIZE_BYTES_];
     size_t sz = sizeof(b);
@@ -177,7 +218,7 @@ static void pub_humidity(uint16_t subject, uint8_t *tid, float ratio)
 static void pub_co2(float mole_fraction)
 {
     industryflow_greenhouse_climate_Co2Concentration_1_0 m = {0};
-    m.timestamp.microsecond = now_ts();
+    m.timestamp.microsecond = cyphal_timestamp_usec();
     m.mole_fraction = mole_fraction;
     uint8_t b[industryflow_greenhouse_climate_Co2Concentration_1_0_SERIALIZATION_BUFFER_SIZE_BYTES_];
     size_t sz = sizeof(b);
@@ -193,7 +234,7 @@ static void pub_co2(float mole_fraction)
 static void pub_gas_sweep(void)
 {
     industryflow_greenhouse_climate_GasResistance_2_0 m = {0};
-    m.timestamp.microsecond = now_ts();
+    m.timestamp.microsecond = cyphal_timestamp_usec();
     m.heater_celsius.count = GAS_STEPS;
     m.ohm.count = GAS_STEPS;
     for (uint8_t i = 0; i < GAS_STEPS; i++) {
@@ -264,8 +305,10 @@ static void publish_primary(void)
     }
     float celsius = 0.0f, rh = 0.0f;
     if (sht4x_read(&celsius, &rh) < 0) {
+        note_read(0, false);
         return;
     }
+    note_read(0, true);
 
     /* U1 is also the best ambient reference on the board for U2's heater
      * calculation -- it is the part furthest from every heat source (spec T3). */
@@ -284,14 +327,20 @@ static void service_co2(void)
     /* Polled, not free-running: periodic mode has one interval, 5 s, and no
      * other exists (spec 3). Four polls in five find nothing new. */
     bool ready = false;
-    if ((scd4x_data_ready(&ready) < 0) || !ready) {
+    if (scd4x_data_ready(&ready) < 0) {
+        note_read(2, false);
         return;
+    }
+    if (!ready) {
+        return; /* nothing new at this poll is normal, not a failure */
     }
 
     float co2 = 0.0f, celsius = 0.0f, rh = 0.0f;
     if (scd4x_read_measurement(&co2, &celsius, &rh) < 0) {
+        note_read(2, false);
         return;
     }
+    note_read(2, true);
     pub_co2(co2);
     pub_temperature(SUBJ_U3_TEMPERATURE, &tid_t3, celsius + 273.15f);
     pub_humidity(SUBJ_U3_HUMIDITY, &tid_h3, rh);
@@ -335,6 +384,7 @@ static void start_u2_cycle(void)
     }
 #endif
     if (bme68x_trigger(s_ambient_c, setpoint) < 0) {
+        note_read(1, false);
 #if M01_GAS_SCAN
         s_sweep_active = false; /* an incomplete shape is not published */
 #endif
@@ -349,11 +399,13 @@ static void finish_u2_cycle(void)
 {
     bme68x_data_t d = {0};
     if (bme68x_read(&d) < 0) {
+        note_read(1, false);
 #if M01_GAS_SCAN
         s_sweep_active = false;
 #endif
         return;
     }
+    note_read(1, true);
 
     /* Every conversion yields pressure and the secondary T/RH, but a sweep's
      * later steps land inside the same second as its first: publishing each of
@@ -488,10 +540,35 @@ static void log_population(void)
     } else {
         uart_puts("absent -> no CO2\r\n");
     }
+
+    /* What the bus cost to get here. Zero failures is the healthy answer; a
+     * non-zero count with every device reported present is the signature of a
+     * bus that answers addresses and completes nothing (spec O-37). */
+    uint32_t att = 0u, fail = 0u;
+    i2c_stats(&att, &fail);
+    uart_puts("  I2C: ");
+    uart_put_u32(att);
+    uart_puts(" transactions, ");
+    uart_put_u32(fail);
+    uart_puts(" failed\r\n");
 }
+
+/* What this personality publishes, for uavcan.node.port.List. 4117 is listed
+ * only in a build that scans: a port list that advertises a subject the node
+ * never sends is worse than no list at all. */
+static const uint16_t M01_SUBJECTS[] = {
+    SUBJ_AIR_TEMPERATURE, SUBJ_AIR_HUMIDITY, SUBJ_AIR_VPD, SUBJ_CO2,
+    SUBJ_BAROMETRIC,
+#if M01_GAS_SCAN
+    SUBJ_GAS_RESISTANCE,
+#endif
+    SUBJ_U2_TEMPERATURE, SUBJ_U2_HUMIDITY, SUBJ_U3_TEMPERATURE, SUBJ_U3_HUMIDITY,
+};
 
 void m01_sensors_init(void)
 {
+    cyphal_declare_publishers(M01_SUBJECTS,
+                              (uint8_t)(sizeof(M01_SUBJECTS) / sizeof(M01_SUBJECTS[0])));
     i2c_init();
 
     /* Boot probe. persist_settings is permitted only here: the watchdog is not
@@ -512,6 +589,7 @@ void m01_sensors_spin(void)
         publish_primary();
         service_co2();
         start_u2_cycle();
+        report_health();
     }
 
     if (s_u2_pending && (now >= s_u2_due)) {

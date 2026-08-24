@@ -32,4 +32,32 @@ void cyphal_spin(void);
 void cyphal_publish(uint16_t subject_id, uint8_t *transfer_id,
                     const uint8_t *payload, size_t size);
 
+/* The value to put in every uavcan.time.SynchronizedTimestamp field, which is
+ * 0 = UNKNOWN until this bus has a synchronization source.
+ *
+ * That field is a NETWORK-wide time base, not a per-node one. Nothing publishes
+ * uavcan.time.Synchronization (subject 7168) here, so each node's only clock is
+ * its own monotonic uptime and two nodes' stamps share no origin — node 96 at
+ * 1378 s and node 97 at 62 s were describing the same instant. A consumer that
+ * aligns samples across nodes, which is exactly what the state estimator of
+ * ADR-0016 does, would be silently wrong. The type reserves 0 for "not known",
+ * and saying so is the honest answer until a master exists.
+ *
+ * This is the single seam where that master plugs in: when the gateway begins
+ * publishing 7168, this function returns the synchronized value and every
+ * publisher inherits it without change. */
+uint64_t cyphal_timestamp_usec(void);
+
+/* Report the personality's own health for the next heartbeat. The heartbeat
+ * carries the WORSE of this and the skeleton's own assessment, so a personality
+ * cannot mask an identity fault and the skeleton cannot mask a sensor fault.
+ * Values are uavcan.node.Health constants. Never reported means NOMINAL. */
+void cyphal_set_health(uint8_t health);
+
+/* Declare the subjects this personality publishes, for uavcan.node.port.List
+ * (subject 7510). The array must outlive the call. Heartbeat and port.List
+ * itself are added by the skeleton. Without this a consumer cannot discover
+ * what the node emits — ADR-0005 requires the capability. */
+void cyphal_declare_publishers(const uint16_t *subject_ids, uint8_t count);
+
 #endif /* IGROW_CYPHAL_CYPHAL_H */

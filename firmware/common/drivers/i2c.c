@@ -12,6 +12,29 @@
 #define I2C_SCL_PIN 6u
 #define I2C_SDA_PIN 7u
 
+static uint32_t s_attempts;
+static uint32_t s_failures;
+
+static void count(int rc)
+{
+    if (s_attempts != UINT32_MAX) {
+        s_attempts++;
+    }
+    if ((rc < 0) && (s_failures != UINT32_MAX)) {
+        s_failures++;
+    }
+}
+
+void i2c_stats(uint32_t *attempts, uint32_t *failures)
+{
+    if (attempts) {
+        *attempts = s_attempts;
+    }
+    if (failures) {
+        *failures = s_failures;
+    }
+}
+
 static int wait_set(volatile uint32_t *reg, uint32_t mask)
 {
     uint32_t g = I2C_TMO;
@@ -266,15 +289,19 @@ int i2c_write(uint8_t addr7, const uint8_t *buf, size_t len)
     int rc = send(addr7, buf, len);
     if (rc < 0) {
         abort_transfer();
-        return rc;
+    } else {
+        stop();
+        rc = 0;
     }
-    stop();
-    return 0;
+    count(rc);
+    return rc;
 }
 
 int i2c_read(uint8_t addr7, uint8_t *buf, size_t len)
 {
-    return recv(addr7, buf, len);
+    const int rc = recv(addr7, buf, len);
+    count(rc);
+    return rc;
 }
 
 int i2c_write_read(uint8_t addr7, const uint8_t *wbuf, size_t wlen,
@@ -286,12 +313,14 @@ int i2c_write_read(uint8_t addr7, const uint8_t *wbuf, size_t wlen,
     int rc = send(addr7, wbuf, wlen);
     if (rc < 0) {
         abort_transfer();
-        return rc;
+    } else {
+        rc = recv(addr7, rbuf, rlen); /* repeated START, no STOP in between */
     }
-    return recv(addr7, rbuf, rlen); /* repeated START, no STOP in between */
+    count(rc);
+    return rc;
 }
 
-int i2c_write_reg16(uint8_t addr7, uint8_t reg, uint16_t value)
+static int write_reg16_impl(uint8_t addr7, uint8_t reg, uint16_t value)
 {
     if (start(addr7, false) < 0) {
         return -1;
@@ -313,7 +342,7 @@ int i2c_write_reg16(uint8_t addr7, uint8_t reg, uint16_t value)
     return 0;
 }
 
-int i2c_read_reg16(uint8_t addr7, uint8_t reg, uint16_t *out)
+static int read_reg16_impl(uint8_t addr7, uint8_t reg, uint16_t *out)
 {
     /* Phase 1: write the register pointer. */
     if (start(addr7, false) < 0) {
@@ -353,4 +382,18 @@ int i2c_read_reg16(uint8_t addr7, uint8_t reg, uint16_t *out)
     I2C1->CR1 &= ~I2C_CR1_POS;
     *out = (uint16_t)((hi << 8) | lo);
     return 0;
+}
+
+int i2c_write_reg16(uint8_t addr7, uint8_t reg, uint16_t value)
+{
+    const int rc = write_reg16_impl(addr7, reg, value);
+    count(rc);
+    return rc;
+}
+
+int i2c_read_reg16(uint8_t addr7, uint8_t reg, uint16_t *out)
+{
+    const int rc = read_reg16_impl(addr7, reg, out);
+    count(rc);
+    return rc;
 }
