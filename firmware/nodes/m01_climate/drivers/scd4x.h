@@ -72,6 +72,17 @@ int scd4x_configure(uint16_t ambient_hpa, bool allow_persist);
  * is a 2000-cycle budget draining one boot at a time. */
 int scd4x_asc_status(bool *found_on, bool *persisted);
 
+/* Commanded self-test. The device takes 10 s to answer, which is several times
+ * the watchdog window, so the wait belongs to the caller's loop and not to this
+ * driver: stop the device, wait SCD4X_STOP_MS, begin, wait SCD4X_SELF_TEST_MS,
+ * read the result, then scd4x_configure() to put it back to work. Nothing else
+ * may address U3 in between. */
+#define SCD4X_STOP_MS      500u
+#define SCD4X_SELF_TEST_MS 10000u
+int scd4x_stop(void);
+int scd4x_self_test_begin(void);
+int scd4x_self_test_result(bool *malfunction_free);
+
 /* True once a new 5 s sample is available. Cheap; poll it. */
 int scd4x_data_ready(bool *ready);
 

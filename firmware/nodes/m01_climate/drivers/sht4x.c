@@ -8,16 +8,19 @@
 #include "i2c.h"
 #include "clock.h"
 
-/* Command bytes (SHT4x datasheet). The heater commands are deliberately absent
- * -- see the header. */
+/* Command bytes (SHT4x datasheet). Only the lowest heater level is exposed --
+ * see the header. */
 #define SHT4X_CMD_MEASURE_HIGH 0xFDu
 #define SHT4X_CMD_READ_SERIAL  0x89u
 #define SHT4X_CMD_SOFT_RESET   0x94u
+#define SHT4X_CMD_HEAT_20MW_01S 0x15u
 
 /* Datasheet maxima are 8.3 ms for the high-repeatability conversion and 1 ms
  * for a soft reset; rounded up to whole SysTick milliseconds. */
 #define SHT4X_MEASURE_MS 10u
 #define SHT4X_RESET_MS   2u
+/* 0.1 s of heating plus the conversion the device appends to it. */
+#define SHT4X_HEATER_MS  115u
 
 /* The SHT4x takes a bare command byte and answers on a SEPARATE transaction --
  * there is no register pointer and no repeated start. The bus must be released
@@ -94,4 +97,10 @@ int sht4x_soft_reset(void)
     }
     delay_ms(SHT4X_RESET_MS);
     return 0;
+}
+
+int sht4x_heater_pulse(void)
+{
+    uint16_t w[2];
+    return command_then_read(SHT4X_CMD_HEAT_20MW_01S, SHT4X_HEATER_MS, w, 2u);
 }

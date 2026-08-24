@@ -472,8 +472,10 @@ end to end or M4 is narrowed. Unresolved. O-46.
 | U3 temperature offset | Shall be determined for this board under its operating conditions in thermal equilibrium and written to the device. The default is 4 °C and is not this board's value. U3's published T and RH are invalid until it is set. O-45. Firmware reads the offset at boot and logs it; it does not write one |
 | U3 settings persistence | `persist_settings` writes EEPROM rated for at least 2000 cycles. It shall be issued only when configuration actually changed, never unconditionally at boot |
 | VOC | Vector per §6.4, published as `GasResistance.2.0`. Pressure and the secondary T/RH are published once per scan, from the step that opens it. Setpoint list and interval are build constants (`M01_GAS_SCAN`, `M01_GAS_PERIOD_S`), reported on the boot line |
-| SHT45 heater | Disabled by default. When enabled for condensate recovery, its pulse shall not overlap a U3 measurement window. Lowest sufficient power level preferred; the rail tolerates the highest |
+| SHT45 heater | Never automatic. Commanded only, per the command surface above; 20 mW for 0.1 s, the lowest level and shortest duration. The pulse shall not overlap a U3 measurement window; the rail tolerates the highest level |
 | Rail failure | Failure of U4 or U5 removes U2 or U3 from the bus. The boot probe handles this as absence; *not fitted*, *failed* and *unpowered* remain indistinguishable. O-37 |
+| Commanded operations | Vendor `uavcan.node.ExecuteCommand` IDs. 1 = U3 self-test: 10 s, run across the loop rather than inline, U3 stopped and reconfigured around it, nothing else addressing U3 meanwhile. 2 = U1 condensate-recovery pulse, fired immediately after a U3 poll so it cannot overlap a measurement window |
+| Diagnostics | `uavcan.diagnostic.Record` (8184) at OPTIONAL priority, event-driven: population at boot, health transitions naming the failing devices, command results. Never periodic |
 | Message timestamps | `uavcan.time.SynchronizedTimestamp` = 0 (UNKNOWN). No synchronization master publishes on this bus, and a node's uptime is not a network time base |
 | Port introspection | `uavcan.node.port.List` (7510) every 10 s at OPTIONAL priority: published subjects, and the services served |
 | Health | Heartbeat health is the worse of identity and sensor state. CAUTION when U1 is present and its reads fail; ADVISORY for U2 or U3, or when identity is not ATECC-anchored. Three consecutive failed cycles is the threshold |
@@ -546,7 +548,7 @@ O-52 to O-62 are M02's.
 | ID | Item | Blocks |
 |----|------|--------|
 | ~~O-3~~ | ~~Bulk capacitor value and dielectric at U3~~ — closed 2026-08-05 by §7.5: 4.7 µF effective, from U5's characterization | — |
-| O-5 | FRC interval, and the operational trigger for performing one. Procedure and constraints now fixed (§6.3.1) | CO₂ validity |
+| O-5 | FRC interval, and the operational trigger for performing one. Procedure and constraints fixed (§6.3.1); a vendor command surface now exists to carry it (§10), and the reference concentration remains the open part | CO₂ validity |
 | O-7 | Cross-calibration procedure, M01 CO₂ against M07 reference | Survey method, ADR-0016 identification |
 | O-9 | Fate of ADR-0014 d3, the ≤ 30 cm short-lead provision | ADR-0014 hygiene |
 | ~~O-32~~ | ~~Remaining `verify` values~~ — closed 2026-08-06. Height and `variant_id` answered in §4.1 and §10. Gas-resistance range is not specified by the device; §3 carries resolution and noise instead. U3 self-heating has no datasheet figure — measured, V7 and O-45. T1's α and h are enclosure properties — O-38 | — |

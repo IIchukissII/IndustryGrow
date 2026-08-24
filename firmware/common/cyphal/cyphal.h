@@ -54,6 +54,28 @@ uint64_t cyphal_timestamp_usec(void);
  * Values are uavcan.node.Health constants. Never reported means NOMINAL. */
 void cyphal_set_health(uint8_t health);
 
+/* Publish uavcan.diagnostic.Record (subject 8184) at OPTIONAL priority.
+ *
+ * The node is the only thing that knows why a reading failed, and until now it
+ * said so on a UART that no deployment reads. Event-driven only -- a periodic
+ * diagnostic is a log, and the bus is not the place for one. `severity` takes
+ * uavcan.diagnostic.Severity values; text is truncated to fit the type. */
+void cyphal_diagnostic(uint8_t severity, const char *text);
+
+/* As above with an unsigned decimal appended after a space. */
+void cyphal_diagnostic_u32(uint8_t severity, const char *text, uint32_t value);
+
+/* Vendor-specific uavcan.node.ExecuteCommand handling. The standard commands
+ * stay with the skeleton; anything the vendor range defines (from zero upward)
+ * is offered to this handler, which returns a uavcan.node.ExecuteCommand
+ * Response STATUS_* value. Unset means every vendor command is rejected.
+ *
+ * A command must return promptly: the response is sent from the same pass of
+ * the loop, and the watchdog window is ~1.4 s at worst-case LSI. Anything
+ * slower accepts the command and does the work from the personality's spin. */
+typedef uint8_t (*cyphal_command_fn)(uint16_t command);
+void cyphal_set_command_handler(cyphal_command_fn fn);
+
 /* Declare the subjects this personality publishes, for uavcan.node.port.List
  * (subject 7510). The array must outlive the call. Heartbeat and port.List
  * itself are added by the skeleton. Without this a consumer cannot discover

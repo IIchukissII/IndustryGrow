@@ -19,6 +19,8 @@
  * does (ADR-0005 d2/d3). Temperature is kelvin and VPD is pascal because the
  * wire is SI base units and °C/kPa are a gateway display concern. */
 #include "uavcan/node/Heartbeat_1_0.h" /* Health constants */
+#include "uavcan/node/ExecuteCommand_1_0.h" /* command response status */
+#include "uavcan/diagnostic/Severity_1_0.h"
 #include "uavcan/si/sample/temperature/Scalar_1_0.h"
 #include "uavcan/si/sample/pressure/Scalar_1_0.h"
 #include "industryflow/greenhouse/climate/RelativeHumidity_1_0.h"
@@ -141,6 +143,20 @@ static uint8_t s_fail[3];
 
 #define FAIL_DEGRADED 3u /* consecutive cycles before the node calls it a fault */
 
+/* Vendor ExecuteCommand IDs. The vendor range starts at zero; the standard
+ * commands live at the top and are the skeleton's. Both of these are bench
+ * operations that spec 10 requires to be commanded rather than automatic. */
+#define CMD_U3_SELF_TEST 1u
+#define CMD_U1_HEATER    2u
+
+/* The self-test takes 10 s -- several watchdog windows -- so it runs as a state
+ * machine across the loop rather than inside the command handler. */
+enum { ST_IDLE = 0, ST_STOPPING, ST_RUNNING, ST_RESTORING };
+static uint8_t s_selftest;
+static uint64_t s_selftest_due;
+static bool s_heater_pending;
+static uint8_t s_last_health = uavcan_node_Health_1_0_NOMINAL;
+
 static float s_ambient_c = DEFAULT_AMBIENT_C;
 static uint16_t s_pressure_hpa = FALLBACK_PRESSURE_HPA;
 
@@ -175,6 +191,82 @@ static void report_health(void)
         health = uavcan_node_Health_1_0_CAUTION;
     }
     cyphal_set_health(health);
+
+    /* A transition is an event; the level itself is already in every heartbeat.
+     * Publishing the change is what tells a consumer WHICH device stopped. */
+    if (health != s_last_health) {
+        s_last_health = health;
+        if (health == uavcan_node_Health_1_0_NOMINAL) {
+            cyphal_diagnostic(uavcan_diagnostic_Severity_1_0_NOTICE, "M01 sensors recovered");
+        } else {
+            const uint32_t which = (uint32_t)((s_fail[0] >= FAIL_DEGRADED ? 1u : 0u) |
+                                              (s_fail[1] >= FAIL_DEGRADED ? 2u : 0u) |
+                                              (s_fail[2] >= FAIL_DEGRADED ? 4u : 0u));
+            cyphal_diagnostic_u32(uavcan_diagnostic_Severity_1_0_WARNING,
+                                  "M01 reads failing, bitmask U1|U2|U3 =", which);
+        }
+    }
+}
+
+static uint8_t m01_command(uint16_t command)
+{
+    switch (command) {
+    case CMD_U3_SELF_TEST:
+        if (!s_u3 || (s_selftest != ST_IDLE)) {
+            return uavcan_node_ExecuteCommand_Response_1_0_STATUS_BAD_STATE;
+        }
+        if (scd4x_stop() < 0) {
+            return uavcan_node_ExecuteCommand_Response_1_0_STATUS_FAILURE;
+        }
+        s_selftest = ST_STOPPING;
+        s_selftest_due = now_ts() + ((uint64_t)SCD4X_STOP_MS * 1000u);
+        return uavcan_node_ExecuteCommand_Response_1_0_STATUS_SUCCESS;
+    case CMD_U1_HEATER:
+        if (!s_u1) {
+            return uavcan_node_ExecuteCommand_Response_1_0_STATUS_BAD_STATE;
+        }
+        s_heater_pending = true; /* fired after the next U3 sample, see spin */
+        return uavcan_node_ExecuteCommand_Response_1_0_STATUS_SUCCESS;
+    default:
+        return uavcan_node_ExecuteCommand_Response_1_0_STATUS_BAD_COMMAND;
+    }
+}
+
+static void service_selftest(void)
+{
+    if ((s_selftest == ST_IDLE) || (now_ts() < s_selftest_due)) {
+        return;
+    }
+    if (s_selftest == ST_STOPPING) {
+        if (scd4x_self_test_begin() < 0) {
+            s_selftest = ST_IDLE;
+            cyphal_diagnostic(uavcan_diagnostic_Severity_1_0_ERROR, "U3 self-test did not start");
+            return;
+        }
+        s_selftest = ST_RUNNING;
+        s_selftest_due = now_ts() + ((uint64_t)SCD4X_SELF_TEST_MS * 1000u);
+        return;
+    }
+    if (s_selftest == ST_RUNNING) {
+        bool ok = false;
+        if (scd4x_self_test_result(&ok) < 0) {
+            cyphal_diagnostic(uavcan_diagnostic_Severity_1_0_ERROR, "U3 self-test unreadable");
+        } else {
+            cyphal_diagnostic(ok ? uavcan_diagnostic_Severity_1_0_NOTICE
+                                 : uavcan_diagnostic_Severity_1_0_ERROR,
+                              ok ? "U3 self-test: no malfunction"
+                                 : "U3 self-test: MALFUNCTION");
+        }
+        s_selftest = ST_RESTORING;
+        s_selftest_due = now_ts();
+        return;
+    }
+    /* Back to work. allow_persist is false: this is not a boot, and the EEPROM
+     * budget is not spent on a diagnostic. */
+    if (scd4x_configure(s_pressure_hpa, false) < 0) {
+        s_u3 = false;
+    }
+    s_selftest = ST_IDLE;
 }
 
 /* --- Publication helpers ------------------------------------------------ */
@@ -321,8 +413,8 @@ static void publish_primary(void)
 
 static void service_co2(void)
 {
-    if (!s_u3) {
-        return;
+    if (!s_u3 || (s_selftest != ST_IDLE)) {
+        return; /* the device is stopped and under test; nothing else may address it */
     }
     /* Polled, not free-running: periodic mode has one interval, 5 s, and no
      * other exists (spec 3). Four polls in five find nothing new. */
@@ -569,6 +661,7 @@ void m01_sensors_init(void)
 {
     cyphal_declare_publishers(M01_SUBJECTS,
                               (uint8_t)(sizeof(M01_SUBJECTS) / sizeof(M01_SUBJECTS[0])));
+    cyphal_set_command_handler(m01_command);
     i2c_init();
 
     /* Boot probe. persist_settings is permitted only here: the watchdog is not
@@ -578,6 +671,11 @@ void m01_sensors_init(void)
 
     s_last_pub = now_ts();
     s_last_probe = s_last_pub;
+
+    /* The population, on the bus rather than only on a console nobody reads. */
+    cyphal_diagnostic_u32(uavcan_diagnostic_Severity_1_0_NOTICE,
+                          "M01 up, present bitmask U1|U2|U3 =",
+                          (uint32_t)((s_u1 ? 1u : 0u) | (s_u2 ? 2u : 0u) | (s_u3 ? 4u : 0u)));
 }
 
 void m01_sensors_spin(void)
@@ -588,9 +686,20 @@ void m01_sensors_spin(void)
         s_last_pub += PUBLISH_PERIOD_US;
         publish_primary();
         service_co2();
+        /* Spec 10: a heater pulse shall not overlap a U3 measurement window.
+         * Immediately after a poll is the furthest point from the next one. */
+        if (s_heater_pending && s_u1 && (s_selftest == ST_IDLE)) {
+            s_heater_pending = false;
+            cyphal_diagnostic(sht4x_heater_pulse() == 0
+                                  ? uavcan_diagnostic_Severity_1_0_NOTICE
+                                  : uavcan_diagnostic_Severity_1_0_ERROR,
+                              "U1 condensate-recovery pulse, 20 mW 0.1 s");
+        }
         start_u2_cycle();
         report_health();
     }
+
+    service_selftest();
 
     if (s_u2_pending && (now >= s_u2_due)) {
         s_u2_pending = false;
