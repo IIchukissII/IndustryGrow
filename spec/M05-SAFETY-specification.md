@@ -181,6 +181,11 @@ Implemented in `firmware/nodes/m05_safety/`.
 | Leak excitation | Shares PA9 with the carrier debug console (pin map note 2) |
 | Leak excitation state | Gated, pin resting low (pin map note 3) |
 | Constants | From `store/E0006-000001-D-pinmap.md`, not from part defaults |
+| Commanded operations | Vendor `uavcan.node.ExecuteCommand` IDs. 1 = zero the energy accumulator; 2 = report the raw leak ADC sample as a diagnostic, which is what calibrating `LEAK_WET_THRESHOLD` needs. Neither is automatic |
+| Diagnostics | `uavcan.diagnostic.Record` (8184), event-driven: population at boot, health transitions, door and leak state changes, command results. Never periodic |
+| Message timestamps | `uavcan.time.SynchronizedTimestamp` = 0 (UNKNOWN). No synchronization master publishes on this bus, and a node's uptime is not a network time base |
+| Port introspection | `uavcan.node.port.List` (7510) every 10 s at OPTIONAL priority |
+| Health | Heartbeat health is the worse of identity and sensor state. CAUTION when U2 is present and its reads fail, since metering is the board's purpose; ADVISORY for U1. Three consecutive failed cycles is the threshold |
 
 ## 10. Verification
 

@@ -8,6 +8,9 @@
 #include "e0001.h"
 #include "clock.h"
 #include "cyphal.h"
+#include "uavcan/node/Heartbeat_1_0.h"       /* Health constants */
+#include "uavcan/node/ExecuteCommand_1_0.h"  /* command response status */
+#include "uavcan/diagnostic/Severity_1_0.h"
 #include "uart.h"
 #include "i2c.h"
 #include "ina226.h"
@@ -46,7 +49,76 @@ static bool s_tmp117;
 static uint8_t tid_v, tid_i, tid_p, tid_t, tid_door, tid_leak, tid_energy;
 static uint64_t s_last_pub, s_last_probe;
 
+/* Consecutive failed read cycles, U2 INA226 then U1 TMP117. A device that
+ * probed present and then stops answering is a fault; one that was never
+ * fitted is not. */
+static uint8_t s_fail[2];
+#define FAIL_DEGRADED 3u
+
+static uint8_t s_last_health = uavcan_node_Health_1_0_NOMINAL;
+static bool s_last_door_engaged = true;
+static bool s_last_leak_wet;
+static bool s_states_seeded;
+
+/* Vendor ExecuteCommand IDs. Both serve residuals this board actually has:
+ * the accumulator is volatile, and LEAK_WET_THRESHOLD is provisional and
+ * cannot be calibrated without seeing the raw count against real water. */
+#define CMD_ENERGY_RESET 1u
+#define CMD_LEAK_RAW     2u
+
 static uint64_t now_ts(void) { return micros64(); }
+
+static void note_read(uint8_t dev, bool ok)
+{
+    if (ok) {
+        s_fail[dev] = 0u;
+    } else if (s_fail[dev] < 255u) {
+        s_fail[dev]++;
+    }
+}
+
+/* U2 carries the board's purpose -- E0006 exists to meter the +12 V bus
+ * (ADR-0018 d5) -- so losing it is CAUTION. U1 reports bay air for bay health
+ * (ADR-0018 d11), which is a secondary duty: ADVISORY. */
+static void report_health(void)
+{
+    uint8_t health = uavcan_node_Health_1_0_NOMINAL;
+    if (s_tmp117 && (s_fail[1] >= FAIL_DEGRADED)) {
+        health = uavcan_node_Health_1_0_ADVISORY;
+    }
+    if (s_ina226 && (s_fail[0] >= FAIL_DEGRADED)) {
+        health = uavcan_node_Health_1_0_CAUTION;
+    }
+    cyphal_set_health(health);
+
+    if (health != s_last_health) {
+        s_last_health = health;
+        if (health == uavcan_node_Health_1_0_NOMINAL) {
+            cyphal_diagnostic(uavcan_diagnostic_Severity_1_0_NOTICE, "M05 sensors recovered");
+        } else {
+            cyphal_diagnostic_u32(uavcan_diagnostic_Severity_1_0_WARNING,
+                                  "M05 reads failing, bitmask U2|U1 =",
+                                  (uint32_t)((s_fail[0] >= FAIL_DEGRADED ? 1u : 0u) |
+                                             (s_fail[1] >= FAIL_DEGRADED ? 2u : 0u)));
+        }
+    }
+}
+
+static uint8_t m05_command(uint16_t command)
+{
+    switch (command) {
+    case CMD_ENERGY_RESET:
+        s0_reset();
+        cyphal_diagnostic(uavcan_diagnostic_Severity_1_0_NOTICE, "M05 energy accumulator zeroed");
+        return uavcan_node_ExecuteCommand_Response_1_0_STATUS_SUCCESS;
+    case CMD_LEAK_RAW:
+        cyphal_diagnostic_u32(uavcan_diagnostic_Severity_1_0_NOTICE,
+                              "M05 leak raw ADC =", (uint32_t)leak_sample_raw());
+        return uavcan_node_ExecuteCommand_Response_1_0_STATUS_SUCCESS;
+    default:
+        return uavcan_node_ExecuteCommand_Response_1_0_STATUS_BAD_COMMAND;
+    }
+}
 
 static void probe(void)
 {
@@ -68,6 +140,7 @@ void m05_sensors_init(void)
 {
     cyphal_declare_publishers(M05_SUBJECTS,
                               (uint8_t)(sizeof(M05_SUBJECTS) / sizeof(M05_SUBJECTS[0])));
+    cyphal_set_command_handler(m05_command);
     /* Last console output on this personality: leak_init() claims PA9 (GPIO_1,
      * shared with USART1_TX) as the leak excitation drive, so the debug UART
      * goes silent from here. Everything the common boot path printed still
@@ -86,6 +159,12 @@ void m05_sensors_init(void)
     probe();
     s_last_pub = now_ts();
     s_last_probe = s_last_pub;
+
+    /* The population, on the bus rather than only on a console that this
+     * personality loses at sensors_init() anyway (PA9 is the leak excitation). */
+    cyphal_diagnostic_u32(uavcan_diagnostic_Severity_1_0_NOTICE,
+                          "M05 up, present bitmask U2|U1 =",
+                          (uint32_t)((s_ina226 ? 1u : 0u) | (s_tmp117 ? 2u : 0u)));
 }
 
 static void pub_voltage(float v)
@@ -143,6 +222,12 @@ static void pub_door(void)
      * high). The NO reed closes when the door is shut, so engaged reads low --
      * confirmed on the bench against a fitted reed. */
     bool engaged = (GPIOA->IDR & (1u << REED_PIN)) == 0u;
+    if (s_states_seeded && (engaged != s_last_door_engaged)) {
+        cyphal_diagnostic(engaged ? uavcan_diagnostic_Severity_1_0_NOTICE
+                                  : uavcan_diagnostic_Severity_1_0_WARNING,
+                          engaged ? "M05 door shut" : "M05 door OPEN");
+    }
+    s_last_door_engaged = engaged;
     industryflow_greenhouse_safety_DoorStatus_1_0 m = {0};
     m.timestamp.microsecond = cyphal_timestamp_usec();
     m.engaged = engaged;
@@ -159,6 +244,12 @@ static void pub_leak(void)
     industryflow_greenhouse_safety_LeakStatus_1_0 m = {0};
     m.timestamp.microsecond = cyphal_timestamp_usec();
     m.wet = leak_is_wet();
+    if (s_states_seeded && (m.wet != s_last_leak_wet)) {
+        cyphal_diagnostic(m.wet ? uavcan_diagnostic_Severity_1_0_WARNING
+                                : uavcan_diagnostic_Severity_1_0_NOTICE,
+                          m.wet ? "M05 leak WET" : "M05 leak dry");
+    }
+    s_last_leak_wet = m.wet;
     m.valid = true; /* TODO: false until gated excitation is actually driven */
     uint8_t b[industryflow_greenhouse_safety_LeakStatus_1_0_SERIALIZATION_BUFFER_SIZE_BYTES_];
     size_t sz = sizeof(b);
@@ -184,15 +275,21 @@ static void publish_all(void)
     if (s_ina226) {
         float v = 0.0f, a = 0.0f, w = 0.0f;
         if (ina226_read(&v, &a, &w) == 0) {
+            note_read(0, true);
             pub_voltage(v);
             pub_current(a);
             pub_power(w);
+        } else {
+            note_read(0, false);
         }
     }
     if (s_tmp117) {
         float k = 0.0f;
         if (tmp117_read_kelvin(&k) == 0) {
+            note_read(1, true);
             pub_temperature(k);
+        } else {
+            note_read(1, false);
         }
     }
     /* Always present (GPIO/ADC, no I2C probe). */
@@ -207,6 +304,8 @@ void m05_sensors_spin(void)
     if ((now - s_last_pub) >= PUBLISH_PERIOD_US) {
         s_last_pub += PUBLISH_PERIOD_US;
         publish_all();
+        s_states_seeded = true; /* the first pass establishes door and leak, not a transition */
+        report_health();
     }
     if ((now - s_last_probe) >= REPROBE_PERIOD_US) {
         s_last_probe += REPROBE_PERIOD_US;

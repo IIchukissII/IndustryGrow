@@ -60,3 +60,8 @@ float s0_energy_joule(void)
 {
     return (float)s_pulses * (S0_JOULE_PER_KWH / S0_IMP_PER_KWH);
 }
+
+void s0_reset(void)
+{
+    s_pulses = 0u;
+}
