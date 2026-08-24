@@ -66,11 +66,24 @@ static int read_words(uint16_t cmd, uint32_t wait_ms, uint16_t *words, size_t co
     return (sensirion_unpack(buf, words, count) < 0) ? -4 : 0;
 }
 
+/* What the stopped device reported, held for the accessors below. Both are
+ * properties of the part, not samples: the serial is fixed for its lifetime and
+ * the offset changes only when something writes it, which this driver
+ * deliberately cannot do (see the header). */
+static uint64_t s_serial;
+static float s_temp_offset_c;
+static bool s_serial_valid;
+static bool s_offset_valid;
+
 int scd4x_configure(uint16_t ambient_hpa, bool allow_persist, bool *out_persisted)
 {
     if (out_persisted) {
         *out_persisted = false;
     }
+    /* A device that has just re-appeared on a probe need not be the one that
+     * answered last time. Nothing carries over until it has answered again. */
+    s_serial_valid = false;
+    s_offset_valid = false;
 
     /* Almost every configuration command is rejected while periodic
      * measurement runs, and the device may already be measuring after a warm
@@ -79,6 +92,26 @@ int scd4x_configure(uint16_t ambient_hpa, bool allow_persist, bool *out_persiste
         return -1;
     }
     delay_ms(MS_STOP_PERIODIC);
+
+    /* Identity and offset are read HERE, in the only window this driver ever
+     * has for them: the device is stopped, and every path out of this function
+     * either leaves it stopped or starts it measuring. The boot log used to
+     * read them afterwards, and a measuring SCD41 rejects both -- which cost
+     * far more than the two log fields it lost, because the NACK wedged the
+     * whole I2C segment and silenced all ten of M01's subjects (bench
+     * 2026-08-24; see clear_stale_flags(), common/drivers/i2c.c).
+     *
+     * Neither read is allowed to fail the configuration: they inform the log,
+     * they do not condition the measurement. */
+    uint16_t w[3] = {0};
+    if (read_words(CMD_GET_SERIAL, MS_SHORT, w, 3u) == 0) {
+        s_serial = ((uint64_t)w[0] << 32) | ((uint64_t)w[1] << 16) | w[2];
+        s_serial_valid = true;
+    }
+    if (read_words(CMD_GET_TEMP_OFFSET, MS_SHORT, w, 1u) == 0) {
+        s_temp_offset_c = 175.0f * (float)w[0] / 65535.0f;
+        s_offset_valid = true;
+    }
 
     /* Read ASC before writing it. This is the whole reason the EEPROM survives:
      * the write and the persist happen only on a device that is not already in
@@ -165,24 +198,22 @@ int scd4x_set_ambient_pressure_hpa(uint16_t hpa)
 
 int scd4x_get_temperature_offset(float *celsius)
 {
-    uint16_t w = 0;
-    if (read_words(CMD_GET_TEMP_OFFSET, MS_SHORT, &w, 1u) < 0) {
+    if (!s_offset_valid) {
         return -1;
     }
     if (celsius) {
-        *celsius = 175.0f * (float)w / 65535.0f;
+        *celsius = s_temp_offset_c;
     }
     return 0;
 }
 
 int scd4x_serial(uint64_t *out)
 {
-    uint16_t w[3];
-    if (read_words(CMD_GET_SERIAL, MS_SHORT, w, 3u) < 0) {
+    if (!s_serial_valid) {
         return -1;
     }
     if (out) {
-        *out = ((uint64_t)w[0] << 32) | ((uint64_t)w[1] << 16) | w[2];
+        *out = s_serial;
     }
     return 0;
 }
