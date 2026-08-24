@@ -45,4 +45,12 @@ int i2c_write_read(uint8_t addr7, const uint8_t *wbuf, size_t wlen,
 int i2c_write_reg16(uint8_t addr7, uint8_t reg, uint16_t value);
 int i2c_read_reg16(uint8_t addr7, uint8_t reg, uint16_t *out);
 
+/* --- Bus statistics -------------------------------------------------------
+ * Transactions attempted and failed since boot, saturating. A node is the only
+ * place that knows a transfer failed: a sensor that has stopped answering is
+ * indistinguishable on the wire from one that is simply quiet, which is how a
+ * latched bus fault once left every device reading "present" while nothing was
+ * published (M01 spec O-37). These feed the personality's health assessment. */
+void i2c_stats(uint32_t *attempts, uint32_t *failures);
+
 #endif /* IGROW_DRIVERS_I2C_H */
