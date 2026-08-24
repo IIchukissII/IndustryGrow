@@ -110,7 +110,7 @@ a reading is a pass when it falls in the expected range for the stimulus applied
 | 16 | VPD | 4114 | Derived on-node from U1 alone | Consistent with 4112 and 4113 per spec §6.1 | |
 | 17 | CO₂ | 4115 | Ambient bench air, then exhaled breath at the sensor | Ambient in range; breath drives it up and it recovers | |
 | 18 | Barometric pressure | 4116 | Ambient | Within 10 hPa of the local station reading | |
-| 19 | Gas resistance | 4117 | Ambient, heater profile 320 °C | Non-zero, `valid` set. Arrives at the scan interval the boot line reports (10 s), not at the 1 s tick — allow a full interval before calling it absent. A build with `M01_GAS_SCAN` = 0 withholds it entirely and says `gas scan PARKED` | |
+| 19 | Gas resistance sweep | 4117 | Ambient; the four setpoints of spec §6.4 | Setpoints return exactly as configured, resistances non-zero and **falling monotonically as the setpoint rises**, `valid` set. Arrives at the scan interval the boot line reports (10 s), not at the 1 s tick — allow a full interval before calling it absent. A build with `M01_GAS_SCAN` = 0 withholds it entirely and says `gas scan PARKED` | |
 | 20 | Air temperature, U2 | 4118 | Ambient bench air | Within the §8 self-heating budget of 4112 | |
 | 21 | Air humidity, U2 | 4119 | Ambient bench air | Consistent with 4113 | |
 | 22 | Air temperature, U3 | 4120 | Ambient bench air | Within the §8 self-heating budget of 4112, offset uncalibrated | |

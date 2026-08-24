@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Metal-oxide gas-sensor resistance across a hotplate sweep -- the VOC signal of
+# M01 spec 6.4. Supersedes 1.0, which carried a single setpoint.
+#
+# MAJOR bump, not the minor one 1.0 anticipated. Types sharing a major version
+# must share an extent, and 1.0's 32 bytes cannot hold a ten-element sweep at
+# any array capacity -- the reserved capacity, not the length actually sent,
+# sets the extent. A minor version was never available for this shape.
+#
+# Deliberately NOT an air-quality index. IAQ, CO2-equivalent, bVOC-equivalent
+# and gas-scan classification are outputs of Bosch's closed-source BSEC, which
+# is incompatible with the AGPL reference firmware (ADR-0002 d5), so this
+# subject carries raw sensor-API resistances and nothing derived from them. CO2
+# is measured by the SCD41 on its own subject, never estimated from this one.
+#
+# Why a sweep. One resistance at one temperature is a scalar whose absolute
+# value means nothing; the same air read 161 kOhm at a 1 s scan interval and
+# 18 kOhm at 10 s (spec 6.4). R(T) across several setpoints is a shape, and a
+# shape survives the baseline drift a single point does not -- different
+# analytes separate by where in temperature they respond, which is the
+# discrimination a scalar cannot offer at any baseline.
+#
+# The sweep is taken as consecutive forced-mode conversions, one per setpoint,
+# NOT in the BME688's parallel mode. That is what lets the approved BME680
+# alternative of spec 4.2 produce the same vector: forced mode and per-shot
+# heater setpoints exist on both parts, so variant_id stays off the critical
+# path of every population (spec O-49). It also means the plate cools between
+# steps, so each point starts from the same state rather than from its
+# predecessor's heat.
+#
+# Comparability. A reading is comparable only against readings taken with the
+# SAME setpoint list AND the same scan interval; both belong to the baseline,
+# not just the setpoints. Consumers shall compare index-by-index against
+# heater_celsius rather than assuming a fixed list.
+uavcan.time.SynchronizedTimestamp.1.0 timestamp
+uint16[<=10] heater_celsius   # hotplate targets, ascending, one per sweep step
+float32[<=10] ohm             # plate resistance at heater_celsius of the same index
+bool valid                    # EVERY step completed and reached heater stability
+@extent 96 * 8

@@ -338,7 +338,7 @@ bool bme68x_is_bme688(void)
     return s_variant == VARIANT_GAS_HIGH;
 }
 
-uint32_t bme68x_meas_duration_ms(bool run_gas)
+uint32_t bme68x_meas_duration_ms(uint16_t heater_celsius)
 {
     static const uint32_t cycles[6] = {0u, 1u, 2u, 4u, 8u, 16u};
 
@@ -346,20 +346,21 @@ uint32_t bme68x_meas_duration_ms(bool run_gas)
      * allowances for TPH switching and the gas measurement. */
     uint32_t us = (cycles[OSRS_T] + cycles[OSRS_P] + cycles[OSRS_H]) * 1963u;
     us += 477u * 4u; /* TPH switching */
-    if (run_gas) {
+    if (heater_celsius != 0u) {
         us += 477u * 5u; /* gas measurement */
     }
     us += 500u; /* round to the nearest millisecond */
-    return (us / 1000u) + 1u + (run_gas ? BME68X_HEATER_MS : 0u); /* +1 ms wake-up */
+    return (us / 1000u) + 1u + ((heater_celsius != 0u) ? BME68X_HEATER_MS : 0u); /* +1 ms wake */
 }
 
-int bme68x_trigger(float ambient_celsius, bool run_gas)
+int bme68x_trigger(float ambient_celsius, uint16_t heater_celsius)
 {
-    if (run_gas) {
-        /* Heater profile slot 0, recomputed each cycle: the code that reaches
-         * the setpoint depends on ambient, and ambient moves. */
+    if (heater_celsius != 0u) {
+        /* Heater profile slot 0, recomputed every shot: the code that reaches
+         * the setpoint depends on both the setpoint and ambient, and a sweep
+         * moves the first while the room moves the second. */
         if (write_reg(REG_RES_HEAT0,
-                      calc_res_heat((float)BME68X_HEATER_CELSIUS, ambient_celsius)) < 0) {
+                      calc_res_heat((float)heater_celsius, ambient_celsius)) < 0) {
             return -1;
         }
         if (write_reg(REG_GAS_WAIT0, calc_gas_wait(BME68X_HEATER_MS)) < 0) {
@@ -373,7 +374,7 @@ int bme68x_trigger(float ambient_celsius, bool run_gas)
      * low); nb_conv = 0 selects heater slot 0. Zero disables the gas step
      * entirely, and with it the hotplate. */
     uint8_t gas_bits = 0u;
-    if (run_gas) {
+    if (heater_celsius != 0u) {
         gas_bits = (s_variant == VARIANT_GAS_HIGH) ? 0x20u : 0x10u;
     }
     if (write_reg(REG_CTRL_GAS_1, gas_bits) < 0) {

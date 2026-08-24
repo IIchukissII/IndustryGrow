@@ -40,10 +40,10 @@
 
 #define BME68X_ADDR 0x76u
 
-/* Hotplate setpoint and dwell, published alongside the resistance so a trend is
- * only ever compared against readings taken at the same setpoint. */
-#define BME68X_HEATER_CELSIUS 320u
-#define BME68X_HEATER_MS      150u
+/* Hotplate dwell per shot. The setpoints themselves are the node's business --
+ * a sweep is a list of them (spec 6.4) and each is published alongside its
+ * resistance, because a reading is comparable only against the same setpoint. */
+#define BME68X_HEATER_MS 150u
 
 typedef struct {
     float celsius;      /* secondary -- NOT a VPD input (spec 4) */
@@ -60,24 +60,32 @@ int bme68x_init(void);
 /* True when the fitted part is a BME688 rather than the BME680 alternative. */
 bool bme68x_is_bme688(void);
 
-/* Start one forced-mode conversion. `ambient_celsius` sets the heater resistance
- * for the target setpoint -- the hotplate is driven to a temperature ABOVE
- * ambient, so the code that reaches 320 C depends on where it starts. Feed it
- * U1's reading; 25 C is the datasheet reference if nothing better is known.
+/* Start one forced-mode conversion at `heater_celsius`. `ambient_celsius` sets
+ * the heater resistance for that setpoint -- the hotplate is driven to a
+ * temperature ABOVE ambient, so the code that reaches the target depends on
+ * where it starts. Feed it U1's reading; 25 C is the datasheet reference if
+ * nothing better is known.
  *
- * `run_gas` false takes the pressure and secondary T/RH WITHOUT lighting the
- * hotplate: no heater profile is programmed and the gas step is disabled. That
- * is the configuration the barometer alone needs, and the barometer is the role
- * this part is load-bearing for (spec 6.3). `ambient_celsius` is then unused. */
-int bme68x_trigger(float ambient_celsius, bool run_gas);
+ * `heater_celsius` = 0 takes the pressure and secondary T/RH WITHOUT lighting
+ * the hotplate: no heater profile is programmed and the gas step is disabled.
+ * That is the configuration the barometer alone needs, and the barometer is the
+ * role this part is load-bearing for (spec 6.3). `ambient_celsius` is then
+ * unused.
+ *
+ * A sweep is this call repeated per setpoint (spec 6.4). Forced mode is what
+ * makes that portable: the parallel mode that would sequence a profile in
+ * hardware exists only on the BME688, while forced mode and per-shot setpoints
+ * exist on the spec 4.2 alternative too. */
+int bme68x_trigger(float ambient_celsius, uint16_t heater_celsius);
 
 /* Milliseconds from bme68x_trigger() to a completed conversion, from the
  * datasheet timing of the configured oversampling, plus the gas step and heater
- * dwell when `run_gas` was set. The caller waits this out in its own loop rather
- * than blocking here: it is ~190 ms with the heater against a 1 s publish cycle,
- * and the Cyphal TX queue must keep flushing. Pass the same `run_gas` the
- * trigger was given -- without the hotplate the conversion is ~20 ms. */
-uint32_t bme68x_meas_duration_ms(bool run_gas);
+ * dwell when a setpoint was given. The caller waits this out in its own loop
+ * rather than blocking here: it is ~190 ms with the heater against a 1 s publish
+ * cycle, and the Cyphal TX queue must keep flushing. Pass the same
+ * `heater_celsius` the trigger was given -- without the hotplate the conversion
+ * is ~20 ms. */
+uint32_t bme68x_meas_duration_ms(uint16_t heater_celsius);
 
 /* Read and compensate the completed conversion. Returns 0 on success, <0 on a
  * bus error or if the device has not finished. */
