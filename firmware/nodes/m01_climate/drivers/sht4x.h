@@ -16,12 +16,13 @@
  * Address 0x44, fixed -- the SHT4x address is set by the ordering part, not by
  * a strap, so a bus conflict here is a BOM error and not a jumper.
  *
- * The heater is NOT driven by this driver. Spec 10 leaves it disabled by
- * default, and its 200 mW pulse is 59 K of self-heating at steady state
- * (spec 8.1) against a 0.1 K module budget -- an accidental pulse would not
- * corrupt one reading, it would corrupt the thermal state the next readings are
- * taken in. Condensate recovery is a commanded operation, not a background one,
- * and gets its own entry point when it exists.
+ * The heater never runs on its own. Spec 10 leaves it disabled by default, and
+ * its 200 mW level is 59 K of self-heating at steady state (spec 8.1) against a
+ * 0.1 K module budget -- an accidental pulse would not corrupt one reading, it
+ * would corrupt the thermal state the next readings are taken in. Condensate
+ * recovery is therefore a COMMANDED operation: sht4x_heater_pulse() below is
+ * the only entry point, it uses the lowest level and shortest duration, and
+ * nothing in this driver calls it.
  *
  * The approved alternative SHT45-AD1B-R2 (spec 4.2) is identical here: it drops
  * the PTFE membrane, which is a mechanical property, not a protocol one.
@@ -40,5 +41,12 @@ int sht4x_read(float *celsius, float *rh_ratio);
 int sht4x_serial(uint32_t *out);
 
 int sht4x_soft_reset(void);
+
+/* One condensate-recovery pulse: 20 mW for 0.1 s, the lowest level and shortest
+ * duration the device offers, which M01 spec 10 prefers and which keeps the
+ * 10 % duty ceiling far away. Blocks ~110 ms. The measurement the device
+ * returns at the end of the pulse is taken on a heated die and is discarded --
+ * the pulse is for driving condensate off the sensor, not for reading. */
+int sht4x_heater_pulse(void);
 
 #endif /* IGROW_M01_SHT4X_H */

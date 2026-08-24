@@ -21,6 +21,7 @@
 #define CMD_PERSIST_SETTINGS 0x3615u
 #define CMD_GET_DATA_READY   0xE4B8u
 #define CMD_GET_SERIAL       0x3682u
+#define CMD_SELF_TEST        0x3639u
 
 #define MS_STOP_PERIODIC 500u
 #define MS_PERSIST       800u
@@ -235,6 +236,32 @@ int scd4x_asc_status(bool *found_on, bool *persisted)
     }
     if (persisted) {
         *persisted = s_asc_persisted;
+    }
+    return 0;
+}
+
+int scd4x_stop(void)
+{
+    return send_command(CMD_STOP_PERIODIC);
+}
+
+int scd4x_self_test_begin(void)
+{
+    return send_command(CMD_SELF_TEST);
+}
+
+int scd4x_self_test_result(bool *malfunction_free)
+{
+    uint8_t buf[3];
+    if (i2c_read(SCD4X_ADDR, buf, sizeof(buf)) < 0) {
+        return -1;
+    }
+    uint16_t w = 0;
+    if (sensirion_unpack(buf, &w, 1u) < 0) {
+        return -2;
+    }
+    if (malfunction_free) {
+        *malfunction_free = (w == 0u); /* the device reports 0 for "no malfunction" */
     }
     return 0;
 }

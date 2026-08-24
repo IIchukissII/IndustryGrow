@@ -22,6 +22,7 @@
 #include "uavcan/_register/Access_1_0.h" /* namespace stropped: register -> _register */
 #include "uavcan/_register/List_1_0.h"
 #include "uavcan/node/port/List_1_0.h"
+#include "uavcan/diagnostic/Record_1_1.h"
 
 #include "registers.h"
 #include "e0001.h" /* CMSIS: NVIC_SystemReset */
@@ -60,6 +61,8 @@ static uint8_t s_personality_health; /* uavcan.node.Health value, 0 = NOMINAL */
 static const uint16_t *s_pub_subjects;
 static uint8_t s_pub_subject_count;
 static uint8_t s_portlist_tid;
+static uint8_t s_diag_tid;
+static cyphal_command_fn s_command_fn;
 static uint64_t s_next_portlist_us;
 
 static uint8_t s_hb_tid;       /* heartbeat transfer-id (5-bit, wraps) */
@@ -183,6 +186,67 @@ void cyphal_set_health(uint8_t health)
     s_personality_health = health;
 }
 
+void cyphal_set_command_handler(cyphal_command_fn fn)
+{
+    s_command_fn = fn;
+}
+
+static size_t copy_text(uint8_t *dst, size_t cap, const char *text)
+{
+    size_t n = 0;
+    while ((text[n] != '\0') && (n < cap)) {
+        dst[n] = (uint8_t)text[n];
+        n++;
+    }
+    return n;
+}
+
+void cyphal_diagnostic(uint8_t severity, const char *text)
+{
+    static uint8_t buf[uavcan_diagnostic_Record_1_1_SERIALIZATION_BUFFER_SIZE_BYTES_];
+    uavcan_diagnostic_Record_1_1 m;
+    memset(&m, 0, sizeof(m));
+    m.timestamp.microsecond = cyphal_timestamp_usec();
+    m.severity.value = severity;
+    m.text.count = copy_text(m.text.elements, sizeof(m.text.elements), text);
+
+    size_t sz = sizeof(buf);
+    if (uavcan_diagnostic_Record_1_1_serialize_(&m, buf, &sz) < 0) {
+        return;
+    }
+    const CanardTransferMetadata meta = {
+        .priority = CanardPriorityOptional,
+        .transfer_kind = CanardTransferKindMessage,
+        .port_id = uavcan_diagnostic_Record_1_1_FIXED_PORT_ID_,
+        .remote_node_id = CANARD_NODE_ID_UNSET,
+        .transfer_id = s_diag_tid,
+    };
+    tx_push(&meta, sz, buf);
+    s_diag_tid = (uint8_t)((s_diag_tid + 1u) & CANARD_TRANSFER_ID_MAX);
+}
+
+void cyphal_diagnostic_u32(uint8_t severity, const char *text, uint32_t value)
+{
+    char line[128];
+    size_t n = 0;
+    while ((text[n] != '\0') && (n < (sizeof(line) - 14u))) {
+        line[n] = text[n];
+        n++;
+    }
+    line[n++] = ' ';
+    char digits[10];
+    uint8_t d = 0;
+    do {
+        digits[d++] = (char)('0' + (value % 10u));
+        value /= 10u;
+    } while (value != 0u);
+    while (d > 0u) {
+        line[n++] = digits[--d];
+    }
+    line[n] = '\0';
+    cyphal_diagnostic(severity, line);
+}
+
 void cyphal_declare_publishers(const uint16_t *subject_ids, uint8_t count)
 {
     s_pub_subjects = subject_ids;
@@ -206,6 +270,7 @@ static void publish_port_list(void)
     uint8_t n = 0;
     m.publishers.sparse_list.elements[n++].value = uavcan_node_Heartbeat_1_0_FIXED_PORT_ID_;
     m.publishers.sparse_list.elements[n++].value = uavcan_node_port_List_1_0_FIXED_PORT_ID_;
+    m.publishers.sparse_list.elements[n++].value = uavcan_diagnostic_Record_1_1_FIXED_PORT_ID_;
     for (uint8_t i = 0; (i < s_pub_subject_count) && (n < 255u); i++) {
         m.publishers.sparse_list.elements[n++].value = s_pub_subjects[i];
     }
@@ -381,6 +446,8 @@ static void handle_execcmd(const CanardRxTransfer *req)
     if (rq.command == uavcan_node_ExecuteCommand_Request_1_0_COMMAND_RESTART) {
         resp.status = uavcan_node_ExecuteCommand_Response_1_0_STATUS_SUCCESS;
         s_pending_reset = true; /* reset after the response is flushed */
+    } else if (s_command_fn != NULL) {
+        resp.status = s_command_fn(rq.command);
     } else {
         resp.status = uavcan_node_ExecuteCommand_Response_1_0_STATUS_BAD_COMMAND;
     }
