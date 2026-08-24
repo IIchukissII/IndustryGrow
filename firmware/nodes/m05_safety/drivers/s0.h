@@ -16,4 +16,9 @@ void s0_init(void);
 uint32_t s0_pulses(void);
 float s0_energy_joule(void);
 
+/* Zero the accumulator. The count lives in RAM and does not survive a reset, so
+ * a deliberate zero at commissioning is the only way to know what the reading
+ * is counting from. Commanded, never automatic. */
+void s0_reset(void);
+
 #endif /* IGROW_M05_S0_H */
