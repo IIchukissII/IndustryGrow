@@ -18,9 +18,30 @@
 #define LEAK_SETTLE_MS 5u
 
 /* Conductive liquid lowers the electrode impedance and pulls the divider; a
- * dry strip reads near full-scale. Threshold is provisional pending E0006
- * conditioning values (ADR-0000: lives in the schematic/BOM). */
-#define LEAK_WET_THRESHOLD 2048u
+ * dry strip reads near full-scale.
+ *
+ * Measured on E0006-000001, 2026-08-24:
+ *
+ *   dry, bench air        4068...4095   (40 samples, spread 0.7 %)
+ *   wet paper, applied A  2101...2370
+ *   wet paper, applied B  3589...3630
+ *
+ * The previous 2048 sat BELOW every wet reading taken, so a wet strip was
+ * reported dry -- the channel did not detect the one thing it exists for.
+ *
+ * 3219 is the midpoint of dry against the A distribution. It catches A and
+ * standing water, which conducts better still; it does NOT catch B. Two
+ * applications of one stimulus differing by 1500 counts is the finding: wet
+ * paper varies more than the margin being set, so it cannot fix this value.
+ * Raising the threshold past B would leave 9 % to the dry minimum, and dry has
+ * only ever been characterized in bench air -- the board lives at 90 %RH, where
+ * a damp strip may sit lower and turn that margin into nuisance alarms.
+ *
+ * So this stays conservative until real water and the reservoir lead settle it
+ * (spec O-74), and the durable answer is probably not an absolute count at all
+ * but a threshold relative to a per-installation dry baseline: dry is stable to
+ * 0.7 % where the wet state is not. */
+#define LEAK_WET_THRESHOLD 3219u
 
 /* Excitation off = driven low, not high-Z: with the strip's lower leg on GND,
  * both ends sit at 0 V, so no DC flows through the electrodes between samples.
