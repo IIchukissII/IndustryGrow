@@ -5,7 +5,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 # M01-CLIMATE — module specification
 
-- **Date:** 2026-08-06
+- **Date:** 2026-08-24
 - **E-number:** `E0002` · module-ID strap `0b001`
 - **Governing ADRs:** ADR-0014 (rev 3), ADR-0002 (rev 3), ADR-0003, ADR-0016, ADR-0017 (rev 2), ADR-0018
 - **Companions:** `M02-LIGHT-specification.md`, `M05-SAFETY-specification.md`, `M06-VENTILATION-specification.md`, `M07-AMBIENT-specification.md`
@@ -304,7 +304,7 @@ residue is O-48.
 
 | | Value |
 |---|---|
-| Node draw on `+12 V` | Not measured. O-35 |
+| Node draw on `+12 V` | Not measured at the 2026-08-24 bring-up (§11.2). O-35, V3 |
 | Reference figure | M05 node, 0.25 W (254 mW at 12.12 V, 2026-08-02). M01 exceeds it |
 | Burst reflected to `+12 V` | ≈ 60–70 mA, calculated as 205 mA × 3.3 V / 12 V ÷ η at η = 0.85, plus the losses of §7.4. Measured by V3. O-35 |
 
@@ -522,16 +522,16 @@ the gateway's concern.
 
 ## 11. Verification
 
-| ID | Verifies | Method |
-|----|----------|--------|
-| V1 | T2 | Board at thermal equilibrium in still air, U1's heater disabled throughout. U1's reported temperature recorded in four states: (a) U2 gas scan idle and U3 idle; (b) U2 gas scan running, U3 idle; (c) U2 idle, U3 periodic at 5 s; (d) both running. T2 is met when the spread across the four states is ≤ 0.1 K. The measurement is differential and needs no absolute reference — an offset common to all four states is not T2's subject. A reference thermometer in the same air is used only to confirm the ambient held during the run |
-| V2 | T1 | U1 reading with and without the luminaire at the profile's operating PPFD, against a shaded reference thermometer in the same air |
-| V3 | §7.1, §7.4 | Node draw on `+12 V` measured at first bring-up, average and during a U3 burst. Rail voltages at U2 VDD and U3 VDD measured under load, to detect a regulator out of regulation. Rail ripple against the 30 mV limit of §7.4.1 requires instrumentation the project does not have — O-44 |
-| V4 | §6.1 | U1 against a reference hygrometer at two points of the ADR-0003 d7 band |
-| V5 | §6.3 | CO₂ against M07's reference instance in the same air (O-7), no earlier than five days after assembly and at the 2.8 V rail |
-| V6 | §4.1 footprints | 1:1 paper printout against the physical part, all three devices, including U1's unsoldered die pad and U3's full pad count |
-| V7 | §10, §8.1 | U3 temperature offset determined and written; U3 T/RH against a reference in the same air before and after. Determined in the finished board at thermal equilibrium in the operating mode used in the application, per the device datasheet. This is also the only source of U3's self-heating contribution (§8.1) |
-| V8 | §7.5 | C8's effective capacitance at 2.8 V DC bias read from the vendor's DC-bias curve for the specific ordering part, against the 2.0–4.7 µF acceptance band. Executed at BOM release, before the `L` document is issued |
+| ID | Verifies | Method | Status |
+|----|----------|--------|--------|
+| V1 | T2 | Board at thermal equilibrium in still air, U1's heater disabled throughout. U1's reported temperature recorded in four states: (a) U2 gas scan idle and U3 idle; (b) U2 gas scan running, U3 idle; (c) U2 idle, U3 periodic at 5 s; (d) both running. T2 is met when the spread across the four states is ≤ 0.1 K. The measurement is differential and needs no absolute reference — an offset common to all four states is not T2's subject. A reference thermometer in the same air is used only to confirm the ambient held during the run | Not executed |
+| V2 | T1 | U1 reading with and without the luminaire at the profile's operating PPFD, against a shaded reference thermometer in the same air | Not executed. No luminaire on the bench |
+| V3 | §7.1, §7.4 | Node draw on `+12 V` measured at first bring-up, average and during a U3 burst. Rail voltages at U2 VDD and U3 VDD measured under load, to detect a regulator out of regulation. Rail ripple against the 30 mV limit of §7.4.1 requires instrumentation the project does not have — O-44 | Not executed at the 2026-08-24 bring-up. O-35 |
+| V4 | §6.1 | U1 against a reference hygrometer at two points of the ADR-0003 d7 band | Not executed |
+| V5 | §6.3 | CO₂ against M07's reference instance in the same air (O-7), no earlier than five days after assembly and at the 2.8 V rail | Blocked: no M07 instance exists. O-7 |
+| V6 | §4.1 footprints | 1:1 paper printout against the physical part, all three devices, including U1's unsoldered die pad and U3's full pad count | Not executed. Parts now in hand |
+| V7 | §10, §8.1 | U3 temperature offset determined and written; U3 T/RH against a reference in the same air before and after. Determined in the finished board at thermal equilibrium in the operating mode used in the application, per the device datasheet. This is also the only source of U3's self-heating contribution (§8.1) | Not executed. Device holds the 4.000 °C factory default (§11.2). O-45 |
+| V8 | §7.5 | C8's effective capacitance at 2.8 V DC bias read from the vendor's DC-bias curve for the specific ordering part, against the 2.0–4.7 µF acceptance band. Executed at BOM release, before the `L` document is issued | Not executed |
 
 ### 11.1 Assembly constraints
 
@@ -546,6 +546,33 @@ The board is machine-assembled; U1 and U3 are not hand-solderable with the equip
 | U1 die pad unsoldered, no copper beneath except pin pads | U1 |
 | U3 requires an assembly fixture and is Standard-PCBA only | Vendor constraint; sets the service class for the whole board |
 | MSL | U1 and U2 are MSL 1; U3 is MSL 3 with 168 h floor time |
+
+### 11.2 Bench bring-up 2026-08-24
+
+`E0002-000001` on carrier `E0001-000002`, node-ID 97, firmware `store/E0001-000001-F.hex`. One
+M05 node also on the bus.
+
+| Item | Result |
+|------|--------|
+| U1 SHT45 at `0x44` | Present; serial read CRC-valid |
+| U2 BME68x at `0x76` | Present; variant **BME688**, not the §4.2 alternative |
+| U3 SCD41 at `0x62` | Present; serial read CRC-valid |
+| U3 temperature offset | 4.000 °C, the device default. Not this board's value — O-45, V7 |
+| U3 automatic self-calibration | Found already disabled; no EEPROM cycle spent this boot (§6.3) |
+| Published subjects | All ten of §10.1; 1 Hz for U1 and U2, one sample per 5 s interval for U3 |
+| Gateway | Node identified as M01-CLIMATE; subjects 4112–4121 decoded |
+| U1, bench air | 23.18 °C, 45.6 %RH, VPD 1.545 kPa |
+| U2, bench air | 23.95 °C, 44.6 %RH, 1021.6 hPa, gas 161 kΩ at the 320 °C heater profile |
+| U3, bench air | 528 ppm CO₂, 24.25 °C, 44.9 %RH |
+| U1 against M05's U1 in the same air | 0.12 K apart |
+| Node draw on `+12 V` | Not measured. O-35, V3 |
+
+No requirement of §6 is verified by this run: the readings are a population and publication
+check against plausible ambient values. U1 and U3 accuracy remain the subjects of V4 and V7.
+
+One firmware defect was found and corrected at this bring-up: a latched I²C `AF` made every
+later address phase report a result it had not obtained, so the node published heartbeat only
+while all three devices were reported present. Recorded against O-37.
 
 ## 12. Open items
 
@@ -564,7 +591,7 @@ O-52 to O-62 are M02's.
 | ~~O-34~~ | ~~Pressure source for CO₂ compensation: U2 or M07~~ — closed 2026-08-05 by §6.3 in favour of U2. Unpopulated-U2 residue moved to O-48 | — |
 | O-35 | Node power unmeasured; M05's O-31 node-count ceilings assume M05-class nodes | Distribution-board sizing, O-31 |
 | ~~O-36~~ | ~~ADR-0014 d2's partial-BOM example cites M01's airflow sensor, moved to M06 in rev 2~~ — closed 2026-08-04 by ADR-0014 rev 3 | — |
-| O-37 | Boot probe does not distinguish *not fitted*, *failed* and *unpowered* | Gateway fault handling |
+| O-37 | Boot probe does not distinguish *not fitted*, *failed* and *unpowered*. A bus fault is a fourth case: at the 2026-08-24 bring-up (§11.2) a latched I²C flag made every device read as present while no transfer completed, and the node published nothing but heartbeat with health NOMINAL | Gateway fault handling, node health reporting |
 | O-38 | T1 fixed as a requirement in §8. Residue: no enclosure design realizes the shading, α and h are unfixed (from O-32), and V2 is not executed | Enclosure design, V2 |
 | O-39 | Neither ADR-0003 d7 nor the profile instance states a VPD uncertainty limit; §6.1 gives ±1.3…±2.9 % in band, ±6.7 % on humid excursion | Profile validity, U1 part grade |
 | O-40 | ADR-0003 d7 does not state air VPD or leaf VPD | Profile interpretation |
@@ -582,14 +609,16 @@ O-52 to O-62 are M02's.
 
 ## 13. Maturity
 
-**Schematic captured, not frozen.** No `verify` value remains. V6 and V8 hold the rung.
+**Schematic captured, not frozen — and fabricated ahead of the rung.** No `verify` value
+remains. `E0002` exists, runs and publishes (§11.2), but V6 and V8 were not executed before
+fabrication and still hold the rung; O-35 and every V item of §11 remain open.
 
 | Rung | Content | Reached when |
 |------|---------|--------------|
 | **Pre-schematic** | Complement and requirements fixed; values estimated or `verify` | — |
 | **Schematic captured** ← here | Parts fixed to ordering part numbers; schematic exists; component values determined | `store/E0002-000001.kicad_sch` exists; O-3, O-34, O-41 closed |
 | **Schematic-frozen** | Remaining `verify` resolved, footprints checked against physical parts. `L` releases here | O-32, O-50 closed ✔; O-33 closed ✔; O-38 fixed as a requirement ✔; **V6 not executed**; **V8 not executed** |
-| **As-built** | Estimates replaced by measured values; verification §11 executed | `E0002` fabricated and bench-verified; O-35 measured |
+| **As-built** | Estimates replaced by measured values; verification §11 executed | `E0002` fabricated ✔; bench bring-up executed ✔ (§11.2); **O-35 not measured**; **no V item of §11 executed** |
 
 `M05-SAFETY-specification.md` is the as-built form of this document class. The transition is an
 edit of this file; no second E-number is issued for the module having been built.
