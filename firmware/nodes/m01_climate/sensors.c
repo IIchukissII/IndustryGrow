@@ -44,6 +44,23 @@
 #define SUBJ_U3_TEMPERATURE  4120u /* U3 secondary -- offset uncalibrated, O-45 */
 #define SUBJ_U3_HUMIDITY     4121u /* U3 secondary -- offset uncalibrated, O-45 */
 
+/* U2's hotplate is PARKED. The gas signal is published as an uncalibrated
+ * resistance whose interpretation -- humidity compensation, per-device baseline,
+ * drift correction -- is a gateway-side soft sensor that does not exist yet
+ * (spec 6.4, ADR-0016 d5). Until it does, running the 320 C hotplate 150 ms in
+ * every second next to U1 spends a thermal disturbance against the board's
+ * primary T/RH reference (T2, ≤ 0.1 K, unverified -- V1) to produce a number no
+ * consumer can read.
+ *
+ * Parking costs nothing else: U2's load-bearing role is the barometer that
+ * compensates U3 (spec 6.3), and pressure and the secondary T/RH come from the
+ * same forced conversion with the gas step simply disabled.
+ *
+ * Set to 1 to re-enable; subject 4117 is published only then. */
+#ifndef M01_GAS_SCAN
+#define M01_GAS_SCAN 0
+#endif
+
 #define PUBLISH_PERIOD_US 1000000u
 #define REPROBE_PERIOD_US 60000000u /* ADR-0014 d8 */
 
@@ -67,19 +84,22 @@
 
 static bool s_u1, s_u2, s_u3;
 
-static uint8_t tid_t1, tid_h1, tid_vpd, tid_co2, tid_baro, tid_gas;
+static uint8_t tid_t1, tid_h1, tid_vpd, tid_co2, tid_baro;
+#if M01_GAS_SCAN
+static uint8_t tid_gas;
+#endif
 static uint8_t tid_t2, tid_h2, tid_t3, tid_h3;
 
 static uint64_t s_last_pub, s_last_probe;
 
-/* U2's conversion is ~190 ms of heater dwell and oversampling. It is triggered
- * on the publish tick and collected on a later pass of the loop rather than
- * waited out in place: the Cyphal TX queue has to keep flushing, and the
- * watchdog window is not generous enough to spend a fifth of every second
- * inside one driver call. Each subject carries its own timestamp, so U2's
- * samples simply land later in the second than U1's. */
-static bool s_gas_pending;
-static uint64_t s_gas_due;
+/* U2's conversion is ~190 ms of heater dwell and oversampling with the hotplate
+ * lit, ~20 ms without it. It is triggered on the publish tick and collected on a
+ * later pass of the loop rather than waited out in place: the Cyphal TX queue
+ * has to keep flushing, and the watchdog window is not generous enough to spend
+ * a fifth of every second inside one driver call. Each subject carries its own
+ * timestamp, so U2's samples simply land later in the second than U1's. */
+static bool s_u2_pending;
+static uint64_t s_u2_due;
 
 static float s_ambient_c = DEFAULT_AMBIENT_C;
 static uint16_t s_pressure_hpa = FALLBACK_PRESSURE_HPA;
@@ -136,6 +156,7 @@ static void pub_co2(float mole_fraction)
     }
 }
 
+#if M01_GAS_SCAN
 static void pub_gas(float ohm, bool valid)
 {
     industryflow_greenhouse_climate_GasResistance_1_0 m = {0};
@@ -149,6 +170,7 @@ static void pub_gas(float ohm, bool valid)
         cyphal_publish(SUBJ_GAS_RESISTANCE, &tid_gas, b, sz);
     }
 }
+#endif
 
 /* --- Derived quantity --------------------------------------------------- */
 
@@ -192,7 +214,7 @@ static void probe(bool boot)
     s_u3 = u3;
 
     if (!s_u2) {
-        s_gas_pending = false; /* nothing will arrive; do not wait for it */
+        s_u2_pending = false; /* nothing will arrive; do not wait for it */
     }
 }
 
@@ -256,19 +278,19 @@ static void compensate_co2_pressure(float pascal)
     }
 }
 
-static void start_gas_cycle(void)
+static void start_u2_cycle(void)
 {
-    if (!s_u2 || s_gas_pending) {
+    if (!s_u2 || s_u2_pending) {
         return;
     }
-    if (bme68x_trigger(s_ambient_c) < 0) {
+    if (bme68x_trigger(s_ambient_c, M01_GAS_SCAN) < 0) {
         return;
     }
-    s_gas_pending = true;
-    s_gas_due = now_ts() + ((uint64_t)bme68x_meas_duration_ms() * 1000u);
+    s_u2_pending = true;
+    s_u2_due = now_ts() + ((uint64_t)bme68x_meas_duration_ms(M01_GAS_SCAN) * 1000u);
 }
 
-static void finish_gas_cycle(void)
+static void finish_u2_cycle(void)
 {
     bme68x_data_t d = {0};
     if (bme68x_read(&d) < 0) {
@@ -277,7 +299,9 @@ static void finish_gas_cycle(void)
     pub_pressure(SUBJ_BAROMETRIC, &tid_baro, d.pressure_pa);
     pub_temperature(SUBJ_U2_TEMPERATURE, &tid_t2, d.celsius + 273.15f);
     pub_humidity(SUBJ_U2_HUMIDITY, &tid_h2, d.rh_ratio);
+#if M01_GAS_SCAN
     pub_gas(d.gas_ohm, d.gas_valid);
+#endif
 
     /* The barometer's real job (spec 6.3): U3's compensation register. */
     compensate_co2_pressure(d.pressure_pa);
@@ -328,8 +352,12 @@ static void log_population(void)
 
     uart_puts("  U2 BME68x 0x76: ");
     if (s_u2) {
-        uart_puts(bme68x_is_bme688() ? "present, variant BME688\r\n"
-                                     : "present, variant BME680 (alternative)\r\n");
+        uart_puts(bme68x_is_bme688() ? "present, variant BME688"
+                                     : "present, variant BME680 (alternative)");
+        /* Which of U2's two roles is running. Parked is the default: spec 6.4,
+         * and the hotplate sits next to U1 (T2, V1). */
+        uart_puts(M01_GAS_SCAN ? ", gas scan ON\r\n"
+                               : ", gas scan PARKED (hotplate off, 4117 not published)\r\n");
     } else {
         uart_puts("absent -> CO2 pressure falls back to 1013 hPa (O-48)\r\n");
     }
@@ -395,12 +423,12 @@ void m01_sensors_spin(void)
         s_last_pub += PUBLISH_PERIOD_US;
         publish_primary();
         service_co2();
-        start_gas_cycle();
+        start_u2_cycle();
     }
 
-    if (s_gas_pending && (now >= s_gas_due)) {
-        s_gas_pending = false;
-        finish_gas_cycle();
+    if (s_u2_pending && (now >= s_u2_due)) {
+        s_u2_pending = false;
+        finish_u2_cycle();
     }
 
     if ((now - s_last_probe) >= REPROBE_PERIOD_US) {

@@ -99,8 +99,9 @@ handles both, the BOM does not.
 
 ## 5. Functional run against bench stimuli
 
-Ten published subjects. Expected operating ranges are in `spec/M01-CLIMATE-specification.md` §3;
-a reading is a pass when it falls in the expected range for the stimulus applied.
+Ten subjects are defined; **nine are published** while the gas scan is parked, which is the
+default build (spec §6.4). Expected operating ranges are in `spec/M01-CLIMATE-specification.md`
+§3; a reading is a pass when it falls in the expected range for the stimulus applied.
 
 | # | Subject | ID | Stimulus | Pass criterion | Result |
 |---|---|---|---|---|---|
@@ -109,7 +110,7 @@ a reading is a pass when it falls in the expected range for the stimulus applied
 | 16 | VPD | 4114 | Derived on-node from U1 alone | Consistent with 4112 and 4113 per spec §6.1 | |
 | 17 | CO₂ | 4115 | Ambient bench air, then exhaled breath at the sensor | Ambient in range; breath drives it up and it recovers | |
 | 18 | Barometric pressure | 4116 | Ambient | Within 10 hPa of the local station reading | |
-| 19 | Gas resistance | 4117 | Ambient, heater profile 320 °C | Non-zero, `valid` set | |
+| 19 | Gas resistance | 4117 | — | **Absent.** The scan is parked by default (spec §6.4); the boot line reads `gas scan PARKED`. Only present, and only then checked for a non-zero resistance with `valid` set, in a build with `M01_GAS_SCAN` = 1 | |
 | 20 | Air temperature, U2 | 4118 | Ambient bench air | Within the §8 self-heating budget of 4112 | |
 | 21 | Air humidity, U2 | 4119 | Ambient bench air | Consistent with 4113 | |
 | 22 | Air temperature, U3 | 4120 | Ambient bench air | Within the §8 self-heating budget of 4112, offset uncalibrated | |
