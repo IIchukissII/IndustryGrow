@@ -291,7 +291,7 @@ residue is O-48.
 |-------------|-------|
 | Output | Gas resistance, uncalibrated. Published as a trend, not a concentration |
 | Software | Sensor API only. BSEC is a closed-source binary under a separate licence agreement and is incompatible with the AGPL-3.0-or-later reference firmware (ADR-0002 d5) |
-| Consequence | Humidity compensation, baseline tracking and long-term drift correction of the gas signal are BSEC functions and are not available. They are the node's problem or nobody's |
+| Consequence | Humidity compensation, baseline tracking and long-term drift correction of the gas signal are BSEC functions and are not available on the node. They are derived gateway-side as a soft sensor under ADR-0016 d5, as DLI is; the node publishes raw resistance and its setpoint, and holds neither a baseline across a reset nor a wall clock to age one against |
 | Excluded outputs | IAQ, CO₂-equivalent, bVOC-equivalent and gas-scan classification are BSEC outputs and are not published. CO₂ is measured by U3, not estimated from VOC |
 | Thresholds | Relative to a tracked per-device baseline. Absolute thresholds shall not be used |
 | Confounding | Responds to temperature and humidity; a VOC excursion concurrent with a T or RH excursion is not independent evidence |
