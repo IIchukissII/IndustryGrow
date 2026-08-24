@@ -19,9 +19,18 @@
 void leak_init(void);
 
 /* One gated-excitation sample: drive the electrode, settle, read ADC, stop. */
-uint16_t leak_sample_raw(void);
+/* One gated, settled ADC sample, and the wet/dry decision taken from it.
+ *
+ * Returns false when the conversion does not complete, in which case neither
+ * output is meaningful: the data register holds whatever the last conversion
+ * left there, and comparing that against a threshold would invent a leak state.
+ * That failure is what LeakStatus.valid reports. Either pointer may be NULL.
+ *
+ * One call, one excitation pulse: asking for the state and the raw count
+ * separately would double the duty the gating exists to keep down. */
+bool leak_sample(bool *wet, uint16_t *raw);
 
 /* Convenience: true if the latest sample crosses the wet threshold. */
-bool leak_is_wet(void);
+
 
 #endif /* IGROW_M05_LEAK_H */

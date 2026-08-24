@@ -104,6 +104,13 @@ static void report_health(void)
     }
 }
 
+static uint32_t leak_raw_sample(void)
+{
+    uint16_t raw = 0u;
+    (void)leak_sample(NULL, &raw);
+    return (uint32_t)raw;
+}
+
 static uint8_t m05_command(uint16_t command)
 {
     switch (command) {
@@ -113,7 +120,7 @@ static uint8_t m05_command(uint16_t command)
         return uavcan_node_ExecuteCommand_Response_1_0_STATUS_SUCCESS;
     case CMD_LEAK_RAW:
         cyphal_diagnostic_u32(uavcan_diagnostic_Severity_1_0_NOTICE,
-                              "M05 leak raw ADC =", (uint32_t)leak_sample_raw());
+                              "M05 leak raw ADC =", leak_raw_sample());
         return uavcan_node_ExecuteCommand_Response_1_0_STATUS_SUCCESS;
     default:
         return uavcan_node_ExecuteCommand_Response_1_0_STATUS_BAD_COMMAND;
@@ -243,14 +250,19 @@ static void pub_leak(void)
 {
     industryflow_greenhouse_safety_LeakStatus_1_0 m = {0};
     m.timestamp.microsecond = cyphal_timestamp_usec();
-    m.wet = leak_is_wet();
+    bool wet = false;
+    const bool leak_ok = leak_sample(&wet, NULL);
+    m.wet = wet;
     if (s_states_seeded && (m.wet != s_last_leak_wet)) {
         cyphal_diagnostic(m.wet ? uavcan_diagnostic_Severity_1_0_WARNING
                                 : uavcan_diagnostic_Severity_1_0_NOTICE,
                           m.wet ? "M05 leak WET" : "M05 leak dry");
     }
     s_last_leak_wet = m.wet;
-    m.valid = true; /* TODO: false until gated excitation is actually driven */
+    /* The excitation is gated and driven (leak.c); what `valid` reports is
+     * whether the conversion completed. A timed-out ADC leaves a stale value in
+     * the register, and calling that dry would be inventing a state. */
+    m.valid = leak_ok;
     uint8_t b[industryflow_greenhouse_safety_LeakStatus_1_0_SERIALIZATION_BUFFER_SIZE_BYTES_];
     size_t sz = sizeof(b);
     if (industryflow_greenhouse_safety_LeakStatus_1_0_serialize_(&m, b, &sz) >= 0) {
