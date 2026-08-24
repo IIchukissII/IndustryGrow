@@ -13,11 +13,16 @@
 # baseline, and the baseline moves with hotplate ageing (spec 6.4). CO2 is
 # measured by the SCD41 on its own subject, never estimated from this one.
 #
-# Scalar, one hotplate setpoint per cycle. The BME688 can sequence a 10-step
-# profile in parallel mode and yield a vector (spec O-49), but the approved
-# BME680 alternative of spec 4.2 has no parallel mode, and a vector would put
-# the variant_id gate of spec 10 on the critical path of every population. A
-# vector reading is a minor version bump on this type if it is ever wanted.
+# Scalar, one hotplate setpoint per cycle.
+#
+# SUPERSEDED by 2.0, which carries the sweep. Two expectations recorded here did
+# not survive: a vector needed a MAJOR bump, because an extent must be shared
+# across a major version and 32 bytes does not hold one; and it needed no
+# parallel mode, because consecutive forced-mode shots at successive setpoints
+# produce the same R(T) on the spec 4.2 alternative as on the BME688, so
+# variant_id never reached the critical path (spec O-49).
+#
+# Retained: a released type is not withdrawn. Nothing publishes it.
 uavcan.time.SynchronizedTimestamp.1.0 timestamp
 float32 ohm              # heater-plate resistance at the setpoint below
 uint16 heater_celsius    # hotplate target this cycle, for trend comparability

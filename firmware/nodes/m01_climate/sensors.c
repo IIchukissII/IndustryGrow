@@ -22,7 +22,7 @@
 #include "uavcan/si/sample/pressure/Scalar_1_0.h"
 #include "industryflow/greenhouse/climate/RelativeHumidity_1_0.h"
 #include "industryflow/greenhouse/climate/Co2Concentration_1_0.h"
-#include "industryflow/greenhouse/climate/GasResistance_1_0.h"
+#include "industryflow/greenhouse/climate/GasResistance_2_0.h"
 
 /* Default subject-IDs, unregulated range. ADR-0005 d7 wants these register-
  * configurable (uavcan.pub.<name>.id) with these as defaults; baked for now,
@@ -65,6 +65,20 @@
 #endif
 #define GAS_PERIOD_US (M01_GAS_PERIOD_S * 1000000u)
 
+#if M01_GAS_SCAN
+/* The sweep. One resistance at one temperature is a scalar whose absolute value
+ * means nothing and whose baseline moves; R(T) across setpoints is a shape, and
+ * analytes separate by WHERE in temperature they respond. That discrimination is
+ * the whole reason the part is on the board (spec 6.4).
+ *
+ * Four points, 150 ms each, is 600 ms of hotplate per scan -- 6 % duty at the
+ * 10 s interval, against 15 % when a single point ran on every 1 s tick. Ten is
+ * the device maximum and would put the duty back where it started, next to U1
+ * (T2, V1). Ascending order is the wire contract of GasResistance.2.0. */
+static const uint16_t GAS_SETPOINTS[] = {200u, 250u, 320u, 400u};
+#define GAS_STEPS ((uint8_t)(sizeof(GAS_SETPOINTS) / sizeof(GAS_SETPOINTS[0])))
+#endif
+
 #define PUBLISH_PERIOD_US 1000000u
 #define REPROBE_PERIOD_US 60000000u /* ADR-0014 d8 */
 
@@ -105,11 +119,17 @@ static uint64_t s_last_pub, s_last_probe;
 static bool s_u2_pending;
 static uint64_t s_u2_due;
 
-/* Whether the conversion now in flight lit the hotplate, and when one last did.
- * The gas result is only meaningful -- and 4117 only published -- for a cycle
- * that ran the heater. */
-static bool s_u2_gas;
+/* The setpoint of the conversion now in flight (0 = no hotplate), and when a
+ * sweep last started. A sweep runs its steps back to back rather than one per
+ * publish tick, so the whole R(T) shape belongs to one moment of air. */
+static uint16_t s_u2_setpoint;
 static uint64_t s_last_gas;
+#if M01_GAS_SCAN
+static bool s_sweep_active;
+static uint8_t s_sweep_step;
+static bool s_sweep_valid;
+static float s_sweep_ohm[GAS_STEPS];
+#endif
 
 static float s_ambient_c = DEFAULT_AMBIENT_C;
 static uint16_t s_pressure_hpa = FALLBACK_PRESSURE_HPA;
@@ -167,16 +187,23 @@ static void pub_co2(float mole_fraction)
 }
 
 #if M01_GAS_SCAN
-static void pub_gas(float ohm, bool valid)
+/* The completed sweep, setpoints and resistances index-for-index. `valid` is the
+ * AND over the steps: a partial shape is not comparable against a whole one, so
+ * a single unstable step invalidates the reading rather than half of it. */
+static void pub_gas_sweep(void)
 {
-    industryflow_greenhouse_climate_GasResistance_1_0 m = {0};
+    industryflow_greenhouse_climate_GasResistance_2_0 m = {0};
     m.timestamp.microsecond = now_ts();
-    m.ohm = ohm;
-    m.heater_celsius = BME68X_HEATER_CELSIUS;
-    m.valid = valid;
-    uint8_t b[industryflow_greenhouse_climate_GasResistance_1_0_SERIALIZATION_BUFFER_SIZE_BYTES_];
+    m.heater_celsius.count = GAS_STEPS;
+    m.ohm.count = GAS_STEPS;
+    for (uint8_t i = 0; i < GAS_STEPS; i++) {
+        m.heater_celsius.elements[i] = GAS_SETPOINTS[i];
+        m.ohm.elements[i] = s_sweep_ohm[i];
+    }
+    m.valid = s_sweep_valid;
+    uint8_t b[industryflow_greenhouse_climate_GasResistance_2_0_SERIALIZATION_BUFFER_SIZE_BYTES_];
     size_t sz = sizeof(b);
-    if (industryflow_greenhouse_climate_GasResistance_1_0_serialize_(&m, b, &sz) >= 0) {
+    if (industryflow_greenhouse_climate_GasResistance_2_0_serialize_(&m, b, &sz) >= 0) {
         cyphal_publish(SUBJ_GAS_RESISTANCE, &tid_gas, b, sz);
     }
 }
@@ -294,35 +321,71 @@ static void start_u2_cycle(void)
         return;
     }
     const uint64_t now = now_ts();
-    const bool gas = (M01_GAS_SCAN != 0) && ((now - s_last_gas) >= GAS_PERIOD_US);
-    if (bme68x_trigger(s_ambient_c, gas) < 0) {
-        return;
-    }
-    if (gas) {
+    uint16_t setpoint = 0u;
+#if M01_GAS_SCAN
+    /* A sweep already in flight continues; otherwise the interval arms one. */
+    if (!s_sweep_active && ((now - s_last_gas) >= GAS_PERIOD_US)) {
+        s_sweep_active = true;
+        s_sweep_step = 0u;
+        s_sweep_valid = true;
         s_last_gas = now;
     }
-    s_u2_gas = gas;
+    if (s_sweep_active) {
+        setpoint = GAS_SETPOINTS[s_sweep_step];
+    }
+#endif
+    if (bme68x_trigger(s_ambient_c, setpoint) < 0) {
+#if M01_GAS_SCAN
+        s_sweep_active = false; /* an incomplete shape is not published */
+#endif
+        return;
+    }
+    s_u2_setpoint = setpoint;
     s_u2_pending = true;
-    s_u2_due = now + ((uint64_t)bme68x_meas_duration_ms(gas) * 1000u);
+    s_u2_due = now + ((uint64_t)bme68x_meas_duration_ms(setpoint) * 1000u);
 }
 
 static void finish_u2_cycle(void)
 {
     bme68x_data_t d = {0};
     if (bme68x_read(&d) < 0) {
+#if M01_GAS_SCAN
+        s_sweep_active = false;
+#endif
         return;
     }
-    pub_pressure(SUBJ_BAROMETRIC, &tid_baro, d.pressure_pa);
-    pub_temperature(SUBJ_U2_TEMPERATURE, &tid_t2, d.celsius + 273.15f);
-    pub_humidity(SUBJ_U2_HUMIDITY, &tid_h2, d.rh_ratio);
+
+    /* Every conversion yields pressure and the secondary T/RH, but a sweep's
+     * later steps land inside the same second as its first: publishing each of
+     * them would put the same air on the wire four times. Only the step that
+     * opens a sweep speaks for it. */
 #if M01_GAS_SCAN
-    if (s_u2_gas) {
-        pub_gas(d.gas_ohm, d.gas_valid);
+    const bool sweep_head = s_sweep_active && (s_sweep_step == 0u);
+#else
+    const bool sweep_head = false;
+#endif
+    if ((s_u2_setpoint == 0u) || sweep_head) {
+        pub_pressure(SUBJ_BAROMETRIC, &tid_baro, d.pressure_pa);
+        pub_temperature(SUBJ_U2_TEMPERATURE, &tid_t2, d.celsius + 273.15f);
+        pub_humidity(SUBJ_U2_HUMIDITY, &tid_h2, d.rh_ratio);
+
+        /* The barometer's real job (spec 6.3): U3's compensation register. */
+        compensate_co2_pressure(d.pressure_pa);
+    }
+
+#if M01_GAS_SCAN
+    if (s_sweep_active) {
+        s_sweep_ohm[s_sweep_step] = d.gas_ohm;
+        if (!d.gas_valid) {
+            s_sweep_valid = false;
+        }
+        s_sweep_step++;
+        if (s_sweep_step >= GAS_STEPS) {
+            s_sweep_active = false;
+            pub_gas_sweep();
+        }
     }
 #endif
-
-    /* The barometer's real job (spec 6.3): U3's compensation register. */
-    compensate_co2_pressure(d.pressure_pa);
 }
 
 /* --- Boot --------------------------------------------------------------- */
@@ -375,7 +438,9 @@ static void log_population(void)
         /* Which of U2's two roles is running, and at what thermal cost to U1
          * (spec 6.4; T2, V1). */
 #if M01_GAS_SCAN
-        uart_puts(", gas scan every ");
+        uart_puts(", gas sweep ");
+        uart_put_u32(GAS_STEPS);
+        uart_puts(" setpoints every ");
         uart_put_u32(M01_GAS_PERIOD_S);
         uart_puts(" s\r\n");
 #else
@@ -452,6 +517,14 @@ void m01_sensors_spin(void)
     if (s_u2_pending && (now >= s_u2_due)) {
         s_u2_pending = false;
         finish_u2_cycle();
+#if M01_GAS_SCAN
+        /* The remaining steps of a sweep do not wait for the next publish tick:
+         * four points spread over four seconds would not describe one moment of
+         * air. Back to back the whole shape takes ~760 ms. */
+        if (s_sweep_active) {
+            start_u2_cycle();
+        }
+#endif
     }
 
     if ((now - s_last_probe) >= REPROBE_PERIOD_US) {

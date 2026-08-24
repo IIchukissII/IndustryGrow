@@ -23,6 +23,12 @@ endif()
 
 set(DSDL_STAMP "${DSDL_GEN_DIR}/.stamp")
 
+# The stamp has to depend on the DSDL sources themselves, or adding a type
+# regenerates nothing and the build fails on a missing header while the .dsdl
+# sits right there. Configure-time glob: a new namespace file needs a re-run of
+# cmake, an edited one does not.
+file(GLOB_RECURSE PROJECT_DSDL_SOURCES CONFIGURE_DEPENDS "${PROJECT_DSDL}/*.dsdl")
+
 # Standard uavcan namespace (Heartbeat, GetInfo, register, si/sample, ...).
 # The project industryflow.greenhouse namespace (ADR-0005) is generated too once
 # its types are used. The project industryflow.greenhouse namespace (ADR-0005:
@@ -40,6 +46,7 @@ add_custom_command(
           --lookup-dir "${PUBLIC_TYPES}/uavcan"
           "${PROJECT_DSDL}/industryflow"
   COMMAND "${CMAKE_COMMAND}" -E touch "${DSDL_STAMP}"
+  DEPENDS ${PROJECT_DSDL_SOURCES}
   COMMENT "Nunavut: generating C bindings from DSDL (uavcan + industryflow)"
   VERBATIM
 )
