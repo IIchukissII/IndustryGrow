@@ -188,6 +188,8 @@ Implemented in `firmware/nodes/m05_safety/`.
 | Boot probe, publication, re-probe interval | ADR-0014 d8 |
 | Leak excitation | Shares PA9 with the carrier debug console (pin map note 2) |
 | Leak excitation state | Gated, pin resting low (pin map note 3) |
+| Leak validity | `LeakStatus.valid` reports whether the ADC conversion completed. A timed-out conversion leaves a stale value in the data register; the channel reports invalid rather than calling it dry |
+| Door failure direction | A cut or unplugged reed lead floats the input high, reported as *door open*. The channel fails toward the alert, never into silence |
 | Constants | From `store/E0006-000001-D-pinmap.md`, not from part defaults |
 | Commanded operations | Vendor `uavcan.node.ExecuteCommand` IDs. 1 = zero the energy accumulator; 2 = report the raw leak ADC sample as a diagnostic, which is what calibrating `LEAK_WET_THRESHOLD` needs. Neither is automatic |
 | Diagnostics | `uavcan.diagnostic.Record` (8184), event-driven: population at boot, health transitions, door and leak state changes, command results. Never periodic |
@@ -221,6 +223,8 @@ Seven subjects, not one record: a channel's absence has to be expressible on its
 | V2 | T2 | U1 against a reference thermometer in the bay | Not executed. O-28 |
 | V3 | T1 | U1 reading against stepped bus current, looking for correlation with R1 dissipation | Not defined. O-27 |
 | V4 | §6.3 | Reported current against an external meter at the cabinet input | Not executed. O-25 |
+| V5 | §3 door channel | Reed actuated by hand in both directions; subject state and the transition record observed on the bus | **Executed 2026-08-24** |
+| V6 | §3 leak channel | Electrode wetted with water and dried; subject state and the transition record observed on the bus. Threshold margin is a separate question — O-74 | **Executed 2026-08-24** |
 
 ## 11. Open items
 
@@ -235,6 +239,7 @@ O-6, O-8, O-10, O-11, O-42 are M06's; O-12 to O-24 are M07's; O-52 to O-62 are M
 | O-28 | U1 offset against true bay air unquantified; no reference thermometer at bring-up (T2) | Commissioning method |
 | O-29 | F1 is an 0805 SMD fuse; a blown input fuse is a rework job, not a field swap | Serviceability, next `E0006` revision |
 | ~~O-30~~ | ~~Per-device power figures for U1 and U2 unconfirmed against datasheets~~ — closed 2026-08-24 by §6.1 from the device datasheets: 330 µA and 16 µA typ | — |
+| O-74 | `LEAK_WET_THRESHOLD` is provisional at 2048 of a 12-bit range. Dry is characterized — 40 samples over two sessions read 4068…4095 — but no wet count has been recorded, so the margin between the two states is unknown and the threshold is a guess between them | Leak-channel accuracy, threshold release |
 | O-31 | One distribution board meters ≈ 39 nodes and conducts ≈ 48 against ADR-0014 d1's "50+ instances"; whether ADR-0018 d2's "one central board per machine" means per cabinet or per deployment is unstated | Scaling, ADR-0018 d2 reading |
 
 Recorded elsewhere and not duplicated: the `STRAP_0`/`STRAP_1` schematic naming defect, carried

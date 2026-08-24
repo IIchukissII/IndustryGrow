@@ -4,6 +4,8 @@
  */
 
 #include "leak.h"
+
+#include <stddef.h>
 #include "e0001.h"
 #include "clock.h"
 
@@ -56,7 +58,7 @@ void leak_init(void)
     ADC1->CR2 |= ADC_CR2_ADON;
 }
 
-uint16_t leak_sample_raw(void)
+bool leak_sample(bool *wet, uint16_t *raw)
 {
     leak_excite(true);
     delay_ms(LEAK_SETTLE_MS);
@@ -66,13 +68,17 @@ uint16_t leak_sample_raw(void)
     uint32_t g = 100000u;
     while (!(ADC1->SR & ADC_SR_EOC) && --g) {
     }
-    uint16_t raw = (uint16_t)ADC1->DR;
+    const bool ok = (g != 0u);
+    const uint16_t v = (uint16_t)ADC1->DR;
 
     leak_excite(false);
-    return raw;
+    if (raw != NULL) {
+        *raw = v;
+    }
+    if (wet != NULL) {
+        *wet = ok && (v < LEAK_WET_THRESHOLD);
+    }
+    return ok;
 }
 
-bool leak_is_wet(void)
-{
-    return leak_sample_raw() < LEAK_WET_THRESHOLD;
-}
+
