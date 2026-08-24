@@ -45,10 +45,65 @@ void i2c_init(void)
     I2C1->CR1 = I2C_CR1_PE;
 }
 
+/* Flags a failed transaction leaves behind, and why none of them may survive
+ * into the next one. AF outlives a NACK: send() gives up waiting for a BTF that
+ * will never arrive and its caller only issues a STOP, so the flag is still set
+ * when start() runs again -- where it reads as a NACK of an address that has
+ * not been sent yet. The abort that follows requests a STOP while the real
+ * address phase is still on the wire, and the ACK arriving a moment later
+ * latches ADDR with nobody left to clear it. From there every start() sees ADDR
+ * already set and reports an address phase that never happened, i2c_probe()
+ * included -- so a bus in that state answers "present" for every device on it
+ * while not one transfer can complete.
+ *
+ * Bench 2026-08-24, M01 on E0002: one SCD41 command NACKed at boot left the
+ * node publishing heartbeat only, all three sensors still reported present, for
+ * as long as it was left running. Clearing ADDR by hand from a debugger started
+ * all ten subjects inside five seconds. */
+static void clear_stale_flags(void)
+{
+    if (I2C1->SR1 & I2C_SR1_AF) {
+        I2C1->SR1 &= ~I2C_SR1_AF;
+    }
+    if (I2C1->SR1 & I2C_SR1_ADDR) {
+        (void)I2C1->SR2; /* SR1 was just read: RM0090's ADDR-clear sequence */
+    }
+}
+
+/* Close a failed transfer so the next one starts on a quiet bus. The wait is
+ * the part that matters: an aborted address phase sets ADDR AFTER its STOP is
+ * requested, so clearing before the bus falls idle clears a flag that has not
+ * arrived yet. A bus that never falls idle is not a flag problem -- SWRST is
+ * the documented escape (RM0090 27.6.1) and i2c_init() re-applies the pin and
+ * timing configuration the reset drops. */
+static void abort_transfer(void)
+{
+    I2C1->CR1 |= I2C_CR1_STOP;
+    uint32_t g = I2C_TMO;
+    while ((I2C1->SR2 & I2C_SR2_BUSY) && --g) {
+    }
+    clear_stale_flags();
+    if (g == 0u) {
+        i2c_init();
+    }
+}
+
 static int start(uint8_t addr7, bool read)
 {
+    clear_stale_flags();
+
+    /* BUSY with MSL clear is a segment this peripheral does not hold: a lost
+     * arbitration, or a device still clocking out a byte from a transfer that
+     * was abandoned under it. Neither is reachable through the status
+     * registers. A repeated START arrives here with MSL set and is left alone. */
+    const uint32_t sr2 = I2C1->SR2;
+    if ((sr2 & I2C_SR2_BUSY) && !(sr2 & I2C_SR2_MSL)) {
+        i2c_init();
+    }
+
     I2C1->CR1 |= I2C_CR1_START;
     if (wait_set(&I2C1->SR1, I2C_SR1_SB) < 0) {
+        abort_transfer();
         return -1;
     }
     I2C1->DR = (uint8_t)((addr7 << 1) | (read ? 1u : 0u));
@@ -56,8 +111,7 @@ static int start(uint8_t addr7, bool read)
     while (!(I2C1->SR1 & (I2C_SR1_ADDR | I2C_SR1_AF)) && --g) {
     }
     if ((g == 0u) || (I2C1->SR1 & I2C_SR1_AF)) {
-        I2C1->SR1 &= ~I2C_SR1_AF;
-        I2C1->CR1 |= I2C_CR1_STOP;
+        abort_transfer(); /* clears AF, and the ADDR the abort itself can latch */
         return -2; /* no ACK */
     }
     return 0;
@@ -78,8 +132,23 @@ bool i2c_probe(uint8_t addr7)
     return true;
 }
 
+/* Like wait_set() on SR1, but gives up the moment the device NACKs. A byte that
+ * was not acknowledged is never followed by the flag being waited for, so the
+ * plain form spends a full timeout -- and then another on the BTF that closes
+ * the transfer -- to reach an answer the AF already gave. That is the wait a
+ * rejected command runs into, and it is charged to the watchdog window. */
+static int wait_sr1_or_nack(uint32_t mask)
+{
+    uint32_t g = I2C_TMO;
+    while (!(I2C1->SR1 & (mask | I2C_SR1_AF)) && --g) {
+    }
+    return ((g == 0u) || (I2C1->SR1 & I2C_SR1_AF)) ? -1 : 0;
+}
+
 /* Address + payload, leaving the bus WITHOUT a STOP so the caller can either
- * close it or turn it round with a repeated START. */
+ * close it or turn it round with a repeated START. A failure leaves the bus
+ * held too -- the caller owns the abort, because only the caller knows whether
+ * a repeated START was going to follow. */
 static int send(uint8_t addr7, const uint8_t *buf, size_t len)
 {
     if (start(addr7, false) < 0) {
@@ -87,12 +156,12 @@ static int send(uint8_t addr7, const uint8_t *buf, size_t len)
     }
     (void)I2C1->SR2; /* clear ADDR */
     for (size_t i = 0; i < len; i++) {
-        if (wait_set(&I2C1->SR1, I2C_SR1_TXE) < 0) {
+        if (wait_sr1_or_nack(I2C_SR1_TXE) < 0) {
             return -2;
         }
         I2C1->DR = buf[i];
     }
-    if (wait_set(&I2C1->SR1, I2C_SR1_BTF) < 0) {
+    if (wait_sr1_or_nack(I2C_SR1_BTF) < 0) {
         return -3;
     }
     return 0;
@@ -120,6 +189,7 @@ static int recv(uint8_t addr7, uint8_t *buf, size_t len)
         I2C1->CR1 |= I2C_CR1_STOP;
         __enable_irq();
         if (wait_set(&I2C1->SR1, I2C_SR1_RXNE) < 0) {
+            abort_transfer();
             return -5;
         }
         buf[0] = (uint8_t)I2C1->DR;
@@ -139,7 +209,7 @@ static int recv(uint8_t addr7, uint8_t *buf, size_t len)
         I2C1->CR1 &= ~I2C_CR1_ACK;
         __enable_irq();
         if (wait_set(&I2C1->SR1, I2C_SR1_BTF) < 0) {
-            stop();
+            abort_transfer();
             I2C1->CR1 &= ~I2C_CR1_POS;
             return -5;
         }
@@ -163,7 +233,7 @@ static int recv(uint8_t addr7, uint8_t *buf, size_t len)
     size_t i = 0;
     while ((len - i) > 3u) {
         if (wait_set(&I2C1->SR1, I2C_SR1_RXNE) < 0) {
-            stop();
+            abort_transfer();
             return -5;
         }
         buf[i++] = (uint8_t)I2C1->DR;
@@ -171,13 +241,13 @@ static int recv(uint8_t addr7, uint8_t *buf, size_t len)
     /* BTF here means N-2 is in DR and N-1 in the shift register, with SCL held
      * low — so the NACK for N lands in time. */
     if (wait_set(&I2C1->SR1, I2C_SR1_BTF) < 0) {
-        stop();
+        abort_transfer();
         return -6;
     }
     I2C1->CR1 &= ~I2C_CR1_ACK;
     buf[i++] = (uint8_t)I2C1->DR; /* data N-2 */
     if (wait_set(&I2C1->SR1, I2C_SR1_BTF) < 0) {
-        stop();
+        abort_transfer();
         return -7;
     }
     __disable_irq();
@@ -194,8 +264,12 @@ int i2c_write(uint8_t addr7, const uint8_t *buf, size_t len)
         return -1;
     }
     int rc = send(addr7, buf, len);
+    if (rc < 0) {
+        abort_transfer();
+        return rc;
+    }
     stop();
-    return rc;
+    return 0;
 }
 
 int i2c_read(uint8_t addr7, uint8_t *buf, size_t len)
@@ -211,7 +285,7 @@ int i2c_write_read(uint8_t addr7, const uint8_t *wbuf, size_t wlen,
     }
     int rc = send(addr7, wbuf, wlen);
     if (rc < 0) {
-        stop();
+        abort_transfer();
         return rc;
     }
     return recv(addr7, rbuf, rlen); /* repeated START, no STOP in between */
@@ -225,14 +299,14 @@ int i2c_write_reg16(uint8_t addr7, uint8_t reg, uint16_t value)
     (void)I2C1->SR2; /* clear ADDR */
     const uint8_t bytes[3] = {reg, (uint8_t)(value >> 8), (uint8_t)value};
     for (int i = 0; i < 3; i++) {
-        if (wait_set(&I2C1->SR1, I2C_SR1_TXE) < 0) {
-            stop();
+        if (wait_sr1_or_nack(I2C_SR1_TXE) < 0) {
+            abort_transfer();
             return -2;
         }
         I2C1->DR = bytes[i];
     }
-    if (wait_set(&I2C1->SR1, I2C_SR1_BTF) < 0) {
-        stop();
+    if (wait_sr1_or_nack(I2C_SR1_BTF) < 0) {
+        abort_transfer();
         return -3;
     }
     stop();
@@ -246,19 +320,20 @@ int i2c_read_reg16(uint8_t addr7, uint8_t reg, uint16_t *out)
         return -1;
     }
     (void)I2C1->SR2;
-    if (wait_set(&I2C1->SR1, I2C_SR1_TXE) < 0) {
-        stop();
+    if (wait_sr1_or_nack(I2C_SR1_TXE) < 0) {
+        abort_transfer();
         return -2;
     }
     I2C1->DR = reg;
-    if (wait_set(&I2C1->SR1, I2C_SR1_BTF) < 0) {
-        stop();
+    if (wait_sr1_or_nack(I2C_SR1_BTF) < 0) {
+        abort_transfer();
         return -3;
     }
 
     /* Phase 2: repeated start, read 2 bytes (RM0090 N=2 POS method). */
     I2C1->CR1 |= I2C_CR1_ACK | I2C_CR1_POS;
     if (start(addr7, true) < 0) {
+        I2C1->CR1 &= ~I2C_CR1_POS; /* POS left set NACKs the wrong byte of the next read */
         return -4;
     }
     __disable_irq();
@@ -266,7 +341,8 @@ int i2c_read_reg16(uint8_t addr7, uint8_t reg, uint16_t *out)
     I2C1->CR1 &= ~I2C_CR1_ACK;
     __enable_irq();
     if (wait_set(&I2C1->SR1, I2C_SR1_BTF) < 0) {
-        stop();
+        abort_transfer();
+        I2C1->CR1 &= ~I2C_CR1_POS;
         return -5;
     }
     __disable_irq();

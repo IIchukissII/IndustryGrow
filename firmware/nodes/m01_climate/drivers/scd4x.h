@@ -28,7 +28,7 @@
  *  - Writing the temperature offset. Spec O-45: the offset belongs to this
  *    board at thermal equilibrium and has not been measured (V7). Writing the
  *    4 C default back would be a value pretending to be a calibration.
- *    scd4x_get_temperature_offset() reads it so the log records what is
+ *    The offset is read during configuration so the log records what is
  *    actually in the device.
  *
  * Until V7 runs, this part's T and RH carry an uncalibrated offset. They are
@@ -39,8 +39,9 @@
 #define SCD4X_ADDR 0x62u
 
 /* Bring the device to M01's operating configuration and leave it measuring:
- * stop periodic mode, disable automatic self-calibration if it is on, seed the
- * ambient pressure, restart periodic mode.
+ * stop periodic mode, read the identity and offset the accessors below report,
+ * disable automatic self-calibration if it is on, seed the ambient pressure,
+ * restart periodic mode.
  *
  * ASC is disabled because it needs weekly exposure to ~400 ppm, which a closed
  * cabinet in photoperiod need not ever reach (spec 6.3). Disabling it makes FRC
@@ -50,7 +51,7 @@
  * `allow_persist` is set, never unconditionally: the EEPROM is rated for 2000
  * cycles and a boot loop that persisted every time would spend that budget in a
  * day (spec 10). On a device already configured this call writes no EEPROM at
- * all, and `*out_persisted` says which happened.
+ * all; scd4x_asc_status() says which happened.
  *
  * `allow_persist` is the caller's statement about its timing budget, not about
  * its intent. The call blocks ~510 ms for the mandatory stop, and 800 ms more
@@ -59,7 +60,17 @@
  * re-probe still gets ASC cleared in RAM for that run -- and if it was
  * configured at boot the setting is already in its EEPROM, so the branch does
  * not arise in the first place. */
-int scd4x_configure(uint16_t ambient_hpa, bool allow_persist, bool *out_persisted);
+int scd4x_configure(uint16_t ambient_hpa, bool allow_persist);
+
+/* What the last configuration found and did about ASC: `found_on` is the state
+ * read out of the device before anything was written, `persisted` whether an
+ * EEPROM cycle was spent turning it off. Returns <0 until a configuration has
+ * got as far as reading it.
+ *
+ * Worth logging on every boot, not once: `found_on` true on a device this
+ * firmware has already configured means the persist is not sticking, and that
+ * is a 2000-cycle budget draining one boot at a time. */
+int scd4x_asc_status(bool *found_on, bool *persisted);
 
 /* True once a new 5 s sample is available. Cheap; poll it. */
 int scd4x_data_ready(bool *ready);
@@ -74,6 +85,11 @@ int scd4x_read_measurement(float *co2_mole_fraction, float *celsius, float *rh_r
  * no EEPROM cycle. */
 int scd4x_set_ambient_pressure_hpa(uint16_t hpa);
 
+/* Identity and offset as scd4x_configure() found them, with no bus traffic of
+ * their own: both are read there, while the device is stopped, because a
+ * measuring SCD41 rejects both commands. They return <0 until a configure has
+ * succeeded far enough to read them, and again if the device disappears and is
+ * re-configured without answering. */
 int scd4x_get_temperature_offset(float *celsius);
 int scd4x_serial(uint64_t *out);
 
