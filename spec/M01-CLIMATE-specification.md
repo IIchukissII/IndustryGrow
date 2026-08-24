@@ -563,7 +563,7 @@ M05 node also on the bus.
 | U3 SCD41 at `0x62` | Present; serial read CRC-valid |
 | U3 temperature offset | 4.000 °C, the device default. Not this board's value — O-45, V7 |
 | U3 automatic self-calibration | Found already disabled; no EEPROM cycle spent this boot (§6.3) |
-| Published subjects | All ten of §10.1; 1 Hz for U1 and U2, one sample per 5 s interval for U3 |
+| Published subjects | All ten of §10.1. Rates confirmed by frame count: 1 Hz for U1, U2 and pressure; 0.2 Hz for U3; 0.1 Hz for the 4117 sweep |
 | Gateway | Node identified as M01-CLIMATE; subjects 4112–4121 decoded |
 | U1, bench air | 23.18 °C, 45.6 %RH, VPD 1.545 kPa |
 | U2, bench air | 23.95 °C, 44.6 %RH, 1021.6 hPa, gas 161 kΩ at the 320 °C heater profile |
@@ -571,12 +571,24 @@ M05 node also on the bus.
 | U1 against M05's U1 in the same air | 0.12 K apart |
 | Node draw on `+12 V` | Not measured. O-35, V3 |
 
-No requirement of §6 is verified by this run: the readings are a population and publication
-check against plausible ambient values. U1 and U3 accuracy remain the subjects of V4 and V7.
+The figures above are the first run, on the as-received firmware. The protocol was re-executed
+end to end after the corrections below, and §6.1's VPD transfer function was checked against the
+published T and RH: recomputed 1637.3 Pa against 1637.8 Pa on the wire, 0.03 %. That is the one
+requirement of §6 this bring-up verifies. U1 and U3 accuracy remain the subjects of V4 and V7,
+and no V item of §11 is discharged.
 
-One firmware defect was found and corrected at this bring-up: a latched I²C `AF` made every
-later address phase report a result it had not obtained, so the node published heartbeat only
-while all three devices were reported present. Recorded against O-37.
+Secondary-sensor offsets from U1 move with the gas configuration and are recorded against it:
++0.77 K (U2) and +1.07 K (U3) at the original 1 Hz single setpoint, +0.03 K and +0.29 K with the
+hotplate parked, +1.42 K and −1.13 K with the shipped four-point sweep. Neither has an
+acceptance limit — §8 budgets bias at U1, and §4 makes both secondary. Whether any of it
+displaces U1 is V1, unexecuted.
+
+Firmware defects found and corrected at this bring-up: a latched I²C `AF` made every later
+address phase report a result it had not obtained, so the node published heartbeat only while
+all three devices were reported present and health stayed NOMINAL (recorded against O-37); the
+SCD41 identity read that triggered it ran while the device was measuring; and the gas channel
+was sampled at 15 % hotplate duty for a signal no consumer could read. PRs #185, #189, #190,
+#191.
 
 ## 12. Open items
 
