@@ -182,7 +182,7 @@ static void probe(bool boot)
         }
     }
     if (u3 && !s_u3) {
-        if (scd4x_configure(s_pressure_hpa, boot, NULL) < 0) {
+        if (scd4x_configure(s_pressure_hpa, boot) < 0) {
             u3 = false;
         }
     }
@@ -352,6 +352,21 @@ static void log_population(void)
             uart_puts(", T offset ");
             put_milli((int32_t)(offset * 1000.0f));
             uart_puts(" C (uncalibrated, O-45)");
+        }
+        /* ASC is disabled on this module by design (spec 6.3), which makes FRC
+         * mandatory -- and FRC has no entry point yet (spec 6.3.1, O-5), so
+         * "off" is the whole of U3's calibration state today. Printed every
+         * boot because "was on" on a board this firmware has already configured
+         * is the one symptom of a persist that is not sticking. */
+        bool asc_on = false, asc_persisted = false;
+        if (scd4x_asc_status(&asc_on, &asc_persisted) == 0) {
+            if (!asc_on) {
+                uart_puts(", ASC already off (no EEPROM write)");
+            } else if (asc_persisted) {
+                uart_puts(", ASC was ON -> off, persisted (one EEPROM cycle)");
+            } else {
+                uart_puts(", ASC was ON -> off in RAM only, NOT persisted");
+            }
         }
         uart_puts("\r\n");
     } else {

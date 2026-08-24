@@ -51,7 +51,7 @@
  * `allow_persist` is set, never unconditionally: the EEPROM is rated for 2000
  * cycles and a boot loop that persisted every time would spend that budget in a
  * day (spec 10). On a device already configured this call writes no EEPROM at
- * all, and `*out_persisted` says which happened.
+ * all; scd4x_asc_status() says which happened.
  *
  * `allow_persist` is the caller's statement about its timing budget, not about
  * its intent. The call blocks ~510 ms for the mandatory stop, and 800 ms more
@@ -60,7 +60,17 @@
  * re-probe still gets ASC cleared in RAM for that run -- and if it was
  * configured at boot the setting is already in its EEPROM, so the branch does
  * not arise in the first place. */
-int scd4x_configure(uint16_t ambient_hpa, bool allow_persist, bool *out_persisted);
+int scd4x_configure(uint16_t ambient_hpa, bool allow_persist);
+
+/* What the last configuration found and did about ASC: `found_on` is the state
+ * read out of the device before anything was written, `persisted` whether an
+ * EEPROM cycle was spent turning it off. Returns <0 until a configuration has
+ * got as far as reading it.
+ *
+ * Worth logging on every boot, not once: `found_on` true on a device this
+ * firmware has already configured means the persist is not sticking, and that
+ * is a 2000-cycle budget draining one boot at a time. */
+int scd4x_asc_status(bool *found_on, bool *persisted);
 
 /* True once a new 5 s sample is available. Cheap; poll it. */
 int scd4x_data_ready(bool *ready);

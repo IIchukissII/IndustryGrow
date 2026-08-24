@@ -75,15 +75,22 @@ static float s_temp_offset_c;
 static bool s_serial_valid;
 static bool s_offset_valid;
 
-int scd4x_configure(uint16_t ambient_hpa, bool allow_persist, bool *out_persisted)
+/* What the ASC branch below actually did. A configuration that disables ASC and
+ * persists it spends one of the EEPROM's 2000 cycles, and a persist that does
+ * not stick spends one on every boot for the rest of the board's life -- so
+ * which of the two happened is not a detail the log can leave out. */
+static bool s_asc_valid;
+static bool s_asc_found_on;
+static bool s_asc_persisted;
+
+int scd4x_configure(uint16_t ambient_hpa, bool allow_persist)
 {
-    if (out_persisted) {
-        *out_persisted = false;
-    }
     /* A device that has just re-appeared on a probe need not be the one that
      * answered last time. Nothing carries over until it has answered again. */
     s_serial_valid = false;
     s_offset_valid = false;
+    s_asc_valid = false;
+    s_asc_persisted = false;
 
     /* Almost every configuration command is rejected while periodic
      * measurement runs, and the device may already be measuring after a warm
@@ -120,6 +127,8 @@ int scd4x_configure(uint16_t ambient_hpa, bool allow_persist, bool *out_persiste
     if (read_words(CMD_GET_ASC, MS_SHORT, &asc, 1u) < 0) {
         return -2;
     }
+    s_asc_found_on = (asc != 0u);
+    s_asc_valid = true;
     if (asc != 0u) {
         if (send_command_arg(CMD_SET_ASC, 0u) < 0) {
             return -3;
@@ -130,9 +139,7 @@ int scd4x_configure(uint16_t ambient_hpa, bool allow_persist, bool *out_persiste
                 return -4;
             }
             delay_ms(MS_PERSIST);
-            if (out_persisted) {
-                *out_persisted = true;
-            }
+            s_asc_persisted = true;
         }
     }
 
@@ -214,6 +221,20 @@ int scd4x_serial(uint64_t *out)
     }
     if (out) {
         *out = s_serial;
+    }
+    return 0;
+}
+
+int scd4x_asc_status(bool *found_on, bool *persisted)
+{
+    if (!s_asc_valid) {
+        return -1;
+    }
+    if (found_on) {
+        *found_on = s_asc_found_on;
+    }
+    if (persisted) {
+        *persisted = s_asc_persisted;
     }
     return 0;
 }
