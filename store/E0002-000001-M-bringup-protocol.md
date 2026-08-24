@@ -111,9 +111,9 @@ a reading is a pass when it falls in the expected range for the stimulus applied
 | 17 | CO₂ | 4115 | Ambient bench air, then exhaled breath at the sensor | Ambient in range; breath drives it up and it recovers | |
 | 18 | Barometric pressure | 4116 | Ambient | Within 10 hPa of the local station reading | |
 | 19 | Gas resistance sweep | 4117 | Ambient; the four setpoints of spec §6.4 | Setpoints return exactly as configured, resistances non-zero and **falling monotonically as the setpoint rises**, `valid` set. Arrives at the scan interval the boot line reports (10 s), not at the 1 s tick — allow a full interval before calling it absent. A build with `M01_GAS_SCAN` = 0 withholds it entirely and says `gas scan PARKED` | |
-| 20 | Air temperature, U2 | 4118 | Ambient bench air | Within the §8 self-heating budget of 4112 | |
+| 20 | Air temperature, U2 | 4118 | Ambient bench air | **Record the offset from 4112; there is no acceptance limit.** §8 budgets bias at U1 (T2, ≤ 0.1 K), not U2's own reading, and §4 makes U2's T/RH secondary and unbudgeted. The offset is a property of the gas-scan configuration in use — it was +0.03 K with the hotplate parked and +1.42 K with the four-point sweep — so it is recorded against that configuration or it means nothing | |
 | 21 | Air humidity, U2 | 4119 | Ambient bench air | Consistent with 4113 | |
-| 22 | Air temperature, U3 | 4120 | Ambient bench air | Within the §8 self-heating budget of 4112, offset uncalibrated | |
+| 22 | Air temperature, U3 | 4120 | Ambient bench air | **Record the offset from 4112; there is no acceptance limit** — same reason as step 20, and U3 additionally carries the uncalibrated device offset of §10 until V7 runs (O-45) | |
 | 23 | Air humidity, U3 | 4121 | Ambient bench air | Consistent with 4113, offset uncalibrated | |
 
 Publication rates: 1 Hz for U1 and U2; U3 publishes one sample per 5 s interval, which is the
