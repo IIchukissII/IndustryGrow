@@ -44,22 +44,26 @@
 #define SUBJ_U3_TEMPERATURE  4120u /* U3 secondary -- offset uncalibrated, O-45 */
 #define SUBJ_U3_HUMIDITY     4121u /* U3 secondary -- offset uncalibrated, O-45 */
 
-/* U2's hotplate is PARKED. The gas signal is published as an uncalibrated
- * resistance whose interpretation -- humidity compensation, per-device baseline,
- * drift correction -- is a gateway-side soft sensor that does not exist yet
- * (spec 6.4, ADR-0016 d5). Until it does, running the 320 C hotplate 150 ms in
- * every second next to U1 spends a thermal disturbance against the board's
- * primary T/RH reference (T2, ≤ 0.1 K, unverified -- V1) to produce a number no
- * consumer can read.
+/* U2's gas channel runs, but not on the publish tick. The hotplate reaches 320 C
+ * for 150 ms per scan, and at 1 Hz that is a 15 % duty cycle of a heater sitting
+ * next to U1 -- the board's primary T/RH reference, whose stability is T2
+ * (≤ 0.1 K, unverified: V1). Nothing needs that rate: a VOC baseline moves over
+ * hours, and Bosch's own BSEC samples gas at 3 s in its low-power mode and 300 s
+ * in ultra-low-power. At 10 s the duty is 1.5 %, a tenth of the thermal
+ * disturbance, and no trend information is lost.
  *
- * Parking costs nothing else: U2's load-bearing role is the barometer that
- * compensates U3 (spec 6.3), and pressure and the secondary T/RH come from the
- * same forced conversion with the gas step simply disabled.
+ * Pressure and the secondary T/RH are NOT on this period. They come from a
+ * conversion every publish tick with the gas step disabled -- U2's load-bearing
+ * role is the barometer that compensates U3 (spec 6.3), and that wants 1 Hz.
  *
- * Set to 1 to re-enable; subject 4117 is published only then. */
+ * M01_GAS_SCAN = 0 parks the hotplate entirely and withholds subject 4117. */
 #ifndef M01_GAS_SCAN
-#define M01_GAS_SCAN 0
+#define M01_GAS_SCAN 1
 #endif
+#ifndef M01_GAS_PERIOD_S
+#define M01_GAS_PERIOD_S 10u
+#endif
+#define GAS_PERIOD_US (M01_GAS_PERIOD_S * 1000000u)
 
 #define PUBLISH_PERIOD_US 1000000u
 #define REPROBE_PERIOD_US 60000000u /* ADR-0014 d8 */
@@ -100,6 +104,12 @@ static uint64_t s_last_pub, s_last_probe;
  * timestamp, so U2's samples simply land later in the second than U1's. */
 static bool s_u2_pending;
 static uint64_t s_u2_due;
+
+/* Whether the conversion now in flight lit the hotplate, and when one last did.
+ * The gas result is only meaningful -- and 4117 only published -- for a cycle
+ * that ran the heater. */
+static bool s_u2_gas;
+static uint64_t s_last_gas;
 
 static float s_ambient_c = DEFAULT_AMBIENT_C;
 static uint16_t s_pressure_hpa = FALLBACK_PRESSURE_HPA;
@@ -283,11 +293,17 @@ static void start_u2_cycle(void)
     if (!s_u2 || s_u2_pending) {
         return;
     }
-    if (bme68x_trigger(s_ambient_c, M01_GAS_SCAN) < 0) {
+    const uint64_t now = now_ts();
+    const bool gas = (M01_GAS_SCAN != 0) && ((now - s_last_gas) >= GAS_PERIOD_US);
+    if (bme68x_trigger(s_ambient_c, gas) < 0) {
         return;
     }
+    if (gas) {
+        s_last_gas = now;
+    }
+    s_u2_gas = gas;
     s_u2_pending = true;
-    s_u2_due = now_ts() + ((uint64_t)bme68x_meas_duration_ms(M01_GAS_SCAN) * 1000u);
+    s_u2_due = now + ((uint64_t)bme68x_meas_duration_ms(gas) * 1000u);
 }
 
 static void finish_u2_cycle(void)
@@ -300,7 +316,9 @@ static void finish_u2_cycle(void)
     pub_temperature(SUBJ_U2_TEMPERATURE, &tid_t2, d.celsius + 273.15f);
     pub_humidity(SUBJ_U2_HUMIDITY, &tid_h2, d.rh_ratio);
 #if M01_GAS_SCAN
-    pub_gas(d.gas_ohm, d.gas_valid);
+    if (s_u2_gas) {
+        pub_gas(d.gas_ohm, d.gas_valid);
+    }
 #endif
 
     /* The barometer's real job (spec 6.3): U3's compensation register. */
@@ -354,10 +372,15 @@ static void log_population(void)
     if (s_u2) {
         uart_puts(bme68x_is_bme688() ? "present, variant BME688"
                                      : "present, variant BME680 (alternative)");
-        /* Which of U2's two roles is running. Parked is the default: spec 6.4,
-         * and the hotplate sits next to U1 (T2, V1). */
-        uart_puts(M01_GAS_SCAN ? ", gas scan ON\r\n"
-                               : ", gas scan PARKED (hotplate off, 4117 not published)\r\n");
+        /* Which of U2's two roles is running, and at what thermal cost to U1
+         * (spec 6.4; T2, V1). */
+#if M01_GAS_SCAN
+        uart_puts(", gas scan every ");
+        uart_put_u32(M01_GAS_PERIOD_S);
+        uart_puts(" s\r\n");
+#else
+        uart_puts(", gas scan PARKED (hotplate off, 4117 not published)\r\n");
+#endif
     } else {
         uart_puts("absent -> CO2 pressure falls back to 1013 hPa (O-48)\r\n");
     }

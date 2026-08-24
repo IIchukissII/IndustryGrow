@@ -290,11 +290,13 @@ residue is O-48.
 | Requirement | Value |
 |-------------|-------|
 | Output | Gas resistance, uncalibrated. Published as a trend, not a concentration |
-| Default state | **Parked.** The hotplate is not commanded and 4117 is not published until the gateway derivation above exists; U2 runs as the barometer of §6.3 alone. Firmware switch `M01_GAS_SCAN`, default 0, reported on the boot line |
+| Scan interval | **10 s**, not the 1 s publish tick. The hotplate holds 320 °C for 150 ms per scan; at 1 Hz that is a 15 % duty cycle beside U1, whose stability is T2. At 10 s it is 1.5 %. A VOC baseline moves over hours, and BSEC itself samples gas at 3 s (low power) and 300 s (ultra-low power), so the rate costs no trend information. `M01_GAS_PERIOD_S`, reported on the boot line |
+| Parking | `M01_GAS_SCAN` = 0 stops the hotplate entirely and withholds 4117, leaving U2 as the barometer of §6.3 alone. Pressure and the secondary T/RH are unaffected either way — they come from a conversion on every publish tick with the gas step disabled |
 | Software | Sensor API only. BSEC is a closed-source binary under a separate licence agreement and is incompatible with the AGPL-3.0-or-later reference firmware (ADR-0002 d5) |
 | Consequence | Humidity compensation, baseline tracking and long-term drift correction of the gas signal are BSEC functions and are not available on the node. They are derived gateway-side as a soft sensor under ADR-0016 d5, as DLI is; the node publishes raw resistance and its setpoint, and holds neither a baseline across a reset nor a wall clock to age one against |
 | Excluded outputs | IAQ, CO₂-equivalent, bVOC-equivalent and gas-scan classification are BSEC outputs and are not published. CO₂ is measured by U3, not estimated from VOC |
 | Thresholds | Relative to a tracked per-device baseline. Absolute thresholds shall not be used |
+| Baseline validity | A baseline is tied to the scan interval as well as the setpoint: the hotplate cools fully between scans at 10 s and did not at 1 s, and the same air read 161 kΩ at the 1 s rate against 18 kΩ at 10 s (bench 2026-08-24). Changing `M01_GAS_PERIOD_S` invalidates every baseline collected at the previous rate |
 | Confounding | Responds to temperature and humidity; a VOC excursion concurrent with a T or RH excursion is not independent evidence |
 | Drift | Hotplate ageing; baseline is per-device and moves |
 | Heater profile | U2's parallel mode sequences up to 10 hotplate temperature steps in hardware, yielding a vector of resistances per cycle rather than a scalar. Whether the node publishes the vector or a reduction of it is undefined. O-49 |
@@ -483,7 +485,7 @@ end to end or M4 is narrowed. Unresolved. O-46.
 | CO₂ self-calibration | ASC disabled; FRC per §6.3.1. FRC is not implemented: §6.3.1 bars it until five days after assembly and requires a reference concentration, so it is a commanded bench operation and awaits the command surface |
 | U3 temperature offset | Shall be determined for this board under its operating conditions in thermal equilibrium and written to the device. The default is 4 °C and is not this board's value. U3's published T and RH are invalid until it is set. O-45. Firmware reads the offset at boot and logs it; it does not write one, because writing the default back would be a value pretending to be a calibration |
 | U3 settings persistence | `persist_settings` writes EEPROM rated for at least 2000 cycles. It shall be issued only when configuration actually changed, never unconditionally at boot |
-| VOC | Trend against a tracked per-device baseline; raw gas resistance via the sensor API (§6.4). **Scalar, forced mode**, one hotplate setpoint of 320 °C for 150 ms per cycle, published with the setpoint — closes O-49. Parallel mode is not commanded; the §4.2 alternative does not implement it. **Parked by default** (`M01_GAS_SCAN` = 0, §6.4): the hotplate is not programmed, the gas step is disabled in `ctrl_gas_1`, and 4117 is absent. U2's conversion still runs each cycle for pressure and its secondary T/RH, at ~20 ms instead of ~190 ms |
+| VOC | Trend against a tracked per-device baseline; raw gas resistance via the sensor API (§6.4). **Scalar, forced mode**, one hotplate setpoint of 320 °C for 150 ms per cycle, published with the setpoint — closes O-49. Parallel mode is not commanded; the §4.2 alternative does not implement it. Scanned every **10 s**, not every publish tick (§6.4). On the other ticks the conversion runs with no heater profile and the gas step cleared in `ctrl_gas_1`, taking ~20 ms instead of ~190 ms and yielding pressure and the secondary T/RH only; 4117 is published at the scan rate. `M01_GAS_SCAN` = 0 parks the hotplate and withholds 4117 |
 | SHT45 heater | Disabled by default. When enabled for condensate recovery, its pulse shall not overlap a U3 measurement window. Lowest sufficient power level preferred; the rail tolerates the highest |
 | Rail failure | Failure of U4 or U5 removes U2 or U3 from the bus. The boot probe handles this as absence; *not fitted*, *failed* and *unpowered* remain indistinguishable. O-37 |
 | Role and zone | Not held by the node; assigned by the gateway (ADR-0014 d7) |
@@ -504,7 +506,7 @@ M05 holds 4096–4102.
 | 4114 | Air VPD | derived, §6.1 | `uavcan.si.sample.pressure.Scalar` (Pa) |
 | 4115 | CO₂ | U3 | `industryflow.greenhouse.climate.Co2Concentration` (mole fraction) |
 | 4116 | Barometric pressure | U2 | `uavcan.si.sample.pressure.Scalar` (Pa) |
-| 4117 | Gas resistance | U2 | `industryflow.greenhouse.climate.GasResistance` (Ω). Not published while the scan is parked (§6.4) |
+| 4117 | Gas resistance | U2 | `industryflow.greenhouse.climate.GasResistance` (Ω). Published at the scan interval of §6.4, not at the 1 s tick; absent entirely while parked |
 | 4118 | Secondary temperature | U2 | `uavcan.si.sample.temperature.Scalar` (K) |
 | 4119 | Secondary humidity | U2 | `industryflow.greenhouse.climate.RelativeHumidity` (ratio) |
 | 4120 | Secondary temperature | U3 | `uavcan.si.sample.temperature.Scalar` (K) |
