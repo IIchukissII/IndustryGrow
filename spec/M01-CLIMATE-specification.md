@@ -296,6 +296,8 @@ residue is O-48.
 | Software | Sensor API only. BSEC is a closed-source binary under a separate licence agreement and is incompatible with the AGPL-3.0-or-later reference firmware (ADR-0002 d5) |
 | Consequence | Humidity compensation, baseline tracking and long-term drift correction of the gas signal are BSEC functions and are not available on the node. They are derived gateway-side as a soft sensor under ADR-0016 d5, as DLI is; the node publishes raw resistance and its setpoint, and holds neither a baseline across a reset nor a wall clock to age one against |
 | Excluded outputs | IAQ, CO₂-equivalent, bVOC-equivalent and gas-scan classification are BSEC outputs and are not published. CO₂ is measured by U3, not estimated from VOC |
+| Measured response | Exhaled breath at the sensor, 2026-08-24: as the stimulus cleared, resistance rose **+187 % at 200 °C, +128 % at 250 °C, +65 % at 320 °C, +38 % at 400 °C**, and R(200 °C)/R(400 °C) moved 2.20 → 4.56. Light reducing species respond most on a cool plate; a single 320 °C point sees roughly a third of what 200 °C sees, which is what the low setpoints are for |
+| CO₂ estimation, measured | During that same stimulus CO₂ rose 52 % while the 200 °C resistance rose 58 % — the reducing-gas load fell while CO₂ climbed. Correlation over the whole transient is r = −0.79 but inverts on the leading edge, so a fit calibrated against U3 passes on the decay and fails on the rise. The exclusion above is measured on this board, not assumed |
 | Thresholds | Relative to a tracked per-device baseline. Absolute thresholds shall not be used |
 | Baseline validity | A baseline is tied to the scan interval as well as the setpoint: the hotplate cools fully between scans at 10 s and did not at 1 s, and the same air read 161 kΩ at the 1 s rate against 18 kΩ at 10 s (bench 2026-08-24). Changing `M01_GAS_PERIOD_S` invalidates every baseline collected at the previous rate |
 | Confounding | Responds to temperature and humidity; a VOC excursion concurrent with a T or RH excursion is not independent evidence |
@@ -402,6 +404,7 @@ limit rather than against the rail. O-44.
 | Voltage rating | **≥ 25 V** |
 | Case | **0805 minimum** |
 | Acceptance | **≥ 2.0 µF and ≤ 4.7 µF effective** at 2.8 V DC bias over −10…+60 °C, from the vendor DC-bias curve for the ordering part. V8 |
+| Recorded in the design | Only `4.7uF`, `0805` and the distributor code `C1779`. Dielectric, voltage rating and manufacturer part are **not** captured, so the three requirements above cannot be checked against what was fitted. O-73 |
 | Local decoupling | 100 nF at U3's supply pins, in addition and not as a substitute |
 
 The value is taken from the regulator's characterization rather than computed from a droop
@@ -535,7 +538,7 @@ the gateway's concern.
 | V5 | §6.3 | CO₂ against M07's reference instance in the same air (O-7), no earlier than five days after assembly and at the 2.8 V rail | Blocked: no M07 instance exists. O-7 |
 | V6 | §4.1 footprints | 1:1 paper printout against the physical part, all three devices, including U1's unsoldered die pad and U3's full pad count | Not executed. Parts now in hand |
 | V7 | §10, §8.1 | U3 temperature offset determined and written; U3 T/RH against a reference in the same air before and after. Determined in the finished board at thermal equilibrium in the operating mode used in the application, per the device datasheet. This is also the only source of U3's self-heating contribution (§8.1) | Not executed. Device holds the 4.000 °C factory default (§11.2). O-45 |
-| V8 | §7.5 | C8's effective capacitance at 2.8 V DC bias read from the vendor's DC-bias curve for the specific ordering part, against the 2.0–4.7 µF acceptance band. Executed at BOM release, before the `L` document is issued | Not executed |
+| V8 | §7.5 | C8's effective capacitance at 2.8 V DC bias read from the vendor's DC-bias curve for the specific ordering part, against the 2.0–4.7 µF acceptance band. Executed at BOM release, before the `L` document is issued | **Not executable as written, 2026-08-24.** The design data identifies no ordering part: `E0002-000001-L.csv` carries `4.7uF / 0805 / C1779` and the schematic carries no manufacturer, dielectric or voltage rating for C8. There is no curve to read. O-73 |
 
 ### 11.1 Assembly constraints
 
@@ -614,6 +617,7 @@ O-52 to O-62 are M02's.
 | ~~O-41~~ | ~~SCD41's specified range starts at 400 ppm~~ — closed 2026-08-05 by §6.3: depletion is reported outside the specified accuracy band, no part change required | — |
 | ~~O-42~~ | ~~Pull-up ownership~~ — **renumbered to O-51** on 2026-08-13. `O-42` was already M06's (module-ID bit 1 unrouted, `M06-VENTILATION-specification.md`, 2026-08-04) and this file duplicated it on 2026-08-06. The number stays M06's; the item moves | — |
 | O-51 | Pull-up ownership and value are not in the header contract (ADR-0014 d5). The rule exists in three boards and no document | Next module designed against the contract |
+| O-73 | Passive attributes that §7.5 makes acceptance criteria — dielectric, voltage rating, manufacturer part — are not recorded in the design data for C8; the BOM carries a distributor code alone. The same gap applies to every passive whose specification is more than a value and a case | V8, `L` release, and any BOM re-sourcing |
 | O-43 | Module-local rails are outside ADR-0002 d3 and the header contract. One instance is not a pattern; revisit at the second | ADR-0014 / ADR-0002 revision |
 | O-44 | Carrier runs in pulse-skipping at node load; rail ripple against U3's 30 mV limit has never been measured, and no instrument is available. Design is dimensioned against the datasheet, not the rail | Confidence in §7.4, not the design |
 | O-45 | U3 temperature offset uncalibrated; U3's T and RH are invalid until V7 is executed | U3 T/RH validity |
