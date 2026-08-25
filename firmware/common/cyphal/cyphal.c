@@ -110,11 +110,12 @@ static void mem_free(CanardInstance *ins, void *pointer)
  * response and the health it is reported through. */
 static bool s_identity_anchored;
 
-/* 16-byte Cyphal unique_id. Per ADR-0007 the carrier's ATECC608 is the node's
- * hardware-identity anchor, so its 9-byte serial is the preferred source (left-
- * justified, zero-padded). When the secure element is absent (bare WeAct / no
- * carrier) fall back to the STM32F405 96-bit factory UID. atecc608_init() must
- * have run first. */
+/* 16-byte Cyphal unique_id, per ADR-0027 d8. The carrier's ATECC608 is the node's
+ * hardware-identity anchor (ADR-0007 d5), so its 9-byte serial is the preferred
+ * source, left-justified and zero-padded. When the secure element does not answer
+ * (bare WeAct / no carrier) this falls back to the STM32F405 96-bit factory UID --
+ * which binds to no provisioning record, so the node also reports its identity as
+ * unanchored and its health as ADVISORY. atecc608_init() must have run first. */
 static void read_unique_id(uint8_t out[16])
 {
     memset(out, 0, 16);

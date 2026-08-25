@@ -3,7 +3,7 @@ SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
-# ADR-0027: Node-ID provisioning and persistence
+# ADR-0027: Node identity model
 
 - **ID:** ADR-0027
 - **Status:** Accepted
@@ -13,6 +13,10 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Companions:** ADR-0005, ADR-0007 (rev 1), ADR-0014 (rev 6), ADR-0017 (rev 2)
 - **Realizes:** ADR-0005 decision 6's *"persistent register value set at provisioning"*, which names no medium and no procedure
 
+## Revision history
+
+- **Amendments** — decisions 8 and 9 (2026-08-25): the Cyphal `unique_id` source, which had no decision behind it, and the map of the five identifiers a node carries. The title widens with them, from *Node-ID provisioning and persistence*; decisions 1–7 are unchanged.
+
 ## Context and problem
 
 ADR-0005 decision 6 fixes the rule: a node holds its Node-ID as a persistent register value set at provisioning, and the gateway's `(module_class, node_role, zone)` mapping keys off it. It names neither where the value is stored nor how it gets there. Nothing else does either, so the firmware supplies neither — `firmware/nodes/registry.c` carries `node_id = 96` for M05 and `97` for M01 as compile-time constants selected by the module-class strap, and `uavcan.node.id` is declared `persistent = false` and read before any write can reach it.
@@ -21,7 +25,9 @@ ADR-0005 decision 6 fixes the rule: a node holds its Node-ID as a persistent reg
 
 That condition is already scheduled to fail, and the ADR that fails it says so: ADR-0006 records that two hydroponic loops mean two M03 instances — *"the first case where that count exceeds one. Both instances carry module-ID `0b011` and are distinguished by deployment identity, not by class."* That distinguishing mechanism is the subject of this ADR, and today there is none: deployment identity has no carrier, so both instances would present the same Node-ID. ADR-0014's own context sets the same pattern — *"design for instance multiplication (across zones), reject redundancy multiplication (within a zone)"* — with several classes at one per zone. Two nodes of one class would claim one Node-ID, which Cyphal forbids: the transport has no tie-break, so the result is corrupted transfers on a shared identifier rather than one node losing. That breaks the bus rather than degrading it, and it affects every subject on it, not only the colliding pair.
 
-A medium must therefore be chosen. Three exist on or near the carrier. They differ in lifecycle, not in capacity — any of them can hold one byte.
+A medium must therefore be chosen. Three exist on or near the carrier, and a fourth store arrives with the next carrier revision. They differ in lifecycle, not in capacity — any of them can hold one byte.
+
+That choice cannot be made in isolation, because the Node-ID is not the only identifier a node carries. Five exist, three of them governed elsewhere, one of them governed nowhere. Deciding the Node-ID's store without stating what the other stores are for is how the class ID came to be used as a Node-ID in the first place. Decision 9 is therefore the map; it is not a copy of the records it names.
 
 ## Decision drivers
 
@@ -47,11 +53,33 @@ A medium must therefore be chosen. Three exist on or near the carrier. They diff
 
 7. **The gateway does not allocate Node-IDs.** Cyphal plug-and-play stays deferred where ADR-0005 decision 6 left it. Provisioning is an operator action recorded against the instance (ADR-0017), so a cabinet's identifier map stays something a human decided and can audit.
 
+8. **The Cyphal `unique_id` is the ATECC608 serial, left-justified and zero-padded; a node whose secure element does not answer falls back to the STM32 96-bit factory UID and reports its identity as unanchored** *(added 2026-08-25)*. This was firmware behaviour with no decision behind it — `read_unique_id()` cited ADR-0007 for a fallback ADR-0007 does not describe.
+
+    The two sources are not equivalent and the decision is not to treat them as such. The ATECC serial is the logistics-to-cryptographic binding of ADR-0017 decision 8 and ADR-0007 decision 5, and it resolves to a `-PR` record. The MCU UID identifies one replaceable part inside the node, binds to no record, and survives no board swap. The fallback exists so that a bare core board without a carrier still enumerates — a node visible on the gateway can be diagnosed, one that is silent cannot — and a node running on it reports ADVISORY health, which is how the difference reaches an operator rather than being inferred from a byte pattern.
+
+9. **A node carries five identifiers; none substitutes for another, and each has exactly one store** *(added 2026-08-25)*.
+
+    | Identifier | Answers | Store | Lifecycle | Decided by |
+    |---|---|---|---|---|
+    | Module class ID | what kind of module this is | 3-bit strap, then serial EEPROM | fixed at module manufacture | ADR-0014 decision 6 |
+    | Node-ID | which instance on this bus | MCU flash sector, on the carrier | provisioned at commissioning | decisions 1–6 above |
+    | `unique_id` | which physical unit | ATECC608 serial, else MCU UID | factory, read-only | decision 8 |
+    | Keypair and leaf certificate | that the unit is genuine | ATECC608 slot, on-chip | provisioned once, non-exportable | ADR-0007 decisions 1 and 5 |
+    | Serial / E-number | which asset, in the records | ERP `-PR` record | assigned at manufacture | ADR-0017 decisions 8 and 12 |
+
+    Each row's own decision lives in the record named. This ADR decides the two rows nobody owned and the separation itself; it restates none of the others, because a value mirrored into a second document is a value that goes stale in one of them (ADR-0000 decision 3).
+
+    **Why the Node-ID gets a store of its own, given three already exist.** Each of the others is disqualified by its lifecycle, not by its size. The class-ID EEPROM is fixed at module manufacture and sits on the *module*, so it can hold neither a field-provisioned value nor one that must survive a module swap. The ATECC608's slots are earmarked for the on-chip keypair, and reaching a data slot means locking the configuration zone — a one-way operation on every node, spent ahead of the node-side provisioning design ADR-0007 has not yet written. The MCU UID is read-only silicon. The one writable, carrier-resident store that commits nothing else is MCU flash.
+
+    **The next carrier revision does not reopen this.** When `E0001-000100` replaces the 3-bit strap with the 8-bit serial EEPROM (ADR-0014 decision 6), that part carries class identity and nothing else. It arrives manufacture-programmed and not field-writable, which is what class identity needs and what instance identity forbids; alternative A stands after the transport changes as it does before.
+
+
 ## Alternatives considered
 
 **A. Serial EEPROM at the reserved `0x50`–`0x57` addresses.** ADR-0014 decision 6 already fixes this transport for the class ID on `E0001-000100` and later. *Rejected:* it is absent from every carrier in service, so it cannot fix the collision on the boards that have it, and it puts M03 behind a carrier iteration. Its stated policy is also the inverse of what is needed — programmed at module manufacture, not writable in the field — and it sits on the *module*, so a module swap would carry the node's identity away with it. Reusing the part while inverting both its lifecycle and its writability would make one store mean two incompatible things.
 
-**B. The ATECC608.** Fitted on every carrier, has data zones, already the node's identity anchor (ADR-0007). *Rejected:* it is scoped to secrets and identity binding, and a Node-ID is neither — it is a non-secret operational value an operator changes at will. Mixing writable configuration into the element whose worth is that its contents are constrained widens what a compromise of it means, for a byte the MCU can already store.
+**B. The ATECC608.** Fitted on every carrier, has data zones, and is the node's identity anchor (ADR-0007). *Rejected:* reaching a data slot requires writing and locking the configuration zone, and that lock is irreversible. It would commit every node's secure element permanently in order to store one byte, ahead of the node-side provisioning design ADR-0007 decision 5 anticipates and has not yet written. The slots are also already spoken for — decision 1 of ADR-0007 puts an on-chip non-exportable keypair in them — so the part is not the empty store it looks like from the firmware, which today reads only its factory serial. Secondary: a Node-ID is a non-secret operational value an operator changes at will, and widening what the secure element holds widens what a compromise of it means.
+
 
 **C. Keep deriving the Node-ID from the class ID, and forbid two instances of a class.** *Rejected:* it contradicts ADR-0006's two-loop case and ADR-0014's instance-multiplication pattern, and converts a firmware limitation into an architectural constraint on how cabinets may be built.
 
