@@ -105,10 +105,10 @@ provisioning):
 
 | Concern | Bring-up (now) | Production target | Source |
 |---------|----------------|-------------------|--------|
-| SSH daemon | Enabled (key-only, no root). | Disabled by default, re-enabled per-op. | ADR-0004 d2 |
+| SSH daemon | Enabled (key-only, no root). | Disabled by default, re-enabled per-op. | ADR-0004 d2, d19 |
 | Inbound | default-deny except SSH on the LAN-facing mgmt interfaces. | unchanged. | ADR-0004 d6 |
-| Outbound | Open (apt/pip/DNS need it; IndustryFlow doesn't exist yet). | Locked to IndustryFlow only. | ADR-0004 d5 |
-| Reboot window | Disabled (`IGROW_UNATTENDED_REBOOT_TIME` empty; photoperiod undefined). | Set once photoperiod is known. | ADR-0004 d4 |
+| Outbound | Open (apt/pip/DNS need it; IndustryFlow doesn't exist yet). | Locked to the IndustryFlow and operator-ERP endpoints. | ADR-0004 d5, d19 |
+| Reboot window | Disabled (`IGROW_UNATTENDED_REBOOT_TIME` empty; photoperiod undefined). | Set once photoperiod is known. | ADR-0004 d4, d19 |
 | Local store | RAM-only on SD (`IGROW_PERSISTENT_BUFFER=off`). | Bounded buffer on SSD/NVMe. | ADR-0020 |
 
 The production egress lock-down lives commented in
