@@ -144,24 +144,24 @@ The threat model otherwise stays:
 
     The key-only and no-root halves of decision 2 are enforced now; only the disabled-by-default half waits. Decision 5's inbound half — no inbound except SSH on the management NIC set — is enforced now; only the outbound half waits.
 
-    **Decision 5's outbound target is IndustryFlow *and* the operator ERP.** The gateway pulls its active cultivation profile from an operator-hosted ERP over mTLS (ADR-0015 decision 5, ADR-0022 decisions 2 and 8), which decision 5 predates and does not name. Both are named endpoints; "no general internet access" is unchanged, and the count of destinations is two rather than one.
+    **Decision 5's outbound target is IndustryFlow *and* the operator ERP.** The gateway pulls its active cultivation profile from an operator-hosted ERP over mTLS (ADR-0015 decision 5, ADR-0022 decisions 2 and 8), which decision 5 predates and does not name. Both are named endpoints and "no general internet access" is unchanged; there are two, not one.
 
 20. **The service-user policy of decision 7 binds every unit on the gateway, not one** *(added 2026-08-25)*. Decision 7 names "the gateway service (Pycyphal-based)" because that was the only one when it was written. Three units now run under the same unprivileged `gateway` user — the Cyphal edge, the profile pull (ADR-0015 decision 5), and the time master (ADR-0002 decision 11) — and every unit added later inherits the same posture: dedicated unprivileged user, no root at runtime, and no write access to `/etc/industrygrow` except for the single short-lived unit whose job is to write it.
 
 ### Validity of the acquisition-to-receipt latency
 
-21. **`t_rx - t_acq` is valid only while the gateway host clock is disciplined and settled; otherwise the sample carries no latency value** *(added 2026-08-25)*. Decision 18 requires durations to be computed from the monotonic clock. That covers the deltas whose endpoints are both on the gateway — `t_store` against `t_rx` — and it cannot cover this one: `t_acq` is written on the node and `t_rx` on the gateway, so the delta spans two machines and has no monotonic form.
+21. **`t_rx - t_acq` is valid only while the gateway host clock is disciplined and settled; otherwise the sample carries no latency value** *(added 2026-08-25)*. Decision 18 computes durations from the monotonic clock. That covers a delta whose endpoints are both on the gateway — `t_store` against `t_rx` — and cannot cover this one: `t_acq` is written on the node and `t_rx` on the gateway, so the delta spans two machines and has no monotonic form.
 
-    A node re-derives its offset from the gateway's clock at most once every two publication periods (ADR-0002 decision 11). A correction applied to that clock therefore reaches the two ends of the subtraction at different times, and the difference between them appears as latency that was never incurred. Observed on a reference gateway after reboot, with the host still disciplining a 10 ms initial offset taken from the RTC: the delta read about 14 ms above its settled value for roughly a minute.
+    A node re-derives its offset from the gateway's clock at most once every two publication periods (ADR-0002 decision 11). A correction to that clock reaches the two ends of the subtraction at different times, and the difference appears as latency that was never incurred. Clock discipline after a host reboot is the ordinary case, not an exceptional one.
 
-    A consumer treats the latency as **absent, not as a value**, when either condition holds:
+    A consumer records the latency as **absent** — not zero, not clamped — when either holds:
 
     - the host clock is not synchronized, or
-    - the host clock has been stepped within the settling window — two node publication periods plus the disciplining interval.
+    - it has been stepped within the settling window: two node publication periods plus the disciplining interval.
 
-    Absent rather than zero or clamped, matching how decision 18 treats a missing `t_store`: a gap a consumer can see beats a number it cannot tell apart from a real one. `t_acq` and `t_rx` are both still recorded, so only the derived delta is withheld and the judgement can be revisited from the stored sample.
+    Absent matches how decision 18 treats a missing `t_store`. `t_acq` and `t_rx` are both still stored, so only the derived value is withheld.
 
-    This adds a validity condition to decision 18. No stamp, field or other rule changes.
+    Bounded: a validity condition on decision 18, with no change to any stamp or field.
 
 ## Alternatives considered
 
