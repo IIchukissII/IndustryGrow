@@ -23,6 +23,7 @@
 #include "uavcan/_register/List_1_0.h"
 #include "uavcan/node/port/List_1_0.h"
 #include "uavcan/diagnostic/Record_1_1.h"
+#include "uavcan/time/Synchronization_1_0.h"
 
 #include "registers.h"
 #include "e0001.h" /* CMSIS: NVIC_SystemReset */
@@ -68,6 +69,31 @@ static uint64_t s_next_portlist_us;
 static uint8_t s_hb_tid;       /* heartbeat transfer-id (5-bit, wraps) */
 static uint64_t s_start_us;    /* for uptime */
 static uint64_t s_next_hb_us;  /* next heartbeat deadline */
+
+/* --- time synchronization slave (ADR-0002 d11) ---------------------------- *
+ * The master publishes the transmit timestamp of its PREVIOUS message, so a
+ * pair of consecutive messages is needed to learn the offset: the first is
+ * held (UPDATE), the second carries the first one's transmit time (ADJUST).
+ * That alternation is the algorithm in 7168.Synchronization.1.0, not a
+ * simplification of it.
+ *
+ * The master publishes at least once per second (ADR-0002 d11), so the timeout
+ * is the type's 3 x MAX_PUBLICATION_PERIOD outright; deriving it from the
+ * measured interval, as the type's text allows, would only reconstruct the same
+ * constant. Note that an UPDATE message arrives two periods after the previous
+ * UPDATE -- the ADJUST message falls between -- so the timeout must exceed two
+ * periods, and 3 s does. */
+#define SYNC_MAX_PUBLICATION_PERIOD_US 1000000u
+#define SYNC_PUBLISHER_TIMEOUT_US (3u * SYNC_MAX_PUBLICATION_PERIOD_US)
+
+static CanardRxSubscription s_sync_sub;
+static int16_t s_sync_master = -1;  /* dominant master's Node-ID, -1 = none yet */
+static bool s_sync_adjust;          /* true = STATE_ADJUST, false = STATE_UPDATE */
+static uint64_t s_sync_prev_rx_us;  /* local reception time of the held message */
+static uint8_t s_sync_prev_tid;
+static int64_t s_sync_offset_us;    /* master time - local time */
+static bool s_sync_have_offset;
+static uint64_t s_sync_last_rx_us;  /* last message from the master; drives staleness */
 
 static void *mem_alloc(CanardInstance *ins, size_t amount)
 {
@@ -145,6 +171,12 @@ void cyphal_init(uint8_t node_id, const char *node_name, const char *description
                             uavcan_node_ExecuteCommand_Request_1_0_EXTENT_BYTES_,
                             CANARD_DEFAULT_TRANSFER_ID_TIMEOUT_USEC,
                             &s_execcmd_sub);
+    (void)canardRxSubscribe(&s_canard,
+                            CanardTransferKindMessage,
+                            uavcan_time_Synchronization_1_0_FIXED_PORT_ID_,
+                            uavcan_time_Synchronization_1_0_EXTENT_BYTES_,
+                            CANARD_DEFAULT_TRANSFER_ID_TIMEOUT_USEC,
+                            &s_sync_sub);
 
     s_node_name = node_name;
     registers_init(node_id, description);
@@ -173,12 +205,83 @@ void cyphal_publish(uint16_t subject_id, uint8_t *transfer_id,
     *transfer_id = (uint8_t)((*transfer_id + 1u) & CANARD_TRANSFER_ID_MAX);
 }
 
+/* Hold this message as the first half of a pair and wait for the next one,
+ * which will carry this one's transmit timestamp. */
+static void sync_update(const CanardRxTransfer *t)
+{
+    s_sync_prev_rx_us = t->timestamp_usec;
+    s_sync_master = (int16_t)t->metadata.remote_node_id;
+    s_sync_prev_tid = t->metadata.transfer_id;
+    s_sync_adjust = true;
+}
+
+static void handle_timesync(const CanardRxTransfer *t)
+{
+    /* An anonymous publisher cannot be elected: election is by Node-ID and an
+     * anonymous transfer has none. */
+    if (t->metadata.remote_node_id > CANARD_NODE_ID_MAX) {
+        return;
+    }
+    uavcan_time_Synchronization_1_0 msg;
+    size_t sz = t->payload_size;
+    if (uavcan_time_Synchronization_1_0_deserialize_(&msg, t->payload, &sz) < 0) {
+        return;
+    }
+
+    const int16_t src = (int16_t)t->metadata.remote_node_id;
+    const uint64_t rx_us = t->timestamp_usec;
+    const uint64_t since_prev = rx_us - s_sync_prev_rx_us;
+
+    const bool needs_init = (s_sync_master < 0);
+    const bool switch_master = (!needs_init) && (src < s_sync_master);
+    const bool timed_out = (!needs_init) && (since_prev > SYNC_PUBLISHER_TIMEOUT_US);
+
+    if (needs_init || switch_master || timed_out) {
+        /* A different master, or the same one after a gap, is a different time
+         * base until a fresh pair proves otherwise. The old offset does not
+         * carry over -- that is exactly the frozen-offset failure ADR-0002 d11
+         * rules out. */
+        s_sync_have_offset = false;
+        sync_update(t);
+    } else if (src == s_sync_master) {
+        if (s_sync_adjust) {
+            const bool msg_invalid =
+                (msg.previous_transmission_timestamp_microsecond == 0u);
+            const bool wrong_tid =
+                (t->metadata.transfer_id !=
+                 (uint8_t)((s_sync_prev_tid + 1u) & CANARD_TRANSFER_ID_MAX));
+            const bool wrong_timing = (since_prev > SYNC_MAX_PUBLICATION_PERIOD_US);
+            if (msg_invalid || wrong_tid || wrong_timing) {
+                s_sync_adjust = false; /* the pair is broken; start a new one */
+            }
+        }
+        if (s_sync_adjust) {
+            /* The whole measurement, in one line: where the master says it was
+             * when we recorded where we were. */
+            s_sync_offset_us =
+                (int64_t)msg.previous_transmission_timestamp_microsecond -
+                (int64_t)s_sync_prev_rx_us;
+            s_sync_have_offset = true;
+            s_sync_adjust = false;
+        } else {
+            sync_update(t);
+        }
+    } else {
+        return; /* higher Node-ID than the dominant master: not our time base */
+    }
+    s_sync_last_rx_us = rx_us;
+}
+
 uint64_t cyphal_timestamp_usec(void)
 {
-    /* No uavcan.time.Synchronization source is subscribed on this bus, so there
-     * is no network time base to report. See the header: 0 is the type's own
-     * value for "not known", and it is the only honest one here. */
-    return 0u;
+    if (!s_sync_have_offset) {
+        return 0u; /* the type's own value for "not known" */
+    }
+    /* The local clock is never stepped -- libcanard's transmission deadlines and
+     * transfer-ID timeouts are denominated in it. The offset is applied here and
+     * nowhere else. */
+    const int64_t t = (int64_t)micros64() + s_sync_offset_us;
+    return (t > 0) ? (uint64_t)t : 0u;
 }
 
 void cyphal_set_health(uint8_t health)
@@ -507,6 +610,13 @@ static void pump_rx(void)
                 default:
                     break;
                 }
+            } else if (transfer.metadata.transfer_kind == CanardTransferKindMessage) {
+                if (transfer.metadata.port_id ==
+                    uavcan_time_Synchronization_1_0_FIXED_PORT_ID_) {
+                    handle_timesync(&transfer);
+                }
+            } else {
+                /* nothing else is subscribed */
             }
             s_canard.memory_free(&s_canard, transfer.payload);
         }
@@ -525,6 +635,15 @@ void cyphal_spin(void)
     }
     flush_tx();
     pump_rx();
+
+    /* A dead master must not leave a frozen offset behind: the drift is silent
+     * and a consumer cannot see it. Reverting to UNKNOWN is visible (ADR-0002
+     * d11). This has to be checked here and not only on reception -- if the
+     * master stops publishing, no reception ever comes to check. */
+    if (s_sync_have_offset &&
+        ((micros64() - s_sync_last_rx_us) > SYNC_PUBLISHER_TIMEOUT_US)) {
+        s_sync_have_offset = false;
+    }
 
     /* Honour an ExecuteCommand RESTART once its response has been flushed. */
     if (s_pending_reset && (canardTxPeek(&s_txq) == NULL)) {

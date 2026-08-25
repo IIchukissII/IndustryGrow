@@ -32,20 +32,29 @@ void cyphal_spin(void);
 void cyphal_publish(uint16_t subject_id, uint8_t *transfer_id,
                     const uint8_t *payload, size_t size);
 
-/* The value to put in every uavcan.time.SynchronizedTimestamp field, which is
- * 0 = UNKNOWN until this bus has a synchronization source.
+/* The value to put in every uavcan.time.SynchronizedTimestamp field: the
+ * network time base if this node is synchronized, otherwise 0 = UNKNOWN.
  *
- * That field is a NETWORK-wide time base, not a per-node one. Nothing publishes
- * uavcan.time.Synchronization (subject 7168) here, so each node's only clock is
- * its own monotonic uptime and two nodes' stamps share no origin — node 96 at
- * 1378 s and node 97 at 62 s were describing the same instant. A consumer that
- * aligns samples across nodes, which is exactly what the state estimator of
- * ADR-0016 does, would be silently wrong. The type reserves 0 for "not known",
- * and saying so is the honest answer until a master exists.
+ * That field is a NETWORK-wide time base, not a per-node one. The gateway is
+ * the bus time-synchronization master (ADR-0002 d11) and publishes
+ * uavcan.time.Synchronization on subject 7168 at 1 Hz; this node is a slave and
+ * tracks it as an OFFSET against its own monotonic clock. The local clock is
+ * never stepped -- libcanard's transmission deadlines and transfer-ID timeouts
+ * are denominated in it.
  *
- * This is the single seam where that master plugs in: when the gateway begins
- * publishing 7168, this function returns the synchronized value and every
- * publisher inherits it without change. */
+ * Returns 0 whenever the offset is not currently trustworthy: before the first
+ * pair of sync messages, and again once the master has been silent for three
+ * publication periods. A stale offset reported as truth is worse than an absent
+ * timestamp, because a consumer cannot detect it. Without a master, two nodes'
+ * stamps share no origin at all -- node 96 at 1378 s and node 97 at 62 s were
+ * describing the same instant -- and a consumer that aligns samples across
+ * nodes, which is what the state estimator of ADR-0016 does, would be silently
+ * wrong. That is what this exists to prevent.
+ *
+ * Accuracy is milliseconds, not microseconds (ADR-0002 d11): reception is
+ * timestamped in the polled main loop, so the error is bounded by however long
+ * a personality's blocking sensor read keeps the loop away from pump_rx().
+ */
 uint64_t cyphal_timestamp_usec(void);
 
 /* Report the personality's own health for the next heartbeat. The heartbeat

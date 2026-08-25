@@ -16,6 +16,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 ## Revision history
 
 - **rev 1 (2026-05-16)** — Reframed the gateway as a stateless edge. The initial draft's local hash-chained audit log (decisions 8–11) is removed in favour of an in-memory ring buffer plus an IndustryFlow-side audit trail; the firmware-signing decisions (12–16) are preserved with one adjustment. Rationale: the local-tamper threat model is unrealistic (a compromised gateway already streams false data live) and continuous SD-card logging is a write-amplification cost. See decisions 8–11 and alternative A.
+- **Amendments** — decision 18 (2026-08-25): every decoded sample carries three provenance stamps; makes the latency between the tiers of decision 10 measurable.
 
 ## Context and problem
 
@@ -106,6 +107,26 @@ The threat model otherwise stays:
 ### Documented trust assumption
 
 17. **CAN domain inside the cabinet is trusted.** No per-node authentication, no payload encryption on CAN. Anyone with physical access to bus wires can spoof or inject. This is intentional and acceptable for the deployment context (physical access already implies operator presence). The assumption is documented here so the boundary is explicit and reviewers know what is in scope and what is not.
+
+### Provenance of a decoded sample
+
+18. **A decoded sample carries three provenance stamps, and only the first is on the wire** *(added 2026-08-25)*. Decision 10 fixes what a *batch* carries; this fixes what a *sample* inside it carries.
+
+    | Stamp | Written by | Clock | Origin |
+    |---|---|---|---|
+    | `t_acq` | the node | bus time base (ADR-0002 decision 11) | `uavcan.time.SynchronizedTimestamp`, on the wire |
+    | `t_rx` | the gateway | host `CLOCK_REALTIME`, plus `CLOCK_MONOTONIC` | frame decode |
+    | `t_store` | each tier that retains it | that tier's own clock | local buffer write, then platform accept |
+
+    Three rules keep the set honest:
+
+    - **`t_acq = 0` propagates as 0.** An unsynchronized node reports `UNKNOWN`, and no tier may substitute `t_rx` for it. Silent substitution makes `t_rx − t_acq` read zero forever, which turns the one anomaly signal this decision exists to produce into a constant.
+    - **Realtime and monotonic are both retained for `t_rx`.** A time step on the gateway host moves `CLOCK_REALTIME` and manufactures a latency spike that never happened; durations are computed from the monotonic reading and only reported against the realtime one.
+    - **`t_store` is per tier and may be absent.** On a deployment with no local persistent buffer (decisions 8–9; ADR-0020 decision 10) there is no local durable write to stamp, and the local stamp is absent rather than zero.
+
+    `t_rx` and `t_store` are **gateway and platform record fields, not DSDL**. No project type is minted for them: ADR-0005 decision 2 reuses over minting, and a node cannot know either value. What the deltas are worth — bus latency, gateway write cost, backhaul latency and its behaviour while a buffer drains — is monitoring, which decision 10 already places platform-side.
+
+    Bounded: `t_rx − t_acq` is meaningful only to the accuracy ADR-0002 decision 11 claims for the time base, and near zero it goes negative on sync noise. A consumer treats a small negative delta as noise, not as a fault.
 
 ## Alternatives considered
 
