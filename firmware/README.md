@@ -23,7 +23,7 @@ Core Board, ADR-0002 rev 3); the sensor-module personality varies per node type
 >   and the project `industryflow.greenhouse.safety` types (ADR-0005).
 > - **Carrier identity (ADR-0007):** the ATECC608 secure element on I²C2 is read
 >   at boot for its 9-byte serial, which becomes the Cyphal node `unique_id`
->   (falling back to the STM32 factory UID when absent). Identity/provenance only
+>   (falling back to the STM32 factory UID when absent -- ADR-0027 d8). Identity/provenance only
 >   — no crypto, key generation, or provisioning (those are Production/Phase-2 per
 >   ADR-0007 d6/d9); the node secure element is not a CAN-bus credential (d5).
 > - **Verified on hardware (bare WeAct F405, ST-Link V3):** 168 MHz clock,
@@ -66,17 +66,19 @@ Core Board, ADR-0002 rev 3); the sensor-module personality varies per node type
 
 A Cyphal/CAN node. Application protocol and wire vocabulary are fixed elsewhere:
 
-- **Bus** — classic CAN, **500 kbit/s**, linear, Node-ID static/provisioned (ADR-0002 d8; ADR-0005 d6).
+- **Bus** — classic CAN, **500 kbit/s**, linear, Node-ID provisioned per instance (ADR-0002 d8; ADR-0005 d6; ADR-0027).
 - **Vocabulary** — DSDL: the OpenCyphal standard `uavcan.*` set plus the project
   `industryflow.greenhouse.*` types, per **ADR-0005**. Physical quantities ride
   `uavcan.si.sample.*` (SI units); accumulated S0 energy is **joule** (ADR-0005 rev 1 d3);
   door/leak are minimal `safety` status types with no command field (M05 is
   sense-only, ADR-0018 d9).
-- **Identity** — module *class* is read from the ID straps at boot (ADR-0014 d6/d8);
-  the carrier's ATECC608 secure element supplies the *instance* identity — its
-  serial becomes the Cyphal node `unique_id` (ADR-0007), with the STM32 factory
-  UID as fallback. Role/zone are *not* in firmware, they are gateway-side tags
-  (ADR-0014 d7).
+- **Identity** — three values from three sources, and none stands in for another
+  (ADR-0027 d9). Module *class* is read from the ID straps at boot (ADR-0014
+  d6/d8). The Cyphal `unique_id` — which physical unit this is — comes from the
+  ATECC608 serial, with the STM32 factory UID as fallback (ADR-0027 d8). The
+  *Node-ID* — which instance on this bus — is a static bring-up default until
+  ADR-0027 d2's flash sector exists. Role/zone are *not* in firmware, they are
+  gateway-side tags (ADR-0014 d7).
 
 ## Toolchain (decided)
 

@@ -476,7 +476,7 @@ step over the measurement path. The diffuser is fitted after coating or masked d
 | Message timestamps | `uavcan.time.SynchronizedTimestamp` from the gateway time base: the node is a synchronization slave to subject 7168 (ADR-0002 d11), tracking the master as an offset against its own monotonic clock. 0 (UNKNOWN) before the first pair of sync messages and again after the master has been silent for 3 s. Accuracy is milliseconds — reception is timestamped in the polled main loop |
 | Role and zone | Not held by the node; assigned by the gateway (ADR-0014 d7) |
 | Node directory | `firmware/nodes/m02_light/` — does not exist |
-| Node-ID | 96 is M05's, 97 is M01's; M02 takes **98**, static for bring-up (ADR-0005 d6) |
+| Node-ID | Not a property of the module class: provisioned per instance into carrier flash (ADR-0027), and distinct across the bus. Bring-up assignment for the first instance is **98** |
 | Publication rate | 1 s, subject to the three-cycle acquisition time of §6.1 |
 
 ### 10.1 Published subjects

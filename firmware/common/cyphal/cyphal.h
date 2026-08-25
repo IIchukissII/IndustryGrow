@@ -14,8 +14,9 @@
  * on the gateway. The per-node personality (sensor publications) sits on top
  * via cyphal_publish().
  *
- * `node_id` is static for bring-up; ADR-0005 d6 makes it register-provisioned
- * later. Call cyphal_init() once after can_init_normal(), then cyphal_spin()
+ * `node_id` is a static bring-up default. ADR-0027 makes it an instance value
+ * provisioned into a carrier flash sector -- not derived from the module class --
+ * which this image does not yet do. Call cyphal_init() once after can_init_normal(), then cyphal_spin()
  * as often as possible from the main loop.
  *
  * `node_name` is the reverse-DNS uavcan.node.GetInfo name and `description` the

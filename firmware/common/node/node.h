@@ -24,7 +24,8 @@
  */
 typedef struct {
     uint8_t module_id;  /* 8-bit class ID, ADR-0014 rev 4 d6 */
-    uint8_t node_id;    /* static bring-up default; ADR-0005 d6 makes it provisioned */
+    uint8_t node_id;    /* static bring-up default; ADR-0027 makes it flash-provisioned
+                         * per instance and removes it from this record */
     const char *name;        /* human, for the debug console */
     const char *cyphal_name; /* reverse-DNS uavcan.node.GetInfo name, <= 50 bytes */
     void (*init)(void); /* called once, before the watchdog starts */
