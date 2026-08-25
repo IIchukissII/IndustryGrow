@@ -133,6 +133,7 @@ The smart-node side (carrier PCB, WeAct core board, F405/F412/F446 drop-in, ATEC
 - One MCU family, one firmware codebase, one carrier design, one core board design. Uniform across every deployment.
 - EE effort concentrated on integration, not on re-implementing well-known MCU minimum-system designs. Carrier schematic capture ~2–3 days; carrier layout ~1–2 days. 2-layer PCB.
 - Triple-MCU drop-in compatibility (F405/F412/F446 in WeAct socket) provides a supply-chain hedge inside one MCU family.
+- **The headroom decision 8 asserts is quantified.** Measured on a two-node bus (M01, M05) plus the time master, by exact bit accounting — CRC-15, stuffing and the fixed-form bits per frame, not a worst-case bound: **0.98 % of 500 kbit/s** at 36 frames/s. One 1 Hz two-frame subject costs **0.054 %**; the time master costs 0.031 %. The full seven-module fleet of ADR-0014 at the same pattern lands near **3.4 %**, and would reach ~34 % only if every subject moved to 10 Hz. Capacity is therefore not a constraint on module count at this rate; the loads that matter are bursts — M04's thermal frames and firmware distribution over the file-transfer service — which are gateway-paced and sit below telemetry priority.
 - Open-hardware core board with published schematic + gerbers means vendor dependency is recoverable.
 - Mainstream STM32F4 with long production history and deep community support.
 - Modularity is real: failed nodes are unplugged and replaced.
