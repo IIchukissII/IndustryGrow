@@ -20,6 +20,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Amendments** — decision 5 (2026-08-20): the SSH-facing interface is the *set* of LAN management NICs, not one.
 - **Amendments** — decision 18 (2026-08-25): every decoded sample carries three provenance stamps; makes the latency between the tiers of decision 10 measurable.
 - **Amendments** — decisions 19 and 20 (2026-08-25): the bring-up enforcement state of decisions 2, 4 and 5, and the operator ERP as a second egress destination; the service-user policy of decision 7 binds every unit.
+- **Amendments** — decision 21 (2026-08-25): a validity condition on the acquisition-to-receipt latency of decision 18.
 
 ## Context and problem
 
@@ -146,6 +147,21 @@ The threat model otherwise stays:
     **Decision 5's outbound target is IndustryFlow *and* the operator ERP.** The gateway pulls its active cultivation profile from an operator-hosted ERP over mTLS (ADR-0015 decision 5, ADR-0022 decisions 2 and 8), which decision 5 predates and does not name. Both are named endpoints; "no general internet access" is unchanged, and the count of destinations is two rather than one.
 
 20. **The service-user policy of decision 7 binds every unit on the gateway, not one** *(added 2026-08-25)*. Decision 7 names "the gateway service (Pycyphal-based)" because that was the only one when it was written. Three units now run under the same unprivileged `gateway` user — the Cyphal edge, the profile pull (ADR-0015 decision 5), and the time master (ADR-0002 decision 11) — and every unit added later inherits the same posture: dedicated unprivileged user, no root at runtime, and no write access to `/etc/industrygrow` except for the single short-lived unit whose job is to write it.
+
+### Validity of the acquisition-to-receipt latency
+
+21. **`t_rx - t_acq` is valid only while the gateway host clock is disciplined and settled; otherwise the sample carries no latency value** *(added 2026-08-25)*. Decision 18 requires durations to be computed from the monotonic clock. That covers the deltas whose endpoints are both on the gateway — `t_store` against `t_rx` — and it cannot cover this one: `t_acq` is written on the node and `t_rx` on the gateway, so the delta spans two machines and has no monotonic form.
+
+    A node re-derives its offset from the gateway's clock at most once every two publication periods (ADR-0002 decision 11). A correction applied to that clock therefore reaches the two ends of the subtraction at different times, and the difference between them appears as latency that was never incurred. Observed on a reference gateway after reboot, with the host still disciplining a 10 ms initial offset taken from the RTC: the delta read about 14 ms above its settled value for roughly a minute.
+
+    A consumer treats the latency as **absent, not as a value**, when either condition holds:
+
+    - the host clock is not synchronized, or
+    - the host clock has been stepped within the settling window — two node publication periods plus the disciplining interval.
+
+    Absent rather than zero or clamped, matching how decision 18 treats a missing `t_store`: a gap a consumer can see beats a number it cannot tell apart from a real one. `t_acq` and `t_rx` are both still recorded, so only the derived delta is withheld and the judgement can be revisited from the stored sample.
+
+    This adds a validity condition to decision 18. No stamp, field or other rule changes.
 
 ## Alternatives considered
 
