@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0027: Node-ID provisioning and persistence
 
 - **ID:** ADR-0027
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-08-25
 - **Project:** IndustryGrow
 - **Parent:** ADR-0002 (rev 3)
