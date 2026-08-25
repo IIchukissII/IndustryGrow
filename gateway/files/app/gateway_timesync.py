@@ -170,7 +170,7 @@ def read_tx_timestamp(sock: socket.socket, can_id: int, deadline: float) -> int 
         sock.settimeout(remaining)
         try:
             data, ancdata, _flags, _addr = sock.recvmsg(_CAN_FRAME_SIZE, 1024)
-        except socket.timeout:
+        except TimeoutError:
             return None
         if len(data) < _CAN_FRAME_SIZE:
             continue
