@@ -481,7 +481,7 @@ end to end or M4 is narrowed. Unresolved. O-46.
 | Health | Heartbeat health is the worse of identity and sensor state. CAUTION when U1 is present and its reads fail; ADVISORY for U2 or U3, or when identity is not ATECC-anchored. Three consecutive failed cycles is the threshold |
 | Role and zone | Not held by the node; assigned by the gateway (ADR-0014 d7) |
 | Node directory | `firmware/nodes/m01_climate/` — `main.c`, `module_id.h`, `sensors.{h,c}`, `drivers/{sensirion,sht4x,bme68x,scd4x}` |
-| Node-ID | 96 is M05's; M01 takes **97**, static for bring-up (ADR-0005 d6) |
+| Node-ID | Not a property of the module class: provisioned per instance into carrier flash (ADR-0027), and distinct across the bus. Bring-up assignment for the first instance is **97** |
 | Publication rate | 1 s for U1 and the derived VPD; U2 lands ~20 ms later in the same second, ~760 ms on a scan tick (§6.4); U3 publishes at its own fixed 5 s |
 
 ### 10.1 Published subjects

@@ -183,7 +183,7 @@ Implemented in `firmware/nodes/m05_safety/`.
 | Item | Requirement |
 |------|-------------|
 | Module-ID strap | `0b101`; bit 1 = 0, so the pattern reads correctly on every carrier revision |
-| Node-ID | **96**, static for bring-up (ADR-0005 d6). M01 takes 97 |
+| Node-ID | Not a property of the module class: provisioned per instance into carrier flash (ADR-0027), and distinct across the bus. Bring-up assignment for the first instance is **96** |
 | Publication rate | 1 s for every subject of §9.1 |
 | Boot probe, publication, re-probe interval | ADR-0014 d8 |
 | Leak excitation | Shares PA9 with the carrier debug console (pin map note 2) |

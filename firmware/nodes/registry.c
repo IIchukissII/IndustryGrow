@@ -11,8 +11,10 @@
  * common boot path (common/node/main.c) free of node-specific code. Adding a
  * module class is a directory under nodes/ and one line here.
  *
- * Node-IDs are static bring-up defaults and must be distinct across the bus;
- * ADR-0005 d6 makes them register-provisioned, which this image does not yet do.
+ * Node-IDs are static bring-up defaults and must be distinct across the bus.
+ * ADR-0027 (Accepted) moves them out of this table entirely: a Node-ID identifies
+ * an INSTANCE and is provisioned into carrier flash, so one ID per module class
+ * collides as soon as a class has two instances. This image does not yet do that.
  */
 
 #include "node.h"
