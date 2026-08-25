@@ -272,7 +272,7 @@ install_timesync_service() {
     # The bus time master (ADR-0002 rev 3 d11). Separate unit from
     # gateway-pycyphal.service on purpose — see the unit file's header: the nodes'
     # time base must not go stale because the telemetry consumer is restarting.
-    log "installing industrygrow-timesync.service (Cyphal time master, 1 Hz)"
+    log "installing industrygrow-timesync.service (Cyphal time master, subject 7168)"
     install -m 0644 "${FILES_DIR}/systemd/industrygrow-timesync.service"         /etc/systemd/system/industrygrow-timesync.service
     systemctl daemon-reload
     systemctl enable industrygrow-timesync.service
@@ -385,7 +385,7 @@ summary() {
     systemctl --no-pager status gateway-pycyphal.service
     journalctl -u gateway-pycyphal.service -n 20 --no-pager
     systemctl --no-pager status industrygrow-timesync.service
-    candump <iface> 041C0000:1FFFFF00   # the 1 Hz time-sync frame (subject 7168)
+    candump <iface> 041C0000:1FFFFF00   # the time-sync frame (subject 7168)
     sshd -T | grep -Ei 'passwordauthentication|permitrootlogin|pubkeyauthentication'
     nft list ruleset
     fail2ban-client status sshd

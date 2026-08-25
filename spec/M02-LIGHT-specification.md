@@ -473,6 +473,7 @@ step over the measurement path. The diffuser is fitted after coating or masked d
 | Deployment constants | `c_i` per §6.2 read from the deployment profile, not compiled in |
 | Rail failure | Failure of U2 removes U4, U3 **and U1** from the bus, so the module presents as a single absent device at `0x70` rather than as two absent sensors. The boot probe handles this as absence; *not fitted*, *failed* and *unpowered* remain indistinguishable (O-37) |
 | U1 recovery | U1's RESET is tied to V_CC (§5.2), so a stuck channel is recoverable only by a node power cycle. Firmware shall report a channel that does not respond rather than attempt a reset it has no line for (O-65) |
+| Message timestamps | `uavcan.time.SynchronizedTimestamp` from the gateway time base: the node is a synchronization slave to subject 7168 (ADR-0002 d11), tracking the master as an offset against its own monotonic clock. 0 (UNKNOWN) before the first pair of sync messages and again after the master has been silent for 3 s. Accuracy is milliseconds — reception is timestamped in the polled main loop |
 | Role and zone | Not held by the node; assigned by the gateway (ADR-0014 d7) |
 | Node directory | `firmware/nodes/m02_light/` — does not exist |
 | Node-ID | 96 is M05's, 97 is M01's; M02 takes **98**, static for bring-up (ADR-0005 d6) |

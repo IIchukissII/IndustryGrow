@@ -37,7 +37,8 @@ void cyphal_publish(uint16_t subject_id, uint8_t *transfer_id,
  *
  * That field is a NETWORK-wide time base, not a per-node one. The gateway is
  * the bus time-synchronization master (ADR-0002 d11) and publishes
- * uavcan.time.Synchronization on subject 7168 at 1 Hz; this node is a slave and
+ * uavcan.time.Synchronization on subject 7168 at least once per second; this node
+ * is a slave and
  * tracks it as an OFFSET against its own monotonic clock. The local clock is
  * never stepped -- libcanard's transmission deadlines and transfer-ID timeouts
  * are denominated in it.

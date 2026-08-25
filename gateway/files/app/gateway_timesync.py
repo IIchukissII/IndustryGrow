@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
-# SPDX-License-Identifier: CC-BY-SA-4.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """IndustryGrow gateway time-synchronization master (ADR-0002 rev 3 d11).
 
-Publishes `uavcan.time.Synchronization` (fixed subject 7168) at 1 Hz so every
+Publishes `uavcan.time.Synchronization` (fixed subject 7168) at `PUBLICATION_PERIOD` so every
 node on the bus shares one time base. Without it each node stamps its telemetry
 `UNKNOWN` (0), because a node's own uptime is not a network time base and two
 nodes' uptimes share no origin -- which makes cross-node sample alignment, what

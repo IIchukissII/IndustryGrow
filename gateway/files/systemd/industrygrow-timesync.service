@@ -1,9 +1,10 @@
 # SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
-# SPDX-License-Identifier: CC-BY-SA-4.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 #
 # IndustryGrow bus time-synchronization master (ADR-0002 rev 3 d11).
 #
-# Publishes uavcan.time.Synchronization (subject 7168) at 1 Hz. Every node on the
+# Publishes uavcan.time.Synchronization (subject 7168) at least once per second.
+# Every node on the
 # bus is a slave to it; without this unit running they stamp their telemetry
 # UNKNOWN (0) and samples from different nodes share no common origin.
 #
