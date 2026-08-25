@@ -135,8 +135,13 @@ firmware/
 
 A strap value that no personality claims is **unidentified**, never a guessed
 class (ADR-0014 rev 4 d6): the node still brings up the Cyphal skeleton and
-enumerates as `org.industrygrow.node.unidentified` at Node-ID 127, publishing no
-subjects. A node that is visible can be diagnosed; a silent one cannot.
+enumerates as `org.industrygrow.node.unidentified`, publishing no subjects. A node
+that is visible can be diagnosed; a silent one cannot.
+
+It sits at Node-ID 127 today only because the personality picks the ID. ADR-0027
+d1 separates the two and d10 gives 127 a single meaning — *no Node-ID provisioned*
+— so once d2's flash store lands, an unidentified but provisioned node keeps its
+own ID and reports the unresolved personality through `GetInfo` and its health.
 
 ### Default subject-ID map
 
