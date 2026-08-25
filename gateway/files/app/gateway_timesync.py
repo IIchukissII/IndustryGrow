@@ -65,9 +65,17 @@ PRIORITY_IMMEDIATE = 1
 
 CAN_EFF_FLAG = 0x80000000
 CAN_EFF_MASK = 0x1FFFFFFF
-CAN_RAW = 1
-CAN_RAW_FILTER = 1
-CAN_RAW_RECV_OWN_MSGS = 5
+
+# The setsockopt LEVEL for CAN_RAW options is SOL_CAN_RAW (SOL_CAN_BASE + CAN_RAW
+# = 101), not the CAN_RAW protocol number 1. Passing 1 silently addresses
+# SOL_SOCKET instead, where option 1 is SO_DEBUG -- which needs CAP_NET_ADMIN and
+# fails with EACCES rather than with anything that names the real mistake.
+SOL_CAN_RAW = getattr(socket, "SOL_CAN_RAW", 101)
+CAN_RAW_FILTER = getattr(socket, "CAN_RAW_FILTER", 1)
+# 4, not 5. 5 is CAN_RAW_FD_FRAMES, which is accepted without complaint and
+# switches the socket to canfd_frame -- so the mistake shows up as "no echo ever
+# arrives", never as an error on the call that caused it.
+CAN_RAW_RECV_OWN_MSGS = getattr(socket, "CAN_RAW_RECV_OWN_MSGS", 4)
 
 # Single-frame transfer: start-of-transfer, end-of-transfer, and the toggle bit
 # in its initial state -- all three set. The low 5 bits are the transfer-ID.
@@ -131,9 +139,9 @@ def open_socket(iface: str, can_id: int) -> socket.socket:
     """
     sock = socket.socket(socket.AF_CAN, socket.SOCK_RAW, socket.CAN_RAW)
     sock.setsockopt(
-        CAN_RAW, CAN_RAW_FILTER, struct.pack("=II", can_id, CAN_EFF_FLAG | CAN_EFF_MASK)
+        SOL_CAN_RAW, CAN_RAW_FILTER, struct.pack("=II", can_id, CAN_EFF_FLAG | CAN_EFF_MASK)
     )
-    sock.setsockopt(CAN_RAW, CAN_RAW_RECV_OWN_MSGS, 1)
+    sock.setsockopt(SOL_CAN_RAW, CAN_RAW_RECV_OWN_MSGS, 1)
     sock.setsockopt(socket.SOL_SOCKET, SO_TIMESTAMPNS, 1)
     sock.bind((iface,))
     return sock
