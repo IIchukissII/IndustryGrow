@@ -16,6 +16,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 ## Revision history
 
 - **Amendments** — decisions 8 and 9 (2026-08-25): the Cyphal `unique_id` source, which had no decision behind it, and the map of the five identifiers a node carries. The title widens with them, from *Node-ID provisioning and persistence*; decisions 1–7 are unchanged.
+- **Amendments** — decision 10 (2026-08-25): `127` carries one meaning, not two; bounds decision 6.
 
 ## Context and problem
 
@@ -74,12 +75,22 @@ That choice cannot be made in isolation, because the Node-ID is not the only ide
     **The next carrier revision does not reopen this.** When `E0001-000100` replaces the 3-bit strap with the 8-bit serial EEPROM (ADR-0014 decision 6), that part carries class identity and nothing else. It arrives manufacture-programmed and not field-writable, which is what class identity needs and what instance identity forbids; alternative A stands after the transport changes as it does before.
 
 
+10. **Node-ID `127` means one thing: no Node-ID is provisioned** *(added 2026-08-25)*. Decision 6 sends an unprovisioned node there. Before this ADR the value also meant *personality unresolved*, because the personality selected the Node-ID — the coupling decision 1 removes. With that coupling gone the second meaning has no mechanism behind it, and it is not restored here.
+
+    The two conditions are independent, and each is reported on its own channel. A node whose class ID resolves to no personality but which *has* been provisioned uses its provisioned Node-ID; it publishes no subjects, because it does not know what it would publish, and it reports the unresolved personality through the `uavcan.node.GetInfo` name and its health. A node that is provisioned and identified publishes normally. A node that is neither sits at `127` and reports both.
+
+    This bounds decision 6 rather than changing it. Unprovisioned still means `127`; what changes is that a provisioned node is no longer sent there for an unrelated reason, so an operator reading `127` off the bus learns exactly one thing and does not need a `GetInfo` round-trip to find out which fault it is. Two unprovisioned nodes still collide at `127` — decision 6 already says so, and no reserved value fixes it.
+
+    The firmware constant is `IGROW_NODE_ID_UNIDENTIFIED`; its name follows its meaning when decision 2's store lands.
+
 ## Alternatives considered
 
 **A. Serial EEPROM at the reserved `0x50`–`0x57` addresses.** ADR-0014 decision 6 already fixes this transport for the class ID on `E0001-000100` and later. *Rejected:* it is absent from every carrier in service, so it cannot fix the collision on the boards that have it, and it puts M03 behind a carrier iteration. Its stated policy is also the inverse of what is needed — programmed at module manufacture, not writable in the field — and it sits on the *module*, so a module swap would carry the node's identity away with it. Reusing the part while inverting both its lifecycle and its writability would make one store mean two incompatible things.
 
 **B. The ATECC608.** Fitted on every carrier, has data zones, and is the node's identity anchor (ADR-0007). *Rejected:* reaching a data slot requires writing and locking the configuration zone, and that lock is irreversible. It would commit every node's secure element permanently in order to store one byte, ahead of the node-side provisioning design ADR-0007 decision 5 anticipates and has not yet written. The slots are also already spoken for — decision 1 of ADR-0007 puts an on-chip non-exportable keypair in them — so the part is not the empty store it looks like from the firmware, which today reads only its factory serial. Secondary: a Node-ID is a non-secret operational value an operator changes at will, and widening what the secure element holds widens what a compromise of it means.
 
+
+**F. Reserve a second value, so `126` means unprovisioned and `127` unidentified.** The obvious way to separate two meanings. *Rejected:* it spends a second reserved identifier to encode, in the Node-ID, a fact that is not about the node's identity. Decision 1 already separates the two axes; encoding personality state back into the Node-ID re-couples them in the one field that must mean only "which instance". It also fixes nothing about collisions — two unprovisioned nodes collide at `126` exactly as they would at `127`.
 
 **C. Keep deriving the Node-ID from the class ID, and forbid two instances of a class.** *Rejected:* it contradicts ADR-0006's two-loop case and ADR-0014's instance-multiplication pattern, and converts a firmware limitation into an architectural constraint on how cabinets may be built.
 
