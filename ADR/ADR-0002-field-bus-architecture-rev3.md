@@ -16,6 +16,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 - **rev 3 (2026-05-16)** — Gateway side only: the rev-2 persistent SQLite local buffer becomes an in-memory ring buffer and the gateway hardware minimum drops to Raspberry Pi 3B+, following ADR-0004 rev 1's stateless-edge reframing. The smart-node side (carrier, WeAct core board, ATECC608, sensor-module header) is unchanged from rev 2. See decision 6, decision 8, and alternative J. Earlier revisions: rev 1 placed the MCU directly on the carrier (alternative D); rev 2 specified a Pi 5 with a persistent SQLite buffer (alternative J).
 - **Amendments** — decision 10 (2026-08-15): WeAct publishes no gerbers and no licence; corrects the premises of decisions 2 and 4.
+- **Amendments** — decision 11 (2026-08-25): the gateway is the bus time-synchronization master; fixes the network time base that decision 1 leaves unassigned.
 
 ## Context and problem
 
@@ -88,6 +89,18 @@ The smart-node side (carrier PCB, WeAct core board, F405/F412/F446 drop-in, ATEC
 9. **Domain mapping.** Each Cyphal node belongs to exactly one IndustryFlow `module` within the cabinet `machine`. Subject-IDs identify *what data*; Node-ID identifies *which physical node*; gateway resolves Node-ID → module assignment via configuration. Tagging by `production_unit_id` (slot) is applied at the gateway based on node-to-slot mapping, not encoded in the CAN frame.
 
 10. **WeAct publishes no gerbers and no licence** *(added 2026-08-15)*. Decisions 2 and 4 assume both. The snapshot is what upstream does publish — V1.1 schematic, V1.1 board outline, V1.0 STEP — filed as `store/SP0005-D-coreboard-snapshot.zip` (`REGISTRY.md`) with WeAct copyright and `LicenseRef-WeAct-unstated`, not the project's CERN-OHL-S default. Decision 2's board selection and decision 4's retention requirement stand.
+
+11. **The gateway is the bus time-synchronization master** *(added 2026-08-25)*. It publishes `uavcan.time.Synchronization` (fixed subject 7168) at `Immediate` priority, at least once per second, and it is the only master on the bus. *At least*: the type's `MAX_PUBLICATION_PERIOD` of one second is a ceiling on the interval, and a slave discards the message pair whenever two arrive further apart than that, so a master targeting exactly 1.000 s loses roughly half its refreshes to ordinary scheduling jitter. The implementation publishes inside the ceiling, not on it. Every node is a slave and fills the `uavcan.time.SynchronizedTimestamp` field of its telemetry from that base.
+
+    Three constraints make this workable rather than nominal:
+
+    - **The gateway holds the lowest Node-ID on the bus.** The dominant master is the master with the lowest Node-ID (`7168.Synchronization.1.0`), so the gateway's ID is allocated below the node range ADR-0005 decision 6 provisions. Master election is then deterministic without a second master existing.
+    - **A node applies the master's time as an offset, never as a clock step.** The node's monotonic microsecond clock carries libcanard's transmission deadlines and transfer-ID timeouts; stepping it would corrupt transport state. The offset is applied only where a timestamp is written.
+    - **Loss of the master returns a node to `UNKNOWN` (0), not to a frozen offset.** After the publisher timeout — thrice the observed publication interval — the node reports 0, the type's own value for "not known". A stale offset presented as truth is worse than an absent timestamp, because a consumer cannot detect it.
+
+    **Bounded accuracy claim.** The achievable accuracy is milliseconds, not the microseconds the algorithm permits. The master's transmit timestamp comes from the SocketCAN transmit echo across an SPI-attached MCP2515 (decision 6), and a node timestamps reception in its polled main loop rather than in an interrupt; the second term is the larger. This is sufficient for the purpose — giving samples from different nodes a shared origin, which ADR-0016's state estimator requires and per-node uptime cannot provide — and insufficient for any claim finer than that. Sub-millisecond synchronization would need hardware receive timestamping on the node and is not decided here.
+
+    This qualifies no decision on record. Decision 1 adopts Cyphal without assigning a time base; decision 7's trusted-zone boundary is unchanged, and the master is trusted exactly as every other publisher inside the cabinet already is.
 
 ## Alternatives considered
 

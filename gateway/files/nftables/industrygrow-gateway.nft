@@ -13,11 +13,12 @@
 #   cable or falling back to Wi-Fi never locks the operator out (ADR-0004 d5, as
 #   amended). The CAN interfaces (can*/vcan*) are deliberately NOT in the set.
 #
-# OUTBOUND: OPEN at bring-up. ADR-0004 rev 1 decision 5 ("outbound to IndustryFlow
-#   only") is the PRODUCTION / roadmap-stage-11 target. IndustryFlow does not exist
-#   yet (ADR-0020 context), and apt/pip need egress to provision. Locking egress to
-#   a non-existent endpoint now would break bring-up. The production lock-down is
-#   marked below; it is NOT enabled by this automation.
+# OUTBOUND: OPEN at bring-up, per ADR-0004 rev 1 decision 19, which records that
+#   decision 5's outbound half binds only from roadmap stage 11. IndustryFlow does
+#   not exist yet (ADR-0020 context) and apt/pip need egress to provision. The
+#   production target is two named destinations, not one: the IndustryFlow endpoint
+#   and the operator ERP the profile pull calls (ADR-0015 d5, ADR-0022 d2/d8). The
+#   lock-down is marked below; it is NOT enabled by this automation.
 
 flush ruleset
 
@@ -51,13 +52,14 @@ table inet industrygrow {
         # BRING-UP: egress open (apt/pip/DNS/NTP need it).
         type filter hook output priority 0; policy accept;
 
-        # ===== PRODUCTION TARGET (ADR-0004 rev 1 decision 5, roadmap stage 11) =====
+        # ===== PRODUCTION TARGET (ADR-0004 rev 1 decisions 5 and 19) =====
         # When IndustryFlow exists, flip `policy accept` -> `policy drop` and allow
         # only the minimum egress, e.g.:
         #     ct state established,related accept
         #     oif "lo" accept
         #     udp dport 53 accept                       # DNS
         #     ip daddr <industryflow-ip> tcp dport 443 accept   # mTLS upload
+        #     ip daddr <erp-ip> tcp dport <erp-port> accept      # mTLS profile pull (IGROW_ERP_URL)
         # DO NOT enable now: no endpoint exists and provisioning needs egress.
     }
 }

@@ -1,0 +1,75 @@
+# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# IndustryGrow bus time-synchronization master (ADR-0002 rev 3 d11).
+#
+# Publishes uavcan.time.Synchronization (subject 7168) at least once per second.
+# Every node on the
+# bus is a slave to it; without this unit running they stamp their telemetry
+# UNKNOWN (0) and samples from different nodes share no common origin.
+#
+# WHY ITS OWN UNIT, not part of gateway-pycyphal.service. The time master is a
+# permanent bus role, not a feature of the telemetry consumer: the nodes' time
+# base must not go stale because the consumer is restarting, being rebuilt, or is
+# still the bring-up placeholder that gateway-pycyphal.service runs today. The two
+# have different lifetimes, so they are different units.
+#
+# It needs no dependency beyond the stdlib — a raw AF_CAN socket, the same access
+# path the pycyphal unit uses, so the same sandbox applies.
+
+[Unit]
+Description=IndustryGrow bus time-synchronization master (Cyphal 7168) — ADR-0002 d11
+Documentation=https://github.com/IIchukissII/IndustryGrow
+After=network-online.target industrygrow-can.service
+Requires=industrygrow-can.service
+
+[Service]
+Type=simple
+User=gateway
+Group=gateway
+
+EnvironmentFile=-/etc/industrygrow/gateway.env
+ExecStart=/opt/industrygrow/venv/bin/python /opt/industrygrow/gateway_timesync.py
+Restart=always
+RestartSec=2
+
+# --- Resource limits ---------------------------------------------------------
+# One socket, one frame per second, no buffering. The limits are a containment
+# bound, not a budget it is expected to approach.
+MemoryAccounting=yes
+MemoryHigh=48M
+MemoryMax=64M
+TasksAccounting=yes
+TasksMax=8
+
+# --- Least-privilege hardening (ADR-0004 rev 1 decision 7) -------------------
+# Same sandbox as gateway-pycyphal.service. CAN is reached through an AF_CAN
+# socket, granted by RestrictAddressFamilies below — classic SocketCAN exposes no
+# /dev character device, so there is deliberately no DeviceAllow=.
+#
+# ProtectClock=yes is correct and NOT in tension with the job: this process READS
+# the system clock and never sets it. The gateway host's own clock discipline
+# (NTP) is a separate concern, and a time master that could step the host clock
+# would be a strictly worse design.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadOnlyPaths=/etc/industrygrow
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+RemoveIPC=yes
+SystemCallArchitectures=native
+RestrictAddressFamilies=AF_UNIX AF_CAN
+
+[Install]
+WantedBy=multi-user.target

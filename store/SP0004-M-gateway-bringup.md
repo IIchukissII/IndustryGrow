@@ -89,6 +89,7 @@ The script is **idempotent** — safe to re-run after editing
 | Python venv | `/opt/industrygrow/venv`, pinned deps. **Never** `pip --break-system-packages` (PEP 668). | ADR-0002 d6 |
 | vcan0 | Bring up **virtual CAN first** for validation before any HAT. | ADR-0002 rev 3 d6/d8 |
 | Gateway service | `gateway-pycyphal.service` as `gateway`, hardened sandbox (`NoNewPrivileges`, `ProtectSystem=strict`, `RestrictAddressFamilies=AF_CAN`, `Restart=`) **+ resource limits** (`MemoryMax`/`MemoryHigh`, `TasksMax`) sized for the Pi 3B+/1 GB floor, headroom above the 100 MB ring buffer. Runs a bring-up self-test placeholder until the DSDL app exists (ADR-0005). | ADR-0004 d7; ADR-0002 d6 |
+| Time master | `industrygrow-timesync.service` as `gateway`, same sandbox. Publishes `uavcan.time.Synchronization` (subject 7168) so nodes stamp telemetry against one time base; without it every node reports `UNKNOWN` (0). Separate unit from the Cyphal edge — the time base must not go stale while that one restarts. | ADR-0002 d11; ADR-0004 d7, d20 |
 | SSH | Drop-in `00-industrygrow-hardening.conf` (read before cloud-init's `50-`; sshd is first-value-wins): key-only, no root, no passwords. sshd stays enabled. | ADR-0004 d2 |
 | fail2ban | Strict SSH thresholds, journald backend. | ADR-0004 d3 |
 | unattended-upgrades | Security patches on; reboot disabled unless `IGROW_UNATTENDED_REBOOT_TIME` set. | ADR-0004 d4 |
@@ -105,10 +106,10 @@ provisioning):
 
 | Concern | Bring-up (now) | Production target | Source |
 |---------|----------------|-------------------|--------|
-| SSH daemon | Enabled (key-only, no root). | Disabled by default, re-enabled per-op. | ADR-0004 d2 |
+| SSH daemon | Enabled (key-only, no root). | Disabled by default, re-enabled per-op. | ADR-0004 d2, d19 |
 | Inbound | default-deny except SSH on the LAN-facing mgmt interfaces. | unchanged. | ADR-0004 d6 |
-| Outbound | Open (apt/pip/DNS need it; IndustryFlow doesn't exist yet). | Locked to IndustryFlow only. | ADR-0004 d5 |
-| Reboot window | Disabled (`IGROW_UNATTENDED_REBOOT_TIME` empty; photoperiod undefined). | Set once photoperiod is known. | ADR-0004 d4 |
+| Outbound | Open (apt/pip/DNS need it; IndustryFlow doesn't exist yet). | Locked to the IndustryFlow and operator-ERP endpoints. | ADR-0004 d5, d19 |
+| Reboot window | Disabled (`IGROW_UNATTENDED_REBOOT_TIME` empty; photoperiod undefined). | Set once photoperiod is known. | ADR-0004 d4, d19 |
 | Local store | RAM-only on SD (`IGROW_PERSISTENT_BUFFER=off`). | Bounded buffer on SSD/NVMe. | ADR-0020 |
 
 The production egress lock-down lives commented in
@@ -202,6 +203,8 @@ Run on the Pi (or via `ssh igrow@gbox-dev "<cmd>"`):
 ip -details link show vcan0                       # state UP
 systemctl --no-pager status gateway-pycyphal.service   # active; "self-test PASSED" in log
 journalctl -u gateway-pycyphal.service -n 20 --no-pager
+systemctl --no-pager status industrygrow-timesync.service   # active
+candump <iface> 041C0000:1FFFFF00                          # the time-sync frame
 sudo sshd -T | grep -Ei 'passwordauthentication|permitrootlogin|pubkeyauthentication'
 # expect: passwordauthentication no / permitrootlogin no / pubkeyauthentication yes
 sudo nft list ruleset                             # policy drop; SSH accept on the LAN iface

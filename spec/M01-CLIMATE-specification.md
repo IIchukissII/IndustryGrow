@@ -476,7 +476,7 @@ end to end or M4 is narrowed. Unresolved. O-46.
 | Rail failure | Failure of U4 or U5 removes U2 or U3 from the bus. The boot probe handles this as absence; *not fitted*, *failed* and *unpowered* remain indistinguishable. O-37 |
 | Commanded operations | Vendor `uavcan.node.ExecuteCommand` IDs. 1 = U3 self-test: 10 s, run across the loop rather than inline, U3 stopped and reconfigured around it, nothing else addressing U3 meanwhile. 2 = U1 condensate-recovery pulse, fired immediately after a U3 poll so it cannot overlap a measurement window |
 | Diagnostics | `uavcan.diagnostic.Record` (8184) at OPTIONAL priority, event-driven: population at boot, health transitions naming the failing devices, command results. Never periodic |
-| Message timestamps | `uavcan.time.SynchronizedTimestamp` = 0 (UNKNOWN). No synchronization master publishes on this bus, and a node's uptime is not a network time base |
+| Message timestamps | `uavcan.time.SynchronizedTimestamp` from the gateway time base: the node is a synchronization slave to subject 7168 (ADR-0002 d11), tracking the master as an offset against its own monotonic clock. 0 (UNKNOWN) before the first pair of sync messages and again after the master has been silent for 3 s. Accuracy is milliseconds — reception is timestamped in the polled main loop |
 | Port introspection | `uavcan.node.port.List` (7510) every 10 s at OPTIONAL priority: published subjects, and the services served |
 | Health | Heartbeat health is the worse of identity and sensor state. CAUTION when U1 is present and its reads fail; ADVISORY for U2 or U3, or when identity is not ATECC-anchored. Three consecutive failed cycles is the threshold |
 | Role and zone | Not held by the node; assigned by the gateway (ADR-0014 d7) |

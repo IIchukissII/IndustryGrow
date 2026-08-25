@@ -158,6 +158,7 @@ setup_dirs() {
     [ -f "${CONFIG_DIR}/gateway.env" ] && chgrp gateway "${CONFIG_DIR}/gateway.env" && chmod 0640 "${CONFIG_DIR}/gateway.env"
     install -d -m 0750 -o root -g gateway "${APP_DIR}"
     install -m 0644 "${FILES_DIR}/app/gateway_selftest.py" "${APP_DIR}/gateway_selftest.py"
+    install -m 0644 "${FILES_DIR}/app/gateway_timesync.py" "${APP_DIR}/gateway_timesync.py"
     install -m 0755 "${FILES_DIR}/app/can-up.sh" "${APP_DIR}/can-up.sh"
     # The profile client lives beside provision.sh rather than under files/app,
     # because it is also run by hand from a checkout (`show`, `once`). It needs no
@@ -267,6 +268,18 @@ install_gateway_service() {
     systemctl restart gateway-pycyphal.service
 }
 
+install_timesync_service() {
+    # The bus time master (ADR-0002 rev 3 d11). Separate unit from
+    # gateway-pycyphal.service on purpose — see the unit file's header: the nodes'
+    # time base must not go stale because the telemetry consumer is restarting.
+    log "installing industrygrow-timesync.service (Cyphal time master, subject 7168)"
+    install -m 0644 "${FILES_DIR}/systemd/industrygrow-timesync.service"         /etc/systemd/system/industrygrow-timesync.service
+    systemctl daemon-reload
+    systemctl enable industrygrow-timesync.service
+    # restart (not just enable --now) so a re-run picks up updated unit/app code.
+    systemctl restart industrygrow-timesync.service
+}
+
 install_profile_pull() {
     # The ADR-0015 d5 profile poll. Separate from gateway-pycyphal.service because
     # that unit keeps /etc/industrygrow read-only and this one has to write the
@@ -371,6 +384,8 @@ summary() {
     ip -details link show vcan0
     systemctl --no-pager status gateway-pycyphal.service
     journalctl -u gateway-pycyphal.service -n 20 --no-pager
+    systemctl --no-pager status industrygrow-timesync.service
+    candump <iface> 041C0000:1FFFFF00   # the time-sync frame (subject 7168)
     sshd -T | grep -Ei 'passwordauthentication|permitrootlogin|pubkeyauthentication'
     nft list ruleset
     fail2ban-client status sshd
@@ -393,6 +408,7 @@ main() {
     setup_can_hat
     setup_can
     install_gateway_service
+    install_timesync_service
     install_profile_pull
     harden_ssh
     setup_fail2ban
