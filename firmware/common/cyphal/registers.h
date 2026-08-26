@@ -17,8 +17,15 @@
  * against your generated output (a likely first compile fixup).
  *
  * This is a small RAM-backed store supporting two value flavours: natural16
- * (node-id, subject-id port assignments) and string (descriptions). Flash
- * persistence is deferred — registers reset to defaults on power-up for now. */
+ * (node-id, subject-id port assignments) and string (descriptions).
+ *
+ * One register is not RAM-backed: `uavcan.node.id` is mutable and PERSISTENT,
+ * and a write commits to the carrier flash sector behind
+ * common/carrier/identity.h (ADR-0027 d5). It takes effect at the next restart,
+ * so between the write and that restart the register reports the committed
+ * value while the transport still runs on the previous one. Every other
+ * register resets to its default on power-up; subject-ID assignments still
+ * have no store (ADR-0005 d7). */
 
 #include "uavcan/_register/Value_1_0.h"
 #include "uavcan/_register/Name_1_0.h"

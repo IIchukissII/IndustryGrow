@@ -81,7 +81,7 @@ That choice cannot be made in isolation, because the Node-ID is not the only ide
 
     This bounds decision 6 rather than changing it. Unprovisioned still means `127`; what changes is that a provisioned node is no longer sent there for an unrelated reason, so an operator reading `127` off the bus learns exactly one thing and does not need a `GetInfo` round-trip to find out which fault it is. Two unprovisioned nodes still collide at `127` — decision 6 already says so, and no reserved value fixes it.
 
-    The firmware constant is `IGROW_NODE_ID_UNIDENTIFIED`; its name follows its meaning when decision 2's store lands.
+    The firmware constant is `IGROW_NODE_ID_UNPROVISIONED`.
 
 ## Alternatives considered
 

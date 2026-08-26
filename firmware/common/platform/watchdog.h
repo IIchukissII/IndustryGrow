@@ -37,4 +37,11 @@ void watchdog_start(void);
  * from an interrupt would keep a hung foreground alive and defeat the point. */
 void watchdog_kick(void);
 
+/* IWDG_KR reload command (RM0090 21.4.1). Exposed because the flash driver has
+ * to reload the watchdog itself: a sector erase stalls every flash read, so
+ * watchdog_kick() cannot run while one is in progress and the reload is issued
+ * from common/platform/flash.c, which executes from RAM. One key, one
+ * definition. */
+#define IGROW_IWDG_KEY_RELOAD 0xAAAAu
+
 #endif /* IGROW_PLATFORM_WATCHDOG_H */

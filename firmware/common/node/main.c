@@ -11,6 +11,10 @@
  * selects the sensor-module personality (ADR-0017 d16), which is the only part
  * that differs between an E0002 and an E0006 in the socket.
  *
+ * Two independent questions are answered here, and neither answers the other
+ * (ADR-0027 d1): the strap says WHAT is fitted, the carrier flash store says
+ * WHICH INSTANCE this node is. Telemetry needs both.
+ *
  * Nothing here knows what a personality measures. That is the point: a new
  * module class adds a nodes/<type>/ directory and one registry entry, and this
  * file does not change.
@@ -18,6 +22,7 @@
 
 #include "e0001.h"
 #include "atecc608.h"
+#include "identity.h"
 #include "node.h"
 #include "clock.h"
 #include "watchdog.h"
@@ -93,15 +98,33 @@ int main(void)
         uart_puts("absent -> STM32 factory UID\r\n");
     }
 
+    /* Instance identity: the Node-ID, read from the dedicated carrier flash
+     * sector (ADR-0027 d2). Not derived from the strap -- one ID per module
+     * class collides the moment a class has two instances. */
+    identity_init();
+    const uint8_t node_id = identity_node_id();
+    uart_puts("node identity: ");
+    uart_puts(identity_state_str());
+    uart_puts(", node-id ");
+    uart_put_u32(node_id);
+    uart_puts("\r\n");
+
+    /* Telemetry needs a provisioned identity AND a resolved personality. An
+     * unprovisioned node sits at 127 and publishes no subjects (d6); a
+     * provisioned node whose class resolves to nothing keeps its own Node-ID
+     * and publishes nothing either, because it does not know what it would
+     * publish (d10). Both stay visible: heartbeat, GetInfo, registers. */
+    const bool publish = identity_provisioned() && (node != NULL);
+
     /* Live bus + Cyphal node: Heartbeat at 1 Hz, GetInfo, register,
-     * ExecuteCommand. Brought up even when unidentified -- a node that is
-     * visible on the gateway can be diagnosed; one that stays silent cannot. */
-    uint8_t node_id = (node != NULL) ? node->node_id : IGROW_NODE_ID_UNIDENTIFIED;
+     * ExecuteCommand. Brought up in every case -- a node that is visible on
+     * the gateway can be diagnosed; one that stays silent cannot. */
     const char *cyphal_name = (node != NULL) ? node->cyphal_name
                                              : IGROW_NODE_NAME_UNIDENTIFIED;
     const char *description = (node != NULL) ? node->name : "unidentified module";
     (void)can_init_normal();
     cyphal_init(node_id, cyphal_name, description);
+    cyphal_report_identity(identity_provisioned(), node != NULL);
     uart_puts("cyphal up: node-id ");
     uart_put_u32(node_id);
     uart_puts("\r\n");
@@ -110,10 +133,12 @@ int main(void)
      * M01's SCD41 alone blocks 500 ms for its mandatory stop, and 800 ms more
      * on the one boot that persists ASC-off to EEPROM -- which is exactly why
      * the watchdog is not running yet. */
-    if (node != NULL) {
+    if (publish) {
         node->init();
     } else {
-        uart_puts("no personality: skeleton only, no sensor publications\r\n");
+        uart_puts("skeleton only, no sensor publications: ");
+        uart_puts(identity_provisioned() ? "no personality claims this strap\r\n"
+                                         : "no Node-ID provisioned\r\n");
     }
 
     /* Last: the personality bring-up, the ATECC read and the CAN self-test are
@@ -124,7 +149,7 @@ int main(void)
     uint32_t last = millis();
     for (;;) {
         watchdog_kick(); /* the ONLY kick: from the foreground, never an ISR */
-        if (node != NULL) {
+        if (publish) {
             node->spin(); /* queue sensor telemetry ... */
         }
         cyphal_spin();    /* ... and flush TX + service RX */

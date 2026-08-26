@@ -26,6 +26,7 @@
 #include "uavcan/time/Synchronization_1_0.h"
 
 #include "registers.h"
+#include "identity.h"
 #include "e0001.h" /* CMSIS: NVIC_SystemReset */
 #include "atecc608.h"
 #include "clock.h"
@@ -109,6 +110,15 @@ static void mem_free(CanardInstance *ins, void *pointer)
  * fallback? Sampled once so the answer cannot change between the GetInfo
  * response and the health it is reported through. */
 static bool s_identity_anchored;
+
+/* The other two identity answers, reported by main.c after cyphal_init()
+ * (ADR-0027 d6, d10). Default true so a caller that never reports leaves the
+ * heartbeat unchanged. */
+static bool s_node_id_provisioned = true;
+static bool s_personality_resolved = true;
+
+/* Next report of a committed Node-ID the running transport has not adopted. */
+static uint64_t s_next_pending_notice_us;
 
 /* 16-byte Cyphal unique_id, per ADR-0027 d8. The carrier's ATECC608 is the node's
  * hardware-identity anchor (ADR-0007 d5), so its 9-byte serial is the preferred
@@ -290,6 +300,16 @@ void cyphal_set_health(uint8_t health)
     s_personality_health = health;
 }
 
+void cyphal_report_identity(bool node_id_provisioned, bool personality_resolved)
+{
+    s_node_id_provisioned = node_id_provisioned;
+    s_personality_resolved = personality_resolved;
+    if (!node_id_provisioned) {
+        cyphal_diagnostic(uavcan_diagnostic_Severity_1_0_WARNING,
+                          "no Node-ID provisioned: running as 127, no subjects");
+    }
+}
+
 void cyphal_set_command_handler(cyphal_command_fn fn)
 {
     s_command_fn = fn;
@@ -417,8 +437,14 @@ static void publish_heartbeat(void)
      * reports a plausible unique_id either way. ADVISORY is the Health value
      * for exactly this: "a minor failure that does not prevent the subsystem
      * from performing any of its real-time functions". */
-    const uint8_t identity_health = s_identity_anchored ? uavcan_node_Health_1_0_NOMINAL
-                                                        : uavcan_node_Health_1_0_ADVISORY;
+    /* Three identity conditions, each ADVISORY on its own: no ATECC anchor
+     * (d8), no provisioned Node-ID (d6), and a module class no personality
+     * claims (d10). They are independent, so the heartbeat carries the worst
+     * rather than the first. */
+    const bool identity_ok = s_identity_anchored && s_node_id_provisioned &&
+                             s_personality_resolved;
+    const uint8_t identity_health = identity_ok ? uavcan_node_Health_1_0_NOMINAL
+                                                : uavcan_node_Health_1_0_ADVISORY;
     /* The worse of the skeleton's view and the personality's. A node whose
      * sensors have stopped answering is not NOMINAL, whatever its identity. */
     hb.health.value = (s_personality_health > identity_health) ? s_personality_health
@@ -644,6 +670,18 @@ void cyphal_spin(void)
     if (s_sync_have_offset &&
         ((micros64() - s_sync_last_rx_us) > SYNC_PUBLISHER_TIMEOUT_US)) {
         s_sync_have_offset = false;
+    }
+
+    /* ADR-0027 d5: while a committed Node-ID differs from the running one, the
+     * node reports the difference. Repeated rather than one-shot because the
+     * condition persists until the restart it asks for and an operator may
+     * attach after the commit; it ends at that restart, which is what keeps it
+     * a condition report and not the periodic log this channel refuses. */
+    if (identity_commit_pending() && (micros64() >= s_next_pending_notice_us)) {
+        s_next_pending_notice_us = micros64() + 10000000u;
+        cyphal_diagnostic_u32(uavcan_diagnostic_Severity_1_0_NOTICE,
+                              "Node-ID committed, restart to adopt:",
+                              identity_committed_node_id());
     }
 
     /* Honour an ExecuteCommand RESTART once its response has been flushed. */

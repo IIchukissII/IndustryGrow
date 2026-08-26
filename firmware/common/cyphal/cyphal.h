@@ -5,6 +5,7 @@
 #ifndef IGROW_CYPHAL_CYPHAL_H
 #define IGROW_CYPHAL_CYPHAL_H
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -14,10 +15,10 @@
  * on the gateway. The per-node personality (sensor publications) sits on top
  * via cyphal_publish().
  *
- * `node_id` is a static bring-up default. ADR-0027 makes it an instance value
- * provisioned into a carrier flash sector -- not derived from the module class --
- * which this image does not yet do. Call cyphal_init() once after can_init_normal(), then cyphal_spin()
- * as often as possible from the main loop.
+ * `node_id` is the instance identity read from the carrier flash store
+ * (ADR-0027 d1/d2), not a value derived from the module class. Call
+ * cyphal_init() once after can_init_normal(), then cyphal_spin() as often as
+ * possible from the main loop.
  *
  * `node_name` is the reverse-DNS uavcan.node.GetInfo name and `description` the
  * uavcan.node.description register. Both belong to the strap-selected
@@ -26,6 +27,16 @@
  * the wire. Both must outlive the call; string literals are the intended source. */
 void cyphal_init(uint8_t node_id, const char *node_name, const char *description);
 void cyphal_spin(void);
+
+/* Tell the skeleton the two independent identity answers, so it can report
+ * them (ADR-0027 d6, d10). Each degrades health to ADVISORY on its own and
+ * neither implies the other: a node can be provisioned with no personality, or
+ * carry a personality with no Node-ID. Call once, after cyphal_init().
+ *
+ * An unprovisioned node also gets one diagnostic naming what is missing --
+ * "an unprovisioned node must be diagnosable" is a decision driver of the ADR,
+ * and health alone does not say which of the identity faults is present. */
+void cyphal_report_identity(bool node_id_provisioned, bool personality_resolved);
 
 /* Publish a pre-serialized message on `subject_id` (a Cyphal port-ID). The
  * caller owns `transfer_id` (one counter per subject) — it is post-incremented

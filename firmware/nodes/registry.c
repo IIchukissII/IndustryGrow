@@ -11,10 +11,11 @@
  * common boot path (common/node/main.c) free of node-specific code. Adding a
  * module class is a directory under nodes/ and one line here.
  *
- * Node-IDs are static bring-up defaults and must be distinct across the bus.
- * ADR-0027 (Accepted) moves them out of this table entirely: a Node-ID identifies
- * an INSTANCE and is provisioned into carrier flash, so one ID per module class
- * collides as soon as a class has two instances. This image does not yet do that.
+ * A personality carries no Node-ID. One ID per module class collides as soon as
+ * a class has two instances, which ADR-0006 already schedules; ADR-0027 d1 makes
+ * the Node-ID an instance value provisioned into carrier flash
+ * (common/carrier/identity.h) and leaves this table with what it is for --
+ * which class means which sensors.
  */
 
 #include "node.h"
@@ -29,7 +30,6 @@
 static const node_personality_t s_personalities[] = {
     {
         .module_id = M05_MODULE_ID,
-        .node_id = 96u,
         .name = "M05-SAFETY (E0006)",
         .cyphal_name = "org.industrygrow.node.m05",
         .init = m05_sensors_init,
@@ -37,7 +37,6 @@ static const node_personality_t s_personalities[] = {
     },
     {
         .module_id = M01_MODULE_ID,
-        .node_id = 97u,
         .name = "M01-CLIMATE (E0002)",
         .cyphal_name = "org.industrygrow.node.m01",
         .init = m01_sensors_init,
