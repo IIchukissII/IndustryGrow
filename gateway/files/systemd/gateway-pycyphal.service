@@ -7,11 +7,13 @@
 # sandbox (ADR-0004 rev 1 decision 7). At bring-up it binds vcan0; for physical
 # hardware, change the interface in /etc/industrygrow/gateway.env (see Manual).
 #
-# NOTE — the ExecStart target is a BRING-UP SELF-TEST PLACEHOLDER, not the final
-# gateway application. The real Pycyphal service consumes the DSDL vocabulary
-# (now defined — ADR-0005, Accepted); building it out is roadmap stages 2+. The
-# placeholder validates the service user, this hardening sandbox, and the
-# SocketCAN/pycyphal path on vcan0.
+# ExecStart is the telemetry consumer: it subscribes to the node subjects, decodes
+# them through the DSDL vocabulary (ADR-0005), stamps each sample per ADR-0004 d18
+# and writes to the bounded local store of ADR-0020 d2. It only subscribes, so it
+# takes no Node-ID — the gateway's own ID belongs to industrygrow-timesync.service.
+#
+# gateway_selftest.py is retained beside it as a manual bring-up check of the
+# venv, this sandbox and the AF_CAN path; nothing runs it automatically.
 
 [Unit]
 Description=IndustryGrow gateway (Pycyphal/SocketCAN edge) — ADR-0002/0004
@@ -28,12 +30,17 @@ Group=gateway
 EnvironmentFile=-/etc/industrygrow/gateway.env
 # /var/lib/industrygrow — created and owned by the service user. Holds the
 # monotonic batch sequence number (ADR-0004 rev 1 d10) and, only on an SSD/NVMe
-# medium, the bounded store-and-forward buffer (ADR-0020 d2/d10). On the SD
-# bring-up card the buffer stays disabled (ADR-0020 d10; ADR-0004 d8-9 RAM-only).
+# medium, the bounded store-and-forward buffer (ADR-0020 d2/d10) as
+# telemetry.sqlite3. On the SD bring-up card the buffer stays disabled
+# (IGROW_PERSISTENT_BUFFER=off; ADR-0020 d10; ADR-0004 d8-9 RAM-only), and the
+# consumer then keeps only the live working set (ADR-0020 d6).
 StateDirectory=industrygrow
 StateDirectoryMode=0750
 
-ExecStart=/opt/industrygrow/venv/bin/python /opt/industrygrow/gateway_selftest.py --serve
+# The DSDL packages are generated at provisioning time, not vendored (ADR-0005
+# d10), so they are not importable without this path.
+Environment=PYTHONPATH=/opt/industrygrow/dsdl
+ExecStart=/opt/industrygrow/venv/bin/python /opt/industrygrow/gateway_telemetry.py --serve
 Restart=on-failure
 RestartSec=5
 

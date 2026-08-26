@@ -17,6 +17,7 @@
 # latest audited 1.x at each bring-up:
 #     /opt/industrygrow/venv/bin/pip index versions pycyphal
 # pycyphal pulls its transitive deps (numpy, pyserial, nunavut, ...); the lock
-# above captures and hashes them. The placeholder self-test (gateway_selftest.py)
-# needs only `import pycyphal` plus stdlib AF_CAN sockets.
+# above captures and hashes them. nunavut is what provision.sh drives through
+# pycyphal.dsdl.compile_all to generate the DSDL packages the telemetry consumer
+# imports — they are generated on the target, never vendored (ADR-0005 d10).
 pycyphal==1.27.0
