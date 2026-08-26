@@ -8,8 +8,9 @@
 
 /* IWDG key register commands (RM0090 21.4.1). */
 #define IWDG_KEY_ACCESS 0x5555u
-#define IWDG_KEY_RELOAD 0xAAAAu
 #define IWDG_KEY_START  0xCCCCu
+/* The reload key is IGROW_IWDG_KEY_RELOAD, in watchdog.h: flash.c issues it
+ * from RAM while a sector erase stalls flash. */
 
 /* Nominal LSI is 32 kHz, so /64 gives 500 counts/s and 1000 counts ~= 2 s.
  *
@@ -96,11 +97,11 @@ void watchdog_start(void)
     IWDG->RLR = IWDG_RELOAD_COUNTS;
     for (uint32_t g = WDG_SPIN_GUARD; (IWDG->SR != 0u) && g; g--) {
     }
-    IWDG->KR = IWDG_KEY_RELOAD;
+    IWDG->KR = IGROW_IWDG_KEY_RELOAD;
     IWDG->KR = IWDG_KEY_START;
 }
 
 void watchdog_kick(void)
 {
-    IWDG->KR = IWDG_KEY_RELOAD;
+    IWDG->KR = IGROW_IWDG_KEY_RELOAD;
 }

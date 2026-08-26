@@ -49,8 +49,10 @@ add_executable(igrow.elf
   common/node/main.c
   common/carrier/e0001.c
   common/carrier/atecc608.c
+  common/carrier/identity.c
   common/platform/clock.c
   common/platform/watchdog.c
+  common/platform/flash.c
   common/drivers/uart.c
   common/drivers/can.c
   common/drivers/i2c.c

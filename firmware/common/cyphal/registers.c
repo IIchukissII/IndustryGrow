@@ -4,6 +4,7 @@
  */
 
 #include "registers.h"
+#include "identity.h"
 #include <string.h>
 
 /* Supported value flavours in this minimal store. */
@@ -26,15 +27,24 @@ typedef struct {
  * filled at init from the strap-selected personality, not baked here -- one
  * image runs every module class (ADR-0017 d16). */
 static reg_entry_t s_regs[] = {
-    {"uavcan.node.id", REG_NATURAL16, true, false, 0u, {0}},
+    {"uavcan.node.id", REG_NATURAL16, true, true, 0u, {0}},
     {"uavcan.node.description", REG_STRING, true, false, 0u, "IndustryGrow node"},
 };
+
+/* uavcan.node.id is the provisioning interface of ADR-0027 d5: mutable and
+ * persistent, backed by the carrier flash sector, effective at the next restart
+ * rather than immediately. It is the only register with a store behind it, so
+ * the write path is special-cased here by index rather than generalised into a
+ * per-entry hook that nothing else would use. */
+#define REG_IDX_NODE_ID 0u
 
 #define REG_N (sizeof(s_regs) / sizeof(s_regs[0]))
 
 void registers_init(uint8_t node_id, const char *description)
 {
-    s_regs[0].n16 = node_id;
+    /* The register reports the CONFIGURED value, which at boot is also the
+     * running one -- the node is brought up with what the store held. */
+    s_regs[REG_IDX_NODE_ID].n16 = node_id;
     if (description != NULL) {
         size_t len = strlen(description);
         if (len >= sizeof(s_regs[1].str)) {
@@ -97,7 +107,20 @@ void registers_access(const uavcan_register_Name_1_0 *name,
         if (r->mutable_ && in != NULL && !uavcan_register_Value_1_0_is_empty_(in)) {
             if (r->type == REG_NATURAL16 && uavcan_register_Value_1_0_is_natural16_(in) &&
                 in->natural16.value.count >= 1u) {
-                r->n16 = in->natural16.value.elements[0];
+                const uint16_t v = in->natural16.value.elements[0];
+                if (i == REG_IDX_NODE_ID) {
+                    /* Out of range, or a flash failure, leaves the register
+                     * reading what the store actually holds -- which is how an
+                     * operator sees the write rejected. 127 is not an identity
+                     * (d10), so writing it clears the store rather than being
+                     * stored as one. */
+                    if (v <= IGROW_NODE_ID_UNPROVISIONED) {
+                        (void)identity_commit((uint8_t)v);
+                    }
+                    r->n16 = identity_committed_node_id();
+                } else {
+                    r->n16 = v;
+                }
             } else if (r->type == REG_STRING && uavcan_register_Value_1_0_is_string_(in)) {
                 size_t len = in->_string.value.count;
                 if (len >= sizeof(r->str)) {

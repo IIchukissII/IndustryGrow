@@ -24,8 +24,6 @@
  */
 typedef struct {
     uint8_t module_id;  /* 8-bit class ID, ADR-0014 rev 4 d6 */
-    uint8_t node_id;    /* static bring-up default; ADR-0027 makes it flash-provisioned
-                         * per instance and removes it from this record */
     const char *name;        /* human, for the debug console */
     const char *cyphal_name; /* reverse-DNS uavcan.node.GetInfo name, <= 50 bytes */
     void (*init)(void); /* called once, before the watchdog starts */
@@ -41,15 +39,18 @@ typedef struct {
  * up the standard node skeleton and publishes nothing. */
 const node_personality_t *node_for_module_id(uint8_t module_id);
 
-/* Node-ID used when no personality claims the strap. The node still enumerates
- * on the gateway -- an unidentified node that is visible can be diagnosed; one
- * that stays off the bus cannot. */
-#define IGROW_NODE_ID_UNIDENTIFIED 127u
+/* A personality does NOT carry a Node-ID. Which instance a node is on the bus
+ * is provisioned into carrier flash and read by common/carrier/identity.h
+ * (ADR-0027 d1); the class ID selects what the node measures and nothing else.
+ * IGROW_NODE_ID_UNPROVISIONED lives there too, because 127 now means exactly
+ * one thing -- no Node-ID provisioned (d10) -- and not "no personality". */
 
 /* GetInfo name when no personality claims the strap. Deliberately its own name
  * rather than a default class: ADR-0014 rev 4 d6 forbids guessing a class from
  * an ID that does not resolve, and the gateway must be able to see the
- * difference between a module it does not know and a module that is missing. */
+ * difference between a module it does not know and a module that is missing.
+ * This name and the node's health are how an unresolved personality is
+ * reported (ADR-0027 d10); the Node-ID no longer carries it. */
 #define IGROW_NODE_NAME_UNIDENTIFIED "org.industrygrow.node.unidentified"
 
 #endif /* IGROW_NODE_NODE_H */

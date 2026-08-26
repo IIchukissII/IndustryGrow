@@ -76,9 +76,10 @@ A Cyphal/CAN node. Application protocol and wire vocabulary are fixed elsewhere:
   (ADR-0027 d9). Module *class* is read from the ID straps at boot (ADR-0014
   d6/d8). The Cyphal `unique_id` — which physical unit this is — comes from the
   ATECC608 serial, with the STM32 factory UID as fallback (ADR-0027 d8). The
-  *Node-ID* — which instance on this bus — is a static bring-up default until
-  ADR-0027 d2's flash sector exists. Role/zone are *not* in firmware, they are
-  gateway-side tags (ADR-0014 d7).
+  *Node-ID* — which instance on this bus — is provisioned into a dedicated
+  sector of the MCU's internal flash on the carrier (ADR-0027 d2), written
+  through the `uavcan.node.id` register and adopted at the next restart.
+  Role/zone are *not* in firmware, they are gateway-side tags (ADR-0014 d7).
 
 ## Toolchain (decided)
 
@@ -138,10 +139,37 @@ class (ADR-0014 rev 4 d6): the node still brings up the Cyphal skeleton and
 enumerates as `org.industrygrow.node.unidentified`, publishing no subjects. A node
 that is visible can be diagnosed; a silent one cannot.
 
-It sits at Node-ID 127 today only because the personality picks the ID. ADR-0027
-d1 separates the two and d10 gives 127 a single meaning — *no Node-ID provisioned*
-— so once d2's flash store lands, an unidentified but provisioned node keeps its
-own ID and reports the unresolved personality through `GetInfo` and its health.
+`127` means one thing: no Node-ID is provisioned (ADR-0027 d10). An unidentified
+but provisioned node keeps its own Node-ID and reports the unresolved personality
+through `GetInfo` and its health. Publishing needs both answers — a provisioned
+identity and a resolved personality — so a node missing either is a skeleton.
+
+### Provisioning a Node-ID
+
+The store is the last flash sector (`0x080E0000`, sector 11), reserved by the
+linker script and outside the application region. A record is magic, version,
+Node-ID and CRC; an absent or interrupted record reads as unprovisioned.
+
+| Step | What happens |
+|---|---|
+| Write `uavcan.node.id` = *n* (0–126) | The sector is erased and rewritten. The register then reads *n* while the transport still runs on the old value |
+| Restart the node | *n* is adopted |
+| Write `uavcan.node.id` = 127 | The store is cleared; the node comes back unprovisioned |
+
+An out-of-range value or a flash failure leaves the register reading what the
+store actually holds, which is how a rejected write is visible. While a
+committed value differs from the running one the node repeats a
+`uavcan.diagnostic.Record` naming it (d5).
+
+**A flashing tool must not mass-erase.** Writing `igrow.hex` erases only the
+sectors the image covers, and the store is not one of them (d4). A mass erase
+de-provisions every node it touches.
+
+The commit blocks for the sector erase — of the order of a second, with
+interrupts masked. The erase routine runs from RAM and reloads the watchdog
+itself, because the flash controller stalls every flash read while it works.
+`millis()` loses that interval; provisioning asks for a restart in the same
+breath.
 
 ### Default subject-ID map
 
