@@ -82,6 +82,10 @@ static uint32_t s_win_n;
  * probed present and then stops answering is a fault; one that was never
  * fitted is not. */
 static uint8_t s_fail[2];
+
+/* Devices seen present at any point in this boot. A device that was here and is
+ * now gone is a FAULT, not an absence -- see report_health(). */
+static bool s_seen[2];
 #define FAIL_DEGRADED 3u
 
 static uint8_t s_last_health = uavcan_node_Health_1_0_NOMINAL;
@@ -112,11 +116,21 @@ static void note_read(uint8_t dev, bool ok)
  * (ADR-0018 d11), which is a secondary duty: ADVISORY. */
 static void report_health(void)
 {
+    /* Present and not answering, or present earlier in this boot and now gone.
+     * The second case matters more than it looks: every publisher is gated on
+     * its device flag, so a bus that wedges marks the devices absent and the
+     * node falls silent while reporting NOMINAL -- nothing is "present and
+     * failing". Metering that stops is exactly what this board exists to
+     * report. Absence is innocent only when the device was never there. */
+    const bool fault[2] = {
+        (s_ina226 && (s_fail[0] >= FAIL_DEGRADED)) || (s_seen[0] && !s_ina226),
+        (s_tmp117 && (s_fail[1] >= FAIL_DEGRADED)) || (s_seen[1] && !s_tmp117),
+    };
     uint8_t health = uavcan_node_Health_1_0_NOMINAL;
-    if (s_tmp117 && (s_fail[1] >= FAIL_DEGRADED)) {
+    if (fault[1]) {
         health = uavcan_node_Health_1_0_ADVISORY;
     }
-    if (s_ina226 && (s_fail[0] >= FAIL_DEGRADED)) {
+    if (fault[0]) {
         health = uavcan_node_Health_1_0_CAUTION;
     }
     cyphal_set_health(health);
@@ -127,9 +141,8 @@ static void report_health(void)
             cyphal_diagnostic(uavcan_diagnostic_Severity_1_0_NOTICE, "M05 sensors recovered");
         } else {
             cyphal_diagnostic_u32(uavcan_diagnostic_Severity_1_0_WARNING,
-                                  "M05 reads failing, bitmask U2|U1 =",
-                                  (uint32_t)((s_fail[0] >= FAIL_DEGRADED ? 1u : 0u) |
-                                             (s_fail[1] >= FAIL_DEGRADED ? 2u : 0u)));
+                                  "M05 devices faulted or vanished, bitmask U2|U1 =",
+                                  (uint32_t)((fault[0] ? 1u : 0u) | (fault[1] ? 2u : 0u)));
         }
     }
 }
@@ -187,6 +200,8 @@ static void probe(void)
     }
     s_ina226 = ina;
     s_tmp117 = i2c_probe(TMP117_ADDR);
+    s_seen[0] = s_seen[0] || s_ina226;
+    s_seen[1] = s_seen[1] || s_tmp117;
 }
 
 /* What this personality publishes, for uavcan.node.port.List. */
