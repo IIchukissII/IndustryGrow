@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
 # SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 # SPDX-License-Identifier: CC-BY-SA-4.0
-"""Bring-up self-test PLACEHOLDER for the IndustryGrow gateway service.
+"""Bring-up self-test for the IndustryGrow gateway service.
 
-This is NOT the final Pycyphal gateway application. The real service consumes the
-DSDL vocabulary (now defined — ADR-0005, Accepted) and the control/upload logic
-(ADR-0015, ADR-0004 rev 1 d10); building it out is roadmap stages 2+. This
-placeholder exists so the systemd unit
-`gateway-pycyphal.service` has something genuine to run during bring-up, proving:
+A manual check, run by hand. `gateway-pycyphal.service` runs gateway_telemetry.py;
+this stays because it isolates the environment from the application, proving:
 
   1. the venv and `pycyphal` import work under the unprivileged `gateway` user;
   2. the least-privilege sandbox (ADR-0004 rev 1 d7) does not block what the
@@ -18,9 +15,8 @@ placeholder exists so the systemd unit
      (ADR-0002 rev 3: validate before physical hardware).
 
 Run modes:
-  (default)  run the checks once and exit 0/1 (handy for a manual check).
-  --serve    run the checks, then idle with a periodic journal heartbeat so the
-             service stays "active (running)" and Restart= is meaningful.
+  (default)  run the checks once and exit 0/1.
+  --serve    run the checks, then idle with a periodic journal heartbeat.
 """
 
 from __future__ import annotations

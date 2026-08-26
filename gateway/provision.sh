@@ -53,6 +53,19 @@ preflight() {
 # wlan0, and recent kernels name onboard Ethernet end0 on Pi 5).
 detect_lan_iface() { ip route show default 2>/dev/null | awk '/default/ {print $5; exit}'; }
 
+# Where the DSDL namespaces are, in the two ways this script is run: from the
+# bundle deploy.ps1 stages (which carries them next to provision.sh, because the
+# firmware tree they live in is not part of gateway/), or straight from a repo
+# checkout. The definitions themselves are never copied into gateway/ — one tree,
+# staged at deploy time.
+default_dsdl_roots() {
+    if [ -d "${SCRIPT_DIR}/dsdl/uavcan" ] && [ -d "${SCRIPT_DIR}/dsdl/industryflow" ]; then
+        printf '%s %s' "${SCRIPT_DIR}/dsdl/uavcan" "${SCRIPT_DIR}/dsdl/industryflow"
+        return
+    fi
+    printf '%s %s'         "${SCRIPT_DIR}/../firmware/third_party/public_regulated_data_types/uavcan"         "${SCRIPT_DIR}/../firmware/dsdl/industryflow"
+}
+
 # Load defaults, then the installed env file (operator edits win).
 load_env() {
     IGROW_SSH_IFACES="wlan0 eth0 end0"  # mgmt NICs SSH may arrive on (a set)
@@ -68,6 +81,9 @@ load_env() {
     IGROW_CAN_HAT_SPI_MAXFREQ="1000000"
     IGROW_UNATTENDED_REBOOT_TIME=""
     IGROW_PERSISTENT_BUFFER="off"
+    # DSDL root namespaces compiled at provisioning time (ADR-0005 d10: generated
+    # code is not vendored). Empty = resolved by default_dsdl_roots below.
+    IGROW_DSDL_ROOTS=""
     IGROW_INDUSTRYFLOW_ENDPOINT=""
     IGROW_REQUIRE_HASHES="0"
 
@@ -79,6 +95,11 @@ load_env() {
     fi
     # shellcheck disable=SC1091
     . "${CONFIG_DIR}/gateway.env"
+
+    # An empty value in gateway.env means "keep the default", as for IGROW_LAN_IFACE
+    # below: systemd's EnvironmentFile passes an empty assignment through, so the
+    # template can name every variable without a blank one disabling a step.
+    [ -n "${IGROW_DSDL_ROOTS}" ] || IGROW_DSDL_ROOTS="$(default_dsdl_roots)"
 
     # Lockout-safe LAN interface resolution. If unset, or if the configured iface
     # is not the one carrying the default route (the management path), prefer the
@@ -135,7 +156,7 @@ apt_base() {
     apt-get install -y --no-install-recommends \
         python3-venv python3-full \
         nftables fail2ban unattended-upgrades \
-        can-utils iproute2 ca-certificates
+        can-utils iproute2 ca-certificates         sqlite3
 }
 
 create_service_user() {
@@ -159,6 +180,8 @@ setup_dirs() {
     install -d -m 0750 -o root -g gateway "${APP_DIR}"
     install -m 0644 "${FILES_DIR}/app/gateway_selftest.py" "${APP_DIR}/gateway_selftest.py"
     install -m 0644 "${FILES_DIR}/app/gateway_timesync.py" "${APP_DIR}/gateway_timesync.py"
+    install -m 0644 "${FILES_DIR}/app/gateway_telemetry.py" "${APP_DIR}/gateway_telemetry.py"
+    install -m 0644 "${FILES_DIR}/app/igrow_subjects.py" "${APP_DIR}/igrow_subjects.py"
     install -m 0755 "${FILES_DIR}/app/can-up.sh" "${APP_DIR}/can-up.sh"
     # The profile client lives beside provision.sh rather than under files/app,
     # because it is also run by hand from a checkout (`show`, `once`). It needs no
@@ -187,6 +210,34 @@ setup_venv() {
     "${VENV_DIR}/bin/pip" "${pip_args[@]}"
     # venv is root-owned and world-readable: the service only reads/executes it.
     chmod -R a+rX "${VENV_DIR}"
+}
+
+setup_dsdl() {
+    # Nunavut runs through pycyphal, so this needs the venv from setup_venv.
+    local out="${APP_DIR}/dsdl"
+    local roots=() r
+    for r in ${IGROW_DSDL_ROOTS}; do
+        if [ -d "${r}" ]; then roots+=("${r}"); else warn "DSDL namespace not found: ${r}"; fi
+    done
+    if [ "${#roots[@]}" -eq 0 ]; then
+        warn "no DSDL namespaces found — gateway-pycyphal.service will not start."
+        warn "copy firmware/dsdl and firmware/third_party/public_regulated_data_types"
+        warn "alongside gateway/, or set IGROW_DSDL_ROOTS in ${CONFIG_DIR}/gateway.env"
+        return 0
+    fi
+    log "compiling DSDL namespaces into ${out}"
+    # Regenerated whole rather than merged: a stale package for a type that has
+    # since changed is the one failure this step exists to prevent.
+    rm -rf "${out}"
+    install -d -m 0755 "${out}"
+    "${VENV_DIR}/bin/python" - "${out}" "${roots[@]}" <<'PYDSDL'
+import sys
+import pycyphal.dsdl
+
+out, *roots = sys.argv[1:]
+pycyphal.dsdl.compile_all(roots, output_directory=out)
+PYDSDL
+    chmod -R a+rX "${out}"
 }
 
 setup_can_hat() {
@@ -259,7 +310,7 @@ setup_can() {
 }
 
 install_gateway_service() {
-    log "installing gateway-pycyphal.service (runs as 'gateway', hardened)"
+    log "installing gateway-pycyphal.service (telemetry consumer, runs as 'gateway', hardened)"
     install -m 0644 "${FILES_DIR}/systemd/gateway-pycyphal.service" \
         /etc/systemd/system/gateway-pycyphal.service
     systemctl daemon-reload
@@ -405,6 +456,7 @@ main() {
     create_service_user
     setup_dirs
     setup_venv
+    setup_dsdl
     setup_can_hat
     setup_can
     install_gateway_service

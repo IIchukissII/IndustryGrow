@@ -84,11 +84,12 @@ The script is **idempotent** — safe to re-run after editing
 
 | Step | Action | ADR |
 |------|--------|-----|
-| Base packages | `python3-venv`, `nftables`, `fail2ban`, `unattended-upgrades`, `can-utils`. **No Docker** — one systemd service, not a container. | ADR-0002; ADR-0004 |
+| Base packages | `python3-venv`, `nftables`, `fail2ban`, `unattended-upgrades`, `can-utils`, `sqlite3`. **No Docker** — one systemd service, not a container. | ADR-0002; ADR-0004 |
 | Service user | System user `gateway`: `adduser --system`, no login shell, no sudo; scoped to CAN + its config dir. | ADR-0004 d7 |
 | Python venv | `/opt/industrygrow/venv`, pinned deps. **Never** `pip --break-system-packages` (PEP 668). | ADR-0002 d6 |
 | vcan0 | Bring up **virtual CAN first** for validation before any HAT. | ADR-0002 rev 3 d6/d8 |
-| Gateway service | `gateway-pycyphal.service` as `gateway`, hardened sandbox (`NoNewPrivileges`, `ProtectSystem=strict`, `RestrictAddressFamilies=AF_CAN`, `Restart=`) **+ resource limits** (`MemoryMax`/`MemoryHigh`, `TasksMax`) sized for the Pi 3B+/1 GB floor, headroom above the 100 MB ring buffer. Runs a bring-up self-test placeholder until the DSDL app exists (ADR-0005). | ADR-0004 d7; ADR-0002 d6 |
+| Gateway service | `gateway-pycyphal.service` as `gateway`, hardened sandbox (`NoNewPrivileges`, `ProtectSystem=strict`, `RestrictAddressFamilies=AF_CAN`, `Restart=`) **+ resource limits** (`MemoryMax`/`MemoryHigh`, `TasksMax`) sized for the Pi 3B+/1 GB floor, headroom above the 100 MB ring buffer. Runs `gateway_telemetry.py`: subscribes to the node subjects, decodes them through the DSDL vocabulary, stamps `t_acq`/`t_rx`/`t_store` and writes the local store. Subscribe-only, so it takes no Node-ID. | ADR-0004 d7, d18, d21; ADR-0002 d6; ADR-0020 d2 |
+| DSDL packages | Compiled on the Pi into `/opt/industrygrow/dsdl` from `firmware/dsdl/industryflow` and the pinned regulated set, staged beside `provision.sh` by `deploy.ps1`. Generated code is never vendored. | ADR-0005 d10 |
 | Time master | `industrygrow-timesync.service` as `gateway`, same sandbox. Publishes `uavcan.time.Synchronization` (subject 7168) so nodes stamp telemetry against one time base; without it every node reports `UNKNOWN` (0). Separate unit from the Cyphal edge — the time base must not go stale while that one restarts. | ADR-0002 d11; ADR-0004 d7, d20 |
 | SSH | Drop-in `00-industrygrow-hardening.conf` (read before cloud-init's `50-`; sshd is first-value-wins): key-only, no root, no passwords. sshd stays enabled. | ADR-0004 d2 |
 | fail2ban | Strict SSH thresholds, journald backend. | ADR-0004 d3 |
@@ -162,8 +163,7 @@ vcan0 needs none of this — do not configure it for validation. For a physical 
 
 > **A physical bus needs another node.** Classic CAN requires at least one other
 > node to ACK a frame; on a lone interface (no peer) transmits never complete, so
-> the placeholder self-test and any `cansend` will not pass until real nodes are on
-> the bus. To bench-test the controller alone, use internal loopback:
+> any `cansend` will not pass until real nodes are on the bus. To bench-test the controller alone, use internal loopback:
 > `sudo ip link set can0 type can bitrate 500000 loopback on` (turn it off for the
 > real bus).
 
@@ -177,11 +177,35 @@ vcan0 needs none of this — do not configure it for validation. For a physical 
 ## 7. Storage medium
 
 - **Bring-up = SD card (provisional).** Acceptable only RAM-only, no local store
-  (`IGROW_PERSISTENT_BUFFER=off`; ADR-0020 d10; ADR-0004 d8-9).
+  (`IGROW_PERSISTENT_BUFFER=off`; ADR-0020 d10; ADR-0004 d8-9). The consumer still
+  decodes and keeps the live working set; nothing is written and `t_store` is
+  absent rather than zero.
 - **Production = SSD/NVMe** (USB-SSD on Pi 4, NVMe-via-M.2-HAT on Pi 5): the
   boot-and-data medium for any gateway that buffers telemetry or runs survey
   capture, and the precondition for `IGROW_PERSISTENT_BUFFER=on` (ADR-0020
   d2/d3/d10). **Do not assume SD in production.**
+
+### What the store holds
+
+`/var/lib/industrygrow/telemetry.sqlite3`, WAL, `synchronous=NORMAL` — best-effort
+by decision (ADR-0020 d3), not a durability guarantee against device failure.
+Eviction is oldest-first past `IGROW_RETENTION_DAYS`, a time bound and not a
+capacity bound.
+
+| Table | Rows |
+|---|---|
+| `sample` | one per decoded telemetry message: `node_id`, `subject_id`, `t_acq_us`, `t_rx_ns`, `t_rx_mono_ns`, `t_store_ns`, `latency_ns`, and either `value` (scalar subjects, SI units) or `payload` (JSON, for the door/leak status and the gas sweep) |
+| `node_event` | heartbeat state changes plus a keepalive, and every `uavcan.diagnostic.Record` |
+
+`t_acq_us = 0` means the node was unsynchronized; it is stored as `0` and never
+replaced by `t_rx`. `latency_ns` is `NULL` whenever `t_rx - t_acq` is not
+admissible (ADR-0004 d21) — both stamps are still there, only the difference is
+withheld.
+
+```bash
+sudo -u gateway sqlite3 /var/lib/industrygrow/telemetry.sqlite3   "SELECT node_id, subject_id, count(*), round(avg(latency_ns)/1e6,2) AS ms
+     FROM sample GROUP BY 1,2 ORDER BY 1,2;"
+```
 
 ---
 
@@ -201,8 +225,9 @@ Run on the Pi (or via `ssh igrow@gbox-dev "<cmd>"`):
 
 ```bash
 ip -details link show vcan0                       # state UP
-systemctl --no-pager status gateway-pycyphal.service   # active; "self-test PASSED" in log
-journalctl -u gateway-pycyphal.service -n 20 --no-pager
+systemctl --no-pager status gateway-pycyphal.service   # active
+journalctl -u gateway-pycyphal.service -n 20 --no-pager    # one summary line per node
+sudo -u gateway /opt/industrygrow/venv/bin/python      /opt/industrygrow/gateway_telemetry.py --once 20      # a 20 s sample, by hand
 systemctl --no-pager status industrygrow-timesync.service   # active
 candump <iface> 041C0000:1FFFFF00                          # the time-sync frame
 sudo sshd -T | grep -Ei 'passwordauthentication|permitrootlogin|pubkeyauthentication'
