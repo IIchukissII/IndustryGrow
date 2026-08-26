@@ -111,8 +111,11 @@ static uint32_t leak_raw_sample(void)
     return (uint32_t)raw;
 }
 
-static uint8_t m05_command(uint16_t command)
+static uint8_t m05_command(uint16_t command, const uint8_t *param, size_t param_len)
 {
+    (void)param;      /* neither M05 command carries a value */
+    (void)param_len;
+
     switch (command) {
     case CMD_ENERGY_RESET:
         s0_reset();

@@ -195,6 +195,9 @@ setup_dirs() {
     # Node-ID provisioning (ADR-0027 d5/d7) is an operator action, never automatic,
     # so it is installed beside the app and run by hand -- no unit, no timer.
     install -m 0644 "${SCRIPT_DIR}/provision_node_id.py" "${APP_DIR}/provision_node_id.py"
+    # Bench commands (each module specification's section 10). Also by hand, and
+    # it borrows the transport session above, so the two install together.
+    install -m 0644 "${SCRIPT_DIR}/node_command.py" "${APP_DIR}/node_command.py"
     # Where the identity and the profile-verification key live (ADR-0025 d10).
     # provision_identity.py writes the first two; the third is the operator's
     # public key, copied here during commissioning.

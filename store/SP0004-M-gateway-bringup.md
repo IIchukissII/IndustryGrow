@@ -241,7 +241,25 @@ de-provisions the node (ADR-0027 d4).
 
 ---
 
-## 9. SocketCAN and `DeviceAllow`
+## 9. Bench commands
+
+The module specifications require some operations to be commanded rather than
+automatic — a sensor self-test, a heater pulse, writing a calibration. Each
+specification's section 10 lists its own vendor `uavcan.node.ExecuteCommand` IDs;
+this is how they are sent.
+
+```bash
+sudo -u gateway PYTHONPATH=/opt/industrygrow/dsdl      /opt/industrygrow/venv/bin/python /opt/industrygrow/node_command.py 97 --list
+sudo -u gateway PYTHONPATH=/opt/industrygrow/dsdl      /opt/industrygrow/venv/bin/python /opt/industrygrow/node_command.py 97 3 --parameter 425
+```
+
+The response is a status, not a result: a command that stops a sensor finishes
+after it. What it did arrives on `uavcan.diagnostic.Record` — read it in
+`journalctl -u gateway-pycyphal.service`, or from the store's `node_event` table.
+
+---
+
+## 10. SocketCAN and `DeviceAllow`
 
 The service grants CAN access via `RestrictAddressFamilies=AF_CAN`, **not**
 `DeviceAllow=`: classic SocketCAN (`vcan0` / a future `can0`) is a network
@@ -251,7 +269,7 @@ Leave this as-is when editing the unit.
 
 ---
 
-## 10. Verification
+## 11. Verification
 
 Run on the Pi (or via `ssh igrow@gbox-dev "<cmd>"`):
 
@@ -278,7 +296,7 @@ cansend vcan0 123#494752    # should be printed by candump
 
 ---
 
-## 11. References (why — owned by the ADRs)
+## 12. References (why — owned by the ADRs)
 
 - **ADR-0000** — decision records / single-source-of-truth.
 - **ADR-0002 (rev 3)** — Pycyphal/SocketCAN gateway; classic CAN, 500 kbit/s; Pi tiers.

@@ -102,6 +102,23 @@ int scd4x_set_ambient_pressure_hpa(uint16_t hpa);
  * succeeded far enough to read them, and again if the device disappears and is
  * re-configured without answering. */
 int scd4x_get_temperature_offset(float *celsius);
+
+/* Write the temperature offset, in centi-degrees Celsius. THE DEVICE MUST BE
+ * STOPPED: the SCD4x accepts this only in idle, so the caller issues
+ * scd4x_stop() and waits SCD4X_STOP_MS first. Blocks ~2 ms and does not
+ * persist -- the write is lost at power-off until scd4x_persist_settings()
+ * follows it.
+ *
+ * Spec section 10: the offset belongs to the finished board at thermal
+ * equilibrium and is a commanded bench operation (V7), never something the
+ * firmware decides for itself. */
+int scd4x_set_temperature_offset_centi(int16_t centi_celsius);
+
+/* Commit the device's settings to its EEPROM. Blocks MS_PERSIST (~800 ms), so
+ * it owns a whole pass of the main loop; it fits the watchdog window only
+ * because nothing else does. The EEPROM is rated for 2000 cycles -- issue it
+ * when a setting actually changed, never on a schedule. */
+int scd4x_persist_settings(void);
 int scd4x_serial(uint64_t *out);
 
 #endif /* IGROW_M01_SCD4X_H */

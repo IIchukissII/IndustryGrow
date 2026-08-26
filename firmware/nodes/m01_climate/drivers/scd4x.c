@@ -15,6 +15,7 @@
 #define CMD_READ_MEASUREMENT 0xEC05u
 #define CMD_STOP_PERIODIC    0x3F86u
 #define CMD_GET_TEMP_OFFSET  0x2318u
+#define CMD_SET_TEMP_OFFSET  0x241Du
 #define CMD_SET_AMB_PRESSURE 0xE000u
 #define CMD_SET_ASC          0x2416u
 #define CMD_GET_ASC          0x2313u
@@ -212,6 +213,38 @@ int scd4x_get_temperature_offset(float *celsius)
     if (celsius) {
         *celsius = s_temp_offset_c;
     }
+    return 0;
+}
+
+int scd4x_set_temperature_offset_centi(int16_t centi_celsius)
+{
+    if (centi_celsius < 0) {
+        return -1; /* the device's own encoding has no negative offset */
+    }
+    /* Device encoding: word = offset_C * 65535 / 175, the inverse of the read
+     * at scd4x_configure(). Rounded, not truncated, so a written value reads
+     * back as itself. */
+    const float celsius = (float)centi_celsius / 100.0f;
+    if (celsius > 175.0f) {
+        return -1;
+    }
+    const uint16_t w = (uint16_t)(((celsius * 65535.0f) / 175.0f) + 0.5f);
+    if (send_command_arg(CMD_SET_TEMP_OFFSET, w) < 0) {
+        return -1;
+    }
+    delay_ms(MS_SHORT);
+    /* The cached value the boot log and scd4x_get_temperature_offset() report
+     * is re-read by the next scd4x_configure(), which the caller runs to bring
+     * the device back to periodic mode. */
+    return 0;
+}
+
+int scd4x_persist_settings(void)
+{
+    if (send_command(CMD_PERSIST_SETTINGS) < 0) {
+        return -1;
+    }
+    delay_ms(MS_PERSIST);
     return 0;
 }
 
