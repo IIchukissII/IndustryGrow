@@ -28,7 +28,7 @@ import argparse
 import asyncio
 import sys
 
-from provision_node_id import Bus, log
+from provision_node_id import Bus, call_with_retry, log
 
 # Readability only. The specifications own these; a mismatch here is a display
 # defect, and an unknown ID is sent unchanged.
@@ -65,10 +65,11 @@ async def execute(bus: Bus, node_id: int, command: int, parameter: str) -> int:
     client = bus.pres.make_client(uavcan.node.ExecuteCommand_1_0, 435, node_id)
     client.response_timeout = 5.0
     try:
-        got = await client.call(
+        got = await call_with_retry(
+            client,
             uavcan.node.ExecuteCommand_1_0.Request(
                 command=command, parameter=parameter.encode("ascii")
-            )
+            ),
         )
     finally:
         client.close()
