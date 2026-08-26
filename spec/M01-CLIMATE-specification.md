@@ -299,9 +299,9 @@ residue is O-48.
 
 | | Value |
 |---|---|
-| Node draw on `+12 V` | Not measured. O-35, V3 |
-| Reference figure | M05 node, 0.25 W (254 mW at 12.12 V, 2026-08-02). M01 exceeds it |
-| Burst reflected to `+12 V` | ≈ 60–70 mA, calculated as 205 mA × 3.3 V / 12 V ÷ η at η = 0.85, plus the losses of §7.4. Measured by V3. O-35 |
+| Node draw on `+12 V` | **311 mW** — 25.68 mA at 12.121 V. Quiescent 263 mW; the sensors add 48 mW. V3 |
+| Reference figure | M05 node, 264 mW on the same bus in the same run (0.25 W, 254 mW at 12.12 V, 2026-08-02, measured otherwise). M01 exceeds it by a factor of 1.18 |
+| Burst reflected to `+12 V` | **+28.5 mA**, held for ≈ 565 ms of each 5 s U3 cycle. The ≈ 60–70 mA that 205 mA × 3.3 V / 12 V ÷ η at η = 0.85 predicts does not reach the bus: that arithmetic carries U3's peak through to the input, and neither the 2.8 V rail's decoupling nor the carrier converter passes it. V3 |
 
 ### 7.2 Device currents
 
@@ -523,7 +523,7 @@ unscaled — ratio, mole fraction, ohm (ADR-0005 d2).
 |----|----------|--------|--------|
 | V1 | T2 | Board at thermal equilibrium in still air, U1's heater disabled throughout. U1's reported temperature recorded in four states: (a) U2 gas scan idle and U3 idle; (b) U2 gas scan running, U3 idle; (c) U2 idle, U3 periodic at 5 s; (d) both running. The four states are reached with commands 4–7 of §10, so one thermal soak covers all four and no state costs a reflash. T2 is met when the spread across the four states is ≤ 0.1 K. The measurement is differential and needs no absolute reference — an offset common to all four states is not T2's subject. A reference thermometer in the same air is used only to confirm the ambient held during the run | Not executed |
 | V2 | T1 | U1 reading with and without the luminaire at the profile's operating PPFD, against a shaded reference thermometer in the same air | Not executed |
-| V3 | §7.1, §7.4 | Node draw on `+12 V` measured at first bring-up, average and during a U3 burst. Rail voltages at U2 VDD and U3 VDD measured under load, to detect a regulator out of regulation. Rail ripple against the 30 mV limit of §7.4.1 requires instrumentation the project does not have — O-44 | Not executed. O-35 |
+| V3 | §7.1, §7.4 | Node draw taken **differentially** on M05's shunt — the `+12 V` bus current with this node present, less the same bus with it removed. The difference cancels the shunt offset that dominates M05's absolute accuracy and the indicator tap upstream of it (M05 specification O-25), so it is far tighter than either reading. Bus current is M05's published mean over each publication period; the burst is the same current sampled at 200 Hz. Rail voltages at U2 VDD and U3 VDD under load, and ripple against §7.4.1's 30 mV, need instrumentation the project does not have — O-44 | Node draw and burst executed. Rail voltages and ripple not executed. O-44 |
 | V4 | §6.1 | U1 against a reference hygrometer at two points of the ADR-0003 d7 band | Not executed |
 | V5 | §6.3 | CO₂ against M07's reference instance in the same air (O-7), no earlier than five days after assembly and at the 2.8 V rail | Blocked. O-7 |
 | V6 | §4.1 footprints | 1:1 paper printout against the physical part, all three devices, including U1's unsoldered die pad and U3's full pad count | Not executed |
@@ -559,7 +559,7 @@ O-52 to O-62 are M02's.
 | ~~O-32~~ | ~~Remaining `verify` values~~ — closed 2026-08-06. Height and `variant_id` answered in §4.1 and §10. Gas-resistance range is not specified by the device; §3 carries resolution and noise instead. U3 self-heating has no datasheet figure — measured, V7 and O-45. T1's α and h are enclosure properties — O-38 | — |
 | ~~O-33~~ | ~~T2 value and V1 method not confirmed~~ — closed 2026-08-06: T2 fixed at 0.1 K per §6.2; V1 fixed as a four-state differential measurement | — |
 | ~~O-34~~ | ~~Pressure source for CO₂ compensation: U2 or M07~~ — closed 2026-08-05 by §6.3 in favour of U2. Unpopulated-U2 residue moved to O-48 | — |
-| O-35 | Node power unmeasured; M05's O-31 node-count ceilings assume M05-class nodes | Distribution-board sizing, O-31 |
+| ~~O-35~~ | ~~Node power unmeasured~~ — closed 2026-08-26 by V3: §7.1 carries the measured figures, and M05's §6.4 states what they do to its ceilings | — |
 | ~~O-36~~ | ~~ADR-0014 d2's partial-BOM example cites M01's airflow sensor, moved to M06 in rev 2~~ — closed 2026-08-04 by ADR-0014 rev 3 | — |
 | O-37 | Boot probe does not distinguish *not fitted*, *failed* and *unpowered*; all three read as the same observation. Health now degrades when a device that probed present stops answering (§10), so a bus fault is no longer silent, but absence and failure remain indistinguishable at boot | Gateway fault handling |
 | O-38 | T1 fixed as a requirement in §8. Residue: no enclosure design realizes the shading, α and h are unfixed (from O-32), and V2 is not executed | Enclosure design, V2 |
@@ -581,14 +581,14 @@ O-52 to O-62 are M02's.
 ## 13. Maturity
 
 **Schematic captured, not frozen.** No `verify` value remains. `E0002` is fabricated and
-publishes; V6 and V8 hold the rung, and O-35 and every V item of §11 remain open.
+publishes; V6 and V8 hold the rung, and V1, V2, V4, V5 and V7 remain open.
 
 | Rung | Content | Reached when |
 |------|---------|--------------|
 | **Pre-schematic** | Complement and requirements fixed; values estimated or `verify` | — |
 | **Schematic captured** ← here | Parts fixed to ordering part numbers; schematic exists; component values determined | `store/E0002-000001.kicad_sch` exists; O-3, O-34, O-41 closed |
 | **Schematic-frozen** | Remaining `verify` resolved, footprints checked against physical parts. `L` releases here | O-32, O-50 closed ✔; O-33 closed ✔; O-38 fixed as a requirement ✔; **V6 not executed**; **V8 not executed** |
-| **As-built** | Estimates replaced by measured values; verification §11 executed | `E0002` fabricated ✔; O-35 not measured; no V item of §11 executed |
+| **As-built** | Estimates replaced by measured values; verification §11 executed | `E0002` fabricated ✔; O-35 closed by V3 ✔; V3's rail voltages and V1, V2, V4, V5, V7 not executed |
 
 `M05-SAFETY-specification.md` is the as-built form of this document class. The transition is an
 edit of this file; no second E-number is issued for the module having been built.
