@@ -684,8 +684,21 @@ void cyphal_spin(void)
                               identity_committed_node_id());
     }
 
-    /* Honour an ExecuteCommand RESTART once its response has been flushed. */
+    /* Honour an ExecuteCommand RESTART once its response has been flushed.
+     *
+     * An empty TX queue means the frames reached the peripheral's mailboxes,
+     * not the wire. Resetting there aborts the response mid-transmission, and
+     * the caller sees its own RESTART fail on a node that restarted perfectly
+     * well -- observed on the bench while provisioning a Node-ID. Wait for the
+     * three mailboxes, bounded: an unterminated bus never ACKs, and a node that
+     * was told to restart must restart. */
     if (s_pending_reset && (canardTxPeek(&s_txq) == NULL)) {
+        const uint32_t all_empty = CAN_TSR_TME0 | CAN_TSR_TME1 | CAN_TSR_TME2;
+        for (uint32_t guard = 200000u; guard > 0u; guard--) {
+            if ((CAN1->TSR & all_empty) == all_empty) {
+                break;
+            }
+        }
         NVIC_SystemReset();
     }
 }

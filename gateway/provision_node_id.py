@@ -284,16 +284,26 @@ async def cmd_write(bus: Bus, target: int, new_id: int, restart: bool, skip_scan
         return 0
 
     log(f"restarting node {target}")
-    if not await bus.restart(target):
-        log("the restart command was not accepted; power-cycle the node instead")
-        return 1
+    # The acknowledgement is not the evidence. A node resets once its response
+    # has been handed to the CAN peripheral, which is not the same as the frame
+    # reaching the wire, so a perfectly successful restart can lose its own
+    # reply -- observed on gbox-dev, where this reported failure on a node that
+    # had already come back at its new ID. What settles it is the bus.
+    acknowledged = await bus.restart(target)
+    if not acknowledged:
+        log("no reply to the restart command; checking whether it restarted anyway")
     await asyncio.sleep(6.0)
     seen = await bus.survey(4.0)
     if new_id in seen:
         info = await bus.get_info(new_id)
         log(f"node is back at {new_id}: {name_of(info)}")
         return 0
-    log(f"node {new_id} has not been heard yet; give it a moment and run `list`")
+    if not acknowledged:
+        log(
+            f"node {new_id} not heard, and the restart was never acknowledged; power-cycle the node"
+        )
+    else:
+        log(f"node {new_id} has not been heard yet; give it a moment and run `list`")
     return 1
 
 

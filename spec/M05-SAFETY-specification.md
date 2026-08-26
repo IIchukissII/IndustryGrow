@@ -147,7 +147,8 @@ At 20.9 mA per node:
 Phase 1 requires five. ADR-0014 d1 states the same architecture at 50+ instances, so the board
 stops metering before it stops conducting at that scale. O-31.
 
-Figures assume nodes resembling this one. Actuator energy does not pass through R1; it is
+Figures assume nodes resembling this one. An M01-class node draws about a fifth more (M01
+specification §7.1), which lowers both ceilings in the same proportion. Actuator energy does not pass through R1; it is
 metered by `SP0001` (ADR-0018 d5).
 
 ## 7. Thermal
@@ -185,13 +186,14 @@ Implemented in `firmware/nodes/m05_safety/`.
 | Module-ID strap | `0b101`; bit 1 = 0, so the pattern reads correctly on every carrier revision |
 | Node-ID | Not a property of the module class: provisioned per instance into carrier flash (ADR-0027), and distinct across the bus. Bring-up assignment for the first instance is **96** |
 | Publication rate | 1 s for every subject of §9.1 |
+| Bus voltage, current and power | The published current is the **mean over the publication period**, from U2 sampled at 200 Hz, not a reading taken at the tick. A tick reading is a 1.1 ms window once a second and the bus is not a steady load — a neighbouring node's sensor bursts make which state a given second reports a matter of luck. Power is that mean current times the voltage at the tick, not U2's own power register. U2's averaging field stays at 1: it would give the mean for nothing and average the peak away |
 | Boot probe, publication, re-probe interval | ADR-0014 d8 |
 | Leak excitation | Shares PA9 with the carrier debug console (pin map note 2) |
 | Leak excitation state | Gated, pin resting low (pin map note 3) |
 | Leak validity | `LeakStatus.valid` reports whether the ADC conversion completed. A timed-out conversion leaves a stale value in the data register; the channel reports invalid rather than calling it dry |
 | Door failure direction | A cut or unplugged reed lead floats the input high, reported as *door open*. The channel fails toward the alert, never into silence |
 | Constants | From `store/E0006-000001-D-pinmap.md`, not from part defaults |
-| Commanded operations | Vendor `uavcan.node.ExecuteCommand` IDs. 1 = zero the energy accumulator; 2 = report the raw leak ADC sample as a diagnostic, which is what calibrating `LEAK_WET_THRESHOLD` needs. Neither is automatic |
+| Commanded operations | Vendor `uavcan.node.ExecuteCommand` IDs, none automatic. 1 = zero the energy accumulator. 2 = report the raw leak ADC sample as a diagnostic, which is what calibrating `LEAK_WET_THRESHOLD` needs. 3 = report the bus-current window minimum and maximum and restart the window; the mean is already on subject 4097, so only the extremes are reported |
 | Diagnostics | `uavcan.diagnostic.Record` (8184), event-driven: population at boot, health transitions, door and leak state changes, command results. Never periodic |
 | Message timestamps | `uavcan.time.SynchronizedTimestamp` from the gateway time base: the node is a synchronization slave to subject 7168 (ADR-0002 d11), tracking the master as an offset against its own monotonic clock. 0 (UNKNOWN) before the first pair of sync messages and again after the master has been silent for 3 s. Accuracy is milliseconds — reception is timestamped in the polled main loop |
 | Port introspection | `uavcan.node.port.List` (7510) every 10 s at OPTIONAL priority |
