@@ -577,7 +577,7 @@ static void handle_execcmd(const CanardRxTransfer *req)
         resp.status = uavcan_node_ExecuteCommand_Response_1_0_STATUS_SUCCESS;
         s_pending_reset = true; /* reset after the response is flushed */
     } else if (s_command_fn != NULL) {
-        resp.status = s_command_fn(rq.command);
+        resp.status = s_command_fn(rq.command, rq.parameter.elements, rq.parameter.count);
     } else {
         resp.status = uavcan_node_ExecuteCommand_Response_1_0_STATUS_BAD_COMMAND;
     }

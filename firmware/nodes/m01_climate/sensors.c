@@ -148,13 +148,36 @@ static uint8_t s_fail[3];
  * operations that spec 10 requires to be commanded rather than automatic. */
 #define CMD_U3_SELF_TEST 1u
 #define CMD_U1_HEATER    2u
+#define CMD_U3_SET_OFFSET 3u /* parameter: offset in centi-degrees C, decimal ASCII */
+#define CMD_U2_GAS_OFF   4u
+#define CMD_U2_GAS_ON    5u
+#define CMD_U3_STOP      6u
+#define CMD_U3_START     7u
 
-/* The self-test takes 10 s -- several watchdog windows -- so it runs as a state
- * machine across the loop rather than inside the command handler. */
-enum { ST_IDLE = 0, ST_STOPPING, ST_RUNNING, ST_RESTORING };
-static uint8_t s_selftest;
-static uint64_t s_selftest_due;
+/* Anything that stops U3 takes several watchdog windows -- the self-test alone
+ * is 10 s -- so it runs as a state machine across the loop rather than inside
+ * the command handler. One machine, because both jobs stop the device and
+ * nothing else may address it while one is in flight. */
+enum {
+    ST_IDLE = 0,
+    ST_SELFTEST_STOPPING,
+    ST_SELFTEST_RUNNING,
+    ST_OFFSET_STOPPING,
+    ST_OFFSET_PERSIST,
+    ST_RESTORING,
+};
+static uint8_t s_u3_job;
+static uint64_t s_u3_job_due;
+static int16_t s_offset_centi; /* the value CMD_U3_SET_OFFSET is carrying */
 static bool s_heater_pending;
+
+/* V1 needs U2's hotplate and U3's measurement switched independently at the
+ * bench (spec 11, four states). The setpoint list and the interval stay build
+ * constants; only whether a sweep is armed is commandable. */
+static bool s_u3_run = true;
+#if M01_GAS_SCAN
+static bool s_gas_run = true;
+#endif
 static uint8_t s_last_health = uavcan_node_Health_1_0_NOMINAL;
 
 static float s_ambient_c = DEFAULT_AMBIENT_C;
@@ -208,18 +231,39 @@ static void report_health(void)
     }
 }
 
-static uint8_t m01_command(uint16_t command)
+/* Decimal ASCII in the ExecuteCommand parameter -> a bounded non-negative int.
+ * Returns -1 on anything that is not entirely digits, or on overflow past the
+ * caller's limit. No stdlib: strtol pulls in more than this needs. */
+static int32_t parse_decimal(const uint8_t *p, size_t len, int32_t limit)
+{
+    if ((p == NULL) || (len == 0u)) {
+        return -1;
+    }
+    int32_t v = 0;
+    for (size_t i = 0; i < len; i++) {
+        if ((p[i] < '0') || (p[i] > '9')) {
+            return -1;
+        }
+        v = (v * 10) + (int32_t)(p[i] - '0');
+        if (v > limit) {
+            return -1;
+        }
+    }
+    return v;
+}
+
+static uint8_t m01_command(uint16_t command, const uint8_t *param, size_t param_len)
 {
     switch (command) {
     case CMD_U3_SELF_TEST:
-        if (!s_u3 || (s_selftest != ST_IDLE)) {
+        if (!s_u3 || (s_u3_job != ST_IDLE)) {
             return uavcan_node_ExecuteCommand_Response_1_0_STATUS_BAD_STATE;
         }
         if (scd4x_stop() < 0) {
             return uavcan_node_ExecuteCommand_Response_1_0_STATUS_FAILURE;
         }
-        s_selftest = ST_STOPPING;
-        s_selftest_due = now_ts() + ((uint64_t)SCD4X_STOP_MS * 1000u);
+        s_u3_job = ST_SELFTEST_STOPPING;
+        s_u3_job_due = now_ts() + ((uint64_t)SCD4X_STOP_MS * 1000u);
         return uavcan_node_ExecuteCommand_Response_1_0_STATUS_SUCCESS;
     case CMD_U1_HEATER:
         if (!s_u1) {
@@ -227,27 +271,113 @@ static uint8_t m01_command(uint16_t command)
         }
         s_heater_pending = true; /* fired after the next U3 sample, see spin */
         return uavcan_node_ExecuteCommand_Response_1_0_STATUS_SUCCESS;
+
+    case CMD_U3_SET_OFFSET: {
+        /* V7. The value is this board's, measured at thermal equilibrium; the
+         * device's 4 C default is not it (spec 10, O-45). Upper bound is the
+         * spec's 0-20 C range, which is also what keeps a fat-fingered value
+         * from being persisted into a 2000-cycle EEPROM. */
+        if (!s_u3 || (s_u3_job != ST_IDLE)) {
+            return uavcan_node_ExecuteCommand_Response_1_0_STATUS_BAD_STATE;
+        }
+        const int32_t centi = parse_decimal(param, param_len, 2000);
+        if (centi < 0) {
+            return uavcan_node_ExecuteCommand_Response_1_0_STATUS_BAD_PARAMETER;
+        }
+        if (scd4x_stop() < 0) {
+            return uavcan_node_ExecuteCommand_Response_1_0_STATUS_FAILURE;
+        }
+        s_offset_centi = (int16_t)centi;
+        s_u3_job = ST_OFFSET_STOPPING;
+        s_u3_job_due = now_ts() + ((uint64_t)SCD4X_STOP_MS * 1000u);
+        return uavcan_node_ExecuteCommand_Response_1_0_STATUS_SUCCESS;
+    }
+
+#if M01_GAS_SCAN
+    case CMD_U2_GAS_OFF:
+    case CMD_U2_GAS_ON:
+        s_gas_run = (command == CMD_U2_GAS_ON);
+        /* A sweep already in flight finishes; the next one is simply not armed.
+         * Cutting one short would publish a shape that was never measured. */
+        cyphal_diagnostic(uavcan_diagnostic_Severity_1_0_NOTICE,
+                          s_gas_run ? "U2 gas scan armed" : "U2 gas scan parked");
+        return uavcan_node_ExecuteCommand_Response_1_0_STATUS_SUCCESS;
+#endif
+
+    case CMD_U3_STOP:
+        if (!s_u3 || (s_u3_job != ST_IDLE)) {
+            return uavcan_node_ExecuteCommand_Response_1_0_STATUS_BAD_STATE;
+        }
+        if (!s_u3_run) {
+            return uavcan_node_ExecuteCommand_Response_1_0_STATUS_SUCCESS;
+        }
+        if (scd4x_stop() < 0) {
+            return uavcan_node_ExecuteCommand_Response_1_0_STATUS_FAILURE;
+        }
+        s_u3_run = false;
+        cyphal_diagnostic(uavcan_diagnostic_Severity_1_0_NOTICE, "U3 measurement stopped");
+        return uavcan_node_ExecuteCommand_Response_1_0_STATUS_SUCCESS;
+
+    case CMD_U3_START:
+        if (!s_u3 || (s_u3_job != ST_IDLE)) {
+            return uavcan_node_ExecuteCommand_Response_1_0_STATUS_BAD_STATE;
+        }
+        if (s_u3_run) {
+            return uavcan_node_ExecuteCommand_Response_1_0_STATUS_SUCCESS;
+        }
+        /* Restarting means a reconfigure, which blocks ~510 ms; the restore arm
+         * of the job machine already owns that call. */
+        s_u3_run = true;
+        s_u3_job = ST_RESTORING;
+        s_u3_job_due = now_ts();
+        return uavcan_node_ExecuteCommand_Response_1_0_STATUS_SUCCESS;
+
     default:
         return uavcan_node_ExecuteCommand_Response_1_0_STATUS_BAD_COMMAND;
     }
 }
 
-static void service_selftest(void)
+static void service_u3_job(void)
 {
-    if ((s_selftest == ST_IDLE) || (now_ts() < s_selftest_due)) {
+    if ((s_u3_job == ST_IDLE) || (now_ts() < s_u3_job_due)) {
         return;
     }
-    if (s_selftest == ST_STOPPING) {
+    if (s_u3_job == ST_SELFTEST_STOPPING) {
         if (scd4x_self_test_begin() < 0) {
-            s_selftest = ST_IDLE;
+            s_u3_job = ST_IDLE;
             cyphal_diagnostic(uavcan_diagnostic_Severity_1_0_ERROR, "U3 self-test did not start");
             return;
         }
-        s_selftest = ST_RUNNING;
-        s_selftest_due = now_ts() + ((uint64_t)SCD4X_SELF_TEST_MS * 1000u);
+        s_u3_job = ST_SELFTEST_RUNNING;
+        s_u3_job_due = now_ts() + ((uint64_t)SCD4X_SELF_TEST_MS * 1000u);
         return;
     }
-    if (s_selftest == ST_RUNNING) {
+    if (s_u3_job == ST_OFFSET_STOPPING) {
+        if (scd4x_set_temperature_offset_centi(s_offset_centi) < 0) {
+            cyphal_diagnostic(uavcan_diagnostic_Severity_1_0_ERROR, "U3 offset write refused");
+            s_u3_job = ST_RESTORING;
+            s_u3_job_due = now_ts();
+            return;
+        }
+        /* Persist owns its own pass: it blocks ~800 ms, and the reconfigure
+         * that follows blocks ~510 ms. Together they do not fit the watchdog
+         * window (scd4x.h). */
+        s_u3_job = ST_OFFSET_PERSIST;
+        s_u3_job_due = now_ts();
+        return;
+    }
+    if (s_u3_job == ST_OFFSET_PERSIST) {
+        const bool ok = (scd4x_persist_settings() == 0);
+        cyphal_diagnostic_u32(ok ? uavcan_diagnostic_Severity_1_0_NOTICE
+                                 : uavcan_diagnostic_Severity_1_0_ERROR,
+                              ok ? "U3 temperature offset written, centi-C ="
+                                 : "U3 offset persist FAILED, centi-C =",
+                              (uint32_t)s_offset_centi);
+        s_u3_job = ST_RESTORING;
+        s_u3_job_due = now_ts();
+        return;
+    }
+    if (s_u3_job == ST_SELFTEST_RUNNING) {
         bool ok = false;
         if (scd4x_self_test_result(&ok) < 0) {
             cyphal_diagnostic(uavcan_diagnostic_Severity_1_0_ERROR, "U3 self-test unreadable");
@@ -257,16 +387,18 @@ static void service_selftest(void)
                               ok ? "U3 self-test: no malfunction"
                                  : "U3 self-test: MALFUNCTION");
         }
-        s_selftest = ST_RESTORING;
-        s_selftest_due = now_ts();
+        s_u3_job = ST_RESTORING;
+        s_u3_job_due = now_ts();
         return;
     }
     /* Back to work. allow_persist is false: this is not a boot, and the EEPROM
      * budget is not spent on a diagnostic. */
-    if (scd4x_configure(s_pressure_hpa, false) < 0) {
-        s_u3 = false;
+    if (s_u3_run) {
+        if (scd4x_configure(s_pressure_hpa, false) < 0) {
+            s_u3 = false;
+        }
     }
-    s_selftest = ST_IDLE;
+    s_u3_job = ST_IDLE;
 }
 
 /* --- Publication helpers ------------------------------------------------ */
@@ -413,8 +545,8 @@ static void publish_primary(void)
 
 static void service_co2(void)
 {
-    if (!s_u3 || (s_selftest != ST_IDLE)) {
-        return; /* the device is stopped and under test; nothing else may address it */
+    if (!s_u3 || !s_u3_run || (s_u3_job != ST_IDLE)) {
+        return; /* stopped, or a job owns the device; nothing else may address it */
     }
     /* Polled, not free-running: periodic mode has one interval, 5 s, and no
      * other exists (spec 3). Four polls in five find nothing new. */
@@ -447,8 +579,8 @@ static void compensate_co2_pressure(float pascal)
     if (hpa == s_pressure_hpa) {
         return; /* the register is already right; keep the segment quiet */
     }
-    if (!s_u3) {
-        s_pressure_hpa = hpa; /* remember it for whenever U3 appears */
+    if (!s_u3 || !s_u3_run || (s_u3_job != ST_IDLE)) {
+        s_pressure_hpa = hpa; /* remember it for whenever U3 is addressable again */
         return;
     }
     if (scd4x_set_ambient_pressure_hpa(hpa) == 0) {
@@ -465,7 +597,7 @@ static void start_u2_cycle(void)
     uint16_t setpoint = 0u;
 #if M01_GAS_SCAN
     /* A sweep already in flight continues; otherwise the interval arms one. */
-    if (!s_sweep_active && ((now - s_last_gas) >= GAS_PERIOD_US)) {
+    if (s_gas_run && !s_sweep_active && ((now - s_last_gas) >= GAS_PERIOD_US)) {
         s_sweep_active = true;
         s_sweep_step = 0u;
         s_sweep_valid = true;
@@ -688,7 +820,7 @@ void m01_sensors_spin(void)
         service_co2();
         /* Spec 10: a heater pulse shall not overlap a U3 measurement window.
          * Immediately after a poll is the furthest point from the next one. */
-        if (s_heater_pending && s_u1 && (s_selftest == ST_IDLE)) {
+        if (s_heater_pending && s_u1 && (s_u3_job == ST_IDLE)) {
             s_heater_pending = false;
             cyphal_diagnostic(sht4x_heater_pulse() == 0
                                   ? uavcan_diagnostic_Severity_1_0_NOTICE
@@ -699,7 +831,7 @@ void m01_sensors_spin(void)
         report_health();
     }
 
-    service_selftest();
+    service_u3_job();
 
     if (s_u2_pending && (now >= s_u2_due)) {
         s_u2_pending = false;

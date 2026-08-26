@@ -45,12 +45,31 @@ MAX_PROVISIONABLE = 126
 # Sized for the sector erase inside the write, not for a round trip.
 WRITE_TIMEOUT_S = float(os.environ.get("IGROW_PROVISION_TIMEOUT_S") or "15")
 READ_TIMEOUT_S = 3.0
+
+# A short-lived process starts its transfer-ID counter at zero, and a node
+# remembers the last transfer-ID it saw from a given source for the transfer-ID
+# timeout (2 s). Two invocations of these tools inside that window therefore
+# present the same transfer-ID and the second is dropped as a duplicate --
+# reproduced on gbox-dev: back-to-back calls fail, the same call five seconds
+# later succeeds. A retry costs nothing and uses the next transfer-ID, which the
+# node accepts. Every call these tools make is idempotent, so a retry after a
+# lost response cannot do a second thing.
+ATTEMPTS = 3
 CAN_IFACE = os.environ.get("IGROW_CAN_IFACE") or "vcan0"
 CLIENT_NODE_ID = int(os.environ.get("IGROW_PROVISION_NODE_ID") or "2")
 
 
 def log(msg: str) -> None:
     print(msg, flush=True)
+
+
+async def call_with_retry(client: Any, request: Any) -> Any:
+    """Call a service, retrying a silent timeout. See ATTEMPTS."""
+    for _ in range(ATTEMPTS):
+        got = await client.call(request)
+        if got is not None:
+            return got
+    return None
 
 
 class Bus:
@@ -98,7 +117,7 @@ class Bus:
         client = self.pres.make_client(uavcan.node.GetInfo_1_0, 430, node_id)
         client.response_timeout = READ_TIMEOUT_S
         try:
-            got = await client.call(uavcan.node.GetInfo_1_0.Request())
+            got = await call_with_retry(client, uavcan.node.GetInfo_1_0.Request())
         finally:
             client.close()
         return None if got is None else got[0]
@@ -119,7 +138,7 @@ class Bus:
         client = self.pres.make_client(uavcan.register.Access_1_0, 384, node_id)
         client.response_timeout = response_timeout
         try:
-            got = await client.call(req)
+            got = await call_with_retry(client, req)
         finally:
             client.close()
         return None if got is None else got[0]
@@ -130,10 +149,11 @@ class Bus:
         client = self.pres.make_client(uavcan.node.ExecuteCommand_1_0, 435, node_id)
         client.response_timeout = READ_TIMEOUT_S
         try:
-            got = await client.call(
+            got = await call_with_retry(
+                client,
                 uavcan.node.ExecuteCommand_1_0.Request(
                     command=uavcan.node.ExecuteCommand_1_0.Request.COMMAND_RESTART
-                )
+                ),
             )
         finally:
             client.close()

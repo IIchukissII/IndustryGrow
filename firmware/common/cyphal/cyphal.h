@@ -92,10 +92,16 @@ void cyphal_diagnostic_u32(uint8_t severity, const char *text, uint32_t value);
  * is offered to this handler, which returns a uavcan.node.ExecuteCommand
  * Response STATUS_* value. Unset means every vendor command is rejected.
  *
+ * `param` is the request's own parameter field, for the commands that carry a
+ * value rather than only an instruction -- a temperature offset to write, a
+ * reference concentration to calibrate against. It is NOT NUL-terminated and is
+ * borrowed for the duration of the call. `param_len` is 0 when the caller sent
+ * none, which is the ordinary case.
+ *
  * A command must return promptly: the response is sent from the same pass of
  * the loop, and the watchdog window is ~1.4 s at worst-case LSI. Anything
  * slower accepts the command and does the work from the personality's spin. */
-typedef uint8_t (*cyphal_command_fn)(uint16_t command);
+typedef uint8_t (*cyphal_command_fn)(uint16_t command, const uint8_t *param, size_t param_len);
 void cyphal_set_command_handler(cyphal_command_fn fn);
 
 /* Declare the subjects this personality publishes, for uavcan.node.port.List
