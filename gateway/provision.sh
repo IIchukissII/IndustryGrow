@@ -139,8 +139,13 @@ load_env() {
     # contributes nothing, which is correct — it is not a path to anywhere.
     local nets="" iface
     for iface in $(printf '%s\n' ${ifaces} | awk 'NF' | sort -u); do
+        # `|| true` is load-bearing under `set -euo pipefail`: a name in the
+        # default set that this host does not have (end0 on a board whose onboard
+        # NIC is eth0) makes `ip` exit non-zero, pipefail propagates it, and the
+        # assignment aborts provisioning before a single step has run.
+        # Contributing nothing is the intended answer for such a NIC.
         nets="${nets} $(ip -4 route show dev "${iface}" proto kernel scope link \
-            2>/dev/null | awk '{print $1}')"
+            2>/dev/null | awk '{print $1}' || true)"
     done
     IGROW_F2B_IGNOREIP_RENDERED="$(printf '%s\n' 127.0.0.1/8 ::1 \
         ${IGROW_F2B_IGNOREIP} ${nets} | awk 'NF' | sort -u | paste -sd' ' -)"
