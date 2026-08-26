@@ -20,8 +20,9 @@ file as an import or attribute error, not as a silently wrong number.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable, Optional
+from typing import Any
 
 import industryflow.greenhouse.climate as _climate
 import industryflow.greenhouse.safety as _safety
@@ -34,7 +35,7 @@ import uavcan.si.sample.voltage
 
 # What a decoded payload becomes in the store: either one scalar in SI units, or
 # a structure that has no single scalar. Exactly one of the two is ever set.
-Extract = Callable[[Any], "tuple[Optional[float], Optional[dict]]"]
+Extract = Callable[[Any], "tuple[float | None, dict | None]"]
 
 
 @dataclass(frozen=True)
@@ -50,15 +51,15 @@ def _scalar(field: str) -> Extract:
     return lambda m: (float(getattr(m, field)), None)
 
 
-def _door(m: Any) -> "tuple[Optional[float], Optional[dict]]":
+def _door(m: Any) -> tuple[float | None, dict | None]:
     return None, {"engaged": bool(m.engaged), "valid": bool(m.valid)}
 
 
-def _leak(m: Any) -> "tuple[Optional[float], Optional[dict]]":
+def _leak(m: Any) -> tuple[float | None, dict | None]:
     return None, {"wet": bool(m.wet), "valid": bool(m.valid)}
 
 
-def _gas_sweep(m: Any) -> "tuple[Optional[float], Optional[dict]]":
+def _gas_sweep(m: Any) -> tuple[float | None, dict | None]:
     # GasResistance.2.0 is an R(T) sweep, not a scalar. Anything reading it as
     # the 1.0 scalar reads garbage, which is why there is no scalar here.
     return None, {
@@ -68,25 +69,37 @@ def _gas_sweep(m: Any) -> "tuple[Optional[float], Optional[dict]]":
     }
 
 
-SUBJECTS: "tuple[Subject, ...]" = (
+SUBJECTS: tuple[Subject, ...] = (
     # --- M05-SAFETY (E0006), module class 0x05 ---
     Subject(4096, "bus_voltage", "V", uavcan.si.sample.voltage.Scalar_1_0, _scalar("volt")),
-    Subject(4097, "bus_current", "A", uavcan.si.sample.electric_current.Scalar_1_0, _scalar("ampere")),
+    Subject(
+        4097, "bus_current", "A", uavcan.si.sample.electric_current.Scalar_1_0, _scalar("ampere")
+    ),
     Subject(4098, "bus_power", "W", uavcan.si.sample.power.Scalar_1_0, _scalar("watt")),
-    Subject(4099, "cabinet_temperature", "K", uavcan.si.sample.temperature.Scalar_1_0, _scalar("kelvin")),
+    Subject(
+        4099, "cabinet_temperature", "K", uavcan.si.sample.temperature.Scalar_1_0, _scalar("kelvin")
+    ),
     Subject(4100, "door", "", _safety.DoorStatus_1_0, _door),
     Subject(4101, "leak", "", _safety.LeakStatus_1_0, _leak),
     Subject(4102, "bus_energy", "J", uavcan.si.sample.energy.Scalar_1_0, _scalar("joule")),
     # --- M01-CLIMATE (E0002), module class 0x01 ---
-    Subject(4112, "air_temperature", "K", uavcan.si.sample.temperature.Scalar_1_0, _scalar("kelvin")),
+    Subject(
+        4112, "air_temperature", "K", uavcan.si.sample.temperature.Scalar_1_0, _scalar("kelvin")
+    ),
     Subject(4113, "air_humidity", "1", _climate.RelativeHumidity_1_0, _scalar("ratio")),
     Subject(4114, "air_vpd", "Pa", uavcan.si.sample.pressure.Scalar_1_0, _scalar("pascal")),
     Subject(4115, "co2", "1", _climate.Co2Concentration_1_0, _scalar("mole_fraction")),
-    Subject(4116, "barometric_pressure", "Pa", uavcan.si.sample.pressure.Scalar_1_0, _scalar("pascal")),
+    Subject(
+        4116, "barometric_pressure", "Pa", uavcan.si.sample.pressure.Scalar_1_0, _scalar("pascal")
+    ),
     Subject(4117, "gas_resistance_sweep", "ohm", _climate.GasResistance_2_0, _gas_sweep),
-    Subject(4118, "u2_temperature", "K", uavcan.si.sample.temperature.Scalar_1_0, _scalar("kelvin")),
+    Subject(
+        4118, "u2_temperature", "K", uavcan.si.sample.temperature.Scalar_1_0, _scalar("kelvin")
+    ),
     Subject(4119, "u2_humidity", "1", _climate.RelativeHumidity_1_0, _scalar("ratio")),
-    Subject(4120, "u3_temperature", "K", uavcan.si.sample.temperature.Scalar_1_0, _scalar("kelvin")),
+    Subject(
+        4120, "u3_temperature", "K", uavcan.si.sample.temperature.Scalar_1_0, _scalar("kelvin")
+    ),
     Subject(4121, "u3_humidity", "1", _climate.RelativeHumidity_1_0, _scalar("ratio")),
 )
 

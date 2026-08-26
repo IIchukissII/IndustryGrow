@@ -38,6 +38,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import contextlib
 import ctypes
 import json
 import os
@@ -47,11 +48,12 @@ import sys
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 # --- Configuration -----------------------------------------------------------
 # Every value an operator may need to change is an environment variable in
 # /etc/industrygrow/gateway.env; none of them is a decision (ADR-0000 d2).
+
 
 def _env(name: str, default: str) -> str:
     """An empty value means the default: EnvironmentFile passes blanks through."""
@@ -113,8 +115,8 @@ class ClockGuard:
     TIME_ERROR = 5
 
     def __init__(self) -> None:
-        self._offset_ns: Optional[int] = None
-        self._last_step_mono_ns: Optional[int] = None
+        self._offset_ns: int | None = None
+        self._last_step_mono_ns: int | None = None
         self._steps = 0
         self._libc: Any = None
         self._timesyncd = Path("/run/systemd/timesync/synchronized")
@@ -259,8 +261,12 @@ class Store:
     def evict(self) -> int:
         """Oldest-first eviction past the time bound (ADR-0020 d2)."""
         cutoff = time.time_ns() - int(RETENTION_DAYS * 86400e9)
-        removed = self._db.execute("DELETE FROM sample WHERE t_store_ns < ?", (cutoff,)).rowcount or 0
-        removed += self._db.execute("DELETE FROM node_event WHERE t_store_ns < ?", (cutoff,)).rowcount or 0
+        removed = (
+            self._db.execute("DELETE FROM sample WHERE t_store_ns < ?", (cutoff,)).rowcount or 0
+        )
+        removed += (
+            self._db.execute("DELETE FROM node_event WHERE t_store_ns < ?", (cutoff,)).rowcount or 0
+        )
         return removed
 
     def close(self) -> None:
@@ -276,8 +282,8 @@ class NodeState:
     samples: int = 0
     events: int = 0
     latency_withheld: int = 0
-    health: Optional[int] = None
-    mode: Optional[int] = None
+    health: int | None = None
+    mode: int | None = None
     latest: dict = field(default_factory=dict)  # subject_id -> value or payload
 
 
@@ -285,7 +291,7 @@ HEALTH_NAMES = {0: "NOMINAL", 1: "ADVISORY", 2: "CAUTION", 3: "WARNING"}
 
 
 class Consumer:
-    def __init__(self, store: Optional[Store]) -> None:
+    def __init__(self, store: Store | None) -> None:
         self.store = store
         self.clock = ClockGuard()
         self.nodes: dict = {}
@@ -303,7 +309,7 @@ class Consumer:
         self.clock.observe(ts.system_ns, ts.monotonic_ns)
 
         t_acq_us = int(msg.timestamp.microsecond)
-        latency_ns: Optional[int] = None
+        latency_ns: int | None = None
         if t_acq_us != 0 and self.clock.latency_valid(ts.monotonic_ns):
             latency_ns = ts.system_ns - (t_acq_us * 1000)
 
@@ -399,7 +405,7 @@ class Consumer:
 # --- Wiring ------------------------------------------------------------------
 
 
-async def run(seconds: Optional[float]) -> int:
+async def run(seconds: float | None) -> int:
     try:
         import igrow_subjects
         import pycyphal.presentation
@@ -409,8 +415,10 @@ async def run(seconds: Optional[float]) -> int:
         from pycyphal.transport.can.media.socketcan import SocketCANMedia
     except ImportError as exc:
         log(f"cannot start: {exc!r}")
-        log("PYTHONPATH must point at the namespaces compiled by provision.sh, "
-            "and SocketCAN exists only on Linux")
+        log(
+            "PYTHONPATH must point at the namespaces compiled by provision.sh, "
+            "and SocketCAN exists only on Linux"
+        )
         return 1
 
     store = Store(DB_PATH) if STORE_ENABLED else None
@@ -460,20 +468,19 @@ async def run(seconds: Optional[float]) -> int:
         stop = asyncio.Event()
         loop = asyncio.get_running_loop()
         for sig in (signal.SIGTERM, signal.SIGINT):
-            try:
+            # Not every platform offers them on the loop; the unit only needs SIGTERM.
+            with contextlib.suppress(NotImplementedError, RuntimeError):
                 loop.add_signal_handler(sig, stop.set)
-            except (NotImplementedError, RuntimeError):
-                pass
         if seconds is not None:
             loop.call_later(seconds, stop.set)
 
         next_report = time.monotonic() + REPORT_S
         next_sweep = time.monotonic() + RETENTION_SWEEP_S
         while not stop.is_set():
-            try:
+            # One second is the housekeeping tick, not a deadline: the timeout IS
+            # the normal path, and stop.wait() returning early is the shutdown.
+            with contextlib.suppress(TimeoutError):
                 await asyncio.wait_for(stop.wait(), timeout=1.0)
-            except asyncio.TimeoutError:
-                pass
             now = time.monotonic()
             if store is not None and store.due():
                 store.commit()
@@ -503,7 +510,9 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="IndustryGrow gateway telemetry consumer")
     group = ap.add_mutually_exclusive_group()
     group.add_argument("--serve", action="store_true", help="consume until stopped (default)")
-    group.add_argument("--once", type=float, metavar="SECONDS", help="consume for SECONDS, report, exit")
+    group.add_argument(
+        "--once", type=float, metavar="SECONDS", help="consume for SECONDS, report, exit"
+    )
     args = ap.parse_args()
     return asyncio.run(run(args.once))
 
