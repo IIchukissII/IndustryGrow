@@ -192,6 +192,9 @@ setup_dirs() {
     # because it is also run by hand from a checkout (`show`, `once`). It needs no
     # dependency beyond the stdlib and the openssl already installed.
     install -m 0644 "${SCRIPT_DIR}/profile_client.py" "${APP_DIR}/profile_client.py"
+    # Node-ID provisioning (ADR-0027 d5/d7) is an operator action, never automatic,
+    # so it is installed beside the app and run by hand -- no unit, no timer.
+    install -m 0644 "${SCRIPT_DIR}/provision_node_id.py" "${APP_DIR}/provision_node_id.py"
     # Where the identity and the profile-verification key live (ADR-0025 d10).
     # provision_identity.py writes the first two; the third is the operator's
     # public key, copied here during commissioning.

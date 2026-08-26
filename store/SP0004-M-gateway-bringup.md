@@ -209,7 +209,39 @@ sudo -u gateway sqlite3 /var/lib/industrygrow/telemetry.sqlite3   "SELECT node_i
 
 ---
 
-## 8. SocketCAN and `DeviceAllow`
+## 8. Node-ID provisioning
+
+A node holds its Cyphal Node-ID in carrier flash and is **not usable until it is
+written once** (ADR-0027 d5/d6). A node that has never been provisioned, or that
+has just taken firmware for the first time, comes up at `127`, publishes no
+telemetry subjects and reports ADVISORY health. Allocation is an operator
+decision, not the gateway's (d7), so this runs by hand.
+
+```bash
+cd /opt/industrygrow
+sudo -u gateway PYTHONPATH=/opt/industrygrow/dsdl venv/bin/python      provision_node_id.py list
+sudo -u gateway PYTHONPATH=/opt/industrygrow/dsdl venv/bin/python      provision_node_id.py set 127 96 --restart
+```
+
+| Rule | Why |
+|---|---|
+| Provisionable range is 0–126; writing `127` clears the store | `127` means *no Node-ID provisioned* and nothing else (d10) |
+| The value is adopted at the next restart, not immediately | Changing it under a live transport invalidates in-flight transfer state (d5) |
+| Provision one unprovisioned node at a time, with the others powered down | Two unprovisioned nodes both answer at `127`, which the transport cannot tie-break (d6) |
+| The write takes seconds, not milliseconds | The node erases a flash sector inside the service call |
+| A read-back that differs, or `persistent = false`, means the write did not take | An out-of-range value, a flash failure, and firmware older than the store all present this way |
+
+The tool takes Node-ID `2` for itself, because Cyphal forbids anonymous service
+transfers; `1` belongs to the time master. Override with
+`IGROW_PROVISION_NODE_ID`.
+
+**A flashing tool must not mass-erase.** Writing `igrow.hex` reaches only the
+sectors the image covers, and the store is not one of them; a mass erase
+de-provisions the node (ADR-0027 d4).
+
+---
+
+## 9. SocketCAN and `DeviceAllow`
 
 The service grants CAN access via `RestrictAddressFamilies=AF_CAN`, **not**
 `DeviceAllow=`: classic SocketCAN (`vcan0` / a future `can0`) is a network
@@ -219,7 +251,7 @@ Leave this as-is when editing the unit.
 
 ---
 
-## 9. Verification
+## 10. Verification
 
 Run on the Pi (or via `ssh igrow@gbox-dev "<cmd>"`):
 
@@ -246,7 +278,7 @@ cansend vcan0 123#494752    # should be printed by candump
 
 ---
 
-## 10. References (why — owned by the ADRs)
+## 11. References (why — owned by the ADRs)
 
 - **ADR-0000** — decision records / single-source-of-truth.
 - **ADR-0002 (rev 3)** — Pycyphal/SocketCAN gateway; classic CAN, 500 kbit/s; Pi tiers.
