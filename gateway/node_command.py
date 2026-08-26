@@ -45,6 +45,7 @@ KNOWN = {
     "org.industrygrow.node.m05": {
         1: "zero the energy accumulator",
         2: "report the raw leak ADC sample",
+        3: "report the bus-current window min/max, and restart the window",
     },
 }
 
