@@ -43,11 +43,40 @@
 #define PUBLISH_PERIOD_US 1000000u
 #define REPROBE_PERIOD_US 60000000u
 
+/* The published bus current is the MEAN over the publication period, not a
+ * reading taken at the tick.
+ *
+ * A tick reading is a 1.1 ms window once a second -- 0.11 % of wall time -- and
+ * the +12 V bus is not a steady load: measured on the bench, a neighbouring M01
+ * spends 11 % of its time in an SCD41 measurement drawing +28.5 mA and 10 % in a
+ * gas sweep drawing +7.4 mA. Sampled at the tick, which of those a given second
+ * reports is luck, and the series says nothing about the second it covers.
+ *
+ * The INA226 completes a shunt+bus conversion pair every 2.2 ms (AVG = 1,
+ * 1.1 ms each, continuous). Sampling at 200 Hz takes roughly every fifth
+ * conversion, uniformly in phase, so the mean is unbiased; it costs one 16-bit
+ * read of ~0.55 ms at 100 kHz, about 11 % of I2C1, and no single read is long
+ * enough to overflow the 3-deep CAN RX FIFO.
+ *
+ * The device's own AVG field would give the mean for nothing, and is not used:
+ * it averages the peak away, and the peak is what M01 specification V3 asks
+ * for. Extremes are kept here and reported by command 3. */
+#define SAMPLE_PERIOD_US 5000u
+
 static bool s_ina226;
 static bool s_tmp117;
 
 static uint8_t tid_v, tid_i, tid_p, tid_t, tid_door, tid_leak, tid_energy;
-static uint64_t s_last_pub, s_last_probe;
+static uint64_t s_last_pub, s_last_probe, s_last_sample;
+
+/* Mean over the publication period. */
+static float s_i_sum;
+static uint32_t s_i_n;
+
+/* Extremes since the last statistics command, which is the only thing that
+ * clears them -- a bench soak is minutes long and its peak is one number. */
+static float s_win_min, s_win_max;
+static uint32_t s_win_n;
 
 /* Consecutive failed read cycles, U2 INA226 then U1 TMP117. A device that
  * probed present and then stops answering is a fault; one that was never
@@ -65,6 +94,7 @@ static bool s_states_seeded;
  * cannot be calibrated without seeing the raw count against real water. */
 #define CMD_ENERGY_RESET 1u
 #define CMD_LEAK_RAW     2u
+#define CMD_BUS_EXTREMES 3u
 
 static uint64_t now_ts(void) { return micros64(); }
 
@@ -113,7 +143,7 @@ static uint32_t leak_raw_sample(void)
 
 static uint8_t m05_command(uint16_t command, const uint8_t *param, size_t param_len)
 {
-    (void)param;      /* neither M05 command carries a value */
+    (void)param;      /* no M05 command carries a value */
     (void)param_len;
 
     switch (command) {
@@ -125,6 +155,25 @@ static uint8_t m05_command(uint16_t command, const uint8_t *param, size_t param_
         cyphal_diagnostic_u32(uavcan_diagnostic_Severity_1_0_NOTICE,
                               "M05 leak raw ADC =", leak_raw_sample());
         return uavcan_node_ExecuteCommand_Response_1_0_STATUS_SUCCESS;
+    case CMD_BUS_EXTREMES: {
+        /* The extremes of the fast sampler since this command last ran, then
+         * the window restarts. Only the extremes: the mean is what subject 4097
+         * already carries every second, and the sample count is what says
+         * whether the maximum is worth reading. */
+        if (!s_ina226 || (s_win_n == 0u)) {
+            return uavcan_node_ExecuteCommand_Response_1_0_STATUS_BAD_STATE;
+        }
+        const float lo = (s_win_min > 0.0f) ? s_win_min : 0.0f;
+        const float hi = (s_win_max > 0.0f) ? s_win_max : 0.0f;
+        cyphal_diagnostic_u32(uavcan_diagnostic_Severity_1_0_NOTICE,
+                              "M05 bus current window samples =", s_win_n);
+        cyphal_diagnostic_u32(uavcan_diagnostic_Severity_1_0_NOTICE,
+                              "M05 bus current window min uA =", (uint32_t)(lo * 1.0e6f));
+        cyphal_diagnostic_u32(uavcan_diagnostic_Severity_1_0_NOTICE,
+                              "M05 bus current window max uA =", (uint32_t)(hi * 1.0e6f));
+        s_win_n = 0u;
+        return uavcan_node_ExecuteCommand_Response_1_0_STATUS_SUCCESS;
+    }
     default:
         return uavcan_node_ExecuteCommand_Response_1_0_STATUS_BAD_COMMAND;
     }
@@ -285,11 +334,50 @@ static void pub_energy(void)
     }
 }
 
+/* One current reading, from the fast path. Failures are not counted as read
+ * failures: the publication path owns the health signal, and a single missed
+ * sample out of two hundred is not a fault. */
+static void sample_bus_current(void)
+{
+    float a = 0.0f;
+    if (!s_ina226 || (ina226_read(NULL, &a, NULL) != 0)) {
+        return;
+    }
+    s_i_sum += a;
+    s_i_n++;
+    if (s_win_n == 0u) {
+        s_win_min = a;
+        s_win_max = a;
+    } else if (a < s_win_min) {
+        s_win_min = a;
+    } else if (a > s_win_max) {
+        s_win_max = a;
+    }
+    s_win_n++;
+}
+
 static void publish_all(void)
 {
     if (s_ina226) {
         float v = 0.0f, a = 0.0f, w = 0.0f;
-        if (ina226_read(&v, &a, &w) == 0) {
+        int rc;
+        if (s_i_n > 0u) {
+            a = s_i_sum / (float)s_i_n;
+            rc = ina226_read(&v, NULL, NULL);
+            /* P = V * I from the period's own mean current and the voltage at
+             * the tick. The device's POWER register would be one 1.1 ms product
+             * instead. The bus holds 12.086-12.118 V under this load, so taking
+             * V at the tick costs less than the 0.3 % the spread allows. */
+            w = v * a;
+        } else {
+            /* Nothing landed this period: first pass, or the device stopped
+             * answering. One direct read, so a publication is never a silent
+             * zero. */
+            rc = ina226_read(&v, &a, &w);
+        }
+        s_i_sum = 0.0f;
+        s_i_n = 0u;
+        if (rc == 0) {
             note_read(0, true);
             pub_voltage(v);
             pub_current(a);
@@ -316,6 +404,10 @@ static void publish_all(void)
 void m05_sensors_spin(void)
 {
     uint64_t now = now_ts();
+    if ((now - s_last_sample) >= SAMPLE_PERIOD_US) {
+        s_last_sample = now; /* not += : a late pass must not chase the backlog */
+        sample_bus_current();
+    }
     if ((now - s_last_pub) >= PUBLISH_PERIOD_US) {
         s_last_pub += PUBLISH_PERIOD_US;
         publish_all();
