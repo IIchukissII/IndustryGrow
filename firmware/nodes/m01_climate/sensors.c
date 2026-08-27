@@ -141,6 +141,10 @@ static float s_sweep_ohm[GAS_STEPS];
  * counted here. */
 static uint8_t s_fail[3];
 
+/* Devices seen present at any point in this boot. A device that was here and is
+ * now gone is a FAULT; only one that was never here is an absence (O-37). */
+static bool s_seen[3];
+
 #define FAIL_DEGRADED 3u /* consecutive cycles before the node calls it a fault */
 
 /* Vendor ExecuteCommand IDs. The vendor range starts at zero; the standard
@@ -203,14 +207,25 @@ static void note_read(uint8_t dev, bool ok)
  * NOMINAL, which is the one state a consumer cannot act on. */
 static void report_health(void)
 {
+    /* A device is faulted when it is present and stops answering, OR when it was
+     * present earlier in this boot and has since vanished.
+     *
+     * The second case is not hypothetical. On the bench the I2C bus wedged, the
+     * re-probe marked all three devices absent, every publisher fell silent --
+     * each is gated on its device flag -- and the heartbeat read NOMINAL for 37
+     * minutes, because a device that is not present cannot be "present and
+     * failing". It even announced "sensors recovered" on the way down. Absence
+     * is only innocent when the device was never there (O-37). */
+    const bool fault[3] = {
+        (s_u1 && (s_fail[0] >= FAIL_DEGRADED)) || (s_seen[0] && !s_u1),
+        (s_u2 && (s_fail[1] >= FAIL_DEGRADED)) || (s_seen[1] && !s_u2),
+        (s_u3 && (s_fail[2] >= FAIL_DEGRADED)) || (s_seen[2] && !s_u3),
+    };
     uint8_t health = uavcan_node_Health_1_0_NOMINAL;
-    if (s_u2 && (s_fail[1] >= FAIL_DEGRADED)) {
+    if (fault[1] || fault[2]) {
         health = uavcan_node_Health_1_0_ADVISORY;
     }
-    if (s_u3 && (s_fail[2] >= FAIL_DEGRADED)) {
-        health = uavcan_node_Health_1_0_ADVISORY;
-    }
-    if (s_u1 && (s_fail[0] >= FAIL_DEGRADED)) {
+    if (fault[0]) {
         health = uavcan_node_Health_1_0_CAUTION;
     }
     cyphal_set_health(health);
@@ -222,11 +237,11 @@ static void report_health(void)
         if (health == uavcan_node_Health_1_0_NOMINAL) {
             cyphal_diagnostic(uavcan_diagnostic_Severity_1_0_NOTICE, "M01 sensors recovered");
         } else {
-            const uint32_t which = (uint32_t)((s_fail[0] >= FAIL_DEGRADED ? 1u : 0u) |
-                                              (s_fail[1] >= FAIL_DEGRADED ? 2u : 0u) |
-                                              (s_fail[2] >= FAIL_DEGRADED ? 4u : 0u));
+            const uint32_t which = (uint32_t)((fault[0] ? 1u : 0u) |
+                                              (fault[1] ? 2u : 0u) |
+                                              (fault[2] ? 4u : 0u));
             cyphal_diagnostic_u32(uavcan_diagnostic_Severity_1_0_WARNING,
-                                  "M01 reads failing, bitmask U1|U2|U3 =", which);
+                                  "M01 devices faulted or vanished, bitmask U1|U2|U3 =", which);
         }
     }
 }
@@ -514,6 +529,9 @@ static void probe(bool boot)
     s_u1 = u1;
     s_u2 = u2;
     s_u3 = u3;
+    s_seen[0] = s_seen[0] || u1;
+    s_seen[1] = s_seen[1] || u2;
+    s_seen[2] = s_seen[2] || u3;
 
     if (!s_u2) {
         s_u2_pending = false; /* nothing will arrive; do not wait for it */

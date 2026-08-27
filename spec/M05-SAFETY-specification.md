@@ -197,7 +197,7 @@ Implemented in `firmware/nodes/m05_safety/`.
 | Diagnostics | `uavcan.diagnostic.Record` (8184), event-driven: population at boot, health transitions, door and leak state changes, command results. Never periodic |
 | Message timestamps | `uavcan.time.SynchronizedTimestamp` from the gateway time base: the node is a synchronization slave to subject 7168 (ADR-0002 d11), tracking the master as an offset against its own monotonic clock. 0 (UNKNOWN) before the first pair of sync messages and again after the master has been silent for 3 s. Accuracy is milliseconds — reception is timestamped in the polled main loop |
 | Port introspection | `uavcan.node.port.List` (7510) every 10 s at OPTIONAL priority |
-| Health | Heartbeat health is the worse of identity and sensor state. CAUTION when U2 is present and its reads fail, since metering is the board's purpose; ADVISORY for U1. Three consecutive failed cycles is the threshold |
+| Health | Heartbeat health is the worse of identity and sensor state. A device is faulted when it is present and its reads fail, **or when it was present earlier in this boot and has since vanished** — every publication is gated on the device flag, so metering that disappears must not read as healthy. A device that was never present is an absence, not a fault. CAUTION for U2, since metering is the board's purpose; ADVISORY for U1. Three consecutive failed cycles is the threshold |
 
 ### 9.1 Published subjects
 
