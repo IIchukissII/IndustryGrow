@@ -83,7 +83,7 @@ estimate of it.
 
 | # | Gate | Threshold | Result |
 |---|---|---|---|
-| 1 | Window size | ≥ 100 paired U3 samples per window, the first ≥ 20 min after power-on excluded | |
+| 1 | Window size | ≥ 100 paired U3 samples per window — **≈ 8 min** at U3's 0.2 Hz. Use **10–15 min**; longer is wasted, see below. The first ≥ 20 min after power-on is excluded | |
 | 2 | Window count | ≥ 24 accepted windows | |
 | 3 | Total span | ≥ 12 h between the first and last accepted window | |
 | 4 | Net ambient ramp | \|U1(last window) − U1(first window)\| / span ≤ 2 mK/min | |
@@ -103,6 +103,12 @@ spread. Ramp is bounded across the ensemble instead, by gates 4 and 5.
 wander — it buys far less than the square root of the added time. For a fixed total observing
 time it is actively worse, because it yields fewer independent samples of the wander and so a
 *larger* standard error on the result. Prefer many short windows over few long ones.
+
+**The window is already long enough at ten minutes.** The offset is a degree-scale quantity
+against per-sample noise of a few tens of mK, so a ten-minute window resolves it to well inside
+the centi-degree it is written in — and inside U1's own accuracy, which is the floor no averaging
+gets past (§3). Going from ten minutes to an hour changes a window's mean by single-digit mK
+while costing six times the observing time. Spend that time on more windows, further apart.
 
 **How gates 4 and 5 bound the lag term.** On a ramp the slower device lags, so each window's
 difference carries a term `−dtau · (dU1/dt)`. Averaged over the accepted set that term becomes
