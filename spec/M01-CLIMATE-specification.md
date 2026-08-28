@@ -288,6 +288,7 @@ residue is O-48.
 | Software | Sensor API only. BSEC not used (ADR-0002 d5) |
 | Excluded outputs | IAQ, CO₂-equivalent, bVOC-equivalent, gas-scan classification. CO₂ is measured by U3, never estimated from this channel: over one breath transient the two correlate at r = −0.79 but invert on the leading edge, where CO₂ rose 52 % while the reducing-gas load fell |
 | Compensation and baseline | Humidity compensation, baseline tracking and drift correction are gateway-side (ADR-0016 d5). The node publishes raw resistance and its setpoints |
+| Compensation inputs | **T and RH only. Pressure is not a confounder for this channel** and shall not be compensated for, though the node publishes it for §6.3. Measured over 22 h of natural ambient drift: the partial correlation of the gas vector with barometric pressure, holding T and RH, is +0.11, and −0.04 once CO₂ is also held; humidity's is −0.70 on the same data. **The raw correlation misleads** — over a day both pressure and resistance drift monotonically and read +0.94 against each other with no causal link, and pressure moves ≈ 1 % of its mean while the gas channel moves tens of percent |
 | Thresholds | Relative to a per-device baseline. Absolute thresholds shall not be used |
 | Baseline validity | Tied to the setpoint list and the scan interval. The same air read 161 kΩ at a 1 s interval against 18 kΩ at 10 s |
 | Confounding | Responds to temperature and humidity; a VOC excursion concurrent with a T or RH excursion is not independent evidence |
@@ -437,7 +438,10 @@ Die pad soldered gives R_θJA 246 K/W. T5 requires it unsoldered.
 
 U3 self-heating: no datasheet figure. Its temperature offset compounds measurement mode,
 self-heating of nearby components, ambient temperature and air flow; default 4 °C, recommended
-range 0–20 °C, determined in the finished board at thermal equilibrium. Measured by V7. O-45.
+range 0–20 °C, determined in the finished board at thermal equilibrium. Because it compounds
+those terms it is **a property of the individual board, not of this design**: it is determined
+per instance and its value is recorded in that instance's `-CC`, never in this document.
+Measured by V7. O-45.
 
 ## 9. Mechanical and enclosure
 
@@ -469,7 +473,7 @@ end to end or M4 is narrowed. Unresolved. O-46.
 | Derived | Air VPD per §6.1 |
 | CO₂ compensation | Pressure from U2 written to U3's compensation register (§6.3), refreshed each cycle and only when the value changed. Fallback when U2 is absent: **1013 hPa**, compiled in — closes O-48 |
 | CO₂ self-calibration | ASC disabled; FRC per §6.3.1. FRC is not implemented: §6.3.1 bars it until five days after assembly and requires a reference concentration the project does not have. O-5 |
-| U3 temperature offset | Shall be determined for this board under its operating conditions in thermal equilibrium and written to the device. The default is 4 °C and is not this board's value. U3's published T and RH are invalid until it is set. O-45. Firmware reads the offset at boot and logs it, and writes one only on command 3, in centi-degrees Celsius, bounded by the 0–20 °C range of §3 |
+| U3 temperature offset | Shall be determined for this board under its operating conditions in thermal equilibrium and written to the device, per `store/E0002-000001-M-calibration-protocol.md`, which owns the procedure and its gates. The default is 4 °C and is not this board's value. U3's published T and RH are invalid until it is set. O-45. Firmware reads the offset at boot and logs it, and writes one only on command 3, in centi-degrees Celsius, bounded by the 0–20 °C range of §3 |
 | U3 settings persistence | `persist_settings` writes EEPROM rated for at least 2000 cycles. It shall be issued only when configuration actually changed, never unconditionally at boot |
 | VOC | Vector per §6.4, published as `GasResistance.2.0`. Pressure and the secondary T/RH are published once per scan, from the step that opens it. Setpoint list and interval are build constants (`M01_GAS_SCAN`, `M01_GAS_PERIOD_S`), reported on the boot line; whether the next sweep is armed is commandable (4, 5). A sweep in flight when the scan is parked completes — an interrupted shape is not published |
 | SHT45 heater | Never automatic. Commanded only, per the command surface above; 20 mW for 0.1 s, the lowest level and shortest duration. The pulse shall not overlap a U3 measurement window; the rail tolerates the highest level |
@@ -511,7 +515,7 @@ M05 holds 4096–4102.
 Ten subjects, not one record: a partial population must be able to omit any one
 of them (ADR-0005 d8). 4118–4121 are the secondary sources of §4 and are not
 admissible for VPD; 4120 and 4121 additionally carry the uncalibrated offset of
-O-45 until V7 runs.
+O-45 until V7 has run **on that instance** and a `-CC` is in force for it.
 
 The three climate types are minted because the standard set has no humidity,
 concentration or electrical-resistance sample type (ADR-0005 d2). All three are
@@ -527,7 +531,7 @@ unscaled — ratio, mole fraction, ohm (ADR-0005 d2).
 | V4 | §6.1 | U1 against a reference hygrometer at two points of the ADR-0003 d7 band | Not executed |
 | V5 | §6.3 | CO₂ against M07's reference instance in the same air (O-7), no earlier than five days after assembly and at the 2.8 V rail | Blocked. O-7 |
 | V6 | §4.1 footprints | 1:1 paper printout against the physical part, all three devices, including U1's unsoldered die pad and U3's full pad count | Not executed |
-| V7 | §10, §8.1 | U3 temperature offset determined and written with command 3; U3 T/RH against a reference in the same air before and after. Determined in the finished board at thermal equilibrium in the operating mode used in the application, per the device datasheet. This is also the only source of U3's self-heating contribution (§8.1) | Not executed. O-45 |
+| V7 | §10, §8.1 | U3 temperature offset determined and written with command 3; U3 T/RH against U1 in the same air before and after. Determined in the finished board at thermal equilibrium in the operating mode used in the application, per the device datasheet. The procedure, its equilibrium gates and the records it produces are `store/E0002-000001-M-calibration-protocol.md`. This is also the only source of U3's self-heating contribution (§8.1). **Per instance** — the offset is a board property, so V7 is re-run for each instance and after any change to a board's thermal environment | Determined, written and its residual verified on the first article, 2026-08-27/28. Persistence read-back not executed. O-45 |
 | V8 | §7.5 | C8's effective capacitance at 2.8 V DC bias read from the vendor's DC-bias curve for the specific ordering part, against the 2.0–4.7 µF acceptance band. Executed at BOM release, before the `L` document is issued | Not executable: no ordering part is identified for C8. O-73 |
 
 ### 11.1 Assembly constraints
@@ -571,7 +575,7 @@ O-52 to O-62 are M02's.
 | O-73 | Passive attributes that §7.5 makes acceptance criteria — dielectric, voltage rating, manufacturer part — are not recorded in the design data for C8; the BOM carries a distributor code alone. The same gap applies to every passive whose specification is more than a value and a case | V8, `L` release, and any BOM re-sourcing |
 | O-43 | Module-local rails are outside ADR-0002 d3 and the header contract. One instance is not a pattern; revisit at the second | ADR-0014 / ADR-0002 revision |
 | O-44 | Carrier runs in pulse-skipping at node load; rail ripple against U3's 30 mV limit has never been measured, and no instrument is available. Design is dimensioned against the datasheet, not the rail | Confidence in §7.4, not the design |
-| O-45 | U3 temperature offset uncalibrated; U3's T and RH are invalid until V7 is executed | U3 T/RH validity |
+| O-45 | U3 temperature offset is a per-instance board property; an instance's U3 T and RH are invalid until V7 has run on it and its `-CC` is in force. On the first article the offset is determined, written and its residual verified; the persistence read-back is outstanding | U3 T/RH validity |
 | O-46 | U3 forbids board wash after reflow; M4 requires conformal coating, which conventionally follows cleaning | Coating process, M4 |
 | O-47 | Condensation on excursions places U2 and U3 outside their stated operating conditions. Post-excursion validity and recovery undefined | Excursion handling, data validity |
 | O-75 | The I²C bus wedged in service: every device probed absent, the node published nothing until it was restarted, and the boot probe then found all three present. The devices were never at fault. This is the failure class PR #185 addressed in `i2c.c` and it is not closed; the trigger is unidentified. Health now reports the condition rather than reading NOMINAL through it (§10) | Sensor availability, common `i2c.c` |
@@ -582,14 +586,15 @@ O-52 to O-62 are M02's.
 ## 13. Maturity
 
 **Schematic captured, not frozen.** No `verify` value remains. `E0002` is fabricated and
-publishes; V6 and V8 hold the rung, and V1, V2, V4, V5 and V7 remain open.
+publishes; V6 and V8 hold the rung, V1, V2, V4 and V5 remain open, and V7 is complete on the
+first article bar its persistence read-back.
 
 | Rung | Content | Reached when |
 |------|---------|--------------|
 | **Pre-schematic** | Complement and requirements fixed; values estimated or `verify` | — |
 | **Schematic captured** ← here | Parts fixed to ordering part numbers; schematic exists; component values determined | `store/E0002-000001.kicad_sch` exists; O-3, O-34, O-41 closed |
 | **Schematic-frozen** | Remaining `verify` resolved, footprints checked against physical parts. `L` releases here | O-32, O-50 closed ✔; O-33 closed ✔; O-38 fixed as a requirement ✔; **V6 not executed**; **V8 not executed** |
-| **As-built** | Estimates replaced by measured values; verification §11 executed | `E0002` fabricated ✔; O-35 closed by V3 ✔; V3's rail voltages and V1, V2, V4, V5, V7 not executed |
+| **As-built** | Estimates replaced by measured values; verification §11 executed | `E0002` fabricated ✔; O-35 closed by V3 ✔; V7 executed bar its persistence read-back; V3's rail voltages and V1, V2, V4, V5 not executed |
 
 `M05-SAFETY-specification.md` is the as-built form of this document class. The transition is an
 edit of this file; no second E-number is issued for the module having been built.
