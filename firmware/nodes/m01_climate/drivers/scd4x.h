@@ -31,9 +31,12 @@
  *    The offset is read during configuration so the log records what is
  *    actually in the device.
  *
- * Until V7 runs, this part's T and RH carry an uncalibrated offset. They are
- * published anyway, on their own subjects: the error is a bias, not an
- * invalidity, and the primary T/RH for every derived quantity is U1 (spec 4).
+ * Until V7 runs on an instance, that board's T and RH carry an uncalibrated
+ * offset. They are published anyway, on their own subjects: the error is a
+ * bias, not an invalidity, and the primary T/RH for every derived quantity is
+ * U1 (spec 4). V7 is per instance, so one board being trimmed says nothing
+ * about the next -- the offset compounds board layout, neighbouring
+ * self-heating and air flow, and its value lives in that instance's -CC.
  */
 
 #define SCD4X_ADDR 0x62u

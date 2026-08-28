@@ -757,11 +757,26 @@ static void log_population(void)
         float offset = 0.0f;
         if (scd4x_get_temperature_offset(&offset) == 0) {
             /* Records what is actually in the device. 4.000 is the factory
-             * default, and it is NOT this board's value -- until V7 measures
-             * one, U3's T and RH carry an uncalibrated bias (spec O-45). */
+             * default and is no board's measured value, so reading it back is
+             * the one thing that proves the trim is missing (spec O-45).
+             *
+             * The device cannot report who wrote any other value, so anything
+             * else is reported as trimmed without claiming which run produced
+             * it -- the instance -CC is the record of that. The suffix used to
+             * be unconditional, which made a calibrated board print
+             * "T offset 2.710 C (uncalibrated, O-45)" and contradict itself.
+             *
+             * Device quantisation is 175/65535 C = 2.67 mK, so a +-10 mK window
+             * catches the default whatever it quantises to and is far too
+             * narrow to catch a measured offset. A board whose measured value
+             * really is 4.000 reads as untrimmed; the -CC settles that case and
+             * the console cannot. */
+            int32_t milli = (int32_t)(offset * 1000.0f);
             uart_puts(", T offset ");
-            put_milli((int32_t)(offset * 1000.0f));
-            uart_puts(" C (uncalibrated, O-45)");
+            put_milli(milli);
+            uart_puts((milli > 3990 && milli < 4010)
+                          ? " C (factory default -- not this board's value, O-45)"
+                          : " C (trimmed -- see this instance's -CC)");
         }
         /* ASC is disabled on this module by design (spec 6.3), which makes FRC
          * mandatory -- and FRC has no entry point yet (spec 6.3.1, O-5), so
