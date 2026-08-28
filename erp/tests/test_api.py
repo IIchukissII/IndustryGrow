@@ -186,15 +186,16 @@ def test_an_indexed_key_that_does_not_resolve_says_so(client, warehouse):
     # the store have diverged — better to say that than hand back a URL that 404s
     # at the object store with no explanation.
     inst = _one_instance(client)
-    client.post(
+    posted = client.post(
         f"/api/v1/instances/{inst}/documents",
-        data={"doc_type": "CP"},
+        data={"doc_type": "CP", "doc_date": "2026-07-22"},
         files={"file": ("cp.pdf", b"%PDF-1.7", "application/pdf")},
         headers=AUTH,
     )
-    warehouse.objects.pop(f"{inst}-CP")  # the divergence
+    key = posted.json()["object_key"]
+    warehouse.objects.pop(key)  # the divergence
 
-    r = client.get(f"/api/v1/instances/{inst}/documents/{inst}-CP/url", headers=AUTH)
+    r = client.get(f"/api/v1/instances/{inst}/documents/{key}/url", headers=AUTH)
     assert r.status_code == 502
     assert "diverged" in r.json()["detail"]
 
@@ -334,6 +335,27 @@ def test_calibration_key_carries_its_date_and_is_queryable(client, warehouse):
     # A recalibration must not overwrite its predecessor, so the CC key is dated.
     assert r.json()["object_key"] == f"{inst}-CC-20260722"
     assert f"{inst}-CC-20260722" in warehouse.objects
+
+    # The -CP carries the same guarantee: it is the raw data behind the -CC, and
+    # a second run must not overwrite the first run's points.
+    r = client.post(
+        f"/api/v1/instances/{inst}/documents",
+        data={"doc_type": "CP", "doc_date": "2026-07-22"},
+        files={"file": ("points.pdf", b"%PDF-1.7 points", "application/pdf")},
+        headers=AUTH,
+    )
+    assert r.json()["object_key"] == f"{inst}-CP-20260722"
+    assert f"{inst}-CP-20260722" in warehouse.objects
+
+    # A later run lands beside it, not on top of it.
+    client.post(
+        f"/api/v1/instances/{inst}/documents",
+        data={"doc_type": "CP", "doc_date": "2026-09-01"},
+        files={"file": ("points2.pdf", b"%PDF-1.7 later", "application/pdf")},
+        headers=AUTH,
+    )
+    assert warehouse.objects[f"{inst}-CP-20260722"] == b"%PDF-1.7 points"
+    assert warehouse.objects[f"{inst}-CP-20260901"] == b"%PDF-1.7 later"
 
     # ADR-0021 d7: the point of indexing the key is that expiry is a query here.
     expiring = client.get("/api/v1/calibration/expiring?days=3650", headers=AUTH).json()

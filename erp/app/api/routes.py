@@ -249,10 +249,16 @@ async def upload_document(
         )
     await _require_instance(db, instance_id)
 
+    # ADR-0017 d11: calibration recurs where quality control does not, so BOTH
+    # calibration records are dated and a later run cannot overwrite an earlier
+    # one. Dating only the -CC left every -CP of an instance sharing one key: the
+    # warehouse put overwrites in place, so a second run destroyed the first run's
+    # raw points while leaving its index row behind. QP/QR/PR are issued once per
+    # instance and take no stamp.
     suffix = doc_type
-    if doc_type == "CC":
+    if doc_type in {"CP", "CC"}:
         stamp = (doc_date or datetime.now(UTC).date()).strftime("%Y%m%d")
-        suffix = f"CC-{stamp}"
+        suffix = f"{doc_type}-{stamp}"
     object_key = f"{instance_id}-{suffix}"
 
     valid_until_dt = (
