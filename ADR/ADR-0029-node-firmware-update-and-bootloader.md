@@ -1,0 +1,169 @@
+<!--
+SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+SPDX-License-Identifier: CC-BY-SA-4.0
+-->
+
+# ADR-0029: Node firmware update and bootloader
+
+- **ID:** ADR-0029
+- **Status:** Proposed
+- **Date:** 2026-08-28
+- **Project:** IndustryGrow
+- **Parent:** ADR-0004 (rev 1)
+- **Companions:** ADR-0002 (rev 3), ADR-0005, ADR-0007 (rev 1), ADR-0027, ADR-0028
+- **Realizes:** ADR-0005's deferred *"firmware-update / OTA service types"*; ADR-0028's deferred
+  *"interaction with the firmware update path"*
+
+## Context and problem
+
+Fixed elsewhere:
+
+| Source | Fixed |
+|---|---|
+| ADR-0004 rev 1 d12–16 | Build-time signing by an offline key; distribution via the Cyphal file transfer service; per-node verification before flashing; bootloader replacement over SWD only; audit events to IndustryFlow |
+| ADR-0004 rev 1 d17 | The in-cabinet CAN domain is trusted against injection |
+| ADR-0027 d4 | An update must not erase the Node-ID sector |
+| ADR-0005 | The update DSDL service binding is deferred to this ADR |
+| ADR-0028 | The interaction between an update and commissioning is deferred to this ADR |
+
+Not fixed:
+
+- flash partitioning and bootloader location;
+- behaviour of an update that fails part-way;
+- which component downloads and writes;
+- whether an updated node is re-provisioned or re-calibrated;
+- which DSDL types carry the transfer.
+
+Four properties bound the answer.
+
+| # | Property | Source |
+|---|---|---|
+| P1 | Single 1 MB flash bank, no read-while-write. Code cannot execute from flash while flash is erased or written | RM0090 |
+| P2 | Erase granularity is the sector: 16 KB ×4 (S0–S3), 64 KB ×1 (S4), 128 KB ×7 (S5–S11) | RM0090 |
+| P3 | Sector 11 (`0x080E0000`, 128 KB) holds the Node-ID store and must survive an update | ADR-0027 d2, d4 |
+| P4 | 500 kbit/s classic CAN, 8-byte frames; a node is addressable only while a Cyphal stack runs on it | ADR-0002 d8 |
+
+P1 excludes in-place rewrite of the running image. P2 fixes partition boundaries to sector edges.
+P3 excludes sector 11 from every write path. P4 requires the downloading component to be a Cyphal
+node.
+
+## Decision drivers
+
+- Release image: ~21 KB. Flash: 1 MB.
+- Project cryptography: ECDSA on NIST P-256 with SHA-256 (ADR-0007 d1–2, ADR-0025 d9).
+- Firmware distribution is a gateway-paced burst below telemetry priority (ADR-0002 rev 3).
+- Watchdog window: ~1.4 s at worst-case LSI (`firmware/common/cyphal/cyphal.h`).
+- SWD recovery requires physical access to the node.
+
+## Decision
+
+1. **Flash is partitioned at sector boundaries.**
+
+    | Region | Sectors | Address | Size | Written by |
+    |---|---|---|---|---|
+    | Bootloader | 0–3 | `0x08000000` | 64 KB | SWD only |
+    | Update state | 4 | `0x08010000` | 64 KB | bootloader, application |
+    | Slot A | 5–7 | `0x08020000` | 384 KB | bootloader |
+    | Slot B | 8–10 | `0x08080000` | 384 KB | bootloader |
+    | Identity | 11 | `0x080E0000` | 128 KB | application (ADR-0027 d5) |
+
+    The application links to a slot base and sets `VTOR`. Sector 11 is outside every update write
+    path (P3).
+
+2. **Two application slots, with rollback.** The bootloader selects the slot from the update state
+   block. A slot is written only while the other holds the running image (P1).
+
+3. **The bootloader downloads and writes; the application writes no slot.** The application records
+   an update request in the update state block and restarts.
+
+4. **The bootloader is a Cyphal node** (P4): publishes `uavcan.node.Heartbeat`, answers
+   `uavcan.node.GetInfo`, and is a `uavcan.file.Read` client. It joins under the Node-ID in the
+   ADR-0027 store, or `127` when unprovisioned (ADR-0027 d6).
+
+5. **DSDL binding: `uavcan.node.ExecuteCommand` `COMMAND_BEGIN_SOFTWARE_UPDATE`, and
+   `uavcan.file.Read`**, consumed from the pinned regulated set (ADR-0005 d2, d10). The command
+   carries the artifact path.
+
+6. **An image is verified by ECDSA P-256 signature over SHA-256 of header and body before its slot
+   is marked bootable.** The verification public key is held in the bootloader (ADR-0004 d14). A
+   failed image is discarded, the slot left unmarked, and the previous slot continues to run.
+
+7. **The image header carries:** magic, header version, image length, target hardware class, image
+   version, SHA-256 digest, detached signature. Byte layout is an implementation specification
+   (ADR-0000 d2). A header whose target class does not match the node is refused.
+
+8. **A newly written slot boots in trial state and must be confirmed.** The application confirms the
+   running slot on reaching a defined healthy condition. An unconfirmed slot is reverted at the next
+   boot. A bounded attempt counter in the update state block terminates a boot loop. Each boot
+   checks a CRC-32 over the selected slot; the signature is checked on download only.
+
+9. **An update is not a commissioning event.** Node-ID survives by d1 and P3; a calibration trim is
+   held in the device it corrects, not in MCU flash (ADR-0028 d2). An update therefore does not void
+   a `-CC`. ADR-0028 d1 step 1 remains the manufacture-time SWD flash of bootloader and first image.
+
+10. **The bootloader is not an update target over the bus.** Its sectors lie outside both slots;
+    replacement requires SWD (ADR-0004 d15). The debug header is reachable with the carrier mounted
+    (`store/E0001-000003-D-pinmap.md`).
+
+11. **The node reports the verification result and resulting image version on its diagnostic
+    channel** (ADR-0004 d16).
+
+## Alternatives considered
+
+**A. One slot, updated in place.** *Rejected:* P1 — an interrupted write leaves no bootable image.
+
+**B. Application self-update executing from RAM.** *Rejected:* unrecoverable on power loss mid-erase.
+
+**C. STM32 ROM system bootloader over CAN.** *Rejected:* AN2606 binds it to CAN2 (PB5/PB13); the
+carrier wires CAN1 (PB8/PB9) and PB13 is `SPI2_SCK`; it cannot verify a signature (ADR-0004 d14).
+
+**D. USB DFU per node.** *Rejected:* physical access per node. Retained as a recovery path.
+
+**E. Unsigned images under ADR-0004 d17.** *Rejected:* d17 covers wire injection, not a corrupted or
+substituted artifact.
+
+**F. Update state in the identity sector.** *Rejected:* P3.
+
+## Consequences
+
+### Positive
+
+- A failed update leaves the previous image bootable; no SWD access required.
+- Node-ID and trims survive by construction.
+- Flash writing and signature verification exist in one signed component.
+- A wrong-class image is refused before execution.
+
+### Negative
+
+- The application relocates off `0x08000000` and sets `VTOR`: linker script, release artifact and
+  SWD flashing procedure all change.
+- A second signed component enters the build and the key ceremony.
+- A bootloader defect requires physical access to correct.
+- A minimal CAN and Cyphal stack is duplicated in the bootloader.
+- First flash is two artifacts.
+
+## Deferred decisions
+
+- **Image header byte layout and the build-time signing step.** An implementation specification.
+- **Bootloader-signing key custody and rotation.** Belongs with the key ceremony (ADR-0024).
+- **Gateway artifact storage layout and the push-versus-pull trigger.** ADR-0004 d13 fixes that the
+  gateway serves artifacts; when a transfer starts is operational.
+- **Measured bus occupancy of a full image transfer**, by the bit accounting ADR-0002 rev 3 applies
+  to telemetry.
+- **Whether the bootloader services or disables the watchdog during a transfer.**
+- **Fleet-wide update order and concurrency.**
+- **The healthy condition that confirms a trial slot, and which component asserts it.**
+
+## References
+
+- ADR-0002 (rev 3): Field bus architecture — d8 fixes 500 kbit/s classic CAN; the CAN1 pin choice
+  keeps USB DFU available.
+- ADR-0004 (rev 1): Gateway host hardening — d12–16 update policy, d17 trusted-bus assumption.
+- ADR-0005: DSDL foundation — d2 and d10 on the pinned regulated set; the deferred OTA service types.
+- ADR-0007 (rev 1): PKI and secure element identity — d1–2 fix P-256; d8 separates the
+  firmware-signing root from node identity.
+- ADR-0027: Node identity model — d2, d4, d5, d6.
+- ADR-0028: Commissioning sequence and trim custody — d1, d2, and the deferred item this ADR closes.
+- `store/E0001-000003-D-pinmap.md`: CAN1 on PB8/PB9, `SPI2_SCK` on PB13, SWD on the WeAct debug
+  header.
+- ST RM0090 (flash sectors, single bank); ST AN2606 (system bootloader interfaces).
