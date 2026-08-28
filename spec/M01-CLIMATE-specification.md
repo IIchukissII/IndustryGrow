@@ -288,6 +288,7 @@ residue is O-48.
 | Software | Sensor API only. BSEC not used (ADR-0002 d5) |
 | Excluded outputs | IAQ, CO₂-equivalent, bVOC-equivalent, gas-scan classification. CO₂ is measured by U3, never estimated from this channel: over one breath transient the two correlate at r = −0.79 but invert on the leading edge, where CO₂ rose 52 % while the reducing-gas load fell |
 | Compensation and baseline | Humidity compensation, baseline tracking and drift correction are gateway-side (ADR-0016 d5). The node publishes raw resistance and its setpoints |
+| Compensation inputs | **T and RH only. Pressure is not a confounder for this channel** and shall not be compensated for, though the node publishes it for §6.3. Measured over 22 h of natural ambient drift: the partial correlation of the gas vector with barometric pressure, holding T and RH, is +0.11, and −0.04 once CO₂ is also held; humidity's is −0.70 on the same data. **The raw correlation misleads** — over a day both pressure and resistance drift monotonically and read +0.94 against each other with no causal link, and pressure moves ≈ 1 % of its mean while the gas channel moves tens of percent |
 | Thresholds | Relative to a per-device baseline. Absolute thresholds shall not be used |
 | Baseline validity | Tied to the setpoint list and the scan interval. The same air read 161 kΩ at a 1 s interval against 18 kΩ at 10 s |
 | Confounding | Responds to temperature and humidity; a VOC excursion concurrent with a T or RH excursion is not independent evidence |
