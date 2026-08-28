@@ -62,34 +62,72 @@ so it is determined in the mode the board is used in and is only valid for it.
 | # | Condition | Pass criterion | Result |
 |---|---|---|---|
 | 1 | Application operating mode | U2 gas scan **armed** at its build interval, U3 periodic | |
-| 2 | U1 heater | Never commanded during the window | |
+| 2 | U1 heater | Never commanded during the run | |
 | 3 | Still air, board undisturbed | No enclosure change, no handling | |
-| 4 | No commands issued | Nothing addresses the node during the window | |
+| 4 | No commands issued | Nothing addresses the node during the run, apart from the §7 write between the determination and verification sets | |
 | 5 | No reset | Heartbeat uptime monotonic end to end | |
-| 6 | Data arriving | Sample count matches the published rate. `health=NOMINAL` is **not** this check — O-75 | |
+| 6 | Data arriving | Sample count matches the published rate, with no gap exceeding four publication intervals. `health=NOMINAL` is **not** this check — O-75 | |
 
-## 5. Equilibrium gate
+## 5. Sampling gate
 
-Thermal equilibrium is established from the data, not from elapsed time. All four gates hold on
-the window before any value is determined.
+Thermal equilibrium is established from the data, not from elapsed time — and not from one long
+window. The room wanders on an hour timescale at ramp rates far below any per-window threshold,
+and that wander moves U1 and U3 by different amounts, because they are different packages at
+different points on the board. Inside a single window that error is invisible: it looks like a
+steady offset, and the standard error of the window mean understates the true uncertainty by
+more than an order of magnitude.
+
+**The determination is a mean over many short windows spread across a full daily cycle**, not one
+long window. The spread across those windows *is* the uncertainty, and it is the only honest
+estimate of it.
 
 | # | Gate | Threshold | Result |
 |---|---|---|---|
-| 1 | Window length | ≥ 60 min of paired samples, with the first ≥ 20 min after power-on excluded | |
-| 2 | Ambient ramp | \|dU1/dt\| ≤ 2 mK/min on block means | |
-| 3 | Difference drift | Block-mean drift of (U3 − U1) ≤ 1 mK/min across ≥ 6 blocks | |
-| 4 | Lag term collapsed | Plain mean and ramp-rate intercept agree within 20 mK | |
+| 1 | Window size | ≥ 100 paired U3 samples per window, the first ≥ 20 min after power-on excluded | |
+| 2 | Window count | ≥ 24 accepted windows | |
+| 3 | Total span | ≥ 12 h between the first and last accepted window | |
+| 4 | Net ambient ramp | \|U1(last window) − U1(first window)\| / span ≤ 2 mK/min | |
+| 5 | Ramp balance | Windows of each sign of dU1/dt ≥ ⅓ of the accepted set | |
+| 6 | Reproducibility | Standard error of the mean of the window means ≤ 25 mK | |
 
-Gate 4 is what separates equilibrium from a steady ramp, and gates 1–3 do not imply it. On a
-ramp the slower device lags, so the measured difference carries a term proportional to the ramp
-rate. Fit across blocks
+`D_ss` is the mean of the accepted window means. **Quote gate 6's standard error beside it; a
+determination without it is not a result.**
+
+**Windows are not individually gated on ramp.** An earlier revision required \|dU1/dt\| ≤ 2 mK/min
+per window. That threshold is only meaningful over an hour or more: the room's instantaneous ramp
+rate swings by an order of magnitude more than that as its thermostat cycles, so applied to a
+short window the same number rejects nearly everything and leaves too few windows to measure a
+spread. Ramp is bounded across the ensemble instead, by gates 4 and 5.
+
+**Why span, not length.** Lengthening a single window is close to useless against correlated
+wander — it buys far less than the square root of the added time. For a fixed total observing
+time it is actively worse, because it yields fewer independent samples of the wander and so a
+*larger* standard error on the result. Prefer many short windows over few long ones.
+
+**How gates 4 and 5 bound the lag term.** On a ramp the slower device lags, so each window's
+difference carries a term `−dtau · (dU1/dt)`. Averaged over the accepted set that term becomes
+`−dtau ·` mean ramp, and the mean ramp over the span is fixed by its endpoints alone. Gate 4
+bounds it at 2 mK/min; U3's lag against U1 cannot plausibly exceed a few minutes, so the residual
+bias is single-digit mK — below the centi-degree the result is rounded to in §6. **No lag fit is
+needed, and none should be used.**
+
+**Retired: the fitted-lag gate.** An earlier revision fitted
 
 ```
 U3 - U1 = D_ss - dtau * (dU1/dt)
 ```
 
-and take `D_ss` at the intercept. While a lag term survives, the intercept and the plain mean
-disagree; at equilibrium they converge and either may be used.
+across blocks within one window and required the intercept to agree with the plain mean within
+20 mK. That gate is withdrawn. It is ill-conditioned exactly where it matters: in a quiet window
+the regressor's range is small, the fit has no leverage, and the recovered `dtau` is not
+reproducible between adjacent windows — it varies far more widely than any physical thermal lag
+and changes sign. It rejected sound windows on a meaningless fit and passed others by luck. Do
+not reinstate it as a per-window test.
+
+**Excluding a disturbance.** A window covering a step change in the air — a door or vent opened,
+the board handled — fails §4 condition 3 and is dropped before gating, not argued about
+afterwards. Such an event is visible as a coincident step in CO₂ and in U3 − U1. Dropping one is
+recorded in the `-CP` with its reason; gate 6 is the backstop if one is missed.
 
 ## 6. Determination — U3 temperature offset
 
@@ -103,10 +141,14 @@ The factory default is 4 °C and is not this board's value. Write in centi-degre
 device encoding is `word = offset_C * 65535 / 175`, so the written value quantizes to 2.67 mK —
 below every other term.
 
+Rounding to a centi-degree is coarser than gate 6's standard error, so a determination that
+passes §5 will not be improved by a longer run. **U1's own absolute accuracy is the binding
+term** and is not reduced by any amount of averaging (§3).
+
 | # | Step | Pass criterion | Result |
 |---|---|---|---|
 | 1 | `T_offset_previous` from the boot log | Read back, not assumed | |
-| 2 | `T_U3 - T_U1` over the gated window | §5 passed | |
+| 2 | `T_U3 - T_U1` as `D_ss`, the mean of the accepted window means | §5 passed, all six gates | |
 | 3 | `T_offset_new` in centi-degrees | Within 0–2000 | |
 
 ## 7. Write
@@ -132,8 +174,8 @@ the write's own answer and is the one that counts.
 | # | Step | Pass criterion | Result |
 |---|---|---|---|
 | 1 | Discard the settling period | ≥ 15 min after the write. Stop, persist and reconfigure leave U3 transient | |
-| 2 | Re-apply §5 to the post-write window | All four gates pass | |
-| 3 | Residual | \|U3 − U1\| ≤ 0.1 K | |
+| 2 | Re-apply §5 to the post-write windows | All six gates pass | |
+| 3 | Residual | \|D_ss\| ≤ 0.1 K, quoted with gate 6's standard error | |
 | 4 | Persistence | Power-cycle; the boot log reads back the written offset | |
 
 A boot log that reads back 4.000 °C after a successful write means the persist did not stick —
@@ -143,7 +185,7 @@ the same EEPROM-persistence failure mode the bring-up protocol checks on ASC.
 
 | Object | Holds |
 |---|---|
-| `E0002-000001-NNNNNN-CP-YYYYMMDD` | Raw points: window bounds, the block table, the four §5 gate values, ambient, and the §4 run conditions as executed |
+| `E0002-000001-NNNNNN-CP-YYYYMMDD` | Raw points: every accepted window with its bounds and mean, every window rejected and by which gate, the six §5 gate values, ambient, and the §4 run conditions as executed |
 | `E0002-000001-NNNNNN-CC-YYYYMMDD` | The coefficient written, its units, the reference used, the ambient it was determined at, and its validity |
 
 **Validity.** The offset is a property of this board in these operating conditions, not of the
