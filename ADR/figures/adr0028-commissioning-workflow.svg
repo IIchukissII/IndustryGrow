@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="772" viewBox="0 0 720 772" role="img" aria-label="Commissioning workflow, per ADR-0028">
+  <title>ADR-0028 — commissioning sequence and trim custody</title>
+  <desc>A vertical workflow. Flash the released image, provision the Node-ID, execute the bring-up protocol. A first decision asks whether the class declares a trim; if not, commissioning is complete. A second decision asks whether a valid calibration certificate exists for this instance; if it does, the recorded trim is restored, otherwise the calibration protocol determines a new one and the records are filed. The trim is held in the device it corrects, and the certificate is authoritative.</desc>
+
+  <defs>
+    <marker id="a28" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#5F5E5A"/></marker>
+    <marker id="a28c" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#D85A30"/></marker>
+  </defs>
+
+  <rect x="0.5" y="0.5" width="719" height="771" rx="10" fill="#FFFFFF" stroke="#E5E3DC"/>
+
+  <text x="360" y="30" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#2C2C2A">Commissioning sequence</text>
+  <text x="360" y="50" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11.5" fill="#5F5E5A">Each step&#8217;s precondition is the previous step&#8217;s pass (decision 1)</text>
+
+  <!-- 1 flash -->
+  <rect x="100" y="70" width="260" height="48" rx="6" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="230" y="90" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#2C2C2A">1 &#183; Flash the released image</text>
+  <text x="230" y="106" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#5F5E5A">SWD. MCU flash only &#8212; no trim (d4)</text>
+  <line x1="230" y1="118" x2="230" y2="132" stroke="#5F5E5A" stroke-width="1.4" marker-end="url(#a28)"/>
+
+  <!-- 2 node-id -->
+  <rect x="100" y="138" width="260" height="48" rx="6" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="230" y="158" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#2C2C2A">2 &#183; Provision the Node-ID</text>
+  <text x="230" y="174" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#5F5E5A">ADR-0027 d5 &#8212; store on the carrier</text>
+  <line x1="230" y1="186" x2="230" y2="200" stroke="#5F5E5A" stroke-width="1.4" marker-end="url(#a28)"/>
+
+  <!-- 3 bring-up -->
+  <rect x="100" y="206" width="260" height="48" rx="6" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="230" y="226" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#2C2C2A">3 &#183; Bring-up protocol</text>
+  <text x="230" y="242" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#5F5E5A">&#8594; instance -QP</text>
+  <line x1="230" y1="254" x2="230" y2="272" stroke="#5F5E5A" stroke-width="1.4" marker-end="url(#a28)"/>
+
+  <!-- D1 -->
+  <polygon points="230,276 380,314 230,352 80,314" fill="#FDF3E7" stroke="#E0B080"/>
+  <text x="230" y="311" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#2C2C2A">Class declares a trim?</text>
+  <text x="230" y="327" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#5F5E5A">its specification and protocol say</text>
+  <line x1="380" y1="314" x2="424" y2="314" stroke="#5F5E5A" stroke-width="1.4" marker-end="url(#a28)"/>
+  <text x="400" y="307" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" fill="#5F5E5A">no</text>
+  <line x1="230" y1="352" x2="230" y2="382" stroke="#5F5E5A" stroke-width="1.4" marker-end="url(#a28)"/>
+  <text x="243" y="371" font-family="Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" fill="#5F5E5A">yes</text>
+
+  <!-- R1 terminal -->
+  <rect x="430" y="290" width="230" height="48" rx="6" fill="#EEF4EE" stroke="#A8C4A8"/>
+  <text x="545" y="310" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#2C2C2A">Complete</text>
+  <text x="545" y="326" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#5F5E5A">no calibration record (d1)</text>
+
+  <!-- D2 -->
+  <polygon points="230,386 390,428 230,470 70,428" fill="#FDF3E7" stroke="#E0B080"/>
+  <text x="230" y="422" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#2C2C2A">-CC valid for this instance?</text>
+  <text x="230" y="438" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#5F5E5A">identifier matches, conditions hold (d7)</text>
+  <line x1="390" y1="428" x2="424" y2="428" stroke="#5F5E5A" stroke-width="1.4" marker-end="url(#a28)"/>
+  <text x="407" y="421" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" fill="#5F5E5A">yes</text>
+  <line x1="230" y1="470" x2="230" y2="500" stroke="#D85A30" stroke-width="1.4" marker-end="url(#a28c)"/>
+  <text x="243" y="489" font-family="Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" fill="#D85A30">no</text>
+
+  <!-- R2 terminal -->
+  <rect x="430" y="404" width="230" height="48" rx="6" fill="#EEF4EE" stroke="#A8C4A8"/>
+  <text x="545" y="424" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#2C2C2A">Restore the recorded trim</text>
+  <text x="545" y="440" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#5F5E5A">write only if read-back differs (d6)</text>
+
+  <!-- 4 calibrate -->
+  <rect x="100" y="504" width="260" height="48" rx="6" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="230" y="524" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#2C2C2A">4 &#183; Calibration protocol</text>
+  <text x="230" y="540" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#5F5E5A">determine &#8594; write &#8594; verify</text>
+  <line x1="230" y1="552" x2="230" y2="566" stroke="#5F5E5A" stroke-width="1.4" marker-end="url(#a28)"/>
+
+  <!-- 5 file -->
+  <rect x="100" y="572" width="260" height="48" rx="6" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="230" y="592" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#2C2C2A">5 &#183; File -CP and -CC</text>
+  <text x="230" y="608" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#5F5E5A">ERP lifecycle index (ADR-0021 d7)</text>
+  <line x1="230" y1="620" x2="230" y2="634" stroke="#5F5E5A" stroke-width="1.4" marker-end="url(#a28)"/>
+
+  <!-- spine terminal -->
+  <rect x="100" y="640" width="260" height="48" rx="6" fill="#EEF4EE" stroke="#A8C4A8"/>
+  <text x="230" y="660" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#2C2C2A">Complete</text>
+  <text x="230" y="676" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#5F5E5A">4120 / 4121 valid for this instance</text>
+
+  <!-- voids callout -->
+  <rect x="430" y="504" width="230" height="90" rx="6" fill="#FBF1EE" stroke="#E3B6A8"/>
+  <text x="545" y="524" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11.5" font-weight="600" fill="#2C2C2A">What forces the &#8220;no&#8221; branch</text>
+  <text x="545" y="542" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#5F5E5A">enclosure, mounting or a named</text>
+  <text x="545" y="556" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#5F5E5A">operating parameter changed (d7)</text>
+  <text x="545" y="574" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#5F5E5A">sensor replaced (d8)</text>
+  <text x="545" y="588" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#5F5E5A">no -CC for this instance</text>
+
+  <!-- custody footnote -->
+  <rect x="40" y="710" width="640" height="46" rx="6" fill="#F2F4F7" stroke="#C3CBD6"/>
+  <text x="360" y="729" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#2C2C2A">Custody: the trim is held in the device whose behaviour it corrects (d2), never in the carrier store.</text>
+  <text x="360" y="746" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#5F5E5A">The instance -CC is authoritative; the device holds a working copy. A divergence is a fault, not a revision (d3).</text>
+</svg>

@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0028: Commissioning sequence and calibration-trim custody
 
 - **ID:** ADR-0028
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-08-28
 - **Project:** IndustryGrow
 - **Parent:** ADR-0017 (rev 2)
@@ -62,6 +62,8 @@ cannot invert. P3 bounds write frequency.
     | 5 | File the records | ERP (ADR-0021 decision 7) |
 
     Steps 4 and 5 are omitted for a class that declares no trim.
+
+    ![Commissioning workflow: flash, provision, bring up, then calibrate or restore](./figures/adr0028-commissioning-workflow.svg)
 
 2. **A trim is held in the device whose behaviour it corrects.** The M01 U3 offset is held in the
    SCD41's EEPROM, not in the ADR-0027 carrier store. That store follows the carrier: a module
