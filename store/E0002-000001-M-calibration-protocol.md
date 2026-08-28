@@ -124,6 +124,32 @@ reproducible between adjacent windows — it varies far more widely than any phy
 and changes sign. It rejected sound windows on a meaningless fit and passed others by luck. Do
 not reinstate it as a per-window test.
 
+**The span is a property of the room, not of the measurement.** The offset itself is a large
+signal — of order a degree against per-sample noise of a few tens of mK — and the *precision*
+needed to resolve it is reached in a couple of minutes. Gates 2 and 3 are not there for
+precision. They are there because the ambient is uncontrolled: the room's wander biases any short
+stretch, and only spanning a large fraction of its daily cycle averages that bias out. **In an
+ambient that is actively held, the requirement collapses.**
+
+| Path | Ambient | Gates 2 and 3 |
+|---|---|---|
+| **A — uncontrolled** | Bench, room air, no active control | As tabled above: ≥ 24 windows, ≥ 12 h |
+| **B — controlled** | Chamber or held enclosure, setpoint maintained across the run | ≥ 6 windows over ≥ 1 h, *provided* the hold is demonstrated: U1's own drift across the run ≤ 50 mK, and no monotonic trend in U1 across the accepted windows |
+
+Path B is admissible only with the hold demonstrated from U1's own record, not asserted from the
+chamber's setpoint. Gates 1, 4, 5 and 6 apply unchanged on both paths. Which path was used is
+recorded in the `-CP`.
+
+**Rejected: stopping when the windows agree.** A self-terminating rule — accumulate short windows,
+stop once the standard error of their mean falls below a threshold — is the obvious way to make
+path A cheap. It does not work, and it fails in the dangerous direction. A locally quiet stretch
+has small internal scatter while sitting at a biased offset, so the rule terminates early,
+reports a small standard error, and is wrong: tried across this class of run it converged in
+well under an hour and still landed of order 100 mK from the multi-hour value, with a tail
+several times worse. **Scatter within a stretch does not measure the offset of that stretch.**
+Do not implement it. If the run must be short, control the ambient (path B) rather than trusting
+an agreement test.
+
 **Excluding a disturbance.** A window covering a step change in the air — a door or vent opened,
 the board handled — fails §4 condition 3 and is dropped before gating, not argued about
 afterwards. Such an event is visible as a coincident step in CO₂ and in U3 − U1. Dropping one is
