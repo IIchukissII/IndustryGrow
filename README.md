@@ -55,31 +55,19 @@ profile signing).
 
 ## Hardware
 
-Seven sensor-module designs, one functional subsystem each, on a universal carrier. Instances are
-specialized by populated BOM, never by new designs. E-numbers, sensor complement, module-ID straps
-and variant rules: [`REGISTRY.md`](REGISTRY.md).
+Seven sensor-module classes (M01–M07), one functional subsystem each, on the universal carrier
+`E0001`, in the cabinet distribution case `E0007`. Instances of one design are specialized by
+populated BOM, never by new designs; a functional group fitted or omitted at build is a populate
+variant with its own assembly E-number (ADR-0017 rev 2 d4).
 
-| Design | E-number | State |
-|---|---|---|
-| Universal carrier | `E0001` | v0.0.3 released; in service on the bench |
-| M01-CLIMATE | `E0002` | Fabricated; bench-verified 2026-08-24, ten subjects publishing |
-| M02-LIGHT | `E0003` | Laid out, DRC/ERC/parity clean; not fabricated |
-| M03-ANALYTICS | `E0004` | Topology fixed (ADR-0006); front-end ADR open |
-| M04-PLANT | `E0005` | Blocked on a bulk-transport decision |
-| M05-SAFETY | `E0006` | Fabricated; bench-verified, seven subjects publishing |
-| M06-VENTILATION | `E0008` | Specified; not laid out |
-| M07-AMBIENT | `E0009` | Specified; not laid out |
-| Distribution case | `E0007` | Schematic `E0007-000001-S` (QElectroTech) |
+E-numbers, sensor complement, module-ID straps, variant rules and per-design state:
+[`REGISTRY.md`](REGISTRY.md).
 
 ## Status
 
-| Phase | Scope | State |
-|---|---|---|
-| Phase 1 | Hardware and firmware bring-up; M01–M05 plus gateway; standalone, no cloud | In progress |
-| Phase 2 | Cloud integration: mTLS ingestion, profile sync, audit trail | Blocked on external IndustryFlow work (ROADMAP stage 11) |
-| Phase 3 | Community profile registry, predictive ML, multi-cabinet coordination | Planned |
-
-Stage-level sequencing: [`project/ROADMAP.md`](project/ROADMAP.md), 14 dependency-ordered stages.
+Phase 1 is data collection only, no actuators; it ends at stage 4, full cabinet telemetry from
+M01–M05. Stage sequencing, dependencies, the Phase 1 → Phase 2 boundary and the v1.0 exit
+criteria: [`project/ROADMAP.md`](project/ROADMAP.md), 14 dependency-ordered stages.
 
 ## Repository
 
@@ -95,7 +83,7 @@ Stage-level sequencing: [`project/ROADMAP.md`](project/ROADMAP.md), 14 dependenc
 | [`pki/`](pki/) | Operator CA bootstrap and root-key ceremony | ADR-0024 |
 | [`signing/`](signing/) | Profile signing tool and runbook | ADR-0025 |
 | [`profiles/`](profiles/) | Cultivation profile instances | ADR-0003 |
-| [`project/`](project/) | `ROADMAP.md` (14 stages), `RESEARCH.md` (open directions L1–L7) | — |
+| [`project/`](project/) | `ROADMAP.md` stage plan, `RESEARCH.md` open directions L1–L7 | — |
 | [`MOTIVATION.md`](MOTIVATION.md) | The gap this project closes | — |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | Contribution licensing, DCO sign-off, working with the store | — |
 
