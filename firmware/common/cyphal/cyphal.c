@@ -25,6 +25,7 @@
 #include "uavcan/diagnostic/Record_1_1.h"
 #include "uavcan/time/Synchronization_1_0.h"
 
+#include "image.h" /* IGROW_HW_CLASS_E0001, the class this image targets */
 #include "registers.h"
 #include "identity.h"
 #include "e0001.h" /* CMSIS: NVIC_SystemReset */
@@ -478,10 +479,12 @@ static void handle_getinfo(const CanardRxTransfer *req)
 
     resp.protocol_version.major = 1; /* Cyphal v1 */
     resp.protocol_version.minor = 0;
-    resp.hardware_version.major = 1; /* carrier E0001 */
+    resp.hardware_version.major = IGROW_HW_CLASS_E0001; /* carrier E0001 */
     resp.hardware_version.minor = 0;
-    resp.software_version.major = 0; /* this firmware */
-    resp.software_version.minor = 1;
+    /* The version the build stamped into this image's header (ADR-0029 d7),
+     * so what the node reports and what the artifact claims are one number. */
+    resp.software_version.major = IGROW_APP_VERSION_MAJOR;
+    resp.software_version.minor = IGROW_APP_VERSION_MINOR;
     resp.software_vcs_revision_id = 0u;
     read_unique_id(resp.unique_id);
 

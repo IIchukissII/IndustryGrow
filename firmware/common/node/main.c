@@ -25,10 +25,16 @@
 #include "identity.h"
 #include "node.h"
 #include "clock.h"
+#include "partition.h"
 #include "watchdog.h"
 #include "cyphal.h"
 #include "can.h"
 #include "uart.h"
+
+/* This image's vector table, placed first by the linker script. Its address is
+ * both what VTOR must point at and how the image learns which slot it runs
+ * from -- nothing else tells it. */
+extern uint32_t g_pfnVectors;
 
 /* Print a byte as two uppercase hex digits over the debug UART. */
 static void put_hex8(uint8_t b)
@@ -40,15 +46,35 @@ static void put_hex8(uint8_t b)
 
 int main(void)
 {
-    /* Before anything else: the reset flags are sticky, so latch and clear them
-     * while they still describe THIS boot rather than every boot since power-on. */
+    /* Before anything else: the image runs from a slot, not from the reset
+     * vector (ADR-0029 d1), so the vector table must be pointed at this
+     * image's own before any interrupt can be taken. The bootloader set it
+     * already; doing it here is what makes the application correct on its own
+     * terms rather than by inheritance. ST's SystemInit leaves VTOR alone. */
+    SCB->VTOR = (uint32_t)&g_pfnVectors;
+
+    /* The reset flags are sticky, so latch and clear them while they still
+     * describe THIS boot rather than every boot since power-on. */
     watchdog_capture_reset_cause();
 
     clock_init();
     e0001_init();
     uart_init();
 
-    uart_puts("\r\nIndustryGrow node firmware (carrier E0001)\r\n");
+    uart_puts("\r\nIndustryGrow node firmware (carrier E0001) v");
+    uart_put_u32(IGROW_APP_VERSION_MAJOR);
+    uart_putc('.');
+    uart_put_u32(IGROW_APP_VERSION_MINOR);
+    /* Which slot the image is running from. An operator reading a boot log
+     * through an update needs it, and it is read from the vector table
+     * rather than from a build-time constant so that it reports where the
+     * code actually is. */
+    igrow_slot_t slot;
+    if (partition_slot_of((uint32_t)&g_pfnVectors, &slot)) {
+        uart_puts(", slot ");
+        uart_puts(partition_slot_str(slot));
+    }
+    uart_puts("\r\n");
     uart_puts("last reset: ");
     uart_puts(watchdog_reset_cause_str());
     uart_puts("\r\n");

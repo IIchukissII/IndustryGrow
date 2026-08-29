@@ -28,7 +28,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 | Gateway | `SP0004` on `can0` at 500 kbit/s, terminated | `SP0004-M-gateway-bringup` |
 | Supply | `+12 V` SELV | ADR-0018 |
 | Programmer | ST-Link V3 over SWD | — |
-| Firmware | `store/E0001-000001-F.hex` — one image holding every personality; the module-ID strap selects M01 at runtime | ADR-0017 d16 |
+| Firmware | `store/E0001-000001-F-boot.hex` and `-F-slot-a.hex` — the bootloader and one application image; the application holds every personality and the module-ID strap selects M01 at runtime | ADR-0017 d16, ADR-0029 d1 |
 | Addresses | `spec/M01-CLIMATE-specification.md` §4. All three devices sit at their part-default addresses; `E0002` has no pin map of its own | — |
 
 **Bench gotchas.** Four, each of which has cost time before:
@@ -46,9 +46,13 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 ## 2. Flash and boot
 
 ```
-STM32_Programmer_CLI.exe -c port=SWD mode=UR freq=950 \
-    -d store/E0001-000001-F.hex -v
+STM32_Programmer_CLI.exe -c port=SWD mode=UR freq=950 -d store/E0001-000001-F-boot.hex -v
+STM32_Programmer_CLI.exe -c port=SWD mode=UR freq=950 -d store/E0001-000001-F-slot-a.hex -v
 ```
+
+Two images, because the bootloader and the application occupy separate sectors (ADR-0029 d1).
+Each carries its own load address, so neither needs one on the command line, and neither reaches
+the Node-ID sector.
 
 | # | Step | Pass criterion | Result |
 |---|---|---|---|

@@ -6,9 +6,10 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # IndustryGrow node firmware
 
 Firmware for the IndustryGrow Cyphal/CAN sensor nodes. One codebase, one carrier (`E0001`), one
-MCU (STM32F405RGT6 on a WeAct STM32F4 64-Pin Core Board, ADR-0002 rev 3). **One image,
-`igrow.hex`**, holds every module personality; the module-ID strap selects among them at boot
-(ADR-0017 rev 2 d16). Sources are `AGPL-3.0-or-later` (ADR-0002 d5); this document is
+MCU (STM32F405RGT6 on a WeAct STM32F4 64-Pin Core Board, ADR-0002 rev 3). **One application
+image** holds every module personality; the module-ID strap selects among them at boot
+(ADR-0017 rev 2 d16). A node carries two components: a bootloader at the reset vector and that
+application in one of two slots (ADR-0029 d1). Sources are `AGPL-3.0-or-later` (ADR-0002 d5); this document is
 `CC-BY-SA-4.0`.
 
 ## State
@@ -19,6 +20,9 @@ MCU (STM32F405RGT6 on a WeAct STM32F4 64-Pin Core Board, ADR-0002 rev 3). **One 
 | M01-CLIMATE (`E0002`) | Verified on hardware 2026-08-24; ten subjects publish (4112–4121) |
 | Node-ID store (ADR-0027) | Built; verified on hardware 2026-08-28 |
 | U3 temperature offset | Implemented as vendor command 3; applied per instance `-CC` (ADR-0028) |
+| Boot chain (ADR-0029) | Partition, image header, update-state block, A/B selection and rollback built; **unverified on hardware** |
+| Firmware download over CAN | Not implemented — the bootloader is not yet a Cyphal node (d4–d6) |
+| Image signing (ADR-0029 d6) | Not implemented — the signature field is present and zero |
 | Subject-ID registers (ADR-0005 d7) | Not implemented — defaults are compiled in |
 | SCD41 forced recalibration | Not implemented (M01 spec O-5) |
 
@@ -58,13 +62,16 @@ pattern and adds its sensor personality. M02–M04 become sibling `nodes/`, each
 
 ```
 firmware/
-├── README.md  CMakeLists.txt      ← one target: igrow.elf
+├── README.md  CMakeLists.txt      ← three targets: igrowboot.elf, igrow-a.elf, igrow-b.elf
 ├── cmake/      arm-none-eabi.cmake (toolchain) · dsdl.cmake (Nunavut codegen)
-├── ldscripts/  STM32F405RGTx_FLASH.ld
+├── ldscripts/  STM32F405RGTx_BOOT.ld · STM32F405RGTx_APP.ld.in (per-slot template)
+├── boot/       main.c              ← bootloader: A/B decision, slot check, hand-over
 ├── common/                       ← runs identically whichever module is fitted
 │   ├── node/       main.c node.h  ← boot → strap → personality dispatch; the seam
 │   ├── carrier/    e0001.{h,c}    ← E0001 carrier: pins, LEDs, straps, ATECC608/identity
 │   ├── platform/   clock.{h,c}    ← 168 MHz clock, SysTick, micros
+│   │               partition.h image.{h,c} update_state.{h,c} crc32.{h,c}
+│   │                               ← the ADR-0029 flash map, shared by both images
 │   ├── drivers/    can i2c uart   ← bxCAN, I2C1, debug UART (register-level)
 │   └── cyphal/     cyphal registers ← Heartbeat/GetInfo/register/ExecuteCommand
 ├── nodes/
@@ -80,7 +87,7 @@ firmware/
 │   ├── safety/    DoorStatus, LeakStatus
 │   └── climate/   RelativeHumidity, Co2Concentration, GasResistance
 ├── third_party/                  ← submodules: libcanard, o1heap, cmsis, regulated types
-└── tools/                        ← bootstrap.sh, release.sh
+└── tools/                        ← bootstrap.sh, release.sh, mkimage.py
 ```
 
 Pin assignments are not repeated here; `store/E0001-000003-D-pinmap.md` is the BSP source of truth.
@@ -111,8 +118,8 @@ An out-of-range value or a flash failure leaves the register reading what the st
 how a rejected write is visible. While a committed value differs from the running one, the node
 repeats a `uavcan.diagnostic.Record` naming it (ADR-0027 d5).
 
-**A flashing tool must not mass-erase.** Writing `igrow.hex` erases only the sectors the image
-covers, and the store is not one of them (ADR-0027 d4). A mass erase de-provisions every node it
+**A flashing tool must not mass-erase.** Writing an image erases only the sectors it covers, and
+the store is not one of them (ADR-0027 d4, ADR-0029 d1). A mass erase de-provisions every node it
 touches.
 
 The commit blocks for the sector erase — of the order of a second, interrupts masked. The erase
@@ -159,8 +166,23 @@ Both settings are cached, so later configures may pass only `-DCMAKE_BUILD_TYPE=
 smaller than Debug (~21 KB against ~66 KB). Linker warnings from `nosys.specs` (`_close is not
 implemented`, `LOAD segment with RWX permissions`) are expected.
 
-Output is `igrow.elf` / `igrow.hex` / `igrow.bin` — one image for every node. What a node becomes is
-decided by the module in the carrier socket, not by which file was flashed.
+Output is three images. What a node becomes is decided by the module in the carrier socket, not by
+which file was flashed; which slot an application image is for is a link address, not a variant.
+
+| Artifact | Flashed at | Holds |
+|---|---|---|
+| `igrowboot.hex` | `0x08000000` | bootloader, sectors 0–3 |
+| `igrow-a.hex` | `0x08020000` | image header + application, slot A |
+| `igrow-b.hex` | `0x08080000` | image header + application, slot B |
+
+`igrow-<slot>.img` is the same bytes without the load address: header plus body, the unit a
+signature will cover and the artifact the gateway will serve. `tools/mkimage.py` writes the header
+(`common/platform/image.h`); the flash map it addresses is ADR-0029 d1, stated in C by
+`common/platform/partition.h`.
+
+A first flash writes the bootloader and one slot. The bootloader picks the slot, checks the image's
+CRC and hands over; with neither slot bootable it halts with the status LED blinking rather than
+resetting into the same answer.
 
 Flashing is over SWD on the WeAct debug header, which stays reachable with the carrier mounted;
 `store/E0002-000001-M-bringup-protocol.md` carries the procedure. CAN1 sits on PB8/PB9, off the USB
@@ -172,8 +194,10 @@ pins, so WeAct USB DFU remains available as a recovery path (pin-map note 5).
 document layer (see `REGISTRY.md`):
 
 ```
-store/E0001-000001-F.hex       # built image
-store/E0001-000001-F-src.zip   # source snapshot of firmware/ at HEAD
+store/E0001-000001-F-boot.hex    # bootloader
+store/E0001-000001-F-slot-a.hex  # application, slot A
+store/E0001-000001-F-slot-b.hex  # application, slot B
+store/E0001-000001-F-src.zip     # source snapshot of firmware/ at HEAD
 ```
 
 Filed under `E0001` — the carrier whose one codebase every node runs, so firmware identity follows
@@ -188,6 +212,7 @@ on a released change. `firmware/build*/` stays git-ignored.
 - ADR-0014 rev 6 — sensor-node taxonomy: module straps, presence probing, gateway tagging.
 - ADR-0007 rev 1 — PKI and hardware identity: the ATECC608 as identity anchor.
 - ADR-0017 rev 2 — document layers; d16 roots firmware on the carrier.
+- ADR-0029 — node firmware update and bootloader: the flash partition, A/B slots and image header.
 - ADR-0018 — M05 sense-only; door/leak report-only; S0 energy.
 - ADR-0027 — node identity model: the Node-ID store, its survival and `127`.
 - ADR-0028 — commissioning sequence and trim custody.

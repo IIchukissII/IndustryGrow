@@ -235,9 +235,9 @@ The tool takes Node-ID `2` for itself, because Cyphal forbids anonymous service
 transfers; `1` belongs to the time master. Override with
 `IGROW_PROVISION_NODE_ID`.
 
-**A flashing tool must not mass-erase.** Writing `igrow.hex` reaches only the
-sectors the image covers, and the store is not one of them; a mass erase
-de-provisions the node (ADR-0027 d4).
+**A flashing tool must not mass-erase.** Writing an image reaches only the
+sectors it covers, and the store is not one of them; a mass erase
+de-provisions the node (ADR-0027 d4, ADR-0029 d1).
 
 ---
 

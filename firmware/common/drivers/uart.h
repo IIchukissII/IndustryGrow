@@ -13,6 +13,10 @@ void uart_putc(char c);
 void uart_puts(const char *s);
 
 /* Small formatters (no newlib printf / syscalls pulled in). */
+/* Block until the last character has left the shift register. Needed before
+ * anything changes the clock the baud rate is derived from. */
+void uart_flush(void);
+
 void uart_put_u32(uint32_t v);
 void uart_put_bin3(uint8_t v); /* low 3 bits, e.g. module-ID strap pattern */
 

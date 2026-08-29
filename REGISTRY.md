@@ -145,8 +145,10 @@ its source snapshot — to the d9 layer set. The *why* (carrier-rooted, not
 per-module) is decision 16 / alternative G; the *what*:
 
 ```
-E0001-VVVVVV-F[.hex|-src.zip]   e.g.  E0001-000001-F.hex     (built image)
-                                      E0001-000001-F-src.zip  (source snapshot)
+E0001-VVVVVV-F-<variant>        e.g.  E0001-000001-F-boot.hex    (bootloader)
+                                      E0001-000001-F-slot-a.hex  (application, slot A)
+                                      E0001-000001-F-slot-b.hex  (application, slot B)
+                                      E0001-000001-F-src.zip     (source snapshot)
 ```
 
 - **Rooted on the carrier `E0001`**, not any node module: the firmware is one
@@ -154,8 +156,12 @@ E0001-VVVVVV-F[.hex|-src.zip]   e.g.  E0001-000001-F.hex     (built image)
   module-ID strap.
 - **`VVVVVV` is the firmware (codebase) version**, independent of the `E0001`
   *board* version — a firmware release bumps `F` without re-spinning the PCB.
-- Per-type binaries, if ever built, are version *variants* (`E0001-VVVVVV-F-<type>`),
-  not separate `F` roots (decision 16).
+- **A firmware version is three images**, because ADR-0029 d1 partitions the
+  flash: the bootloader owns sectors 0-3 and is replaced over SWD only, and the
+  application is built once per A/B slot because it links to the slot it runs
+  from. They share one `F` version — one codebase, released together.
+- Per-type binaries, if ever built, are further variants of the same root
+  (`E0001-VVVVVV-F-<type>`), not separate `F` roots (decision 16).
 - Produced by `firmware/tools/release.sh`; licensed AGPL-3.0-or-later
   (`REUSE.toml`, overriding the CERN-OHL-S `store/**` default).
 
