@@ -525,11 +525,26 @@ static void handle_getinfo(const CanardRxTransfer *req)
     resp.protocol_version.minor = 0;
     resp.hardware_version.major = IGROW_HW_CLASS_E0001; /* carrier E0001 */
     resp.hardware_version.minor = 0;
-    /* The version the build stamped into this image's header (ADR-0029 d7),
-     * so what the node reports and what the artifact claims are one number. */
-    resp.software_version.major = IGROW_IMAGE_VERSION_MAJOR;
-    resp.software_version.minor = IGROW_IMAGE_VERSION_MINOR;
-    resp.software_vcs_revision_id = 0u;
+    /* Read out of the running image's own header, not out of a constant this
+     * build happens to carry (ADR-0029 d15): version, VCS revision and the body
+     * CRC all come from the bytes that were signed, so what the node reports
+     * and what the artifact is are the same object. The image CRC is what makes
+     * "is this node running the released artifact?" an exact question.
+     *
+     * The bootloader has no header -- it is not in a slot -- and falls back to
+     * what it was built with. */
+    const igrow_image_header_t *img = image_running_header();
+    if (img != NULL) {
+        resp.software_version.major = (uint8_t)img->version_major;
+        resp.software_version.minor = (uint8_t)img->version_minor;
+        resp.software_vcs_revision_id = img->vcs_revision_id;
+        resp.software_image_crc.count = 1u;
+        resp.software_image_crc.elements[0] = img->body_crc32;
+    } else {
+        resp.software_version.major = IGROW_IMAGE_VERSION_MAJOR;
+        resp.software_version.minor = IGROW_IMAGE_VERSION_MINOR;
+        resp.software_vcs_revision_id = 0u;
+    }
     read_unique_id(resp.unique_id);
 
     /* The node name is the personality's, not the image's: one image serves

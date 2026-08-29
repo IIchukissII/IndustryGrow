@@ -81,6 +81,16 @@ static inline uint32_t image_body_addr(igrow_slot_t slot)
     return partition_slot_addr(slot) + IGROW_IMAGE_HEADER_SIZE;
 }
 
+/* The header of the image this code is running from, or NULL when it is not
+ * running from a slot -- which is the bootloader's answer, and the reason this
+ * is a lookup rather than a build-time constant. Derived from the address of
+ * this image's own code, so it cannot disagree with where the code actually is.
+ *
+ * It is how a node reports what it is running rather than what it was built to
+ * claim (ADR-0029 d15): version, VCS revision and image CRC all come out of the
+ * header the artifact was signed with. */
+const igrow_image_header_t *image_running_header(void);
+
 /* Whether the slot holds an image this node may run: header well-formed, body
  * length sane, hardware class ours, and the body matching its CRC. The
  * signature is NOT checked here -- it is checked once, on download, before the
