@@ -125,7 +125,7 @@ That choice cannot be made in isolation, because the Node-ID is not the only ide
 ### Negative
 
 - A flash-write path in node firmware is new, and a partially written sector must be detectable — hence the CRC in decision 2. Its failure mode is an unprovisioned node (decision 6), not a corrupt one.
-- The update path gains a constraint it did not have. Decision 4 makes the sector's exclusion a property that mechanism must preserve, and the firmware-update ADR does not exist yet.
+- The update path gains a constraint it did not have. Decision 4 makes the sector's exclusion a property that mechanism must preserve. *(2026-08-29: ADR-0029 exists and preserves it — it consumes decision 4 as a named constraint, states sector 11 as property P3, and places the identity sector outside both application slots in decision 1's partition table.)*
 - Commissioning gains a step: a node is not usable until provisioned, where today it self-identifies — wrongly, but silently.
 - Nodes in service must each be provisioned once when they take this firmware, or they come up as `127`. This is deliberate: a visible unprovisioned node is preferred to one that quietly keeps a colliding identity.
 

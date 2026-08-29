@@ -339,7 +339,7 @@ The single key to every code that can occupy the trailing slot of an identifier:
 - **Identifier validation and parsing tooling.** Regexes and encoders implemented from the field formats in this ADR, including the full suffix set. *Where it lives is now settled:* ADR-0022 decision 13 puts the parse in one server-side implementation and has the API return identifiers already read into their fields, so no consumer re-derives them. What stays open is coverage — the calibration suffix's dated/sequenced form is unresolved (above) and therefore unparsed, and no encoder exists for the compact binary form (below).
 - **Optional compact binary encoding** of identifiers for embedded/indexing use — out of scope now.
 - **Object-store deployment specifics (decision 15).** Bucket topology (single vs. per-deployment / per-tenant), region and replication, how object versioning interacts with the dated calibration suffix and the write-once QC/provisioning records, and prefix-scoped access-control granularity.
-- **Mechanical / pneumatic / fluidic module catalog.** E-numbers for enclosures, trays, plumbing, and actuator hardware are assigned when those modules are designed (ADR-0006 deferred; actuator taxonomy deferred per ADR-0014).
+- **Mechanical / pneumatic / fluidic module catalog.** E-numbers for enclosures, trays, plumbing, and actuator hardware are assigned when those modules are designed (ADR-0006 is now written and Accepted; the actuator taxonomy remains deferred per ADR-0014).
 
 ## References
 

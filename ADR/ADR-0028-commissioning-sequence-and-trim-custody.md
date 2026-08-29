@@ -147,8 +147,9 @@ value remains valid.
   calibration protocol.
 - **Where a device-versus-record divergence is detected and reported.** Candidates are the node's
   diagnostic channel and the gateway.
-- **Interaction with the firmware update path.** ADR-0027 decision 4's constraint waits on the
-  firmware-update ADR, which is not written.
+- ~~**Interaction with the firmware update path.**~~ — discharged 2026-08-29 by ADR-0029:
+  ADR-0027 decision 4 is a named constraint there (property P3), and decision 1's partition
+  table puts sector 11 outside both application slots.
 
 ## References
 
