@@ -17,6 +17,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 - **Amendments** — decisions 8 and 9 (2026-08-25): the Cyphal `unique_id` source, which had no decision behind it, and the map of the five identifiers a node carries. The title widens with them, from *Node-ID provisioning and persistence*; decisions 1–7 are unchanged.
 - **Amendments** — decision 10 (2026-08-25): `127` carries one meaning, not two; bounds decision 6.
+- **Amendments** — decision 11 (2026-08-29): the store on the next carrier revision; bounds decision 2 to the carriers in service.
 
 ## Context and problem
 
@@ -83,6 +84,20 @@ That choice cannot be made in isolation, because the Node-ID is not the only ide
 
     The firmware constant is `IGROW_NODE_ID_UNPROVISIONED`.
 
+11. **On `E0001-000100` and later the Node-ID store is a carrier-resident serial EEPROM** *(added 2026-08-29)*. The record is decision 2's — magic, version, Node-ID, CRC — in a field-writable part on the carrier. Its I²C address is allocated inside the `0x50`–`0x57` block ADR-0014 decision 6 reserves, distinct from the module class-ID EEPROM's; both parts sit on one bus and never share an address.
+
+    | Property | Module EEPROM (ADR-0014 d6) | Carrier EEPROM (here) |
+    |---|---|---|
+    | Board | module | carrier |
+    | Holds | class ID | Node-ID |
+    | Written | at module manufacture | in the field, per decision 5 |
+
+    Alternative A rejects the module part on those three properties. This is not that part, and that rejection stands.
+
+    Two properties decision 2 cannot give a series build: an SWD mass erase clears the flash sector, so a fixture that erases before programming de-provisions the board — decision 4's exclusion binds the bus update path only; and with identity outside program flash every unit takes byte-identical images, verifiable by CRC at test.
+
+    Bounded: `E0001-000002` and `E0001-000003` keep decision 2's flash store. Which store a build uses follows the carrier revision; how firmware selects between them is a firmware concern, not fixed here.
+
 ## Alternatives considered
 
 **A. Serial EEPROM at the reserved `0x50`–`0x57` addresses.** ADR-0014 decision 6 already fixes this transport for the class ID on `E0001-000100` and later. *Rejected:* it is absent from every carrier in service, so it cannot fix the collision on the boards that have it, and it puts M03 behind a carrier iteration. Its stated policy is also the inverse of what is needed — programmed at module manufacture, not writable in the field — and it sits on the *module*, so a module swap would carry the node's identity away with it. Reusing the part while inverting both its lifecycle and its writability would make one store mean two incompatible things.
@@ -118,7 +133,7 @@ That choice cannot be made in isolation, because the Node-ID is not the only ide
 
 - **The sector address and record layout.** Downstream values (ADR-0000 decision 2); they belong with the linker script and the firmware.
 - **The provisioning tool.** Whether an operator writes the register over the bus, over SWD at manufacture, or through a gateway command is an operational specification.
-- **How the update path excludes the sector.** Belongs with the firmware-update ADR that ADR-0004 decisions 12–16 anticipate and which is not yet written.
+- **The I²C address allocation inside `0x50`–`0x57`** between the carrier store of decision 11 and the module class-ID EEPROM of ADR-0014 decision 6. Fixed by the `E0001-000100` pin map before layout.
 - **Where the assignment is recorded against the instance.** Which ERP record holds a cabinet's Node-ID map, under ADR-0017 and ADR-0021.
 
 ## References

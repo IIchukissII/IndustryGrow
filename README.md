@@ -41,7 +41,7 @@ Scope and rationale: [`MOTIVATION.md`](MOTIVATION.md), [ADR-0001](ADR/ADR-0001-i
 | Gateway | Raspberry Pi (3B+ minimum, 4/5 for higher traffic) + isolated 2-channel CAN HAT |
 | Gateway software | Python / asyncio, SocketCAN + Pycyphal + Nunavut-generated DSDL bindings |
 | Cloud link | mTLS to IndustryFlow; stateless edge in steady state, with a bounded local store for buffering and survey |
-| Identity | Module class from the ID strap, `unique_id` from the ATECC608, Node-ID from a flash store; 127 = unprovisioned |
+| Identity | Module class from the ID strap, `unique_id` from the ATECC608, Node-ID from a carrier-resident store; 127 = unprovisioned |
 | Security | Operator CA, signed firmware, signed profiles |
 
 Governing records: ADR-0002 rev 3 (bus, carrier, gateway), ADR-0005 (DSDL), ADR-0020
