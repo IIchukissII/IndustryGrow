@@ -115,7 +115,7 @@ A note on scope. This ADR is the **foundation and the worked first example (M05-
 - **The concrete subject-ID default map and register names** — a downstream artifact (subject-ID map document), owned where pin-maps and BOM values are owned (ADR-0000 decision 2), not frozen here.
 - **The exact field layout of the `industryflow.greenhouse.safety` status types** (and any other minted types) — lives in the `.dsdl` files; this ADR fixes their existence, intent, and the no-command constraint, not their bytes.
 - **M01–M04 (and future-module) type sets** — extend this vocabulary as each module reaches firmware; the reuse-first rule and SI-sample mapping apply.
-- **Firmware-update / OTA service types** (e.g. `uavcan.file`, the `ExecuteCommand` update verbs) — belong with the node firmware-update decision (ADR-0004 covers CAN-node update at the policy level; the DSDL service binding is deferred to that work).
+- **Firmware-update / OTA service types** (e.g. `uavcan.file`, the `ExecuteCommand` update verbs) — **discharged by ADR-0029 decision 5** (2026-08-29): the binding is `uavcan.node.ExecuteCommand` `COMMAND_BEGIN_SOFTWARE_UPDATE` plus `uavcan.file.Read`, taken from the pinned regulated set under decisions 2 and 10. No type is minted. ADR-0004 covered the policy level only; the service binding is ADR-0029's.
 - **Plug-and-play Node-ID allocation (`uavcan.pnp`)** — deferred per decision 6; revisit on field-replacement ergonomics.
 - **Profile document schema (ADR-0009)** — explicitly *not* DSDL; gateway-to-cloud JSON, separate ADR.
 - **Aggregate/multi-frame record types** (e.g. the M04 thermal frame) — defined when that module is built; this ADR only records that aggregation is the exception, not the default (alternative D).
@@ -126,6 +126,7 @@ A note on scope. This ADR is the **foundation and the worked first example (M05-
 - ADR-0002 (rev 3): Field bus architecture — Cyphal over classic CAN; names `industryflow.greenhouse.*` and defers this ADR; Node-ID → module mapping at the gateway (decision 9); closed trusted bus (decision 7); libcanard/Pycyphal/Nunavut toolchain.
 - ADR-0014: Sensor node taxonomy — module classes and per-module sensor sets; node-publishes-what-it-measures, gateway tags role/zone (decision 7); presence-probing and partial BOM (decision 8).
 - ADR-0015: Gateway profile and control loops — control via gateway-issued Cyphal commands; profile is JSON (decision 2), not DSDL.
+- ADR-0029: Node firmware update and bootloader — binds the OTA service types this ADR deferred (decision 5), by reuse rather than by minting.
 - ADR-0018: Power distribution and rail monitoring — M05 sense-only; door/leak are report/alert, not interlocks (decisions 9–11); the single +12 V INA226 and the S0 energy stream.
 - ADR-0000: Single source of truth — ADR owns *why*, downstream owns *what*; one authoritative copy (drives the no-vendored-codegen and downstream-subject-ID-map decisions).
 - [Cyphal Specification](https://opencyphal.org/specification) and the DSDL language reference.
