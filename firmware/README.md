@@ -198,9 +198,14 @@ cmake -S firmware -B firmware/build ... \
       -DIGROW_VERIFY_KEY_HEX=<those 128 characters>
 ```
 
-Without them the build still runs and the images still flash over SWD; they simply cannot be
-accepted over the bus, because an unsigned image fails verification and a bootloader with no key
-refuses every image. The build says so at configure time.
+Give both or neither: CMake refuses half a pair, because a bootloader holding a key its images are
+not signed with rejects every one of them. Without either, the build still runs and the images
+still flash over SWD; they simply cannot be accepted over the bus. The build says so at configure
+time, and **the bootloader says so at boot** — `verification key present` or `ABSENT`.
+
+`tools/release.sh` takes `--key <pem>` or `--unsigned` and refuses to guess. It builds in its own
+directory (`firmware/build-release`), so a release never resets the keys cached in the tree you
+flash from.
 
 ## Flashing and updating
 
