@@ -148,6 +148,8 @@ per-module) is decision 16 / alternative G; the *what*:
 E0001-VVVVVV-F-<variant>        e.g.  E0001-000001-F-boot.hex    (bootloader)
                                       E0001-000001-F-slot-a.hex  (application, slot A)
                                       E0001-000001-F-slot-b.hex  (application, slot B)
+                                      E0001-000001-F-slot-a.img  (the same, as the bus serves it)
+                                      E0001-000001-F-slot-b.img
                                       E0001-000001-F-src.zip     (source snapshot)
 ```
 
@@ -160,6 +162,9 @@ E0001-VVVVVV-F-<variant>        e.g.  E0001-000001-F-boot.hex    (bootloader)
   flash: the bootloader owns sectors 0-3 and is replaced over SWD only, and the
   application is built once per A/B slot because it links to the slot it runs
   from. They share one `F` version — one codebase, released together.
+- **Each application image ships twice**: `.hex` carries its load address and is
+  what an operator flashes; `.img` is the same image without one, which is what
+  a signature covers and what a node is served over the bus (ADR-0029 d13).
 - Per-type binaries, if ever built, are further variants of the same root
   (`E0001-VVVVVV-F-<type>`), not separate `F` roots (decision 16).
 - Produced by `firmware/tools/release.sh`; licensed AGPL-3.0-or-later

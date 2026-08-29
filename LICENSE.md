@@ -14,7 +14,7 @@ live in [`LICENSES/`](LICENSES/), named by SPDX identifier (REUSE convention).
 | Part of the repository | Contents | License | SPDX ID |
 |------------------------|----------|---------|---------|
 | `store/` | Hardware reference designs — carrier and sensor-module PCBs, BOMs, placement, renders, and the `-S-src.zip` / `-D-src.zip` design-source and `-D-fab.zip` fabrication packages (ADR-0017 d18/d19) | CERN Open Hardware Licence v2 – Strongly Reciprocal | [`CERN-OHL-S-2.0`](LICENSES/CERN-OHL-S-2.0.txt) |
-| `store/E0001-*-F*.hex`, `-F-src.zip` | Firmware release artifacts (ADR-0017 `F` layer) — reference firmware, not hardware design | GNU Affero General Public License v3.0 or later | [`AGPL-3.0-or-later`](LICENSES/AGPL-3.0-or-later.txt) |
+| `store/E0001-*-F*.hex`, `-F*.img`, `-F-src.zip` | Firmware release artifacts (ADR-0017 `F` layer) — reference firmware, not hardware design | GNU Affero General Public License v3.0 or later | [`AGPL-3.0-or-later`](LICENSES/AGPL-3.0-or-later.txt) |
 | `firmware/` | Reference smart-node firmware (C / libcanard), build and release tooling | GNU Affero General Public License v3.0 or later | [`AGPL-3.0-or-later`](LICENSES/AGPL-3.0-or-later.txt) |
 | `firmware/dsdl/` | DSDL type vocabulary (`industryflow.greenhouse.*`) — the protocol layer, kept permissive so any implementation can speak it | Apache License 2.0 | [`Apache-2.0`](LICENSES/Apache-2.0.txt) |
 | `erp/` | Instance-and-integration ERP application and operator console (ADR-0021 d14) | GNU Affero General Public License v3.0 or later | [`AGPL-3.0-or-later`](LICENSES/AGPL-3.0-or-later.txt) |
