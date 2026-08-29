@@ -28,6 +28,8 @@ void e0001_init(void)
     e0001_led_can(false);
     gpio_mode(E0001_LED_GPIO, E0001_LED_STATUS_PIN, 1u);
     gpio_mode(E0001_LED_GPIO, E0001_LED_CAN_PIN, 1u);
+    e0001_weact_led(false);
+    gpio_mode(E0001_WEACT_LED_GPIO, E0001_WEACT_LED_PIN, 1u);
 
     /* Module-ID straps as inputs with pull-down. */
     gpio_mode(E0001_STRAP_GPIO, E0001_STRAP0_PIN, 0u);
@@ -66,6 +68,21 @@ void e0001_led_can(bool on)
 #else
     E0001_LED_GPIO->BSRR = on ? (bit << 16u) : bit;
 #endif
+}
+
+void e0001_weact_led(bool on)
+{
+    uint32_t bit = 1u << E0001_WEACT_LED_PIN;
+#if E0001_WEACT_LED_ACTIVE_HIGH
+    E0001_WEACT_LED_GPIO->BSRR = on ? bit : (bit << 16u);
+#else
+    E0001_WEACT_LED_GPIO->BSRR = on ? (bit << 16u) : bit;
+#endif
+}
+
+void e0001_weact_led_toggle(void)
+{
+    E0001_WEACT_LED_GPIO->ODR ^= (1u << E0001_WEACT_LED_PIN);
 }
 
 void e0001_led_status_toggle(void)

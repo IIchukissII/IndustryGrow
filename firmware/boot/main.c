@@ -26,6 +26,7 @@
 
 #include "e0001.h"
 #include "clock.h"
+#include "cyphal.h"
 #include "uart.h"
 #include "image.h"
 #include "partition.h"
@@ -124,7 +125,15 @@ int main(void)
         if (update_run_request()) {
             uart_puts("restarting into the new image\r\n");
             uart_flush();
-            NVIC_SystemReset();
+            /* Through the skeleton rather than straight into a reset: the
+             * verification result is a diagnostic that has to reach the bus
+             * (d11), and resetting with frames still queued loses it. The
+             * queue drains either way -- unsent frames expire on their own
+             * deadline -- so this cannot wait on a dead bus forever. */
+            cyphal_restart_after_flush();
+            for (;;) {
+                cyphal_spin();
+            }
         }
         uart_puts("update abandoned; booting what was already here\r\n");
     }
@@ -172,6 +181,9 @@ int main(void)
         (void)update_state_store(&st);
     }
 
+    /* Nothing to indicate on an ordinary boot: the blue LED is the update
+     * indication and must be dark when the application takes over. */
+    e0001_weact_led(false);
     e0001_led_status(true);
     jump_to_image(st.boot_slot);
     return 0;

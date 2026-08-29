@@ -52,6 +52,25 @@ static struct {
     uint8_t data[READ_BLOCK] __attribute__((aligned(4)));
 } s_rx;
 
+/* "v<major>.<minor>" into `out`, which must hold 12 bytes. The bootloader has
+ * no printf and the application does not use one either; the diagnostic of
+ * ADR-0029 d11 has to carry the version, so it is composed here. */
+static void format_version(char *out, uint16_t major, uint16_t minor)
+{
+    unsigned i = 0u;
+    out[i++] = 'v';
+    if (major >= 10u) {
+        out[i++] = (char)('0' + (major / 10u) % 10u);
+    }
+    out[i++] = (char)('0' + (major % 10u));
+    out[i++] = '.';
+    if (minor >= 10u) {
+        out[i++] = (char)('0' + (minor / 10u) % 10u);
+    }
+    out[i++] = (char)('0' + (minor % 10u));
+    out[i] = '\0';
+}
+
 static void put_hex32(uint32_t v)
 {
     static const char hex[] = "0123456789ABCDEF";
@@ -86,6 +105,10 @@ static void on_read_response(uint8_t from, uint8_t transfer_id,
 static uint8_t bus_up(void)
 {
     e0001_led_status(true);
+    /* The blue LED on the core board is the only one visible with a module
+     * mounted, and from here on it means one thing: this node is in its
+     * bootloader doing something, not running. */
+    e0001_weact_led(true);
     atecc608_init();
     identity_init();
     const uint8_t node_id = identity_node_id();
@@ -232,6 +255,7 @@ bool update_run_request(void)
             return false;
         }
         offset += (uint32_t)n;
+        e0001_weact_led_toggle(); /* one flicker per block: the transfer, visibly */
 
         /* The header is the first thing written, so after one block the image
          * announces its own length and the transfer knows where it ends. */
@@ -261,6 +285,9 @@ bool update_run_request(void)
         return false;
     }
 
+    /* Steady through the verification, which is the one part of an update
+     * that takes a second and produces no traffic to watch. */
+    e0001_weact_led(true);
     const image_verify_t result = image_verify_slot(target);
     uart_puts("verification: ");
     uart_puts(image_verify_str(result));
@@ -270,6 +297,7 @@ bool update_run_request(void)
          * not only on a UART nobody is attached to. */
         cyphal_diagnostic(uavcan_diagnostic_Severity_1_0_ERROR, image_verify_str(result));
         cyphal_spin();
+        e0001_weact_led(false);
         return false;
     }
 
@@ -285,9 +313,20 @@ bool update_run_request(void)
         uart_puts("cannot mark the slot bootable\r\n");
         return false;
     }
-    cyphal_diagnostic_u32(uavcan_diagnostic_Severity_1_0_NOTICE,
-                          "image verified, on trial: v", h->version_major);
-    cyphal_spin();
+    char version[12];
+    format_version(version, h->version_major, h->version_minor);
+    char notice[48];
+    unsigned n = 0u;
+    for (const char *t = "image verified, on trial "; *t != 0; t++) {
+        notice[n++] = *t;
+    }
+    for (const char *t = version; *t != 0; t++) {
+        notice[n++] = *t;
+    }
+    notice[n++] = ' ';
+    notice[n++] = 'A' + (char)target;
+    notice[n] = '\0';
+    cyphal_diagnostic(uavcan_diagnostic_Severity_1_0_NOTICE, notice);
     uart_puts("slot ");
     uart_puts(partition_slot_str(target));
     uart_puts(" marked bootable on trial\r\n");
@@ -308,6 +347,7 @@ void update_await_image(void)
         if ((millis() - last_blink) >= 250u) {
             last_blink = millis();
             e0001_led_status_toggle();
+            e0001_weact_led_toggle();
         }
     }
 }

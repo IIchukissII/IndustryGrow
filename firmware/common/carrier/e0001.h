@@ -37,6 +37,16 @@
 #define E0001_LED_STATUS_PIN  1u
 #define E0001_LED_CAN_PIN     2u
 
+/* --- WeAct core-board LED (pin-map: PB2, also BOOT1) --- *
+ * The blue LED on the MCU board itself, not a carrier LED, and the only one
+ * visible with a module mounted over the carrier. The bootloader uses it: it
+ * is the one indication that a node is taking an update rather than running.
+ * BOOT1 is sampled at reset only, so driving the pin afterwards is free.
+ * Active-low, as the LED sits between 3V3 and the pin on that board. */
+#define E0001_WEACT_LED_ACTIVE_HIGH 0
+#define E0001_WEACT_LED_GPIO        GPIOB
+#define E0001_WEACT_LED_PIN         2u
+
 /* --- Module-ID straps (pin-map: PA5/PA6/PA7 = STRAP_0/1/2; ADR-0014 d6) --- *
  * Read as inputs with pull-down: a child module ties its ID bits to 3V3 (=1) and
  * leaves the 0 bits to the pull-down. The 3-bit pattern selects which node type
@@ -88,6 +98,8 @@ void e0001_init(void);
 uint8_t e0001_read_module_id(void);
 
 void e0001_led_status(bool on);
+void e0001_weact_led(bool on);
+void e0001_weact_led_toggle(void);
 void e0001_led_can(bool on);
 void e0001_led_status_toggle(void);
 

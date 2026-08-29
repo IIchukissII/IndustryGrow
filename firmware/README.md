@@ -229,6 +229,12 @@ serve the file.
 A failed download clears the request before erasing anything, so a node that cannot reach its file
 server retries nothing and boots what it already had. The previous image is never touched.
 
+**The blue LED on the core board (PB2) is the update indication.** It is dark whenever the
+application is running, comes on when the bootloader joins the bus, flickers once per 256-byte
+block through the transfer, and holds steady through verification. A node blinking it at 2 Hz has
+no bootable image and is waiting on the bus for one. It is the only LED visible with a sensor
+module mounted over the carrier.
+
 ## Release artifacts (`store/`)
 
 `tools/release.sh` builds the image and publishes it under the ADR-0017 rev 2 **`F` (Firmware)**
