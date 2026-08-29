@@ -2,8 +2,17 @@
  * SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
  * SPDX-License-Identifier: AGPL-3.0-or-later
  *
- * Linker script for STM32F405RGT6: 1024 KB flash, 128 KB SRAM (SRAM1+SRAM2),
- * plus 64 KB CCM (not used here). Conventional ST/GCC layout.
+ * Linker script for the APPLICATION image on the STM32F405RGT6: 128 KB SRAM
+ * (SRAM1+SRAM2) plus 64 KB CCM (not used here), and one 384 KB flash slot.
+ *
+ * CMake configures this template once per slot (@IGROW_SLOT_NAME@ here), so an
+ * image is built for the slot it will run from: the application is not
+ * position-independent, and ADR-0029 d1 has it link to a slot base and set
+ * VTOR. A release therefore carries one application artifact per slot.
+ *
+ * FLASH starts past the 512-byte image header (common/platform/image.h), so
+ * the vector table this script places first lands 512-byte aligned as VTOR
+ * requires, and objcopy's .bin is exactly the body the header describes.
  */
 
 ENTRY(Reset_Handler)
@@ -12,16 +21,19 @@ _estack = ORIGIN(RAM) + LENGTH(RAM);   /* top of stack */
 _Min_Heap_Size  = 0x400;               /* 1 KB */
 _Min_Stack_Size = 0x800;               /* 2 KB */
 
-/* The last 128 KB sector (sector 11) is NOT part of FLASH: it is the Node-ID
- * store of ADR-0027 d2, written by the running node and read at boot. Keeping
- * it out of the application region is what makes d4's rule -- an update must
- * not erase the sector -- a property of the image rather than of the operator:
- * a programmer writing only the sectors the image covers cannot reach it.
- * common/carrier/identity.h states the same range in C and is checked against
- * _identity_start at init. */
+/* FLASH is one slot and nothing else. Every other region of ADR-0029 d1 --
+ * the bootloader, the update-state block, the other slot -- is outside it, so
+ * an image can no more reach them than it can reach another chip; the
+ * bootloader is what writes a slot (d3).
+ *
+ * Sector 11 is likewise not part of FLASH: it is the Node-ID store of ADR-0027
+ * d2, written by the running node and read at boot. Keeping it out is what
+ * makes d4's rule -- an update must not erase the sector -- a property of the
+ * image rather than of the operator. common/carrier/identity.h states the same
+ * range in C and is checked against _identity_start at init. */
 MEMORY
 {
-  FLASH    (rx)  : ORIGIN = 0x08000000, LENGTH = 896K
+  FLASH    (rx)  : ORIGIN = @IGROW_SLOT_FLASH_ORIGIN@, LENGTH = @IGROW_SLOT_FLASH_LENGTH@
   IDENTITY (r)   : ORIGIN = 0x080E0000, LENGTH = 128K
   RAM      (xrw) : ORIGIN = 0x20000000, LENGTH = 128K
   CCMRAM   (rw)  : ORIGIN = 0x10000000, LENGTH = 64K

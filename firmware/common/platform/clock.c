@@ -80,3 +80,25 @@ void clock_init(void)
     /* 7. 1 kHz SysTick for millis()/delay_ms(). */
     SysTick_Config(SystemCoreClock / 1000u);
 }
+
+void clock_deinit(void)
+{
+    SysTick->CTRL = 0u;
+    SysTick->LOAD = 0u;
+    SysTick->VAL = 0u;
+
+    /* HSI first: SYSCLK cannot be taken off the PLL while the PLL is its
+     * source, and the PLL cannot be stopped while it is the source. */
+    RCC->CR |= RCC_CR_HSION;
+    while (!(RCC->CR & RCC_CR_HSIRDY)) {
+    }
+    RCC->CFGR = 0u;
+    while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_HSI) {
+    }
+
+    RCC->CR &= ~(RCC_CR_PLLON | RCC_CR_HSEON | RCC_CR_HSEBYP | RCC_CR_CSSON);
+    RCC->PLLCFGR = 0x24003010u; /* reset value, RM0090 6.3.2 */
+    FLASH->ACR = 0u;            /* no prefetch, no cache, zero wait states */
+
+    SystemCoreClock = 16000000u;
+}

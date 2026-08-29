@@ -243,8 +243,14 @@ def test_a_listed_document_carries_its_key_read_into_fields(client):
 
     # Same E prefix, different axis: the firmware is not swept into the board's
     # withdrawn v0.0.1 set (d16, d17) and its version is the codebase's.
-    assert by_key["E0001-000001-F.hex"]["status"] is None
-    assert by_key["E0001-000001-F.hex"]["layer_label"] == "firmware"
+    boot = by_key["E0001-000001-F-boot.hex"]
+    assert boot["status"] is None
+    assert boot["layer_label"] == "firmware"
+    assert (boot["version"], boot["slug"]) == ("000001", "boot")
+    # Three images share one firmware version: bootloader plus one application
+    # image per A/B slot (ADR-0029 d1). They are variants of one F root.
+    assert by_key["E0001-000001-F-slot-a.hex"]["version"] == "000001"
+    assert by_key["E0001-000001-F-slot-b.hex"]["slug"] == "slot-b"
 
     # An SP root carries no version — the supplier owns it (ADR-0019 d2).
     manual = by_key["SP0004-M-gateway-bringup.md"]

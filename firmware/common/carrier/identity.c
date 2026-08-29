@@ -4,6 +4,7 @@
  */
 
 #include "identity.h"
+#include "crc32.h"
 #include "flash.h"
 #include "e0001.h" /* CMSIS device header */
 
@@ -33,19 +34,6 @@ static uint8_t s_running = IGROW_NODE_ID_UNPROVISIONED;
 static uint8_t s_committed = IGROW_NODE_ID_UNPROVISIONED;
 static bool s_range_conflict;
 
-/* CRC-32/MPEG-2 from the on-chip unit: poly 0x04C11DB7, init 0xFFFFFFFF, no
- * reflection, no final XOR. Nothing else in the image uses the peripheral. */
-static uint32_t crc32_words(const uint32_t *words, uint32_t count)
-{
-    RCC->AHB1ENR |= RCC_AHB1ENR_CRCEN;
-    (void)RCC->AHB1ENR; /* the enable takes effect after one read-back */
-    CRC->CR = CRC_CR_RESET;
-    for (uint32_t i = 0u; i < count; i++) {
-        CRC->DR = words[i];
-    }
-    return CRC->DR;
-}
-
 /* The Node-ID the sector holds, or IGROW_NODE_ID_UNPROVISIONED if it holds no
  * valid record. Reads flash and computes a CRC, so callers use the cached
  * accessors below rather than this. */
@@ -59,7 +47,7 @@ static uint8_t read_stored(void)
     if ((r->magic == IGROW_IDENTITY_MAGIC) &&
         (r->version == IGROW_IDENTITY_VERSION) &&
         (r->node_id <= IGROW_NODE_ID_MAX_PROVISIONABLE) &&
-        (r->crc == crc32_words(body, 3u))) {
+        (r->crc == crc32_mpeg2_words(body, 3u))) {
         return (uint8_t)r->node_id;
     }
     return IGROW_NODE_ID_UNPROVISIONED;
@@ -108,7 +96,7 @@ int identity_commit(uint8_t node_id)
         rec.magic = IGROW_IDENTITY_MAGIC;
         rec.version = IGROW_IDENTITY_VERSION;
         rec.node_id = node_id;
-        rec.crc = crc32_words((const uint32_t *)&rec, 3u);
+        rec.crc = crc32_mpeg2_words((const uint32_t *)&rec, 3u);
         (void)flash_program_words(IGROW_IDENTITY_FLASH_ADDR, (const uint32_t *)&rec, 4u);
     }
     /* Read back through the store's own validation, so a commit reports success

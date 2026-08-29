@@ -60,7 +60,7 @@ def test_the_repository_mirror_is_not_backed_up():
         "E0001-000002-D-fab.zip",
         "E0001-000002.kicad_pcb",
         "SP0004-M-gateway-bringup.md",
-        "E0001-000001-F.hex",
+        "E0001-000001-F-boot.hex",
         "E0007-000001-S.pdf",
     ):
         assert not is_backed_up_object(key)

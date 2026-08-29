@@ -12,6 +12,15 @@
  * latency, and start a 1 kHz SysTick. Call first, before any peripheral. */
 void clock_init(void);
 
+/* Put the clock tree back the way reset left it: SYSCLK on the 16 MHz HSI,
+ * PLL and HSE off, PLLCFGR and FLASH->ACR at their reset values, SysTick
+ * stopped. Only the bootloader calls this, and only immediately before it
+ * hands over: PLLCFGR cannot be written while the PLL is running, so an
+ * application that starts on someone else's PLL would silently keep it
+ * (ADR-0029 d2 -- the two components are built and released separately, and
+ * neither may depend on the other's clock setup). */
+void clock_deinit(void);
+
 uint32_t millis(void);
 void delay_ms(uint32_t ms);
 

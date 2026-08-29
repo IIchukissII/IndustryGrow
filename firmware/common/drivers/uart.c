@@ -39,6 +39,12 @@ void uart_puts(const char *s)
     }
 }
 
+void uart_flush(void)
+{
+    while (!(E0001_DBG_UART->SR & USART_SR_TC)) {
+    }
+}
+
 void uart_put_u32(uint32_t v)
 {
     char buf[10];
