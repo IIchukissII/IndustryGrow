@@ -26,6 +26,7 @@
 #include "node.h"
 #include "clock.h"
 #include "partition.h"
+#include "update_state.h"
 #include "watchdog.h"
 #include "cyphal.h"
 #include "can.h"
@@ -62,9 +63,9 @@ int main(void)
     uart_init();
 
     uart_puts("\r\nIndustryGrow node firmware (carrier E0001) v");
-    uart_put_u32(IGROW_APP_VERSION_MAJOR);
+    uart_put_u32(IGROW_IMAGE_VERSION_MAJOR);
     uart_putc('.');
-    uart_put_u32(IGROW_APP_VERSION_MINOR);
+    uart_put_u32(IGROW_IMAGE_VERSION_MINOR);
     /* Which slot the image is running from. An operator reading a boot log
      * through an update needs it, and it is read from the vector table
      * rather than from a build-time constant so that it reports where the
@@ -78,6 +79,11 @@ int main(void)
     uart_puts("last reset: ");
     uart_puts(watchdog_reset_cause_str());
     uart_puts("\r\n");
+
+    /* The A/B boot state. Read before the bus comes up, because an update
+     * request arriving over ExecuteCommand is recorded into it (ADR-0029 d3)
+     * and because a trial image confirms itself out of it further down. */
+    update_state_load();
 
     /* Module-ID strap -> personality (ADR-0014 rev 4 d6, ADR-0017 d16).
      *
@@ -165,6 +171,17 @@ int main(void)
         uart_puts("skeleton only, no sensor publications: ");
         uart_puts(identity_provisioned() ? "no personality claims this strap\r\n"
                                          : "no Node-ID provisioned\r\n");
+    }
+
+    /* Bring-up is complete: a Node-ID, a personality and a live Cyphal node.
+     * That is the condition ADR-0029 d12 confirms a trial image on -- an image
+     * that faults or hangs before here never reaches it, and the bootloader
+     * reverts to the slot that did. Writes flash only while a trial is open. */
+    if (publish && partition_slot_of((uint32_t)&g_pfnVectors, &slot) &&
+        (update_state_confirm(slot) == 1)) {
+        uart_puts("trial image confirmed; slot ");
+        uart_puts(partition_slot_str(slot));
+        uart_puts(" is now the one that boots\r\n");
     }
 
     /* Last: the personality bring-up, the ATECC read and the CAN self-test are

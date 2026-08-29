@@ -24,9 +24,21 @@ ART="E0001-${FW_VER}-F"
 ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT"
 
+# Signing keys (ADR-0029 d6). Neither lives in the repository: pass the private
+# key path and its public half in the environment. Without them the images are
+# built UNSIGNED and no node will accept them over the bus -- which is a valid
+# thing to release for SWD flashing, and is why this warns rather than stops.
+: "${IGROW_SIGNING_KEY:=}"
+: "${IGROW_VERIFY_KEY_HEX:=}"
+if [ -z "$IGROW_SIGNING_KEY" ] || [ -z "$IGROW_VERIFY_KEY_HEX" ]; then
+  echo "release: IGROW_SIGNING_KEY / IGROW_VERIFY_KEY_HEX unset - releasing UNSIGNED images" >&2
+fi
+
 # Cross-build (expects submodules from tools/bootstrap.sh + arm-none-eabi-gcc + nnvg).
 cmake -S firmware -B firmware/build \
       -DCMAKE_TOOLCHAIN_FILE=firmware/cmake/arm-none-eabi.cmake \
+      -DIGROW_SIGNING_KEY="$IGROW_SIGNING_KEY" \
+      -DIGROW_VERIFY_KEY_HEX="$IGROW_VERIFY_KEY_HEX" \
       -DCMAKE_BUILD_TYPE=Release
 cmake --build firmware/build
 

@@ -49,6 +49,7 @@ typedef struct {
     uint8_t attempts;            /* trial boots left before the revert */
     bool request_pending;        /* an update was asked for (d3) */
     igrow_slot_t request_slot;   /* the slot it must be written into */
+    uint8_t server_node_id;      /* who serves the artifact: the caller */
     char path[IGROW_UPDATE_PATH_MAX + 1u]; /* artifact path, NUL-terminated */
 } update_state_t;
 
@@ -60,6 +61,24 @@ void update_state_load(void);
 
 /* The state this boot is running under. Never NULL after update_state_load(). */
 const update_state_t *update_state(void);
+
+/* Confirm the trial image running in `running_slot` (ADR-0029 d12). Returns 1
+ * if it confirmed, 0 if there was nothing to confirm -- the ordinary case, and
+ * why this is cheap to call on every boot -- and -1 on a flash failure.
+ *
+ * Called by the application once bring-up has completed. An image that never
+ * gets that far never calls it, which is what the trial state is for. */
+int update_state_confirm(igrow_slot_t running_slot);
+
+/* Record an update request and leave the boot decision alone: the target is
+ * the slot that is NOT running, the server is the node that asked, and the
+ * path is the artifact it will serve (ADR-0029 d3, d5). The caller restarts;
+ * the bootloader acts on it.
+ *
+ * The server is the requester rather than a configured address because the
+ * node that issues COMMAND_BEGIN_SOFTWARE_UPDATE is by definition reachable
+ * and holds the artifact it named. Returns 0, or -1 as for the store below. */
+int update_state_request(uint8_t server_node_id, const char *path);
 
 /* Append `st` as the newest record. Returns 0, or -1 on a flash failure or a
  * path longer than IGROW_UPDATE_PATH_MAX.

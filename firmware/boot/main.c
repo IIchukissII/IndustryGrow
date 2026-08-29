@@ -11,12 +11,12 @@
  * lives here, in one component that is signed as a whole and replaced only
  * over SWD (d10).
  *
- * What it does on every boot: read the update-state block, settle the A/B
- * decision including a failed trial's revert (d8), check that the chosen slot
- * holds an image this hardware may run, and hand over. The download half --
- * a Cyphal node answering ExecuteCommand and reading the artifact through
- * uavcan.file.Read, then verifying its signature before marking the slot
- * bootable (d4, d5, d6) -- writes the same state block through the same API.
+ * What it does on every boot: read the update-state block, act on a pending
+ * update request, settle the A/B decision including a failed trial's revert
+ * (d8), check that the chosen slot holds an image this hardware may run, and
+ * hand over. The bus half lives in update.c -- it is reached only when there is
+ * an update to run or nothing to boot, so an ordinary boot costs milliseconds
+ * and never joins the bus.
  *
  * It runs before the watchdog: IWDG cannot be stopped once started, and an
  * application that inherited a running watchdog would have to service it
@@ -26,16 +26,12 @@
 
 #include "e0001.h"
 #include "clock.h"
+#include "cyphal.h"
 #include "uart.h"
 #include "image.h"
 #include "partition.h"
+#include "update.h"
 #include "update_state.h"
-
-/* Reported over the debug console and, once the bootloader is a Cyphal node,
- * through its own GetInfo. Distinct from the application's version: the two
- * are released and flashed separately. */
-#define IGROW_BOOT_VERSION_MAJOR 0u
-#define IGROW_BOOT_VERSION_MINOR 1u
 
 static void put_hex8(uint8_t b)
 {
@@ -105,18 +101,6 @@ static void jump_to_image(igrow_slot_t slot)
     }
 }
 
-/* Nothing to run: both slots are unbootable. The node stays here rather than
- * resetting into the same answer -- a reset loop looks like a dead board on
- * the bench, a lit LED and a printed reason do not. Recovery is SWD (d10). */
-static void halt_no_image(void)
-{
-    uart_puts("HALT: no bootable image in either slot; recover over SWD\r\n");
-    for (;;) {
-        e0001_led_status_toggle();
-        delay_ms(100u);
-    }
-}
-
 int main(void)
 {
     clock_init();
@@ -124,15 +108,37 @@ int main(void)
     uart_init();
 
     uart_puts("\r\nIndustryGrow bootloader v");
-    uart_put_u32(IGROW_BOOT_VERSION_MAJOR);
+    uart_put_u32(IGROW_IMAGE_VERSION_MAJOR);
     uart_putc('.');
-    uart_put_u32(IGROW_BOOT_VERSION_MINOR);
+    uart_put_u32(IGROW_IMAGE_VERSION_MINOR);
     uart_puts(" (carrier E0001)\r\n");
 
     update_state_load();
-    update_state_t st = *update_state();
     report_slot(IGROW_SLOT_A);
     report_slot(IGROW_SLOT_B);
+
+    /* An update request is answered before anything else, and by restarting
+     * rather than by booting the new slot directly: the slot then goes through
+     * the same checks as any other boot, on a node whose peripherals are in
+     * their reset state rather than half way through a file transfer. */
+    if (update_state()->request_pending) {
+        if (update_run_request()) {
+            uart_puts("restarting into the new image\r\n");
+            uart_flush();
+            /* Through the skeleton rather than straight into a reset: the
+             * verification result is a diagnostic that has to reach the bus
+             * (d11), and resetting with frames still queued loses it. The
+             * queue drains either way -- unsent frames expire on their own
+             * deadline -- so this cannot wait on a dead bus forever. */
+            cyphal_restart_after_flush();
+            for (;;) {
+                cyphal_spin();
+            }
+        }
+        uart_puts("update abandoned; booting what was already here\r\n");
+    }
+
+    update_state_t st = *update_state();
 
     /* A trial slot spends one attempt per boot, and the spend is committed
      * BEFORE the image runs (d8). An image that hangs or faults on entry
@@ -166,7 +172,7 @@ int main(void)
         uart_puts(partition_slot_str(st.boot_slot));
         uart_puts(" failed its check\r\n");
         if (!image_slot_bootable(other)) {
-            halt_no_image();
+            update_await_image(); /* never returns */
         }
         st.boot_slot = other;
         st.prev_slot = other;
@@ -175,6 +181,9 @@ int main(void)
         (void)update_state_store(&st);
     }
 
+    /* Nothing to indicate on an ordinary boot: the blue LED is the update
+     * indication and must be dark when the application takes over. */
+    e0001_weact_led(false);
     e0001_led_status(true);
     jump_to_image(st.boot_slot);
     return 0;

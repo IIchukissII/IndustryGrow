@@ -14,6 +14,10 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Realizes:** ADR-0005's deferred *"firmware-update / OTA service types"*; ADR-0028's deferred
   *"interaction with the firmware update path"*
 
+## Revision history
+
+- **Amendments** — decision 12 (2026-08-29): the condition that confirms a trial slot, which decision 8 left to the deferred list; bounds decision 8 and answers its deferred item.
+
 ## Context and problem
 
 Fixed elsewhere:
@@ -108,6 +112,13 @@ node.
 11. **The node reports the verification result and resulting image version on its diagnostic
     channel** (ADR-0004 d16).
 
+12. **A trial slot is confirmed by the application reaching its main loop** (added 2026-08-29).
+    The condition is a provisioned Node-ID, a personality resolved from the strap, and the Cyphal
+    node up: the point at which bring-up has completed and the loop begins. The application
+    asserts it and writes the update state once. An image that faults, hangs in bring-up or boot
+    loops never reaches it and is reverted by d8's attempt counter. This bounds d8 and nothing
+    else; the gateway takes no part, so a node updated on a bus with no gateway keeps its image.
+
 ## Alternatives considered
 
 **A. One slot, updated in place.** *Rejected:* P1 — an interrupted write leaves no bootable image.
@@ -152,7 +163,6 @@ substituted artifact.
   to telemetry.
 - **Whether the bootloader services or disables the watchdog during a transfer.**
 - **Fleet-wide update order and concurrency.**
-- **The healthy condition that confirms a trial slot, and which component asserts it.**
 
 ## References
 

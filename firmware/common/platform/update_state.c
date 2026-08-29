@@ -29,7 +29,8 @@ typedef struct {
     uint8_t attempts;      /* 0x0F */
     uint8_t request;       /* 0x10 0 or 1 */
     uint8_t request_slot;  /* 0x11 */
-    uint16_t path_len;     /* 0x12 bytes of path, excluding the terminator */
+    uint8_t server_node_id;/* 0x12 the node that will serve the artifact */
+    uint8_t path_len;      /* 0x13 bytes of path, excluding the terminator */
     char path[IGROW_UPDATE_PATH_MAX + 1u]; /* 0x14 */
     uint32_t reserved0;    /* 0xF4 */
     uint32_t reserved1;    /* 0xF8 */
@@ -70,6 +71,7 @@ static bool record_valid(const update_record_t *r)
            (r->boot_slot < IGROW_SLOT_COUNT) &&
            (r->prev_slot < IGROW_SLOT_COUNT) &&
            (r->request_slot < IGROW_SLOT_COUNT) &&
+           (r->server_node_id <= 127u) && /* Cyphal Node-ID range */
            (r->path_len <= IGROW_UPDATE_PATH_MAX) &&
            (r->crc == crc32_mpeg2_words((const uint32_t *)r,
                                         IGROW_UPDATE_RECORD_WORDS - 1u));
@@ -85,6 +87,7 @@ void update_state_load(void)
     s_state.attempts = 0u;
     s_state.request_pending = false;
     s_state.request_slot = IGROW_SLOT_B;
+    s_state.server_node_id = 0u;
     s_state.path[0] = '\0';
     s_seq = 0u;
     s_index = 0u;
@@ -109,6 +112,7 @@ void update_state_load(void)
     s_state.attempts = newest->attempts;
     s_state.request_pending = (newest->request != 0u);
     s_state.request_slot = (igrow_slot_t)newest->request_slot;
+    s_state.server_node_id = newest->server_node_id;
     memcpy(s_state.path, newest->path, newest->path_len);
     s_state.path[newest->path_len] = '\0';
 }
@@ -136,7 +140,8 @@ int update_state_store(const update_state_t *st)
     rec.attempts = st->attempts;
     rec.request = st->request_pending ? 1u : 0u;
     rec.request_slot = (uint8_t)st->request_slot;
-    rec.path_len = (uint16_t)len;
+    rec.server_node_id = st->server_node_id;
+    rec.path_len = (uint8_t)len;
     memcpy(rec.path, st->path, len);
     rec.crc = crc32_mpeg2_words((const uint32_t *)&rec, IGROW_UPDATE_RECORD_WORDS - 1u);
 
@@ -162,4 +167,36 @@ int update_state_store(const update_state_t *st)
     s_index = index;
     s_state = *st;
     return 0;
+}
+
+int update_state_confirm(igrow_slot_t running_slot)
+{
+    /* Only the image on trial confirms itself, and only from the slot the
+     * bootloader chose. A confirmation from anywhere else would clear a trial
+     * that this code is not the subject of. */
+    if ((s_state.state != IGROW_BOOT_TRIAL) || (s_state.boot_slot != running_slot)) {
+        return 0;
+    }
+    update_state_t st = s_state;
+    st.state = IGROW_BOOT_CONFIRMED;
+    st.attempts = 0u;
+    st.prev_slot = running_slot;
+    return (update_state_store(&st) == 0) ? 1 : -1;
+}
+
+int update_state_request(uint8_t server_node_id, const char *path)
+{
+    /* The target is the slot that is not in force. A request never changes the
+     * boot decision: until an image is downloaded, verified and marked, the
+     * node keeps booting exactly what it boots now (ADR-0029 d2). */
+    update_state_t st = s_state;
+    st.request_pending = true;
+    st.request_slot = partition_other_slot(st.boot_slot);
+    st.server_node_id = server_node_id;
+    const size_t len = strlen(path);
+    if (len > IGROW_UPDATE_PATH_MAX) {
+        return -1;
+    }
+    memcpy(st.path, path, len + 1u);
+    return update_state_store(&st);
 }
