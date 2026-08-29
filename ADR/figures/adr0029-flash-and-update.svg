@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="780" height="470" viewBox="0 0 780 470" role="img" aria-label="How firmware reaches a node, per ADR-0029">
+  <title>ADR-0029 — first flash over SWD, updates over CAN</title>
+  <desc>Two procedures. The first flash, done once per node over SWD, writes the bootloader to 0x08000000 and an application image to slot A, then provisions the Node-ID; neither write reaches the identity sector. Thereafter an update runs over CAN: a command carrying the artifact path, a restart into the bootloader, a download into the slot that is not running, verification by digest and P-256 signature, and a trial boot that the application confirms by reaching its main loop. A failed verification leaves the running image untouched; an unconfirmed trial is reverted. A node with no bootable slot waits on the bus for an image, and the bootloader itself is replaced over SWD only.</desc>
+
+  <defs>
+    <marker id="a29" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#5F5E5A"/></marker>
+    <marker id="a29c" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#D85A30"/></marker>
+    <marker id="a29g" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#3E7A57"/></marker>
+  </defs>
+
+  <rect x="0.5" y="0.5" width="779" height="469" rx="10" fill="#FFFFFF" stroke="#E5E3DC"/>
+
+  <text x="390" y="28" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#2C2C2A">How firmware reaches a node</text>
+
+  <!-- ============ Panel A: first flash ============ -->
+  <text x="40" y="58" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#2C2C2A">First flash &#183; SWD &#183; once per node</text>
+
+  <rect x="40" y="70" width="200" height="52" rx="6" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="140" y="90" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#2C2C2A">1 &#183; Bootloader</text>
+  <text x="140" y="108" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#5F5E5A">-F-boot.hex &#8594; 0x08000000</text>
+  <line x1="240" y1="96" x2="266" y2="96" stroke="#5F5E5A" stroke-width="1.4" marker-end="url(#a29)"/>
+
+  <rect x="272" y="70" width="200" height="52" rx="6" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="372" y="90" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#2C2C2A">2 &#183; Application</text>
+  <text x="372" y="108" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#5F5E5A">-F-slot-a.hex &#8594; 0x08020000</text>
+  <line x1="472" y1="96" x2="498" y2="96" stroke="#5F5E5A" stroke-width="1.4" marker-end="url(#a29)"/>
+
+  <rect x="504" y="70" width="236" height="52" rx="6" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="622" y="90" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#2C2C2A">3 &#183; Provision the Node-ID</text>
+  <text x="622" y="108" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#5F5E5A">ADR-0028 d1 step 2 &#183; ADR-0027 d5</text>
+
+  <text x="40" y="140" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#5F5E5A">Neither image covers sector 11, so a provisioned Node-ID survives every flash. A mass erase does not.</text>
+
+  <line x1="40" y1="156" x2="740" y2="156" stroke="#E5E3DC" stroke-width="1"/>
+
+  <!-- ============ Panel B: update ============ -->
+  <text x="40" y="180" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#2C2C2A">Update &#183; over CAN &#183; thereafter</text>
+
+  <rect x="40" y="192" width="130" height="56" rx="6" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="105" y="212" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#2C2C2A">1 &#183; Command</text>
+  <text x="105" y="228" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#5F5E5A">ExecuteCommand</text>
+  <text x="105" y="240" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#5F5E5A">65533 + path</text>
+  <line x1="170" y1="220" x2="192" y2="220" stroke="#5F5E5A" stroke-width="1.4" marker-end="url(#a29)"/>
+
+  <rect x="196" y="192" width="130" height="56" rx="6" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="261" y="212" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#2C2C2A">2 &#183; Restart</text>
+  <text x="261" y="228" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#5F5E5A">the application only</text>
+  <text x="261" y="240" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#5F5E5A">records the request (d3)</text>
+  <line x1="326" y1="220" x2="348" y2="220" stroke="#5F5E5A" stroke-width="1.4" marker-end="url(#a29)"/>
+
+  <rect x="352" y="192" width="130" height="56" rx="6" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="417" y="212" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#2C2C2A">3 &#183; Download</text>
+  <text x="417" y="228" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#5F5E5A">file.Read into the</text>
+  <text x="417" y="240" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#5F5E5A">slot that is not running</text>
+  <line x1="482" y1="220" x2="504" y2="220" stroke="#5F5E5A" stroke-width="1.4" marker-end="url(#a29)"/>
+
+  <rect x="508" y="192" width="130" height="56" rx="6" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="573" y="212" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#2C2C2A">4 &#183; Verify</text>
+  <text x="573" y="228" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#5F5E5A">digest, then P-256</text>
+  <text x="573" y="240" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#5F5E5A">signature (d6)</text>
+  <line x1="638" y1="220" x2="660" y2="220" stroke="#5F5E5A" stroke-width="1.4" marker-end="url(#a29)"/>
+
+  <rect x="664" y="192" width="76" height="56" rx="6" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="702" y="216" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#2C2C2A">5 &#183; Trial</text>
+  <text x="702" y="232" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#5F5E5A">3 boots (d8)</text>
+
+  <!-- verify fails -->
+  <line x1="573" y1="248" x2="573" y2="286" stroke="#D85A30" stroke-width="1.4" marker-end="url(#a29c)"/>
+  <text x="581" y="266" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#D85A30">fails</text>
+  <rect x="440" y="290" width="266" height="44" rx="6" fill="#FCF3EF" stroke="#D85A30"/>
+  <text x="573" y="308" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11.5" font-weight="600" fill="#2C2C2A">Refused, slot left unmarked</text>
+  <text x="573" y="324" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#5F5E5A">the running image is untouched</text>
+
+  <!-- trial outcome -->
+  <line x1="702" y1="248" x2="702" y2="360" stroke="#5F5E5A" stroke-width="1.4"/>
+  <line x1="702" y1="360" x2="330" y2="360" stroke="#5F5E5A" stroke-width="1.4"/>
+  <line x1="330" y1="360" x2="330" y2="374" stroke="#5F5E5A" stroke-width="1.4" marker-end="url(#a29)"/>
+
+  <rect x="180" y="378" width="300" height="44" rx="6" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="330" y="396" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11.5" font-weight="600" fill="#2C2C2A">Does the application reach its main loop?</text>
+  <text x="330" y="412" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#5F5E5A">Node-ID, personality and Cyphal all up (d12)</text>
+
+  <line x1="180" y1="400" x2="150" y2="400" stroke="#D85A30" stroke-width="1.4" marker-end="url(#a29c)"/>
+  <text x="152" y="392" text-anchor="end" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#D85A30">no</text>
+  <rect x="40" y="378" width="104" height="44" rx="6" fill="#FCF3EF" stroke="#D85A30"/>
+  <text x="92" y="396" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11.5" font-weight="600" fill="#2C2C2A">Reverted</text>
+  <text x="92" y="411" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#5F5E5A">previous slot</text>
+
+  <line x1="480" y1="400" x2="510" y2="400" stroke="#3E7A57" stroke-width="1.4" marker-end="url(#a29g)"/>
+  <text x="508" y="392" text-anchor="end" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#3E7A57">yes</text>
+  <rect x="514" y="378" width="226" height="44" rx="6" fill="#F1F6F2" stroke="#3E7A57"/>
+  <text x="627" y="396" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11.5" font-weight="600" fill="#2C2C2A">Confirmed</text>
+  <text x="627" y="411" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#5F5E5A">this slot is the one that boots</text>
+
+  <text x="40" y="446" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#5F5E5A">No bootable slot: the bootloader joins the bus and waits for an image. The bootloader itself is replaced over SWD only (d10).</text>
+</svg>

@@ -173,20 +173,15 @@ implemented`, `LOAD segment with RWX permissions`) are expected.
 Output is three images. What a node becomes is decided by the module in the carrier socket, not by
 which file was flashed; which slot an application image is for is a link address, not a variant.
 
-| Artifact | Flashed at | Holds |
+| Artifact | Load address | Holds |
 |---|---|---|
 | `igrowboot.hex` | `0x08000000` | bootloader, sectors 0–3 |
 | `igrow-a.hex` | `0x08020000` | image header + application, slot A |
 | `igrow-b.hex` | `0x08080000` | image header + application, slot B |
+| `igrow-<slot>.img` | — | the same bytes unaddressed: what a signature covers and what the gateway serves |
 
-`igrow-<slot>.img` is the same bytes without the load address: header plus body, the unit a
-signature will cover and the artifact the gateway will serve. `tools/mkimage.py` writes the header
-(`common/platform/image.h`); the flash map it addresses is ADR-0029 d1, stated in C by
-`common/platform/partition.h`.
-
-A first flash writes the bootloader and one slot. The bootloader picks the slot, checks the image's
-CRC and hands over; with neither slot bootable it joins the bus and waits to be given an image,
-blinking the status LED, rather than resetting into the same answer.
+`tools/mkimage.py` writes the header (`common/platform/image.h`); the flash map it addresses is
+ADR-0029 d1, stated in C by `common/platform/partition.h`.
 
 ### Signing keys
 
@@ -207,33 +202,33 @@ Without them the build still runs and the images still flash over SWD; they simp
 accepted over the bus, because an unsigned image fails verification and a bootloader with no key
 refuses every image. The build says so at configure time.
 
-Flashing is over SWD on the WeAct debug header, which stays reachable with the carrier mounted;
-`store/E0002-000001-M-bringup-protocol.md` carries the procedure. CAN1 sits on PB8/PB9, off the USB
-pins, so WeAct USB DFU remains available as a recovery path (pin-map note 5).
+## Flashing and updating
 
-## Updating a node over CAN
+![First flash over SWD, then updates over CAN](../ADR/figures/adr0029-flash-and-update.svg)
 
-`uavcan.node.ExecuteCommand` `COMMAND_BEGIN_SOFTWARE_UPDATE` (65533), with the artifact path in the
-command parameter. The node records the request, restarts, and the bootloader reads the artifact
-from the caller with `uavcan.file.Read` (subject 408) — so whoever issues the command must also
-serve the file.
+SWD is on the WeAct debug header, reachable with the carrier mounted. CAN1 sits on PB8/PB9, off the
+USB pins, so WeAct USB DFU stays available as a recovery path (pin-map note 5).
 
-| Step | What happens |
+| | Command |
 |---|---|
-| Command | The running application writes the request to the update-state block and restarts (d3) |
-| Download | The bootloader joins the bus under the node's own Node-ID, erases the *other* slot and writes it, 256 bytes per block |
-| Verify | SHA-256 of the body against the header, then ECDSA P-256 over the header (d6) |
-| Mark | On success the slot is marked bootable **on trial**, and the node restarts into it |
-| Confirm | The new image confirms itself on reaching its main loop (d12); one that faults or hangs does not, and three boots later the bootloader reverts (d8) |
+| First flash, 1 | `STM32_Programmer_CLI -c port=SWD mode=UR freq=950 -d E0001-VVVVVV-F-boot.hex -v` |
+| First flash, 2 | `STM32_Programmer_CLI -c port=SWD mode=UR freq=950 -d E0001-VVVVVV-F-slot-a.hex -v` |
+| Provision | `store/SP0004-M-gateway-bringup.md` §8 |
+| Update | `uavcan.node.ExecuteCommand` 65533, artifact path in the parameter |
+
+Whoever sends the command serves the file: the bootloader reads it back from that node with
+`uavcan.file.Read` (subject 408). The target is always the slot that is not running.
+
+| Blue LED (PB2) | Node is |
+|---|---|
+| dark | running the application |
+| lit | in the bootloader, on the bus |
+| flickering | downloading, one flicker per 256-byte block |
+| steady through a pause | verifying |
+| 2 Hz | holding no bootable image, waiting for one |
 
 A failed download clears the request before erasing anything, so a node that cannot reach its file
-server retries nothing and boots what it already had. The previous image is never touched.
-
-**The blue LED on the core board (PB2) is the update indication.** It is dark whenever the
-application is running, comes on when the bootloader joins the bus, flickers once per 256-byte
-block through the transfer, and holds steady through verification. A node blinking it at 2 Hz has
-no bootable image and is waiting on the bus for one. It is the only LED visible with a sensor
-module mounted over the carrier.
+server retries nothing and boots what it already had.
 
 ## Release artifacts (`store/`)
 

@@ -15,7 +15,7 @@
   <!-- 1 flash -->
   <rect x="100" y="70" width="260" height="48" rx="6" fill="#F7F6F2" stroke="#C9C6BC"/>
   <text x="230" y="90" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#2C2C2A">1 &#183; Flash the released image</text>
-  <text x="230" y="106" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#5F5E5A">SWD. MCU flash only &#8212; no trim (d4)</text>
+  <text x="230" y="106" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#5F5E5A">SWD, bootloader + image (ADR-0029 d1). No trim (d4)</text>
   <line x1="230" y1="118" x2="230" y2="132" stroke="#5F5E5A" stroke-width="1.4" marker-end="url(#a28)"/>
 
   <!-- 2 node-id -->

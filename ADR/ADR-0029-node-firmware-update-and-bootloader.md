@@ -74,6 +74,8 @@ node.
     The application links to a slot base and sets `VTOR`. Sector 11 is outside every update write
     path (P3).
 
+    ![First flash over SWD, then updates over CAN: command, restart, download, verify, trial, confirm or revert](./figures/adr0029-flash-and-update.svg)
+
 2. **Two application slots, with rollback.** The bootloader selects the slot from the update state
    block. A slot is written only while the other holds the running image (P1).
 
@@ -150,7 +152,7 @@ substituted artifact.
   SWD flashing procedure all change.
 - A second signed component enters the build and the key ceremony.
 - A bootloader defect requires physical access to correct.
-- A minimal CAN and Cyphal stack is duplicated in the bootloader.
+- The Cyphal skeleton is linked into both images. It is the same code, not a second implementation, so the cost is 22 KB of the bootloader's 64 KB rather than a stack to keep in step.
 - First flash is two artifacts.
 
 ## Deferred decisions
