@@ -17,6 +17,8 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 - **rev 1 (2026-06-17)** — Energy reverts from watt-hours to **joule**: accumulated S0 energy is now published on the standard `uavcan.si.sample.energy.Scalar` (joule), and the bespoke `industryflow.greenhouse.safety.EnergyWh` type is **dropped**. The initial record made Wh a deliberate SI exception because the meter is defined in imp/kWh; on review that is cosmetic — the node scales a dimensionless pulse count by a constant either way (`J = pulses × 3 600 000 / imp_per_kWh`, exact), Wh carries no precision advantage (float32 relative error is unit-independent), and human-facing kWh is a gateway/platform display concern. Keeping energy in base SI restores wire-uniformity and lets it **reuse** a standard type instead of minting one (decision 2). Affects decision 3, the positive-consequences type tally, and adds alternative H; no other decision changed.
 
+- **Amendments** — decision 11 (2026-08-29): which mechanism carries M04's two telemetry streams; answers the deferred *aggregate/multi-frame record types* for that module and qualifies ADR-0014 decision 4 on direction only.
+
 ## Context and problem
 
 ADR-0002 (rev 3) fixed the field bus as **Cyphal over classic CAN** and named, in passing, the place the wire vocabulary would live: "the DSDL types live in `industryflow.greenhouse.*` (ADR-0005)." That ADR was never written. Every artifact that depends on it has been blocked or stubbed in consequence: the gateway ships only a *placeholder* self-test that proves SocketCAN and the sandbox work but explicitly defers the real Pycyphal application "pending the DSDL vocabulary (ADR-0005, planned)"; the roadmap makes "DSDL foundation" stage 2, the prerequisite for the first sensor node (stage 3) and everything after it; and no sensor-node firmware can finalize its publication interface without agreed types.
@@ -91,6 +93,19 @@ A note on scope. This ADR is the **foundation and the worked first example (M05-
 
 **H. Publish accumulated energy in watt-hours via a custom `industryflow.greenhouse` type.** *Adopted in the initial record, rejected on revision (rev 1):* the rationale was that the DIN meter is defined in imp/kWh, so Wh is its "native" unit. But the node scales a dimensionless pulse count by a constant regardless of target unit, so Wh is cosmetic, not more faithful; float32 relative precision is unit-independent (Wh buys nothing there); and human-facing Wh/kWh is a gateway/platform display concern. Wh's only effect was to **cost** a minted type where the standard `uavcan.si.sample.energy.Scalar` (joule) fits — contrary to the reuse-first driver (decision 2). Energy is published in joule.
 
+11. **M04's two telemetry streams take different mechanisms, and only one mints a type** *(added 2026-08-29)*.
+
+    | Stream | Cadence | Mechanism | Type |
+    |---|---|---|---|
+    | Summary statistics — mean, max/min, gradient, hotspot mask | 1 Hz | published subject | **one minted aggregate** under `industryflow.greenhouse.plant.*` |
+    | Full 32×24 frame, 1668 B | 5 min or on event | `uavcan.file.Read`, node serves, gateway reads | none — standard service |
+
+    The statistics are the atomicity case alternative D reserves: they describe one frame, and split across separate SI subjects they would describe no frame in particular. The full frame is 1668 B of pixel data with no semantics a minted type would add, so decision 2's reuse rule applies and ADR-0014 decision 4's file service carries it.
+
+    Frame availability is a field in the summary record; the gateway reads on change rather than polling. This **qualifies ADR-0014 decision 4 on direction only**, bounded: "pushed" there names the cadence, and the Cyphal file service is a pull, so the gateway performs the transfer. The mechanism, the cadence and the trigger in that decision are unchanged.
+
+    Cost, at ADR-0002 rev 3's 500 kbit/s: 1668 B is 239 Cyphal/CAN frames, ~72 ms, once per 5 minutes — 0.024 % mean occupancy. The frame's byte layout stays deferred to when the module is built.
+
 ## Consequences
 
 ### Positive
@@ -118,7 +133,7 @@ A note on scope. This ADR is the **foundation and the worked first example (M05-
 - **Firmware-update / OTA service types** (e.g. `uavcan.file`, the `ExecuteCommand` update verbs) — **discharged by ADR-0029 decision 5** (2026-08-29): the binding is `uavcan.node.ExecuteCommand` `COMMAND_BEGIN_SOFTWARE_UPDATE` plus `uavcan.file.Read`, taken from the pinned regulated set under decisions 2 and 10. No type is minted. ADR-0004 covered the policy level only; the service binding is ADR-0029's.
 - **Plug-and-play Node-ID allocation (`uavcan.pnp`)** — deferred per decision 6; revisit on field-replacement ergonomics.
 - **Profile document schema (ADR-0009)** — explicitly *not* DSDL; gateway-to-cloud JSON, separate ADR.
-- **Aggregate/multi-frame record types** (e.g. the M04 thermal frame) — defined when that module is built; this ADR only records that aggregation is the exception, not the default (alternative D).
+- **Aggregate/multi-frame record types** — decision 11 settles which mechanism carries M04's two streams; what remains is the **byte layout of the minted summary record**, defined when that module is built. Aggregation stays the exception, not the default (alternative D).
 
 ## References
 
