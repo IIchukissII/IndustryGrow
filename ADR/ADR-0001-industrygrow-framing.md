@@ -97,7 +97,7 @@ IndustryGrow is an **open-core cultivation platform** with the following structu
 - **ADR-0003:** Strawberry day-neutral cultivation profile (reference profile #1).
 - **ADR-0004:** Gateway host hardening, audit log, firmware signing.
 - **ADR-0005:** DSDL namespace structure and Subject-ID allocation.
-- **ADR-0006 (deferred):** Cabinet form factor, materials, mechanical decomposition.
+- **ADR-0006:** ~~(deferred)~~ Cabinet form factor, materials, mechanical decomposition — **written and Accepted**; that record names this reservation as discharged.
 - **ADR-0007:** PKI architecture — community-self-hosted CA pattern and commercial CA infrastructure.
 - **ADR-0008 (future):** Deployment topology and operational scale.
 - **ADR-0009 (future):** Cultivation profile schema, contribution workflow, registry design.
