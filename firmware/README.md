@@ -244,6 +244,8 @@ document layer (see `REGISTRY.md`):
 store/E0001-000001-F-boot.hex    # bootloader
 store/E0001-000001-F-slot-a.hex  # application, slot A
 store/E0001-000001-F-slot-b.hex  # application, slot B
+store/E0001-000001-F-slot-a.img  # the same images without a load address:
+store/E0001-000001-F-slot-b.img  # what a signature covers, what the bus serves
 store/E0001-000001-F-src.zip     # source snapshot of firmware/ at HEAD
 ```
 

@@ -17,6 +17,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 ## Revision history
 
 - **Amendments** — decision 12 (2026-08-29): the condition that confirms a trial slot, which decision 8 left to the deferred list; bounds decision 8 and answers its deferred item.
+- **Amendments** — decisions 13–16 (2026-08-29): the artifact a node is served, where the gateway gets it, how a running version becomes known, and what starts a transfer; answers the deferred *gateway artifact storage layout and the push-versus-pull trigger*.
 
 ## Context and problem
 
@@ -121,6 +122,29 @@ node.
     loops never reaches it and is reverted by d8's attempt counter. This bounds d8 and nothing
     else; the gateway takes no part, so a node updated on a bus with no gateway keeps its image.
 
+13. **A release publishes the bus artifact beside the flashable one** (added 2026-08-29). Each
+    application slot ships as `-F-slot-x.hex` and `-F-slot-x.img`. The `.img` is header plus body:
+    the unit a signature covers and the only form a node can be given over the bus. The `.hex`
+    carries its own load address, so flashing cannot put an image at the wrong one. The bootloader
+    ships flashable only — it is never served over the bus (d10).
+
+14. **The gateway obtains artifacts from the ERP and holds them on disk** (added 2026-08-29), as it
+    obtains the active cultivation profile (ADR-0021 d8). ADR-0004 d13 fixes that the gateway holds
+    and serves artifacts; this fixes where they come from. The ERP is the system of record and
+    already indexes store objects by key (ADR-0021 d7), so no third party holds firmware.
+
+15. **What a node runs is observed, never assumed** (added 2026-08-29). The gateway reads
+    `uavcan.node.GetInfo` and reports the node's software version, with its unique-id, to the ERP,
+    which records it against the instance. A version is not inferred from the last command sent: a
+    reverted trial, an SWD flash and a failed download all leave a node running something other
+    than what was last asked of it.
+
+16. **A transfer starts from an operator action recorded in the ERP; the gateway performs it**
+    (added 2026-08-29). The ERP holds the intended version per machine, as it holds the active
+    profile; the gateway compares it against d15's observation, fetches the artifact, sends
+    `COMMAND_BEGIN_SOFTWARE_UPDATE` and serves the file. Pull, by the component that owns the bus,
+    on a record the operator changed — not a push from a system that cannot see the node.
+
 ## Alternatives considered
 
 **A. One slot, updated in place.** *Rejected:* P1 — an interrupted write leaves no bootable image.
@@ -159,8 +183,6 @@ substituted artifact.
 
 - **Image header byte layout and the build-time signing step.** An implementation specification.
 - **Bootloader-signing key custody and rotation.** Belongs with the key ceremony (ADR-0024).
-- **Gateway artifact storage layout and the push-versus-pull trigger.** ADR-0004 d13 fixes that the
-  gateway serves artifacts; when a transfer starts is operational.
 - **Measured bus occupancy of a full image transfer**, by the bit accounting ADR-0002 rev 3 applies
   to telemetry.
 - **Whether the bootloader services or disables the watchdog during a transfer.**

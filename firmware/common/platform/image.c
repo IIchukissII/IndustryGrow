@@ -6,6 +6,21 @@
 #include "image.h"
 #include "crc32.h"
 
+#include <stddef.h>
+
+const igrow_image_header_t *image_running_header(void)
+{
+    /* The address of this function is inside the running image, whichever that
+     * is. No symbol from the linker script is needed and no build-time flag can
+     * get it wrong. */
+    igrow_slot_t slot;
+    if (!partition_slot_of((uint32_t)(uintptr_t)&image_running_header, &slot)) {
+        return NULL;
+    }
+    const igrow_image_header_t *h = image_header(slot);
+    return (h->magic == IGROW_IMAGE_MAGIC) ? h : NULL;
+}
+
 bool image_slot_bootable(igrow_slot_t slot)
 {
     const igrow_image_header_t *h = image_header(slot);

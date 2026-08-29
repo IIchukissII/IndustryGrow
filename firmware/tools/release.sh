@@ -8,6 +8,8 @@
 #   store/E0001-000001-F-boot.hex    bootloader, sectors 0-3
 #   store/E0001-000001-F-slot-a.hex  application linked for slot A
 #   store/E0001-000001-F-slot-b.hex  application linked for slot B
+#   store/E0001-000001-F-slot-a.img  the same image without a load address
+#   store/E0001-000001-F-slot-b.img  -- what a signature covers, what the bus serves
 #   store/E0001-000001-F-src.zip     source snapshot (firmware/ tree at HEAD)
 #
 # Three images because ADR-0029 d1 partitions the flash: the bootloader owns
@@ -99,14 +101,20 @@ cp "$BUILD/igrowboot.hex" "store/${ART}-boot.hex"
 cp "$BUILD/igrow-a.hex"   "store/${ART}-slot-a.hex"
 cp "$BUILD/igrow-b.hex"   "store/${ART}-slot-b.hex"
 
+# The bus artifact (ADR-0029 d13). Same bytes as the .hex without the load
+# address: the unit a signature covers, and the only form a node can be given
+# over the bus. The bootloader has none -- it is never served (d10).
+cp "$BUILD/igrow-a.img"   "store/${ART}-slot-a.img"
+cp "$BUILD/igrow-b.img"   "store/${ART}-slot-b.img"
+
 # Source snapshot of the firmware/ tree at HEAD (tracked files only; submodules
 # are gitlinks and excluded by design — bootstrap.sh re-fetches them).
 git archive --format=zip --prefix="${ART}-src/" -o "store/${ART}-src.zip" HEAD -- firmware
 
 if [ -n "$SIGNING_KEY" ]; then
-  echo "released SIGNED: store/${ART}-{boot,slot-a,slot-b}.hex  store/${ART}-src.zip"
+  echo "released SIGNED: store/${ART}-{boot,slot-a,slot-b}.hex  store/${ART}-slot-{a,b}.img  store/${ART}-src.zip"
 else
-  echo "released UNSIGNED: store/${ART}-{boot,slot-a,slot-b}.hex  store/${ART}-src.zip"
+  echo "released UNSIGNED: store/${ART}-{boot,slot-a,slot-b}.hex  store/${ART}-slot-{a,b}.img  store/${ART}-src.zip"
   echo "         these flash over SWD and refuse every update over the bus."
 fi
 echo "note: these paths are annotated AGPL-3.0-or-later in REUSE.toml."
