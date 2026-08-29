@@ -24,10 +24,12 @@
 #include "uavcan/node/port/List_1_0.h"
 #include "uavcan/diagnostic/Record_1_1.h"
 #include "uavcan/time/Synchronization_1_0.h"
+#include "uavcan/file/Read_1_1.h"
 
 #include "image.h" /* IGROW_HW_CLASS_E0001, the class this image targets */
 #include "registers.h"
 #include "identity.h"
+#include "update_state.h"
 #include "e0001.h" /* CMSIS: NVIC_SystemReset */
 #include "atecc608.h"
 #include "clock.h"
@@ -55,6 +57,9 @@ static CanardRxSubscription s_getinfo_sub;
 static CanardRxSubscription s_access_sub;
 static CanardRxSubscription s_list_sub;
 static CanardRxSubscription s_execcmd_sub;
+static CanardRxSubscription s_resp_sub;      /* the one client subscription */
+static uint16_t s_resp_port;                 /* 0 = none registered */
+static cyphal_response_fn s_resp_fn;
 static bool s_pending_reset; /* set by ExecuteCommand RESTART, acted on after TX flush */
 static const char *s_node_name = "org.industrygrow.node"; /* set by cyphal_init() */
 
@@ -198,9 +203,48 @@ void cyphal_init(uint8_t node_id, const char *node_name, const char *description
     s_next_portlist_us = s_start_us + 2000000u; /* offset from the heartbeat tick */
 }
 
+static int32_t tx_push_rc(const CanardTransferMetadata *meta, size_t size, const void *payload)
+{
+    return canardTxPush(&s_txq, &s_canard, micros64() + 1000000u, meta, size, payload);
+}
+
 static void tx_push(const CanardTransferMetadata *meta, size_t size, const void *payload)
 {
-    (void)canardTxPush(&s_txq, &s_canard, micros64() + 1000000u, meta, size, payload);
+    (void)tx_push_rc(meta, size, payload);
+}
+
+bool cyphal_request(uint16_t service_id, uint8_t server_node_id, uint8_t *transfer_id,
+                    const uint8_t *payload, size_t size)
+{
+    const CanardTransferMetadata meta = {
+        .priority = CanardPriorityNominal,
+        .transfer_kind = CanardTransferKindRequest,
+        .port_id = (CanardPortID)service_id,
+        .remote_node_id = server_node_id,
+        .transfer_id = *transfer_id,
+    };
+    /* The transfer-ID advances whether or not the push succeeded: a response is
+     * matched on it, and reusing one after a failed push would match this
+     * request's response to the next one. */
+    *transfer_id = (uint8_t)((*transfer_id + 1u) & CANARD_TRANSFER_ID_MAX);
+    return tx_push_rc(&meta, size, payload) > 0;
+}
+
+bool cyphal_subscribe_response(uint16_t service_id, size_t extent, cyphal_response_fn fn)
+{
+    if (s_resp_port != 0u) {
+        (void)canardRxUnsubscribe(&s_canard, CanardTransferKindResponse, s_resp_port);
+    }
+    s_resp_port = service_id;
+    s_resp_fn = fn;
+    return canardRxSubscribe(&s_canard, CanardTransferKindResponse, (CanardPortID)service_id,
+                             extent, CANARD_DEFAULT_TRANSFER_ID_TIMEOUT_USEC,
+                             &s_resp_sub) >= 0;
+}
+
+void cyphal_restart_after_flush(void)
+{
+    s_pending_reset = true;
 }
 
 void cyphal_publish(uint16_t subject_id, uint8_t *transfer_id,
@@ -483,8 +527,8 @@ static void handle_getinfo(const CanardRxTransfer *req)
     resp.hardware_version.minor = 0;
     /* The version the build stamped into this image's header (ADR-0029 d7),
      * so what the node reports and what the artifact claims are one number. */
-    resp.software_version.major = IGROW_APP_VERSION_MAJOR;
-    resp.software_version.minor = IGROW_APP_VERSION_MINOR;
+    resp.software_version.major = IGROW_IMAGE_VERSION_MAJOR;
+    resp.software_version.minor = IGROW_IMAGE_VERSION_MINOR;
     resp.software_vcs_revision_id = 0u;
     read_unique_id(resp.unique_id);
 
@@ -579,6 +623,28 @@ static void handle_execcmd(const CanardRxTransfer *req)
     if (rq.command == uavcan_node_ExecuteCommand_Request_1_0_COMMAND_RESTART) {
         resp.status = uavcan_node_ExecuteCommand_Response_1_0_STATUS_SUCCESS;
         s_pending_reset = true; /* reset after the response is flushed */
+    } else if (rq.command ==
+               uavcan_node_ExecuteCommand_Request_1_0_COMMAND_BEGIN_SOFTWARE_UPDATE) {
+        /* ADR-0029 d3: nothing here writes a slot. The request -- the artifact
+         * path, and the caller as the node that will serve it -- is recorded in
+         * the update-state block, and the restart hands the job to the
+         * bootloader, which owns the flash.
+         *
+         * The path arrives in the ExecuteCommand parameter, which is where the
+         * standard command puts it. It is NOT NUL-terminated on the wire. */
+        if ((rq.parameter.count == 0u) || (rq.parameter.count > IGROW_UPDATE_PATH_MAX)) {
+            resp.status = uavcan_node_ExecuteCommand_Response_1_0_STATUS_BAD_PARAMETER;
+        } else {
+            char path[IGROW_UPDATE_PATH_MAX + 1u];
+            memcpy(path, rq.parameter.elements, rq.parameter.count);
+            path[rq.parameter.count] = '\0';
+            if (update_state_request(req->metadata.remote_node_id, path) == 0) {
+                resp.status = uavcan_node_ExecuteCommand_Response_1_0_STATUS_SUCCESS;
+                s_pending_reset = true;
+            } else {
+                resp.status = uavcan_node_ExecuteCommand_Response_1_0_STATUS_FAILURE;
+            }
+        }
     } else if (s_command_fn != NULL) {
         resp.status = s_command_fn(rq.command, rq.parameter.elements, rq.parameter.count);
     } else {
@@ -645,6 +711,12 @@ static void pump_rx(void)
                     uavcan_time_Synchronization_1_0_FIXED_PORT_ID_) {
                     handle_timesync(&transfer);
                 }
+            } else if ((s_resp_fn != NULL) && (transfer.metadata.port_id == s_resp_port)) {
+                /* The source and the transfer-ID travel with the payload: a
+                 * client that pipelines, or that meets a late response to a
+                 * request it gave up on, needs both to tell them apart. */
+                s_resp_fn(transfer.metadata.remote_node_id, transfer.metadata.transfer_id,
+                          (const uint8_t *)transfer.payload, transfer.payload_size);
             } else {
                 /* nothing else is subscribed */
             }

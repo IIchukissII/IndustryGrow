@@ -104,6 +104,32 @@ void cyphal_diagnostic_u32(uint8_t severity, const char *text, uint32_t value);
 typedef uint8_t (*cyphal_command_fn)(uint16_t command, const uint8_t *param, size_t param_len);
 void cyphal_set_command_handler(cyphal_command_fn fn);
 
+/* --- client side: the service requests this node originates ----------------
+ *
+ * The bootloader downloads an image with uavcan.file.Read (ADR-0029 d5), which
+ * makes it a service CLIENT -- the only one in the project so far. The two
+ * calls below are the whole client surface: send a request, and be told when
+ * its response arrives.
+ *
+ * One response subscription exists, not a table: a second client would need a
+ * second slot, and inventing the table before the second caller is guesswork.
+ * `cyphal_subscribe_response()` replaces whatever was registered.
+ *
+ * A response is delivered as its raw payload -- deserialization belongs to the
+ * caller, who is the only one that knows the type. Returns false when the
+ * request could not be queued (a full TX queue is the realistic cause). */
+typedef void (*cyphal_response_fn)(uint8_t from_node_id, uint8_t transfer_id,
+                                   const uint8_t *payload, size_t size);
+bool cyphal_request(uint16_t service_id, uint8_t server_node_id, uint8_t *transfer_id,
+                    const uint8_t *payload, size_t size);
+bool cyphal_subscribe_response(uint16_t service_id, size_t extent, cyphal_response_fn fn);
+
+/* Restart once the TX queue and the CAN mailboxes have drained. This is how
+ * ExecuteCommand RESTART is honoured, and what an update request uses after
+ * recording itself (ADR-0029 d3): the response must reach the caller before
+ * the node disappears. */
+void cyphal_restart_after_flush(void);
+
 /* Declare the subjects this personality publishes, for uavcan.node.port.List
  * (subject 7510). The array must outlive the call. Heartbeat and port.List
  * itself are added by the skeleton. Without this a consumer cannot discover

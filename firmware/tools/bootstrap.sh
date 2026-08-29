@@ -27,6 +27,8 @@ add https://github.com/STMicroelectronics/cmsis_device_f4.git firmware/third_par
 # bump to v4, update src/cyphal/cyphal.c accordingly.
 add https://github.com/OpenCyphal/libcanard.git          firmware/third_party/libcanard        3.0.0
 add https://github.com/pavel-kirienko/o1heap.git         firmware/third_party/o1heap            2.0.0
+# micro-ecc (BSD-2-Clause): ECDSA P-256 verification in the bootloader, ADR-0029 d6.
+add https://github.com/kmackay/micro-ecc.git                firmware/third_party/micro_ecc       v1.1
 # public_regulated_data_types publishes no release tags; pin to a commit.
 add https://github.com/OpenCyphal/public_regulated_data_types.git \
                                                           firmware/third_party/public_regulated_data_types  a229bb78e76c48a3082be163bc240b2c13ff2d89

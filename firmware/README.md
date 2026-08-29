@@ -20,9 +20,9 @@ application in one of two slots (ADR-0029 d1). Sources are `AGPL-3.0-or-later` (
 | M01-CLIMATE (`E0002`) | Verified on hardware 2026-08-24; ten subjects publish (4112–4121) |
 | Node-ID store (ADR-0027) | Built; verified on hardware 2026-08-28 |
 | U3 temperature offset | Implemented as vendor command 3; applied per instance `-CC` (ADR-0028) |
-| Boot chain (ADR-0029) | Partition, image header, update-state block, A/B selection and rollback built; **unverified on hardware** |
-| Firmware download over CAN | Not implemented — the bootloader is not yet a Cyphal node (d4–d6) |
-| Image signing (ADR-0029 d6) | Not implemented — the signature field is present and zero |
+| Boot chain (ADR-0029) | Verified on hardware 2026-08-29: hand-over, fallback, update-state write |
+| Firmware download over CAN | Built — the bootloader is a Cyphal node and a `uavcan.file.Read` client |
+| Image signing (ADR-0029 d6) | Built — needs a key given to the build; an unsigned image is refused |
 | Subject-ID registers (ADR-0005 d7) | Not implemented — defaults are compiled in |
 | SCD41 forced recalibration | Not implemented (M01 spec O-5) |
 
@@ -65,13 +65,16 @@ firmware/
 ├── README.md  CMakeLists.txt      ← three targets: igrowboot.elf, igrow-a.elf, igrow-b.elf
 ├── cmake/      arm-none-eabi.cmake (toolchain) · dsdl.cmake (Nunavut codegen)
 ├── ldscripts/  STM32F405RGTx_BOOT.ld · STM32F405RGTx_APP.ld.in (per-slot template)
-├── boot/       main.c              ← bootloader: A/B decision, slot check, hand-over
+├── boot/       main.c update.c verify.c
+│                                   ← bootloader: A/B decision, slot check, hand-over;
+│                                     the download, and P-256 verification before a
+│                                     slot is marked bootable
 ├── common/                       ← runs identically whichever module is fitted
 │   ├── node/       main.c node.h  ← boot → strap → personality dispatch; the seam
 │   ├── carrier/    e0001.{h,c}    ← E0001 carrier: pins, LEDs, straps, ATECC608/identity
 │   ├── platform/   clock.{h,c}    ← 168 MHz clock, SysTick, micros
 │   │               partition.h image.{h,c} update_state.{h,c} crc32.{h,c}
-│   │                               ← the ADR-0029 flash map, shared by both images
+│   │               sha256.{h,c}   ← the ADR-0029 flash map, shared by both images
 │   ├── drivers/    can i2c uart   ← bxCAN, I2C1, debug UART (register-level)
 │   └── cyphal/     cyphal registers ← Heartbeat/GetInfo/register/ExecuteCommand
 ├── nodes/
@@ -86,7 +89,8 @@ firmware/
 ├── dsdl/industryflow/greenhouse/
 │   ├── safety/    DoorStatus, LeakStatus
 │   └── climate/   RelativeHumidity, Co2Concentration, GasResistance
-├── third_party/                  ← submodules: libcanard, o1heap, cmsis, regulated types
+├── third_party/                  ← submodules: libcanard, o1heap, cmsis, regulated types,
+│                                     micro-ecc (BSD-2-Clause; P-256 verification)
 └── tools/                        ← bootstrap.sh, release.sh, mkimage.py
 ```
 
@@ -181,12 +185,49 @@ signature will cover and the artifact the gateway will serve. `tools/mkimage.py`
 `common/platform/partition.h`.
 
 A first flash writes the bootloader and one slot. The bootloader picks the slot, checks the image's
-CRC and hands over; with neither slot bootable it halts with the status LED blinking rather than
-resetting into the same answer.
+CRC and hands over; with neither slot bootable it joins the bus and waits to be given an image,
+blinking the status LED, rather than resetting into the same answer.
+
+### Signing keys
+
+An image is accepted over the bus only if it carries a signature from the key the bootloader was
+built with (ADR-0029 d6). Neither half of that key lives in this repository — custody is the key
+ceremony's (ADR-0024) — so both are build inputs:
+
+```sh
+py tools/mkimage.py --new-key ~/igrow-signing-key.pem      # once, kept off the repo
+py tools/mkimage.py --public-key ~/igrow-signing-key.pem   # prints 128 hex characters
+
+cmake -S firmware -B firmware/build ... \
+      -DIGROW_SIGNING_KEY="$HOME/igrow-signing-key.pem" \
+      -DIGROW_VERIFY_KEY_HEX=<those 128 characters>
+```
+
+Without them the build still runs and the images still flash over SWD; they simply cannot be
+accepted over the bus, because an unsigned image fails verification and a bootloader with no key
+refuses every image. The build says so at configure time.
 
 Flashing is over SWD on the WeAct debug header, which stays reachable with the carrier mounted;
 `store/E0002-000001-M-bringup-protocol.md` carries the procedure. CAN1 sits on PB8/PB9, off the USB
 pins, so WeAct USB DFU remains available as a recovery path (pin-map note 5).
+
+## Updating a node over CAN
+
+`uavcan.node.ExecuteCommand` `COMMAND_BEGIN_SOFTWARE_UPDATE` (65533), with the artifact path in the
+command parameter. The node records the request, restarts, and the bootloader reads the artifact
+from the caller with `uavcan.file.Read` (subject 408) — so whoever issues the command must also
+serve the file.
+
+| Step | What happens |
+|---|---|
+| Command | The running application writes the request to the update-state block and restarts (d3) |
+| Download | The bootloader joins the bus under the node's own Node-ID, erases the *other* slot and writes it, 256 bytes per block |
+| Verify | SHA-256 of the body against the header, then ECDSA P-256 over the header (d6) |
+| Mark | On success the slot is marked bootable **on trial**, and the node restarts into it |
+| Confirm | The new image confirms itself on reaching its main loop (d12); one that faults or hangs does not, and three boots later the bootloader reverts (d8) |
+
+A failed download clears the request before erasing anything, so a node that cannot reach its file
+server retries nothing and boots what it already had. The previous image is never touched.
 
 ## Release artifacts (`store/`)
 

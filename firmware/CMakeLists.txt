@@ -49,16 +49,61 @@ set(IGROW_HW_CLASS 1)                # carrier E0001
 set(IGROW_SLOT_A_BASE 0x08020000)
 set(IGROW_SLOT_B_BASE 0x08080000)
 
-# The application version, reported by GetInfo and stamped into every image
-# header. One definition: the C code takes it as a macro and mkimage.py as an
-# argument, so a released image cannot claim a version its node denies.
+# The version an image reports, through GetInfo and in its own header. One
+# definition: the C code takes it as a macro and mkimage.py as an argument, so
+# a released image cannot claim a version its node denies. The bootloader is
+# versioned separately -- the two are built, signed and flashed apart.
 set(IGROW_APP_VERSION_MAJOR 0)
 set(IGROW_APP_VERSION_MINOR 1)
+set(IGROW_BOOT_VERSION_MAJOR 0)
+set(IGROW_BOOT_VERSION_MINOR 1)
+
+# Image signing (ADR-0029 d6). Neither key is in this repository: the private
+# half is the key ceremony's (ADR-0024), and the public half is a build input
+# so that a node can be given one without a source change.
+#
+#   -DIGROW_SIGNING_KEY=<path to a P-256 PEM>  signs the images mkimage writes
+#   -DIGROW_VERIFY_KEY_HEX=<128 hex chars>     compiles that key's public half
+#                                              into the bootloader
+#
+# Without them the build still produces working images -- they simply cannot be
+# accepted over the bus, because an unsigned image fails verification and a
+# bootloader with no key rejects every image. That is fail-closed by design.
+set(IGROW_SIGNING_KEY "" CACHE STRING "P-256 private key (PEM) used to sign images")
+set(IGROW_VERIFY_KEY_HEX "" CACHE STRING "Verification public key, X||Y as 128 hex chars")
+
+if(IGROW_VERIFY_KEY_HEX STREQUAL "")
+  set(IGROW_VERIFY_KEY_PRESENT 0)
+  set(IGROW_VERIFY_KEY_BYTES "    0u,")
+  message(STATUS "igrow: no verification key; the bootloader will refuse every download")
+else()
+  string(LENGTH "${IGROW_VERIFY_KEY_HEX}" _key_len)
+  if(NOT _key_len EQUAL 128)
+    message(FATAL_ERROR
+      "IGROW_VERIFY_KEY_HEX must be 128 hex characters (P-256 X||Y), got ${_key_len}")
+  endif()
+  set(IGROW_VERIFY_KEY_PRESENT 1)
+  set(IGROW_VERIFY_KEY_BYTES "")
+  foreach(_i RANGE 63)
+    math(EXPR _off "${_i} * 2")
+    string(SUBSTRING "${IGROW_VERIFY_KEY_HEX}" ${_off} 2 _byte)
+    math(EXPR _eol "(${_i} + 1) % 8")
+    if(_i EQUAL 0)
+      string(APPEND IGROW_VERIFY_KEY_BYTES "    0x${_byte}u,")
+    elseif(_eol EQUAL 1)
+      string(APPEND IGROW_VERIFY_KEY_BYTES "\n    0x${_byte}u,")
+    else()
+      string(APPEND IGROW_VERIFY_KEY_BYTES " 0x${_byte}u,")
+    endif()
+  endforeach()
+endif()
+configure_file(boot/verify_key.h.in "${CMAKE_CURRENT_BINARY_DIR}/verify_key.h" @ONLY)
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
 set(LIBCANARD "${CMAKE_CURRENT_SOURCE_DIR}/third_party/libcanard")
 set(O1HEAP    "${CMAKE_CURRENT_SOURCE_DIR}/third_party/o1heap")
+set(MICRO_ECC "${CMAKE_CURRENT_SOURCE_DIR}/third_party/micro_ecc")
 
 # Nunavut-generated DSDL headers (header-only C) -> ${DSDL_GEN_DIR}.
 include(cmake/dsdl.cmake)
@@ -140,10 +185,50 @@ function(igrow_target_settings target)
   )
 endfunction()
 
-# --- bootloader: sectors 0-3, no Cyphal stack yet, no personalities ----------
-add_executable(igrowboot.elf boot/main.c ${SHARED_SOURCES})
+# --- bootloader: sectors 0-3, a Cyphal node, no personalities ---------------
+#
+# It runs the same skeleton as the application rather than a second minimal
+# one: the gateway then sees one node whose GetInfo name changes while it is in
+# its bootloader, and there is one implementation of Heartbeat, GetInfo and
+# ExecuteCommand to be wrong in. What it does not carry is any personality --
+# nothing here reads a sensor.
+add_executable(igrowboot.elf
+  boot/main.c
+  boot/update.c
+  boot/verify.c
+  common/platform/sha256.c
+  common/platform/watchdog.c
+  common/carrier/atecc608.c
+  common/carrier/identity.c
+  common/drivers/can.c
+  common/cyphal/cyphal.c
+  common/cyphal/registers.c
+  "${LIBCANARD}/libcanard/canard.c"
+  "${O1HEAP}/o1heap/o1heap.c"
+  "${MICRO_ECC}/uECC.c"
+  ${SHARED_SOURCES}
+)
+# Vendored code, built under our warning set: micro-ecc trips -Wundef and
+# -Wunused-parameter throughout. Silencing it here keeps a real warning from a
+# firmware/ source visible instead of buried under forty of someone else's.
+set_source_files_properties("${MICRO_ECC}/uECC.c" PROPERTIES COMPILE_OPTIONS "-w")
 add_dependencies(igrowboot.elf dsdl_generated)
 igrow_target_settings(igrowboot.elf)
+target_include_directories(igrowboot.elf PRIVATE
+  boot "${MICRO_ECC}" "${CMAKE_CURRENT_BINARY_DIR}")
+target_compile_definitions(igrowboot.elf PRIVATE
+  IGROW_IMAGE_VERSION_MAJOR=${IGROW_BOOT_VERSION_MAJOR}
+  IGROW_IMAGE_VERSION_MINOR=${IGROW_BOOT_VERSION_MINOR}
+  # micro-ecc: one curve, no compressed points, Thumb-2 assembly. Every other
+  # curve it supports is dead weight in a 64 KB region.
+  uECC_PLATFORM=5            # uECC_arm_thumb2
+  uECC_SUPPORTS_secp160r1=0
+  uECC_SUPPORTS_secp192r1=0
+  uECC_SUPPORTS_secp224r1=0
+  uECC_SUPPORTS_secp256r1=1
+  uECC_SUPPORTS_secp256k1=0
+  uECC_SUPPORT_COMPRESSED_POINT=0
+)
 target_link_options(igrowboot.elf PRIVATE
   -T${BOOT_LINKER_SCRIPT}
   --specs=nano.specs --specs=nosys.specs
@@ -166,6 +251,13 @@ add_custom_command(TARGET igrowboot.elf POST_BUILD
 # what a programmer writes.
 math(EXPR APP_FLASH_LENGTH "${IGROW_SLOT_SIZE} - ${IGROW_IMAGE_HEADER_SIZE}")
 
+if(IGROW_SIGNING_KEY STREQUAL "")
+  set(MKIMAGE_KEY_ARG "")
+  message(STATUS "igrow: no signing key; images are built UNSIGNED")
+else()
+  set(MKIMAGE_KEY_ARG --key "${IGROW_SIGNING_KEY}")
+endif()
+
 foreach(slot a b)
   string(TOUPPER ${slot} SLOT_UPPER)
   set(IGROW_SLOT_NAME ${SLOT_UPPER})
@@ -181,8 +273,8 @@ foreach(slot a b)
   add_dependencies(igrow-${slot}.elf dsdl_generated)
   igrow_target_settings(igrow-${slot}.elf)
   target_compile_definitions(igrow-${slot}.elf PRIVATE
-    IGROW_APP_VERSION_MAJOR=${IGROW_APP_VERSION_MAJOR}
-    IGROW_APP_VERSION_MINOR=${IGROW_APP_VERSION_MINOR}
+    IGROW_IMAGE_VERSION_MAJOR=${IGROW_APP_VERSION_MAJOR}
+    IGROW_IMAGE_VERSION_MINOR=${IGROW_APP_VERSION_MINOR}
   )
   # libm: M01's VPD needs expf() for the saturation-vapour-pressure curve (spec 6.1).
   target_link_libraries(igrow-${slot}.elf PRIVATE m)
@@ -202,6 +294,7 @@ foreach(slot a b)
             --version-minor ${IGROW_APP_VERSION_MINOR}
             --hardware-class ${IGROW_HW_CLASS}
             --max-body ${APP_FLASH_LENGTH}
+            ${MKIMAGE_KEY_ARG}
     COMMAND ${CMAKE_OBJCOPY} -I binary -O ihex --change-addresses=${SLOT_BASE}
             igrow-${slot}.img igrow-${slot}.hex
     COMMAND ${CMAKE_SIZE} $<TARGET_FILE:igrow-${slot}.elf>
