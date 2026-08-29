@@ -192,6 +192,34 @@ static bool erase_slot(igrow_slot_t slot)
     return true;
 }
 
+/* Put queued frames on the wire before the bootloader stops spinning. Bounded,
+ * and safe on a bus with nobody on it: unsent frames expire on their own
+ * deadline and are dropped by the skeleton. */
+static void flush_bus(uint32_t ms)
+{
+    const uint32_t until = millis() + ms;
+    while (millis() < until) {
+        cyphal_spin();
+    }
+}
+
+/* Give up on the update, saying why on both channels.
+ *
+ * The diagnostic is the point: the console is not attached in service, and an
+ * update that fails silently looks exactly like one that was never asked for.
+ * ADR-0029 d11 requires the verification result to be reported, and a refusal
+ * is a result. Flushing before returning is not optional -- the caller boots
+ * an image next, and the hand-over discards whatever is still queued. */
+static bool abandon(const char *why)
+{
+    uart_puts(why);
+    uart_puts("\r\n");
+    cyphal_diagnostic(uavcan_diagnostic_Severity_1_0_ERROR, why);
+    flush_bus(300u);
+    e0001_weact_led(false);
+    return false;
+}
+
 bool update_run_request(void)
 {
     const update_state_t *req = update_state();
@@ -217,13 +245,11 @@ bool update_run_request(void)
     update_state_t st = *req;
     st.request_pending = false;
     if (update_state_store(&st) != 0) {
-        uart_puts("cannot clear the update request; not erasing\r\n");
-        return false;
+        return abandon("update refused: the request could not be cleared");
     }
 
     if (!erase_slot(target)) {
-        uart_puts("slot erase failed\r\n");
-        return false;
+        return abandon("update failed: slot erase");
     }
 
     const uint32_t base = partition_slot_addr(target);
@@ -234,25 +260,23 @@ bool update_run_request(void)
 
     for (;;) {
         if ((millis() - started) > TRANSFER_TIMEOUT_MS) {
-            uart_puts("transfer timed out\r\n");
-            return false;
+            return abandon("update failed: transfer timed out");
         }
         const int32_t n = read_block(req, offset, &tid);
         if (n < 0) {
-            return false;
+            return abandon("update failed: download");
         }
         if (n == 0) {
             break; /* end of file */
         }
         if ((offset + (uint32_t)n) > IGROW_SLOT_SIZE) {
-            uart_puts("artifact is larger than the slot\r\n");
-            return false;
+            return abandon("update failed: artifact larger than the slot");
         }
         if (!program_block(base + offset, s_rx.data, (uint32_t)n)) {
             uart_puts("flash program failed at ");
             put_hex32(base + offset);
             uart_puts("\r\n");
-            return false;
+            return abandon("update failed: flash program");
         }
         offset += (uint32_t)n;
         e0001_weact_led_toggle(); /* one flicker per block: the transfer, visibly */
@@ -264,8 +288,7 @@ bool update_run_request(void)
             if ((h->magic != IGROW_IMAGE_MAGIC) ||
                 (h->image_length == 0u) ||
                 (h->image_length > IGROW_IMAGE_MAX_BODY)) {
-                uart_puts("artifact does not start with an image header\r\n");
-                return false;
+                return abandon("update failed: no image header");
             }
             total = IGROW_IMAGE_HEADER_SIZE + h->image_length;
             uart_puts("image length ");
@@ -281,8 +304,7 @@ bool update_run_request(void)
     }
 
     if ((total == 0u) || (offset < total)) {
-        uart_puts("artifact ended early\r\n");
-        return false;
+        return abandon("update failed: artifact ended early");
     }
 
     /* Steady through the verification, which is the one part of an update
@@ -295,10 +317,7 @@ bool update_run_request(void)
     if (result != IMAGE_VERIFY_OK) {
         /* d11: the node says why on the channel the gateway is listening to,
          * not only on a UART nobody is attached to. */
-        cyphal_diagnostic(uavcan_diagnostic_Severity_1_0_ERROR, image_verify_str(result));
-        cyphal_spin();
-        e0001_weact_led(false);
-        return false;
+        return abandon(image_verify_str(result));
     }
 
     /* Only now does the slot become bootable, and only on trial: the image has
@@ -310,8 +329,7 @@ bool update_run_request(void)
     st.state = IGROW_BOOT_TRIAL;
     st.attempts = IGROW_UPDATE_TRIAL_ATTEMPTS;
     if (update_state_store(&st) != 0) {
-        uart_puts("cannot mark the slot bootable\r\n");
-        return false;
+        return abandon("update failed: the slot could not be marked");
     }
     char version[12];
     format_version(version, h->version_major, h->version_minor);
@@ -327,6 +345,7 @@ bool update_run_request(void)
     notice[n++] = 'A' + (char)target;
     notice[n] = '\0';
     cyphal_diagnostic(uavcan_diagnostic_Severity_1_0_NOTICE, notice);
+    flush_bus(200u);
     uart_puts("slot ");
     uart_puts(partition_slot_str(target));
     uart_puts(" marked bootable on trial\r\n");
