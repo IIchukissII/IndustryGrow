@@ -72,10 +72,25 @@ set(IGROW_BOOT_VERSION_MINOR 1)
 set(IGROW_SIGNING_KEY "" CACHE STRING "P-256 private key (PEM) used to sign images")
 set(IGROW_VERIFY_KEY_HEX "" CACHE STRING "Verification public key, X||Y as 128 hex chars")
 
+# Half a key pair is always a mistake, and a silent one: signed images no node
+# will accept, or a bootloader that rejects the images released beside it. The
+# two are given together or not at all.
+if((IGROW_SIGNING_KEY STREQUAL "") AND (NOT IGROW_VERIFY_KEY_HEX STREQUAL ""))
+  message(FATAL_ERROR
+    "IGROW_VERIFY_KEY_HEX is set without IGROW_SIGNING_KEY: the bootloader would "
+    "hold a key and every image built beside it would be unsigned.")
+endif()
+if((NOT IGROW_SIGNING_KEY STREQUAL "") AND (IGROW_VERIFY_KEY_HEX STREQUAL ""))
+  message(FATAL_ERROR
+    "IGROW_SIGNING_KEY is set without IGROW_VERIFY_KEY_HEX: the images would be "
+    "signed and the bootloader built beside them would refuse all of them. "
+    "Derive it with: tools/mkimage.py --public-key <key>")
+endif()
+
 if(IGROW_VERIFY_KEY_HEX STREQUAL "")
   set(IGROW_VERIFY_KEY_PRESENT 0)
   set(IGROW_VERIFY_KEY_BYTES "    0u,")
-  message(STATUS "igrow: no verification key; the bootloader will refuse every download")
+  message(STATUS "igrow: UNSIGNED build -- images flash over SWD and no node accepts them over the bus")
 else()
   string(LENGTH "${IGROW_VERIFY_KEY_HEX}" _key_len)
   if(NOT _key_len EQUAL 128)

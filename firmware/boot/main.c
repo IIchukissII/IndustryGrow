@@ -31,6 +31,7 @@
 #include "image.h"
 #include "partition.h"
 #include "update.h"
+#include "verify_key.h"
 #include "update_state.h"
 
 static void put_hex8(uint8_t b)
@@ -111,7 +112,12 @@ int main(void)
     uart_put_u32(IGROW_IMAGE_VERSION_MAJOR);
     uart_putc('.');
     uart_put_u32(IGROW_IMAGE_VERSION_MINOR);
-    uart_puts(" (carrier E0001)\r\n");
+    uart_puts(" (carrier E0001), verification key ");
+    /* Whether this bootloader can accept an image at all. It is the one
+     * thing about a bootloader that cannot be seen from outside and that
+     * decides whether the node will ever take an update (ADR-0029 d6). */
+    uart_puts(IGROW_VERIFY_KEY_PRESENT ? "present" : "ABSENT -- updates will be refused");
+    uart_puts("\r\n");
 
     update_state_load();
     report_slot(IGROW_SLOT_A);
