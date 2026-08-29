@@ -531,7 +531,7 @@ unscaled — ratio, mole fraction, ohm (ADR-0005 d2).
 | V4 | §6.1 | U1 against a reference hygrometer at two points of the ADR-0003 d7 band | Not executed |
 | V5 | §6.3 | CO₂ against M07's reference instance in the same air (O-7), no earlier than five days after assembly and at the 2.8 V rail | Blocked. O-7 |
 | V6 | §4.1 footprints | 1:1 paper printout against the physical part, all three devices, including U1's unsoldered die pad and U3's full pad count | Not executed |
-| V7 | §10, §8.1 | U3 temperature offset determined and written with command 3; U3 T/RH against U1 in the same air before and after. Determined in the finished board at thermal equilibrium in the operating mode used in the application, per the device datasheet. The procedure, its equilibrium gates and the records it produces are `store/E0002-000001-M-calibration-protocol.md`. This is also the only source of U3's self-heating contribution (§8.1). **Per instance** — the offset is a board property, so V7 is re-run for each instance and after any change to a board's thermal environment | Determined, written and its residual verified on the first article, 2026-08-27/28. Persistence read-back not executed. O-45 |
+| V7 | §10, §8.1 | U3 temperature offset determined and written with command 3; U3 T/RH against U1 in the same air before and after. Determined in the finished board at thermal equilibrium in the operating mode used in the application, per the device datasheet. The procedure, its equilibrium gates and the records it produces are `store/E0002-000001-M-calibration-protocol.md`. This is also the only source of U3's self-heating contribution (§8.1). **Per instance** — the offset is a board property, so V7 is re-run for each instance and after any change to a board's thermal environment | Executed on the first article, 2026-08-27/28: determined, written, residual verified, and the offset read back from the device after a power cycle and after a reflash, 2026-08-28. `-CC` in force. Closes O-45. Not executed on any further instance — V7 is per instance |
 | V8 | §7.5 | C8's effective capacitance at 2.8 V DC bias read from the vendor's DC-bias curve for the specific ordering part, against the 2.0–4.7 µF acceptance band. Executed at BOM release, before the `L` document is issued | Not executable: no ordering part is identified for C8. O-73 |
 
 ### 11.1 Assembly constraints
@@ -575,7 +575,7 @@ O-52 to O-62 are M02's.
 | O-73 | Passive attributes that §7.5 makes acceptance criteria — dielectric, voltage rating, manufacturer part — are not recorded in the design data for C8; the BOM carries a distributor code alone. The same gap applies to every passive whose specification is more than a value and a case | V8, `L` release, and any BOM re-sourcing |
 | O-43 | Module-local rails are outside ADR-0002 d3 and the header contract. One instance is not a pattern; revisit at the second | ADR-0014 / ADR-0002 revision |
 | O-44 | Carrier runs in pulse-skipping at node load; rail ripple against U3's 30 mV limit has never been measured, and no instrument is available. Design is dimensioned against the datasheet, not the rail | Confidence in §7.4, not the design |
-| O-45 | U3 temperature offset is a per-instance board property; an instance's U3 T and RH are invalid until V7 has run on it and its `-CC` is in force. On the first article the offset is determined, written and its residual verified; the persistence read-back is outstanding | U3 T/RH validity |
+| ~~O-45~~ | ~~U3 temperature offset persistence read-back outstanding~~ — closed 2026-08-28 by V7 on the first article: offset determined, written, residual verified, read back after a power cycle and after a reflash, and its `-CC` in force. **The per-instance rule stands and is normative in §8.1 and §11** — every further instance's U3 T and RH are invalid until V7 has run on it and its own `-CC` is in force | — |
 | O-46 | U3 forbids board wash after reflow; M4 requires conformal coating, which conventionally follows cleaning | Coating process, M4 |
 | O-47 | Condensation on excursions places U2 and U3 outside their stated operating conditions. Post-excursion validity and recovery undefined | Excursion handling, data validity |
 | O-75 | The I²C bus wedged in service: every device probed absent, the node published nothing until it was restarted, and the boot probe then found all three present. The devices were never at fault. This is the failure class PR #185 addressed in `i2c.c` and it is not closed; the trigger is unidentified. Health now reports the condition rather than reading NOMINAL through it (§10) | Sensor availability, common `i2c.c` |
@@ -587,14 +587,14 @@ O-52 to O-62 are M02's.
 
 **Schematic captured, not frozen.** No `verify` value remains. `E0002` is fabricated and
 publishes; V6 and V8 hold the rung, V1, V2, V4 and V5 remain open, and V7 is complete on the
-first article bar its persistence read-back.
+first article.
 
 | Rung | Content | Reached when |
 |------|---------|--------------|
 | **Pre-schematic** | Complement and requirements fixed; values estimated or `verify` | — |
 | **Schematic captured** ← here | Parts fixed to ordering part numbers; schematic exists; component values determined | `store/E0002-000001.kicad_sch` exists; O-3, O-34, O-41 closed |
 | **Schematic-frozen** | Remaining `verify` resolved, footprints checked against physical parts. `L` releases here | O-32, O-50 closed ✔; O-33 closed ✔; O-38 fixed as a requirement ✔; **V6 not executed**; **V8 not executed** |
-| **As-built** | Estimates replaced by measured values; verification §11 executed | `E0002` fabricated ✔; O-35 closed by V3 ✔; V7 executed bar its persistence read-back; V3's rail voltages and V1, V2, V4, V5 not executed |
+| **As-built** | Estimates replaced by measured values; verification §11 executed | `E0002` fabricated ✔; O-35 closed by V3 ✔; V7 executed on the first article, O-45 closed ✔; V3's rail voltages and V1, V2, V4, V5 not executed |
 
 `M05-SAFETY-specification.md` is the as-built form of this document class. The transition is an
 edit of this file; no second E-number is issued for the module having been built.
