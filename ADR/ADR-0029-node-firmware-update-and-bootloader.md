@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0029: Node firmware update and bootloader
 
 - **ID:** ADR-0029
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-08-28
 - **Project:** IndustryGrow
 - **Parent:** ADR-0004 (rev 1)
@@ -52,7 +52,7 @@ node.
 - Release image: ~21 KB. Flash: 1 MB.
 - Project cryptography: ECDSA on NIST P-256 with SHA-256 (ADR-0007 d1–2, ADR-0025 d9).
 - Firmware distribution is a gateway-paced burst below telemetry priority (ADR-0002 rev 3).
-- Watchdog window: ~1.4 s at worst-case LSI (`firmware/common/cyphal/cyphal.h`).
+- Watchdog window: ~1.4 s at worst-case LSI (`firmware/common/platform/watchdog.c`).
 - SWD recovery requires physical access to the node.
 
 ## Decision
@@ -166,4 +166,7 @@ substituted artifact.
 - ADR-0028: Commissioning sequence and trim custody — d1, d2, and the deferred item this ADR closes.
 - `store/E0001-000003-D-pinmap.md`: CAN1 on PB8/PB9, `SPI2_SCK` on PB13, SWD on the WeAct debug
   header.
-- ST RM0090 (flash sectors, single bank); ST AN2606 (system bootloader interfaces).
+- ST RM0090: Table 5 *Flash module organization (STM32F40x and STM32F41x)*; section *Erase and
+  program operations* — a flash read stalls while flash is written or erased.
+- ST AN2606: Table 50 *STM32F40xxx/41xxx configuration in system memory boot mode* — system
+  bootloader resources, CAN2 on PB5/PB13.
