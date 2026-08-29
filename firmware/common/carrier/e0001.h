@@ -42,8 +42,11 @@
  * visible with a module mounted over the carrier. The bootloader uses it: it
  * is the one indication that a node is taking an update rather than running.
  * BOOT1 is sampled at reset only, so driving the pin afterwards is free.
- * Active-low, as the LED sits between 3V3 and the pin on that board. */
-#define E0001_WEACT_LED_ACTIVE_HIGH 0
+ *
+ * ACTIVE-HIGH, measured on the bench 2026-08-29: with the pin driven high the
+ * LED is lit, driven low it is dark. The carrier LEDs' polarity is still an
+ * assumption; this one is not. */
+#define E0001_WEACT_LED_ACTIVE_HIGH 1
 #define E0001_WEACT_LED_GPIO        GPIOB
 #define E0001_WEACT_LED_PIN         2u
 
