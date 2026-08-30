@@ -1,0 +1,74 @@
+# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Bring this machine's nodes onto the firmware release the ERP records
+# (ADR-0029 d14-d17). Driven by industrygrow-firmware.timer.
+#
+# WHY THIS IS A SEPARATE UNIT from gateway-pycyphal.service: that one subscribes
+# and takes no Node-ID; this one takes SERVER_NODE_ID, sends
+# COMMAND_BEGIN_SOFTWARE_UPDATE and serves uavcan.file.Read for the length of a
+# transfer. Two sessions on one Node-ID would take each other's responses, and
+# the telemetry consumer must not stop decoding because a transfer is in flight.
+#
+# Type=oneshot: one pass, then exit. The ERP being unreachable, or holding no
+# intended release yet, is a pass to try again on the next tick — not a service
+# to restart. Nodes keep running what they have throughout (ADR-0029 d8).
+
+[Unit]
+Description=IndustryGrow node firmware update (ADR-0029 d14-d17)
+Documentation=https://github.com/IIchukissII/IndustryGrow
+After=network-online.target industrygrow-can.service
+Wants=network-online.target
+Requires=industrygrow-can.service
+
+[Service]
+Type=oneshot
+User=gateway
+Group=gateway
+
+EnvironmentFile=-/etc/industrygrow/gateway.env
+# /var/lib/industrygrow/firmware — the artifact cache of ADR-0029 d14, created
+# by the client under this StateDirectory. Re-fetchable data, which is the
+# cheapest entry ADR-0020 d5 admits on a replaceable edge host: losing it costs
+# one download, never a node.
+StateDirectory=industrygrow
+StateDirectoryMode=0750
+
+# uavcan.node and uavcan.file come from the DSDL compiled at provisioning time
+# (ADR-0005 d10), not from the venv.
+Environment=PYTHONPATH=/opt/industrygrow/dsdl
+ExecStart=/opt/industrygrow/venv/bin/python /opt/industrygrow/firmware_client.py once
+
+# --- Least-privilege hardening (ADR-0004 rev 1 decision 7) ---
+# /etc/industrygrow read-only: this unit reads the identity chain and the trust
+# anchor and writes nothing there. Its one writable path is the StateDirectory.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadOnlyPaths=/etc/industrygrow
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+RemoveIPC=yes
+SystemCallArchitectures=native
+# AF_CAN for the bus, AF_INET for the ERP: unlike the profile pull, this unit
+# needs both. See gateway-pycyphal.service on why CAN needs no DeviceAllow.
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_CAN
+
+# A pass updates one node at a time and each transfer is bounded at
+# IGROW_FIRMWARE_TRANSFER_TIMEOUT_S (420 s default), so a full cabinet of seven
+# nodes is under 50 minutes. An hour is that plus the survey, and past it the
+# pass is hung rather than working.
+TimeoutStartSec=3600
+
+[Install]
+WantedBy=multi-user.target

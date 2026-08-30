@@ -198,6 +198,10 @@ setup_dirs() {
     # Bench commands (each module specification's section 10). Also by hand, and
     # it borrows the transport session above, so the two install together.
     install -m 0644 "${SCRIPT_DIR}/node_command.py" "${APP_DIR}/node_command.py"
+    # The firmware client (ADR-0029 d14-d17). Installed beside the two above
+    # because it imports both: provision_node_id for the transfer-ID retry and
+    # profile_client for the machine identity and the mTLS paths.
+    install -m 0644 "${SCRIPT_DIR}/firmware_client.py" "${APP_DIR}/firmware_client.py"
     # Where the identity and the profile-verification key live (ADR-0025 d10).
     # provision_identity.py writes the first two; the third is the operator's
     # public key, copied here during commissioning.
@@ -372,6 +376,37 @@ install_profile_pull() {
     fi
 }
 
+install_firmware_update() {
+    # The ADR-0029 d16 loop: the ERP holds the intended release, the gateway
+    # compares it against what each node reports and performs the transfer.
+    # Separate from gateway-pycyphal.service because that unit takes no Node-ID
+    # and this one must be addressable for a whole transfer (see the unit header).
+    log "installing industrygrow-firmware.service + .timer (ADR-0029 d14-d17)"
+    install -m 0644 "${FILES_DIR}/systemd/industrygrow-firmware.service" \
+        /etc/systemd/system/industrygrow-firmware.service
+    install -m 0644 "${FILES_DIR}/systemd/industrygrow-firmware.timer" \
+        /etc/systemd/system/industrygrow-firmware.timer
+    systemctl daemon-reload
+
+    # The TIMER, not the service — same reason as the profile pull: the service
+    # is oneshot and would otherwise run once at boot and never again.
+    #
+    # Two gates stand between this and a node being written, and both are outside
+    # this script. Without IGROW_ERP_URL the timer stays stopped here; with it,
+    # nothing is transferred until an operator selects a release for this machine
+    # in the console, which is the operator action ADR-0029 d16 requires.
+    if [ -n "${IGROW_ERP_URL:-}" ]; then
+        systemctl enable --now industrygrow-firmware.timer
+        log "firmware update enabled against ${IGROW_ERP_URL}"
+    else
+        systemctl enable industrygrow-firmware.timer
+        systemctl stop industrygrow-firmware.timer 2>/dev/null || true
+        warn "IGROW_ERP_URL is empty — firmware update installed but NOT started. Set it in
+       ${CONFIG_DIR}/gateway.env, provision an identity (provision_identity.py), then:
+       systemctl start industrygrow-firmware.timer"
+    fi
+}
+
 harden_ssh() {
     # ADR-0004 d2 — key-only, no root. BRING-UP: sshd stays ENABLED (do not disable).
     # The drop-in is installed as 00- so it is read BEFORE cloud-init's
@@ -447,6 +482,8 @@ summary() {
     systemctl --no-pager status gateway-pycyphal.service
     journalctl -u gateway-pycyphal.service -n 20 --no-pager
     systemctl --no-pager status industrygrow-timesync.service
+    systemctl list-timers industrygrow-firmware.timer --no-pager
+    sudo -u gateway /opt/industrygrow/venv/bin/python /opt/industrygrow/firmware_client.py once --dry-run
     candump <iface> 041C0000:1FFFFF00   # the time-sync frame (subject 7168)
     sshd -T | grep -Ei 'passwordauthentication|permitrootlogin|pubkeyauthentication'
     nft list ruleset
@@ -473,6 +510,7 @@ main() {
     install_gateway_service
     install_timesync_service
     install_profile_pull
+    install_firmware_update
     harden_ssh
     setup_fail2ban
     setup_unattended

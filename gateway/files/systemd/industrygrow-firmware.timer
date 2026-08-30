@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# How often the gateway checks the ERP's intended release against what its nodes
+# are running (ADR-0029 d16). Change it here, or with `systemctl edit
+# industrygrow-firmware.timer` — the timer is what runs in production; the
+# client's IGROW_FIRMWARE_INTERVAL applies only to `firmware_client.py serve`.
+#
+# Hourly, against the profile pull's 60 seconds: a profile changes what a cabinet
+# does next minute, a release changes what a node runs for months. A pass that
+# finds nothing to do still surveys the bus and calls GetInfo on every node.
+
+[Unit]
+Description=Poll the ERP for this machine's intended firmware release (ADR-0029 d16)
+Documentation=https://github.com/IIchukissII/IndustryGrow
+
+[Timer]
+# Not at boot: industrygrow-can.service and the nodes both need to be up, and a
+# node that has just powered on has nothing to gain from being asked immediately.
+OnBootSec=5min
+OnUnitInactiveSec=1h
+
+# A firmware pass downloads artifacts, so a fleet booting off one image would
+# otherwise arrive at the ERP together with the largest request it ever makes.
+RandomizedDelaySec=5min
+
+# Never wake a host to flash a node.
+Persistent=false
+
+[Install]
+WantedBy=timers.target
