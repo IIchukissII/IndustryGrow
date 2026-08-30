@@ -25,6 +25,15 @@ FROM python:3.12-slim
 
 WORKDIR /srv
 
+# WeasyPrint lays out the PDF reports (app/services/reports.py); it renders text
+# through Pango and HarfBuzz rather than bundling a rasteriser. The two font
+# packages are the faces the report stylesheet names — without them every page
+# falls back to whatever fontconfig finds, which in a slim image is nothing.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz0b libfribidi0 libfontconfig1 \
+      fonts-liberation2 fonts-dejavu-core && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
 COPY erp/pyproject.toml ./
 COPY erp/app ./app
 RUN pip install --no-cache-dir .
@@ -39,13 +48,13 @@ COPY --from=console /repo/erp/frontend/dist ./console
 COPY REGISTRY.md ./REGISTRY.md
 # The mark printed on PDF reports. img/ is copied into the console stage for the
 # bundle; the runtime needs its own copy because the report is rendered here.
-COPY img/industrygrow-logo-mono-light.png ./img/industrygrow-logo-mono-light.png
+COPY img/industrygrow-mark.svg ./img/industrygrow-mark.svg
 
 EXPOSE 8021
 ENV ERP_HOST=0.0.0.0 ERP_PORT=8021 \
     ERP_CONSOLE_DIR=/srv/console \
     ERP_REGISTRY_PATH=/srv/REGISTRY.md \
-    ERP_REPORT_LOGO=/srv/img/industrygrow-logo-mono-light.png
+    ERP_REPORT_LOGO=/srv/img/industrygrow-mark.svg
 # --no-proxy-headers: the gateway mTLS check tests the transport peer against the
 # trusted-proxy list (ADR-0022 d2, app/services/mtls.py). Uvicorn's proxy-header
 # mode would rewrite that address from X-Forwarded-For, i.e. from the request.

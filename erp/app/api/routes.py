@@ -1096,9 +1096,9 @@ async def document_content(
     return await _read_through(warehouse, object_key)
 
 
-# Which object keys can be rendered as a PDF. Markdown only: the renderer turns
-# markdown into the HTML subset fpdf2 draws, and handing it a CSV or a zip would
-# produce a page of mojibake rather than an error a caller can act on.
+# Which object keys can be rendered as a PDF. Markdown only: the renderer parses
+# markdown, and handing it a CSV or a zip would produce a page of mojibake rather
+# than an error a caller can act on.
 def _is_markdown(object_key: str) -> bool:
     return object_key.lower().endswith((".md", ".markdown"))
 

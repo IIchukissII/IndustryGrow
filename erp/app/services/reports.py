@@ -9,67 +9,302 @@ anything a JSON route does not.
 
 **Rendered for monochrome.** Greys and rules only, no colour: these are printed,
 filed, and photocopied, and a status a reader can only get from a colour is lost
-the first time that happens. The mark is the README's mono-light logo, which is
-the black-on-white variant of the brand asset (`img/`).
+the first time that happens.
 
-fpdf2 is the whole rendering dependency — pure Python, no system libraries, which
-keeps ADR-0021 decision 15's "compact" single container intact. It cannot parse
-the mono logo's SVG (the glyphs in it break its parser), so the PNG beside it is
-the rasterised form; regenerate it with
-``cairosvg.svg2png(url=..., output_width=1000)`` if the brand asset changes.
+Both report kinds are markdown or record data turned into HTML and laid out by
+WeasyPrint against the stylesheet below, so they share one page frame: masthead,
+type scale, rules, footer. The layout the frame depends on is CSS paged media —
+page margin boxes, running headers, repeated table headers, widow, orphan and
+break control — and WeasyPrint is the engine that implements it. It draws text
+through Pango and HarfBuzz, which the image installs (see erp/Dockerfile), and
+takes UTF-8 through to the font: an operator's em dash or umlaut in a removal
+reason prints as typed.
 """
 
 from __future__ import annotations
 
+import base64
+import logging
 import re
 from datetime import UTC, datetime
+from functools import lru_cache
+from html import escape
 from pathlib import Path
 
 import markdown as md_lib
-from fpdf import FPDF
-from fpdf.enums import Align
-from fpdf.fonts import TextStyle
+import weasyprint
 
 from app.config import settings
 
+log = logging.getLogger(__name__)
+
+# Monochrome. Ink for anything read, muted for anything that frames it, and two
+# rule weights: a heavy one under the masthead, a hairline everywhere else.
+INK = "#141414"
+MUTED = "#6b6b6b"
+FAINT = "#9a9a9a"
+RULE = "#c9c9c9"
+
+# Liberation and DejaVu, in that order, everywhere: both ship as Debian packages
+# the image installs, so a page rendered on a developer's machine and one
+# rendered in the container use the same faces. DejaVu is the fallback because
+# it covers what Liberation does not.
+SANS = '"Liberation Sans", "DejaVu Sans", sans-serif'
+SERIF = '"Liberation Serif", "DejaVu Serif", serif'
+MONO = '"Liberation Mono", "DejaVu Sans Mono", monospace'
+
 
 def _logo() -> Path:
-    """The brand mark, black on white. Relative paths resolve against erp/, as
-    store_dir and registry_path do."""
+    """The brand mark. Relative paths resolve against erp/, as store_dir and
+    registry_path do."""
     return Path(settings.report_logo)
 
 
-INK = (26, 26, 26)
-MUTED = (110, 110, 110)
-RULE = (200, 200, 200)
-
-MARGIN = 18.0
-LOGO_MM = 16.0
-
-
-# fpdf2's core fonts are latin-1. Anything outside it raises rather than degrades,
-# and the text here is not all ours — an instance note or a removal reason carries
-# whatever an operator typed. So every string is folded to latin-1 before it
-# reaches the page: the common typography is mapped to its ASCII equivalent, and
-# anything else becomes "?" rather than a 500 on a report route.
-_FOLD = str.maketrans(
-    {
-        "\u2014": "-",
-        "\u2013": "-",
-        "\u2026": "...",
-        "\u2018": "'",
-        "\u2019": "'",
-        "\u201c": '"',
-        "\u201d": '"',
-        "\u00a0": " ",
-        "\u2011": "-",
-        "\u2212": "-",
-    }
-)
+# The mark's SVG carries a `prefers-color-scheme` rule that flips its fill to the
+# dark-theme green. Inlined into an HTML document that rule is live and would put
+# a colour on a page defined as monochrome, so the style block is dropped and the
+# fill is set from this stylesheet instead.
+_SVG_STYLE = re.compile(r"<style\b.*?</style>", re.S | re.I)
 
 
-def _safe(text: str) -> str:
-    return text.translate(_FOLD).encode("latin-1", "replace").decode("latin-1")
+@lru_cache(maxsize=1)
+def _mark_html() -> str:
+    """The mark as markup for the masthead, or nothing.
+
+    An SVG is inlined rather than referenced: it stays vector at any size, and it
+    is the one external resource the page is allowed, since the fetcher below
+    refuses everything the document itself asks for. A missing file prints the
+    report without the mark rather than failing it.
+    """
+    path = _logo()
+    if not path.is_file():
+        return ""
+    if path.suffix.lower() == ".svg":
+        return f'<div class="mark">{_SVG_STYLE.sub("", path.read_text())}</div>'
+    data = base64.b64encode(path.read_bytes()).decode("ascii")
+    return f'<div class="mark"><img src="data:image/png;base64,{data}" alt=""></div>'
+
+
+def _no_remote_resources(url: str, timeout: int = 10, ssl_context: object = None) -> dict:
+    """The only resources a document may load are the ones inlined into it.
+
+    The markdown comes out of the warehouse, and an image or stylesheet reference
+    in it would otherwise be fetched by the ERP — from the network, or from the
+    container's filesystem via `file:`. Refusing the fetch drops that one element
+    and renders the rest; WeasyPrint logs it and carries on.
+    """
+    if url.startswith("data:"):
+        return weasyprint.default_url_fetcher(url, timeout, ssl_context)
+    raise ValueError(f"refused external resource: {url}")
+
+
+# The page frame. A4, a masthead on the first page and a one-line running header
+# after it, and a footer that carries provenance — a printed page outlives the
+# screen it came from and is read without one.
+_CSS = f"""
+@page {{
+  size: A4;
+  margin: 24mm 18mm 20mm 18mm;
+  /* The header boxes are bottom-aligned in the top margin, so the padding under
+     them is what separates their rule from the first line of the page. */
+  @top-left {{
+    content: element(runhead);
+    width: 100%;
+    vertical-align: bottom;
+    padding-bottom: 4mm;
+  }}
+  @bottom-left {{
+    /* The provenance line is per document; _document() appends it. */
+    width: 60%;
+    font-family: {SANS}; font-size: 7pt; color: {FAINT};
+    border-top: 0.4pt solid {RULE}; padding-top: 2.5mm;
+    vertical-align: top; text-align: left;
+  }}
+  @bottom-right {{
+    content: "Page " counter(page) " of " counter(pages);
+    width: 40%;
+    font-family: {SANS}; font-size: 7pt; color: {FAINT};
+    border-top: 0.4pt solid {RULE}; padding-top: 2.5mm;
+    vertical-align: top; text-align: right;
+  }}
+}}
+/* The first page carries the full masthead and gives it the room to sit in. */
+@page :first {{
+  margin-top: 44mm;
+  @top-left {{
+    content: element(masthead);
+    width: 100%;
+    vertical-align: bottom;
+    padding-bottom: 6mm;
+  }}
+}}
+
+html {{ color: {INK}; }}
+body {{ font-family: {SERIF}; font-size: 10pt; line-height: 1.5; margin: 0; }}
+
+/* ── Masthead ───────────────────────────────────────────────────────────────
+   Mark, then what the page is and which record it is about. The identifier is
+   set in the monospace face throughout the document because it is an object key
+   (ADR-0017 d15), not a name — the character positions carry meaning and are
+   read one at a time. The double rule under it is the page's one ornament. */
+.masthead {{ position: running(masthead); width: 100%; }}
+.masthead-row {{ display: flex; align-items: flex-end; gap: 6mm; }}
+.mark {{ flex: 0 0 14mm; }}
+.mark svg, .mark img {{ width: 14mm; height: auto; display: block; }}
+.mark path {{ fill: {INK}; }}
+.masthead-id {{ flex: 1 1 auto; }}
+.masthead-org {{ flex: 0 0 auto; text-align: right; }}
+.doc-class {{
+  font-family: {SANS}; font-size: 7pt; font-weight: 700;
+  letter-spacing: 0.16em; text-transform: uppercase; color: {MUTED};
+}}
+.doc-subject {{
+  font-family: {MONO}; font-size: 13pt; letter-spacing: 0.02em;
+  color: {INK}; margin-top: 1.5mm; word-break: break-all;
+}}
+.doc-operator {{ font-family: {SANS}; font-size: 8pt; color: {MUTED}; }}
+.doc-scope {{
+  font-family: {SANS}; font-size: 6.5pt; font-weight: 700;
+  letter-spacing: 0.14em; text-transform: uppercase; color: {MUTED};
+  border: 0.5pt solid {RULE}; padding: 0.8mm 1.6mm; display: inline-block;
+  margin-top: 1.5mm;
+}}
+.masthead-rule {{ border-top: 1.6pt solid {INK}; margin-top: 3mm; }}
+.masthead-rule-thin {{ border-top: 0.4pt solid {RULE}; margin-top: 0.9mm; }}
+
+/* Every page after the first: the same two facts, one line, out of the way. */
+.runhead {{
+  position: running(runhead); width: 100%;
+  font-family: {SANS}; font-size: 7.5pt; color: {MUTED};
+  border-bottom: 0.4pt solid {RULE}; padding-bottom: 2mm;
+  display: flex; justify-content: space-between; gap: 6mm;
+}}
+.runhead .rh-id {{ font-family: {MONO}; color: {INK}; }}
+.runhead .rh-class {{ letter-spacing: 0.14em; text-transform: uppercase; }}
+
+/* ── Prose ──────────────────────────────────────────────────────────────────
+   Headings are sans against a serif body, which is what separates a heading
+   from a bold sentence when both are printed in black. Sizes stay close to the
+   body: these are procedures and records, not covers. */
+h1, h2, h3, h4, h5, h6 {{
+  font-family: {SANS}; color: {INK}; font-weight: 700;
+  line-height: 1.25; break-after: avoid; margin: 0;
+}}
+h1 {{ font-size: 15pt; letter-spacing: -0.01em; margin: 0 0 3mm; }}
+h2 {{
+  font-size: 11.5pt; margin: 7mm 0 2mm;
+  border-bottom: 0.4pt solid {RULE}; padding-bottom: 1.2mm;
+}}
+h3 {{ font-size: 10pt; margin: 5mm 0 1.5mm; }}
+h4, h5, h6 {{
+  font-size: 8.5pt; letter-spacing: 0.08em; text-transform: uppercase;
+  color: {MUTED}; margin: 4mm 0 1.5mm;
+}}
+p {{ margin: 0 0 2.4mm; orphans: 2; widows: 2; }}
+ul, ol {{ margin: 0 0 2.4mm; padding-left: 6mm; }}
+li {{ margin-bottom: 1mm; }}
+li::marker {{ color: {MUTED}; }}
+a {{ color: {INK}; text-decoration: none; border-bottom: 0.4pt solid {RULE}; }}
+strong {{ font-weight: 700; }}
+hr {{ border: 0; border-top: 0.4pt solid {RULE}; margin: 5mm 0; }}
+blockquote {{
+  margin: 3mm 0; padding-left: 4mm; border-left: 1.5pt solid {RULE}; color: {MUTED};
+}}
+img {{ max-width: 100%; }}
+
+/* ── Code ───────────────────────────────────────────────────────────────────
+   A block is set on a tint rather than in a box: photocopied, a light grey
+   survives and a hairline box around a page-wide block does not. */
+code {{ font-family: {MONO}; font-size: 8.5pt; }}
+pre {{
+  font-family: {MONO}; font-size: 7.5pt; line-height: 1.4;
+  background: #f4f4f4; border-left: 1.5pt solid {RULE};
+  padding: 2.5mm 3mm; margin: 2.5mm 0; white-space: pre-wrap; word-break: break-word;
+}}
+pre code {{ font-size: inherit; }}
+
+/* ── Tables ─────────────────────────────────────────────────────────────────
+   Reference material, read down a column: ranged left, rules between rows, no
+   fill. A header repeated on every page, because a table that breaks across a
+   page break otherwise loses its column names. */
+table {{
+  width: 100%; border-collapse: collapse; margin: 3mm 0;
+  font-family: {MONO}; font-size: 8pt;
+}}
+thead {{ display: table-header-group; }}
+th {{
+  font-family: {SANS}; font-size: 7pt; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase; color: {MUTED};
+  text-align: left; padding: 0 3mm 1.5mm 0;
+  border-bottom: 0.8pt solid {INK};
+}}
+td {{
+  text-align: left; vertical-align: top; padding: 1.4mm 3mm 1.4mm 0;
+  border-bottom: 0.4pt solid {RULE}; word-break: break-word;
+}}
+tr {{ break-inside: avoid; }}
+th:last-child, td:last-child {{ padding-right: 0; }}
+
+/* ── Record blocks ──────────────────────────────────────────────────────────
+   The dossier's own furniture: a section head, a label/value list, and a note. */
+.section {{ margin-top: 7mm; break-inside: auto; }}
+.section > h2 {{ margin-top: 0; }}
+.fields {{ margin: 0; display: grid; grid-template-columns: 42mm 1fr; row-gap: 1.4mm; }}
+.fields dt {{
+  font-family: {SANS}; font-size: 7.5pt; letter-spacing: 0.06em;
+  text-transform: uppercase; color: {MUTED}; padding-top: 0.4mm;
+}}
+.fields dd {{ font-family: {MONO}; font-size: 9pt; margin: 0; word-break: break-all; }}
+.note {{
+  font-family: {SERIF}; font-style: italic; font-size: 8pt; color: {MUTED};
+  margin: 2.5mm 0 0; line-height: 1.45;
+}}
+.absent {{ font-family: {SERIF}; font-style: italic; font-size: 9pt; color: {MUTED}; }}
+"""
+
+
+def _css_string(text: str) -> str:
+    """A CSS string literal. The provenance line reaches the page through the
+    footer margin box, which takes a string rather than an element."""
+    return '"' + text.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+def _document(*, doc_class: str, subject: str, footer: str, body: str) -> bytes:
+    """One report: the page frame, the masthead, and a body already in HTML."""
+    mark = _mark_html()
+    doc = f"""<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>{escape(doc_class)} {escape(subject)}</title>
+</head><body>
+<div class="masthead">
+  <div class="masthead-row">
+    {mark}
+    <div class="masthead-id">
+      <div class="doc-class">{escape(doc_class)}</div>
+      <div class="doc-subject">{escape(subject)}</div>
+    </div>
+    <div class="masthead-org">
+      <div class="doc-operator">{escape(settings.operator_name)}</div>
+      <div class="doc-scope">Operator-private</div>
+    </div>
+  </div>
+  <div class="masthead-rule"></div>
+  <div class="masthead-rule-thin"></div>
+</div>
+<div class="runhead">
+  <span class="rh-id">{escape(subject)}</span>
+  <span class="rh-class">{escape(doc_class)}</span>
+</div>
+{body}
+</body></html>"""
+    provenance = f"@page {{ @bottom-left {{ content: {_css_string(footer)}; }} }}"
+    rendered = weasyprint.HTML(string=doc, url_fetcher=_no_remote_resources)
+    return rendered.write_pdf(
+        stylesheets=[weasyprint.CSS(string=_CSS), weasyprint.CSS(string=provenance)]
+    )
+
+
+def _stamp() -> str:
+    return datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
 
 
 def _fmt(value: object) -> str:
@@ -81,128 +316,34 @@ def _fmt(value: object) -> str:
     return str(value)
 
 
-class Report(FPDF):
-    """A4 portrait with a running header and footer.
+def _fields(pairs: list[tuple[str, object]]) -> str:
+    rows = "".join(
+        f"<dt>{escape(label)}</dt><dd>{escape(_fmt(value))}</dd>" for label, value in pairs
+    )
+    return f'<dl class="fields">{rows}</dl>'
 
-    The header carries what the page *is* and who it belongs to; the footer
-    carries provenance — when it was produced and from which record — because a
-    printed page outlives the screen it came from and is read without one.
+
+def _table(columns: list[str], rows: list[list[object]]) -> str:
+    """A table, or the reason there is not one.
+
+    An empty section prints a stated absence rather than a blank: on paper a gap
+    is indistinguishable from a rendering fault.
     """
+    if not rows:
+        return '<p class="absent">None on record.</p>'
+    head = "".join(f"<th>{escape(c)}</th>" for c in columns)
+    body = "".join(
+        "<tr>" + "".join(f"<td>{escape(_fmt(cell))}</td>" for cell in row) + "</tr>" for row in rows
+    )
+    return f"<table><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>"
 
-    def __init__(self, title: str, subject: str) -> None:
-        super().__init__(orientation="P", unit="mm", format="A4")
-        self.title_text = title
-        self.subject_text = subject
-        self.set_auto_page_break(auto=True, margin=22)
-        self.set_margins(MARGIN, MARGIN, MARGIN)
-        self.set_title(_safe(f"{title} - {subject}"))
 
-    def header(self) -> None:
-        logo = _logo()
-        if logo.is_file():
-            self.image(str(logo), x=MARGIN, y=12, w=LOGO_MM)
-        left = MARGIN + LOGO_MM + 5
+def _section(heading: str, *parts: str) -> str:
+    return f'<div class="section"><h2>{escape(heading)}</h2>{"".join(parts)}</div>'
 
-        self.set_xy(left, 13)
-        self.set_font("Helvetica", "B", 13)
-        self.set_text_color(*INK)
-        self.cell(0, 6, _safe(self.title_text), new_x="LMARGIN", new_y="NEXT")
 
-        self.set_x(left)
-        self.set_font("Helvetica", "", 10)
-        self.set_text_color(*MUTED)
-        self.cell(0, 5, _safe(self.subject_text), new_x="LMARGIN", new_y="NEXT")
-
-        self.set_x(left)
-        self.set_font("Helvetica", "", 8)
-        self.cell(
-            0, 4, f"{settings.operator_name} · operator-private", new_x="LMARGIN", new_y="NEXT"
-        )
-
-        self.set_draw_color(*RULE)
-        self.set_line_width(0.3)
-        self.line(MARGIN, 32, self.w - MARGIN, 32)
-        self.set_y(38)
-
-    def footer(self) -> None:
-        self.set_y(-16)
-        self.set_draw_color(*RULE)
-        self.set_line_width(0.2)
-        self.line(MARGIN, self.get_y(), self.w - MARGIN, self.get_y())
-        self.set_y(-13)
-        self.set_font("Helvetica", "", 7.5)
-        self.set_text_color(*MUTED)
-        stamp = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
-        self.cell(
-            0,
-            4,
-            f"Generated {stamp} from the instance-and-integration record (ADR-0021).",
-            align=Align.L,
-        )
-        self.set_y(-13)
-        # `{nb}` is substituted with the final page count by fpdf2.
-        self.cell(0, 4, f"Page {self.page_no()} of {{nb}}", align=Align.R)
-
-    # ---- building blocks ---------------------------------------------------
-
-    def section(self, heading: str) -> None:
-        self.ln(3)
-        self.set_font("Helvetica", "B", 10)
-        self.set_text_color(*INK)
-        self.cell(0, 6, _safe(heading), new_x="LMARGIN", new_y="NEXT")
-        self.set_draw_color(*RULE)
-        self.line(MARGIN, self.get_y(), self.w - MARGIN, self.get_y())
-        self.ln(2)
-
-    def field(self, label: str, value: object) -> None:
-        self.set_font("Helvetica", "", 9)
-        self.set_text_color(*MUTED)
-        self.cell(46, 5.5, _safe(label))
-        self.set_text_color(*INK)
-        self.set_font("Courier", "", 9)
-        self.multi_cell(0, 5.5, _safe(_fmt(value)), new_x="LMARGIN", new_y="NEXT")
-
-    def note(self, text: str) -> None:
-        self.ln(1)
-        self.set_font("Helvetica", "I", 8)
-        self.set_text_color(*MUTED)
-        self.multi_cell(0, 4, _safe(text), new_x="LMARGIN", new_y="NEXT")
-        self.set_text_color(*INK)
-
-    def table(self, columns: list[tuple[str, float]], rows: list[list[object]]) -> None:
-        """A table, or the reason there is not one.
-
-        An empty section prints a stated absence rather than a blank: on paper a
-        gap is indistinguishable from a rendering fault.
-        """
-        if not rows:
-            self.set_font("Helvetica", "I", 9)
-            self.set_text_color(*MUTED)
-            self.cell(0, 5.5, "None on record.", new_x="LMARGIN", new_y="NEXT")
-            self.set_text_color(*INK)
-            return
-
-        self.set_font("Helvetica", "B", 8.5)
-        self.set_text_color(*MUTED)
-        for name, width in columns:
-            self.cell(width, 5.5, _safe(name))
-        self.ln(5.5)
-        self.set_draw_color(*RULE)
-        self.line(MARGIN, self.get_y(), self.w - MARGIN, self.get_y())
-        self.ln(1)
-
-        self.set_text_color(*INK)
-        for row in rows:
-            self.set_font("Courier", "", 8.5)
-            for (_name, width), cell in zip(columns, row, strict=False):
-                text = _safe(_fmt(cell))
-                # Truncate rather than wrap: a row that wraps mid-identifier is
-                # harder to read than one that is visibly cut.
-                budget = int(width / 1.75)
-                if len(text) > budget:
-                    text = text[: budget - 3] + "..."
-                self.cell(width, 5, text)
-            self.ln(5)
+def _note(text: str) -> str:
+    return f'<p class="note">{escape(text)}</p>'
 
 
 def instance_dossier(
@@ -218,190 +359,125 @@ def instance_dossier(
     and which lifecycle documents exist for it.
     """
     instance_id = instance["_id"]
-    pdf = Report("Instance", instance_id)
-    pdf.alias_nb_pages()
-    pdf.add_page()
 
-    pdf.section("Identity")
-    pdf.field("Instance", instance_id)
-    pdf.field("Module", instance.get("e_number"))
-    pdf.field("Design version", instance.get("version"))
-    pdf.field("Serial", instance.get("serial"))
-    pdf.field("Status", instance.get("status"))
-    pdf.field("Produced", instance.get("produced_at"))
-    pdf.note(
-        "The identifier is the object key (ADR-0017 d15). Module, version and serial are "
-        "its parts, not separate facts."
-    )
-
-    pdf.section("Provisioning binding")
-    if identity is None:
-        pdf.set_font("Helvetica", "I", 9)
-        pdf.set_text_color(*MUTED)
-        pdf.cell(0, 5.5, "No certificate bound to this serial.", new_x="LMARGIN", new_y="NEXT")
-        pdf.set_text_color(*INK)
-    else:
-        pdf.field("Certificate serial", identity.get("cert_serial"))
-        pdf.field("Public key", identity.get("public_key_fingerprint"))
-        pdf.field("Valid from", identity.get("cert_not_before"))
-        pdf.field("Valid until", identity.get("cert_not_after"))
-        pdf.field("Provisioned", identity.get("provisioned_at"))
-        pdf.note("Public certificate material only. A private key is not representable here.")
-
-    pdf.section("Integration history")
-    pdf.table(
-        [("Machine", 34), ("Position", 26), ("Installed", 28), ("Removed", 28), ("Reason", 46)],
-        [
+    identity_block = (
+        '<p class="absent">No certificate bound to this serial.</p>'
+        if identity is None
+        else _fields(
             [
-                h.get("machine_id"),
-                h.get("depth_code"),
-                h.get("installed_at"),
-                h.get("removed_at"),
-                h.get("removal_reason"),
+                ("Certificate serial", identity.get("cert_serial")),
+                ("Public key", identity.get("public_key_fingerprint")),
+                ("Valid from", identity.get("cert_not_before")),
+                ("Valid until", identity.get("cert_not_after")),
+                ("Provisioned", identity.get("provisioned_at")),
             ]
-            for h in history
-        ],
-    )
-    pdf.note(
-        "Position is assigned at integration and is never written onto the instance "
-        "(ADR-0017 d7). An open 'Removed' is the current placement."
+        )
+        + _note("Public certificate material only. A private key is not representable here.")
     )
 
-    pdf.section("Lifecycle documents")
-    pdf.table(
-        [("Type", 16), ("Object key", 88), ("Valid until", 28), ("Status", 24)],
+    body = "".join(
         [
-            [d.get("doc_type"), d.get("object_key"), d.get("valid_until"), d.get("status")]
-            for d in documents
-        ],
-    )
-    pdf.note(
-        "The ERP indexes these; the documents themselves are in the object store under "
-        "the keys above (ADR-0021 d7)."
-    )
-
-    return bytes(pdf.output())
-
-
-# fpdf2's write_html understands a useful subset. Tables and fenced code are the
-# two that matter here: the store's `-M` manuals and bring-up protocols use both,
-# and a table flattened to prose is unreadable.
-_MD_EXTENSIONS = ["tables", "fenced_code", "sane_lists"]
-
-# fpdf2 raises on any element nested inside a table cell — a `code` span or a bold
-# run in a cell is enough, and the store's manuals are full of both. Flattening the
-# cell to its text keeps the table, which is the part that carries the meaning; the
-# alternative fpdf2 leaves open is no table at all.
-_CELL = re.compile(r"(<(?:td|th)\b[^>]*>)(.*?)(</(?:td|th)>)", re.S | re.I)
-_TAG = re.compile(r"<[^>]+>")
-# An in-document link records a named destination that nothing sets, and fpdf2 then
-# refuses to emit the file at all. The heading it points at is on the page anyway,
-# so the link becomes its own text.
-_FRAGMENT_LINK = re.compile(r'<a\b[^>]*href="#[^"]*"[^>]*>(.*?)</a>', re.S | re.I)
-
-
-def _flatten_cells(html: str) -> str:
-    """Strip markup inside a cell, and left-align what remains.
-
-    fpdf2 justifies cell text by default, which stretches a short value across a
-    wide column and reads as a typographic accident. Reference tables are scanned
-    down a column, so every cell is ranged left.
-    """
-
-    def one(m: re.Match[str]) -> str:
-        open_tag = m.group(1)
-        if "align=" not in open_tag.lower():
-            open_tag = open_tag[:-1].rstrip() + ' align="left">'
-        return open_tag + _TAG.sub("", m.group(2)).strip() + m.group(3)
-
-    return _CELL.sub(one, html)
-
-
-def _drop_fragment_links(html: str) -> str:
-    return _FRAGMENT_LINK.sub(lambda m: m.group(1), html)
-
-
-# fpdf2's HTML defaults are Times, maroon headings and red list bullets — a look
-# that belongs to no document here and prints badly in monochrome. Everything is
-# restated in the page's own terms: one sans family, black, a heading scale that
-# stays close to the body size because these are procedures rather than covers,
-# and margins that give a heading room without a blank band under it.
-def _h(size: float, top: float, bottom: float) -> TextStyle:
-    return TextStyle(
-        font_family="helvetica",
-        font_style="B",
-        font_size_pt=size,
-        color=INK,
-        t_margin=top,
-        b_margin=bottom,
+            _section(
+                "Identity",
+                _fields(
+                    [
+                        ("Instance", instance_id),
+                        ("Module", instance.get("e_number")),
+                        ("Design version", instance.get("version")),
+                        ("Serial", instance.get("serial")),
+                        ("Status", instance.get("status")),
+                        ("Produced", instance.get("produced_at")),
+                    ]
+                ),
+                _note(
+                    "The identifier is the object key (ADR-0017 d15). Module, version and serial "
+                    "are its parts, not separate facts."
+                ),
+            ),
+            _section("Provisioning binding", identity_block),
+            _section(
+                "Integration history",
+                _table(
+                    ["Machine", "Position", "Installed", "Removed", "Reason"],
+                    [
+                        [
+                            h.get("machine_id"),
+                            h.get("depth_code"),
+                            h.get("installed_at"),
+                            h.get("removed_at"),
+                            h.get("removal_reason"),
+                        ]
+                        for h in history
+                    ],
+                ),
+                _note(
+                    "Position is assigned at integration and is never written onto the instance "
+                    "(ADR-0017 d7). An open 'Removed' is the current placement."
+                ),
+            ),
+            _section(
+                "Lifecycle documents",
+                _table(
+                    ["Type", "Object key", "Valid until", "Status"],
+                    [
+                        [
+                            d.get("doc_type"),
+                            d.get("object_key"),
+                            d.get("valid_until"),
+                            d.get("status"),
+                        ]
+                        for d in documents
+                    ],
+                ),
+                _note(
+                    "The ERP indexes these; the documents themselves are in the object store "
+                    "under the keys above (ADR-0021 d7)."
+                ),
+            ),
+        ]
     )
 
+    return _document(
+        doc_class="Instance record",
+        subject=instance_id,
+        footer=f"Generated {_stamp()} from the instance-and-integration record (ADR-0021).",
+        body=body,
+    )
 
-_HTML_STYLE = {
-    "font_family": "helvetica",
-    # A grey disc, sized down. The default is a red dot at body size, which reads
-    # as a warning rather than a bullet.
-    "li_prefix_color": MUTED,
-    "pre_code_font": "courier",
-    # Rules between rows: the store's tables are reference material, read across.
-    "table_line_separators": True,
-    "tag_styles": {
-        "h1": _h(13.5, 5, 2.5),
-        "h2": _h(11.5, 4.5, 2),
-        "h3": _h(10.5, 4, 1.8),
-        "h4": _h(10, 3.5, 1.5),
-        "h5": _h(9.5, 3, 1.2),
-        "h6": _h(9.5, 3, 1.2),
-        # Body and list text carry the frame's ink, not fpdf2's near-black.
-        "p": TextStyle(font_family="helvetica", font_size_pt=9.5, color=INK, b_margin=1.6),
-        "li": TextStyle(font_family="helvetica", font_size_pt=9.5, color=INK, b_margin=0.8),
-        "code": TextStyle(font_family="courier", font_size_pt=8.5, color=INK),
-        "pre": TextStyle(font_family="courier", font_size_pt=8, color=INK, t_margin=1.5),
-        # No "td"/"th": fpdf2 refuses tag_styles for table cells and raises, which
-        # sends the whole document down the plain-text fallback. Cell alignment is
-        # set on the tag itself in _flatten_cells instead.
-        "blockquote": TextStyle(
-            font_family="helvetica", font_size_pt=9, color=MUTED, l_margin=6, t_margin=2
-        ),
-    },
-}
+
+# Tables and fenced code are the two extensions that matter: the store's `-M`
+# manuals and bring-up protocols use both, and a table flattened to prose is
+# unreadable. `sane_lists` keeps a numbered list from swallowing the paragraph
+# under it. `toc` gives every heading the slug id its own cross-references point
+# at, so a "see §6" link in a manual is a live link in the PDF.
+_MD_EXTENSIONS = ["tables", "fenced_code", "sane_lists", "toc"]
 
 
 def markdown_document(*, object_key: str, text: str, subject: str | None = None) -> bytes:
     """One markdown document as a printable PDF.
 
     A rendering of a document the API already serves, not a new artifact: the
-    bytes come from the object store and nothing is stored back. The page frame is
-    the instance report's, so a printed manual and a printed instance file together.
-
-    The text is folded to latin-1 like everything else on the page — the core
-    fonts cannot show more, and a glyph lost beats a document lost.
+    bytes come from the object store and nothing is stored back. The page frame
+    is the instance dossier's, so a printed manual and a printed instance record
+    file together.
     """
-
-    def page() -> Report:
-        pdf = Report("Document", subject or object_key)
-        pdf.alias_nb_pages()
-        pdf.add_page()
-        pdf.set_font("Helvetica", "", 10)
-        pdf.set_text_color(*INK)
-        return pdf
-
-    html = _drop_fragment_links(
-        _flatten_cells(md_lib.markdown(_safe(text), extensions=_MD_EXTENSIONS))
-    )
+    body = md_lib.markdown(text, extensions=_MD_EXTENSIONS)
+    subject = subject or object_key
+    footer = f"Generated {_stamp()} from the repository store (ADR-0017 d15)."
     try:
-        pdf = page()
-        pdf.write_html(html, **_HTML_STYLE)
-        return bytes(pdf.output())
+        return _document(doc_class="Document", subject=subject, footer=footer, body=body)
     except Exception as exc:
-        # fpdf2's HTML support is a subset, and it fails in two places: at
-        # write_html for markup it cannot lay out, and at output() for a link
-        # whose destination was never set. Both are caught, and both fall back to
-        # the text — an operator holding a plain page is better served than one
-        # holding a 500, and the reason goes on the page rather than only a log.
-        pdf = page()
-        pdf.note(f"Rendered as plain text — the layout engine refused the markup: {exc}")
-        pdf.set_font("Courier", "", 8.5)
-        pdf.set_text_color(*INK)
-        pdf.multi_cell(0, 4, _safe(text), new_x="LMARGIN", new_y="NEXT")
-        return bytes(pdf.output())
+        # A layout engine that raises still has to produce the document: an
+        # operator holding a plain page is better served than one holding a 500.
+        # The reason goes on the page and into the log — a fallback that only
+        # shows on paper is a defect nobody is told about.
+        log.exception("%s rendered as plain text", object_key)
+        return _document(
+            doc_class="Document",
+            subject=subject,
+            footer=footer,
+            body=(
+                f'<p class="note">Rendered as plain text — the layout engine refused '
+                f"the markup: {escape(str(exc))}</p><pre>{escape(text)}</pre>"
+            ),
+        )
