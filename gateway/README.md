@@ -130,18 +130,46 @@ header from an unidentified proxy is indistinguishable from a forged one
 curl -sk https://industrygrow.local:8445/api/v1/gateway/firmware      # expect 401
 
 # the gateway is accepted and gets its own machine's record
-sudo /opt/industrygrow/venv/bin/python firmware_client.py show
+sudo -u gateway /opt/industrygrow/venv/bin/python /opt/industrygrow/firmware_client.py show
 
 # what each node needs, changing nothing
-sudo /opt/industrygrow/venv/bin/python firmware_client.py once --dry-run
+sudo -u gateway /opt/industrygrow/venv/bin/python /opt/industrygrow/firmware_client.py once --dry-run
 
 # the profile path, same channel
-profile_client.py once
+sudo -u gateway /opt/industrygrow/venv/bin/python /opt/industrygrow/profile_client.py once
 ```
+
+`sudo -u gateway`, not `sudo`: the artifact cache and the profile directory are
+owned by the service user, and a check run as root leaves files behind that the
+unit then cannot write.
 
 A `503` from any gateway route means the trusted-proxy list is empty. A `401`
 means the certificate was not accepted — check that the *chain* is presented, not
 the leaf.
+
+## 8. Let it run
+
+`provision.sh` installs `industrygrow-firmware.timer` and starts it when
+`IGROW_ERP_URL` is set. From there the loop is unattended: an operator selects a
+release for the machine in the console, and the next pass brings the nodes onto
+it (ADR-0029 d16).
+
+```bash
+systemctl list-timers industrygrow-firmware.timer --no-pager
+journalctl -u industrygrow-firmware.service -n 50 --no-pager
+```
+
+| Bound | Where it is set |
+| --- | --- |
+| every hour, 5 min after boot, ±5 min jitter | `industrygrow-firmware.timer` (`systemctl edit`) |
+| one pass, 1 h | `industrygrow-firmware.service` `TimeoutStartSec` |
+| one node's transfer, 420 s | `IGROW_FIRMWARE_TRANSFER_TIMEOUT_S` |
+
+A pass ending `no firmware release intended for this machine` is a failed unit and
+the correct state before anyone has selected one — nothing reaches a node until
+they do. A node reported `unidentified` is running an image this gateway does not
+hold, and is left alone until an operator resolves it by SWD or by making that
+release available (ADR-0029 d17).
 
 ## What this does not give you
 
