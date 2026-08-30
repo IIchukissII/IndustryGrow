@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="480" viewBox="0 0 820 480" role="img" aria-label="The operator CA ceremony, per ADR-0024">
+  <title>ADR-0024 — the operator CA ceremony</title>
+  <desc>The passphrases are resolved from the password manager first, because that needs the network and the ceremony must not. Key generation then runs inside a user and network namespace with no interface and no routes, asserted before anything is written: the root key is generated there, signs exactly one issuing certificate authority, and nothing else. Verification checks that the root key is encrypted at rest, that the issuing authority verifies against the root, that the root outlives it, and that both are certificate authorities. Custody is physical and is the operator's: two encrypted copies on separate removable media in separate locations, with the passphrase held apart from both, after which the root key is destroyed on the host. Only then can leaves be issued — the signing script refuses while the root key is still on disk. The issuing authority stays online and signs the gateway and server certificates.</desc>
+
+  <defs>
+    <marker id="a24" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#5F5E5A"/></marker>
+    <marker id="a24r" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#D85A30"/></marker>
+    <marker id="a24g" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#3E7A57"/></marker>
+  </defs>
+
+  <rect x="0.5" y="0.5" width="819" height="479" rx="10" fill="#FFFFFF" stroke="#E5E3DC"/>
+  <text x="410" y="30" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#2C2C2A">The operator CA ceremony</text>
+  <text x="410" y="48" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#8A8880">one run of pki/ceremony.sh, then one physical step nothing can automate</text>
+
+  <!-- online, before isolation -->
+  <rect x="26" y="70" width="180" height="66" rx="7" fill="#FFFFFF" stroke="#D8D5CC"/>
+  <text x="116" y="92" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#2C2C2A">1Password</text>
+  <text x="116" y="109" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#8A8880">root + issuing passphrase</text>
+  <text x="116" y="124" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#8A8880">resolved while online</text>
+
+  <line x1="206" y1="103" x2="248" y2="103" stroke="#5F5E5A" stroke-width="1.4" marker-end="url(#a24)"/>
+  <text x="227" y="97" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="8" fill="#8A8880">env</text>
+
+  <!-- the isolation boundary -->
+  <rect x="250" y="62" width="330" height="212" rx="9" fill="#FBF9F4" stroke="#D85A30" stroke-dasharray="5 3"/>
+  <text x="415" y="82" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#D85A30">unshare --user --net</text>
+  <text x="415" y="97" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#8A8880">no interface, no routes — asserted before any key is written</text>
+
+  <rect x="272" y="110" width="286" height="52" rx="6" fill="#FFFFFF" stroke="#D8D5CC"/>
+  <text x="415" y="130" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#2C2C2A">operator root — P-256, encrypted</text>
+  <text x="415" y="147" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#8A8880">generated where it will live, and does not move (d5)</text>
+
+  <line x1="415" y1="162" x2="415" y2="186" stroke="#5F5E5A" stroke-width="1.4" marker-end="url(#a24)"/>
+  <text x="470" y="178" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="8" fill="#8A8880">signs exactly one</text>
+
+  <rect x="272" y="188" width="286" height="52" rx="6" fill="#FFFFFF" stroke="#D8D5CC"/>
+  <text x="415" y="208" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#2C2C2A">issuing CA — the only thing the root signs</text>
+  <text x="415" y="225" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#8A8880">every leaf comes from here, never from the root (d1)</text>
+
+  <text x="415" y="262" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#8A8880">the process could not reach the network; the host stayed connected</text>
+
+  <!-- verification -->
+  <line x1="580" y1="168" x2="618" y2="168" stroke="#3E7A57" stroke-width="1.4" marker-end="url(#a24g)"/>
+  <rect x="620" y="112" width="176" height="112" rx="7" fill="#F3F6F4" stroke="#3E7A57"/>
+  <text x="708" y="132" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#2C2C2A">verified, not assumed</text>
+  <text x="634" y="152" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">root key encrypted at rest</text>
+  <text x="634" y="168" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">issuing CA verifies to root</text>
+  <text x="634" y="184" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">root outlives it (d8)</text>
+  <text x="634" y="200" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">both are CAs</text>
+  <text x="634" y="216" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#8A8880">a failure writes no key</text>
+
+  <!-- custody: the manual gate -->
+  <rect x="26" y="296" width="480" height="92" rx="8" fill="#FDF6F2" stroke="#D85A30"/>
+  <text x="46" y="318" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#2C2C2A">Custody — physical, the operator's, unautomatable (d6)</text>
+  <text x="46" y="338" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#5F5E5A">two encrypted copies · two separate locations · passphrase held apart from both</text>
+  <text x="46" y="355" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#5F5E5A">then the root key is destroyed on this host</text>
+  <text x="46" y="374" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#D85A30">until this is done the ceremony reports itself incomplete — and the root key is still on disk</text>
+
+  <line x1="506" y1="342" x2="556" y2="342" stroke="#D85A30" stroke-width="1.4" marker-end="url(#a24r)"/>
+
+  <!-- issuance, gated -->
+  <rect x="558" y="296" width="238" height="92" rx="8" fill="#FFFFFF" stroke="#D8D5CC"/>
+  <text x="677" y="318" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#2C2C2A">Issuance</text>
+  <text x="677" y="337" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#5F5E5A">gateway leaf · ERP server leaf</text>
+  <text x="677" y="353" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#5F5E5A">issuing CA stays online</text>
+  <text x="677" y="372" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#8A8880">refused while the root key is on disk</text>
+
+  <!-- what never happens -->
+  <rect x="26" y="406" width="770" height="52" rx="8" fill="#FBF9F4" stroke="#E5E3DC"/>
+  <text x="46" y="426" font-family="Helvetica, Arial, sans-serif" font-size="10" font-weight="600" fill="#2C2C2A">Never</text>
+  <text x="46" y="444" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#5F5E5A">the root signs a leaf · the root key returns to an online host · both media travel with the passphrase · a second run overwrites an existing CA</text>
+</svg>
