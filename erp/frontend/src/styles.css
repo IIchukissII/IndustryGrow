@@ -8,6 +8,11 @@
    actuators, gateway core burning at the trunk. */
 
 :root {
+  /* The console is dark only. Declaring it makes the UA use its dark defaults
+     for what CSS does not reach: scrollbars, form widgets, and `CanvasText` —
+     which is what a <dialog> inherits its colour from when nothing sets one. */
+  color-scheme: dark;
+
   /* prima materia — the fertile dark (cosmic navy, not graphite) */
   --void-0: #16294e; --void-1: #0a1428; --void-2: #03070f;
 
@@ -353,7 +358,12 @@ button.seg.key:focus-visible { outline: 2px solid var(--violet); outline-offset:
    A sheet held up over the console, not a panel grown onto the end of the page.
    `<dialog>` earns the top layer, `Escape`, and an inert background from the
    platform, so none of that is re-implemented here in z-indexes. */
-.reader { border: 0; padding: 0; background: none; max-width: none; max-height: none;
+/* The colour is set here, not left to inherit: a <dialog> takes its text colour
+   from the UA, not from the body it sits over, so anything inside it that does
+   not name a colour — a CSV cell, a table — would be drawn in the UA's default
+   against the console's dark ground. */
+.reader { color: var(--ink);
+  border: 0; padding: 0; background: none; max-width: none; max-height: none;
   width: 100vw; height: 100dvh; overflow: hidden;
   /* The element IS the backdrop area: it fills the viewport and centres the
      sheet, which is what makes "click outside to close" a hit on the dialog. */
