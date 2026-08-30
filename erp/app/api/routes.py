@@ -1144,8 +1144,13 @@ def _as_text(body: bytes) -> str | None:
         return None
 
 
-async def _markdown_pdf(warehouse: Warehouse, object_key: str) -> Response:
-    """Fetch one document and render it. Holds no copy of either."""
+async def _markdown_pdf(warehouse: Warehouse, object_key: str, origin: str) -> Response:
+    """Fetch one document and render it. Holds no copy of either.
+
+    `origin` is the home the caller's route reads from; it goes in the page's
+    footer, because the two routes serve documents that are filed under different
+    decisions and a printed page has to say which one it came from.
+    """
     # By name first, so a refusal costs no transfer: a zip or a board render is
     # answered before the bytes are pulled out of the warehouse.
     if _named_unrenderable(object_key):
@@ -1168,6 +1173,7 @@ async def _markdown_pdf(warehouse: Warehouse, object_key: str) -> Response:
         reports.markdown_document,
         object_key=object_key,
         text=text,
+        origin=origin,
     )
     stem = object_key.rsplit(".", 1)[0] if "." in object_key.rsplit("/", 1)[-1] else object_key
     return Response(
@@ -1193,7 +1199,7 @@ async def store_document_pdf(
         raise HTTPException(
             status.HTTP_404_NOT_FOUND, f"{object_key} is not a document in the repository's store/"
         )
-    return await _markdown_pdf(warehouse, object_key)
+    return await _markdown_pdf(warehouse, object_key, reports.STORE_ORIGIN)
 
 
 @router.get("/instances/{instance_id}/documents/{object_key}/pdf", tags=["documents"])
@@ -1212,7 +1218,7 @@ async def instance_document_pdf(
         raise HTTPException(
             status.HTTP_404_NOT_FOUND, f"{instance_id} has no indexed document {object_key}"
         )
-    return await _markdown_pdf(warehouse, object_key)
+    return await _markdown_pdf(warehouse, object_key, reports.LIFECYCLE_ORIGIN)
 
 
 @router.get(

@@ -453,7 +453,21 @@ def instance_dossier(
 _MD_EXTENSIONS = ["tables", "fenced_code", "sane_lists", "toc"]
 
 
-def markdown_document(*, object_key: str, text: str, subject: str | None = None) -> bytes:
+# Where the bytes came from, for the footer. A printed page is read away from
+# the system that produced it, and "which record is this from" is the question a
+# filed document has to answer on its own — the two origins are different homes
+# under different decisions, so the page names the one it came from.
+STORE_ORIGIN = "the repository store (ADR-0017 d15)"
+LIFECYCLE_ORIGIN = "the lifecycle-document index (ADR-0021 d7)"
+
+
+def markdown_document(
+    *,
+    object_key: str,
+    text: str,
+    subject: str | None = None,
+    origin: str = STORE_ORIGIN,
+) -> bytes:
     """One markdown document as a printable PDF.
 
     A rendering of a document the API already serves, not a new artifact: the
@@ -463,7 +477,7 @@ def markdown_document(*, object_key: str, text: str, subject: str | None = None)
     """
     body = md_lib.markdown(text, extensions=_MD_EXTENSIONS)
     subject = subject or object_key
-    footer = f"Generated {_stamp()} from the repository store (ADR-0017 d15)."
+    footer = f"Generated {_stamp()} from {origin}."
     try:
         return _document(doc_class="Document", subject=subject, footer=footer, body=body)
     except Exception as exc:
