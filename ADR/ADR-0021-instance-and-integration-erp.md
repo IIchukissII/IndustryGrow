@@ -3,19 +3,34 @@ SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
-# ADR-0021 (rev 4): Instance-and-integration ERP — the pre-cloud system of record
+# ADR-0021 (rev 5): Instance-and-integration ERP — the pre-cloud system of record
 
-- **ID:** ADR-0021 (rev 4)
+- **ID:** ADR-0021 (rev 5)
 - **Status:** Accepted
-- **Date:** 2026-07-09 (rev 1: 2026-07-19; rev 2 and rev 3: 2026-07-26; rev 4: 2026-08-30)
+- **Date:** 2026-07-09 (rev 1: 2026-07-19; rev 2 and rev 3: 2026-07-26; rev 4 and rev 5: 2026-08-30)
 - **Project:** IndustryGrow
 - **Parent:** ADR-0001
 - **Companions:** ADR-0000, ADR-0004 (rev 1), ADR-0007, ADR-0015, ADR-0016 (rev 1), ADR-0017 (rev 2), ADR-0019, ADR-0020, ADR-0022 (API contract), ADR-0029
-- **Supersedes:** ADR-0021 rev 3 (2026-07-26), and through it rev 2 (2026-07-26), rev 1 (2026-07-19) and the initial record (2026-07-09)
+- **Supersedes:** ADR-0021 rev 4 (2026-08-30), and through it rev 3 (2026-07-26), rev 2 (2026-07-26), rev 1 (2026-07-19) and the initial record (2026-07-09)
 - **Realizes:** ADR-0017 (rev 2) deferred decision "Registry and store location" — the instance/integration layer host
 - **Relates to:** ADR-IF-0001 (planned) — the `production_unit` entity this store's foundational part aligns to when IndustryGrow integrates as a layer over the IndustryFlow core at stage 11
 
 ## Revision history
+
+- **rev 5 (2026-08-30)** — States what *compact* in decision 15 bounds: the
+  entity set, not the image. The ERP renders printed representations of records
+  it already holds — an instance record, a store document — and the layout engine
+  that produces them draws text through the system text-shaping and font stack,
+  which the container therefore carries. Read as a statement about image size,
+  *compact* forbids that; read as the scope statement it is — the
+  asset/traceability core, not a finance/HR suite (alternative H) — a
+  representation that introduces no entity is inside the bound. Decision 15 gains
+  the statement and the limit that goes with it; no ownership boundary, tenancy,
+  or profile-channel decision changes. Editorial in the same pass: the Context
+  paragraphs that retold revisions 2 and 3 are removed — the revision history,
+  decision 17 and alternatives L and M hold that content — the two overlapping
+  core-plus-layer drivers are one bullet, and the alternatives are back in letter
+  order.
 
 - **rev 4 (2026-08-30)** — Adds decision 18: the ERP owns the **intended firmware
   release** recorded against `GBOX_NNNN`. ADR-0029 decision 16 starts a firmware
@@ -90,29 +105,11 @@ That deferral is now blocking. Three concrete needs have arrived at once, and no
 
 3. **There is no cloud yet.** ADR-0020 establishes that IndustryFlow arrives only at roadmap **stage 11**; stages 1–10 (bring-up, survey, first cultivation) run with **no cloud sink**. Every ADR that routes instance/integration data "platform-side / to IndustryFlow" presupposes a platform that does not yet exist. The survey and first-cultivation work of ADR-0016/0020 will *produce* serialized instances, provisioning records, calibration certificates, and deployment-specific profiles during exactly the period when their designated home is absent.
 
-This ADR gives the deferred instance/integration layer a concrete, buildable home for the pre-cloud period: a **compact, self-hostable, containerized ERP** — a small relational system of record for machines, instances, integration, lifecycle-document metadata, deployment-specific profiles, and purchased-part stock. It **operates single-tenant and private** — one operator, one deployment estate, no tenancy machinery — but its **data model is IndustryFlow-conformant**. IndustryFlow's core is **multitenant**; the ERP is therefore a *single-tenant instantiation of the multitenant core model*, not a model that ignores tenancy. The single-tenant estate is exactly *one tenant* of the IndustryFlow model, so stage-11 migration is a "tenant N" insertion, not a remodel (decision 16). Operating single-tenant (no isolation infrastructure, no shared hosting) and conforming to the multitenant schema are separate axes, and this ADR takes the first without abandoning the second.
+This ADR gives the deferred instance/integration layer a concrete, buildable home for the pre-cloud period: a **compact, self-hostable, containerized ERP** — a small relational system of record for machines, instances, integration, lifecycle-document metadata, deployment-specific profiles, and purchased-part stock. It **operates single-tenant and private** — one operator, one deployment estate, no tenancy machinery — but its **data model is IndustryFlow-conformant**: a single-tenant instantiation of the multitenant core model, so stage-11 migration inserts the estate as "tenant N" rather than remodelling it (decision 16).
 
-**Where it runs was stated wrongly at first (rev 2).** The initial record said the
-operator runs this container *"on or beside the gateway host"*, reaching for
-self-hostability — one box, nothing to buy, the record sitting next to the machines
-it describes. But the gateway is the one host it must not be. ADR-0004's
-replaceability driver requires a gateway to be swappable in minutes with no
-accumulated local state lost, and ADR-0020 decision 5 enumerates exhaustively what
-may persist there; a system of record is not in that enumeration. Serial allocation,
-provisioning bindings, and integration history are precisely the records with the
-least tolerance for loss, and putting them on the edge unit makes a routine swap a
-recovery exercise. What the wording meant — single node, no managed service,
-nothing an operator cannot stand up alone — is what decision 1 now says, with the
-gateway named as an exclusion rather than as the example (alternative L).
+**A fourth need (rev 3).** The three above concern what the project manufactures. The gateway is bought, so it has no E-instance serial, and decision 5's certificate binding is keyed by one — leaving the unit every other machine's mTLS channel depends on undescribable in the record. Decision 17 gives it a binding of its own.
 
-**A fourth need arrived later (rev 3).** The three above are about things the
-project *manufactures*. The gateway is not one of them — it is bought — and once it
-had a real certificate and a real client, it turned out to have no home in this
-record either: decision 5 binds a certificate to a serial, and the gateway has no
-serial. So the unit that every other machine's channel depends on was the one unit
-the system of record could not describe. Decision 17 gives it one.
-
-The integration end-state is **core plus layer, not absorption.** IndustryFlow is the *independent, multitenant core* industrial-IoT platform (ADR-0001); IndustryGrow is *not standalone* — it is an additional **domain layer** on top of that core, contributing extensions to it (the `production_unit` entity, cultivation DSDL types, plugin interfaces; ADR-0001 decision 7). The glossary already draws this line: platform-foundational concerns are tagged `[F]` and move with IndustryFlow if the foundation is extracted; domain/CEA concerns are `[D]` and stay with IndustryGrow (`GLOSSARY.md`, scope tags). This ERP straddles both: its **foundational** part (generic instance tracking, provisioning, integration history) is the single-tenant realization of what becomes IndustryFlow's multitenant `production_unit`; its **domain** part (`GBOX` machines, cultivation profiles) is the IndustryGrow layer. At stage 11 the two *integrate* — the `[F]` part becomes one tenant in the multitenant core, the `[D]` part remains the grow layer over it — rather than one swallowing the other.
+The integration end-state is **core plus layer, not absorption.** IndustryFlow is the independent multitenant core; IndustryGrow is an additional domain layer over it, contributing the `production_unit` entity, cultivation DSDL types, and plugin interfaces (ADR-0001 decision 7). `GLOSSARY.md`'s scope tags already draw the line, and this ERP straddles it: its `[F]` part (instance tracking, provisioning, integration history) is the single-tenant realization of what becomes IndustryFlow's `production_unit`; its `[D]` part (`GBOX` machines, cultivation profiles) stays the IndustryGrow layer.
 
 This ADR carries **decisions and rationale only**. Database engine, ERP product/framework, schema DDL, on-disk formats, container base image, and exact retention figures are implementation/BOM concerns per ADR-0000 and are not fixed here.
 
@@ -122,8 +119,7 @@ This ADR carries **decisions and rationale only**. Database engine, ERP product/
 - **Instance/integration data is mutable, relational, and private** — the opposite of what the repo (public, type-level, PR-gated) and the object store (flat, one-object-per-identifier, blob-shaped) are good at. It wants a small store with mutable history — realized (rev 1) as a document index over the object store, not a stretch of the two existing homes.
 - **Single source of truth (ADR-0000) is non-negotiable.** The ERP must own facts *no other home owns* and must not mirror the type registry, the object store's blobs, the BOM's SKUs/prices, or IndustryFlow's operational/forensic trail. Each boundary is drawn explicitly below.
 - **The stateless-edge and audit-authority boundaries hold.** Operational telemetry, firmware events, and the tamper-evident hash chain stay platform-side (ADR-0004 rev 1 decision 10; ADR-0020 decision 9). The ERP is an *asset/config/traceability* record, never a second forensic trail — the boundary ADR-0017 alternative E and ADR-0020 decision 9 already defend.
-- **Core plus layer, not absorption, at stage 11.** IndustryFlow is the independent core; IndustryGrow is an additional domain layer over it (ADR-0001; `GLOSSARY.md` `[F]`/`[D]` tags). The ERP's foundational instance-tracking part is the private realization of what becomes IndustryFlow's `production_unit` (ADR-IF-0001); its grow-domain part stays the IndustryGrow layer. Its schema is a forward-compatible subset so the stage-11 transition is a data migration and a re-layering, not a rewrite.
-- **IndustryFlow-conformant, single-tenant in operation.** IndustryFlow's core is multitenant; the ERP must conform to that model so integration is a migration, not a rewrite. But the pre-cloud period is one operator, so the ERP *operates* single-tenant — a single-tenant instantiation of the multitenant schema, with no tenancy-isolation machinery built now. Conformance (a schema property) and single-tenant operation (a deployment property) are separate; take the second without giving up the first.
+- **Core plus layer at stage 11, and conformant before it.** IndustryFlow is the independent multitenant core; IndustryGrow is a domain layer over it (ADR-0001; `GLOSSARY.md` `[F]`/`[D]` tags). The ERP's foundational part must therefore be a forward-compatible subset of what becomes IndustryFlow's `production_unit` (ADR-IF-0001), so stage 11 is a migration and a re-layering rather than a rewrite. Conformance is a schema property and single-tenant operation is a deployment property: the pre-cloud period has one operator, so no tenancy-isolation machinery is built now.
 - **Self-build path and open-core ethos (ADR-0001).** The first deployer and any community member must be able to stand this up from open artifacts. A single self-hostable container matches the self-build path (ADR-0001 decision 6); the *data* it holds is per-operator production data and is not published (ADR-0017).
 - **Compact, not enterprise.** The need is a handful of related entities with history, not procurement/finance/HR. "ERP" here means the asset/inventory/traceability core only; scope creep into finance is a smell.
 
@@ -169,7 +165,9 @@ This ADR carries **decisions and rationale only**. Database engine, ERP product/
 
 ### Deployment vehicle
 
-15. **Delivery is a single self-hostable container over a compact document store that indexes the flat object-store warehouse (ADR-0017 decision 15); the concrete product is implementation.** The architectural commitments are: *containerized* (a drop-in the operator runs on a host of their own, matching the self-build path — see decision 1), *single-node and compact* (asset/traceability core, not a finance/HR suite), and *a document metadata store with mutable history over time*. The last is the rev-1 change (see Revision history): the instance/integration layer is the *queryable index over the object store* (decision 7), and the project's storage paradigm is already document/blob-oriented — identifiers are object keys (ADR-0017 decision 15) — so the layer is a **document store, not a relational core**. Integration remains a mutable cross-reference over time (decision 6); in a document store that history is carried by validity-stamped records (an `installed`/`removed` timestamp pair) with a uniqueness constraint per position, not by a relational join engine. Which document database realizes this — the specific product — is an implementation choice per ADR-0000 (Deferred decisions, now **resolved to MongoDB** over the object-store warehouse), recorded with the implementation. This mirrors ADR-0020 fixing the storage *class* (SSD/NVMe) while leaving the SKU to the BOM.
+15. **Delivery is a single self-hostable container over a compact document store that indexes the flat object-store warehouse (ADR-0017 decision 15); the concrete product is implementation.** The architectural commitments are: *containerized* (a drop-in the operator runs on a host of their own, matching the self-build path — see decision 1), *single-node and compact* (asset/traceability core, not a finance/HR suite), and *a document metadata store with mutable history over time*. The store is a document store rather than a relational core because the layer is the queryable index over the object store (decision 7) and identifiers already *are* object keys (ADR-0017 decision 15). Integration's mutable cross-reference over time (decision 6) is carried there by validity-stamped records — an `installed`/`removed` timestamp pair with a uniqueness constraint per position — not by a relational join engine. Which document database realizes it is an implementation choice per ADR-0000, **resolved to MongoDB** (Deferred decisions), as ADR-0020 fixes the storage *class* and leaves the SKU to the BOM.
+
+    **Compact bounds the entity set, not the image (rev 5).** The commitment is the scope of the record — the asset/traceability core, against alternative H's finance/HR suite — and single-node self-hostable delivery. A printed representation of records the ERP already owns adds no entity and is inside that bound, so what its renderer needs at runtime (a text-shaping and font stack in the image) is an implementation cost recorded with the implementation. What *does* breach the bound is a dependency that has to be operated: a second service beside the container, or a second node, contradicts *single-node* and *a drop-in the operator runs on a host of their own* regardless of how small it is.
 
 ### Tenancy and integration model
 
@@ -177,7 +175,7 @@ This ADR carries **decisions and rationale only**. Database engine, ERP product/
     - **Schema (conform now).** The ERP's data model is an IndustryFlow-conformant schema — foundational `[F]` entities are keyed and shaped exactly as a *single-tenant instantiation* of the multitenant core model. Every foundational record belongs, at least implicitly, to one tenant (this operator), so migrating the estate into the multitenant core at stage 11 is inserting it as "tenant N", not remodelling. The ERP does not invent a keying or entity shape that the multitenant core cannot ingest.
     - **Operation (single-tenant now).** The running instance serves one operator with **no tenancy machinery** — no tenant isolation, no per-tenant partitioning at runtime, no shared-hosting surface. That machinery is a core-platform `[F]` concern supplied by IndustryFlow when it arrives; building it in this domain-layer bring-up store would be premature (there is one tenant) and would duplicate what the core will provide.
 
-    So the ERP conforms to multitenancy in its model while declining to *operate* multitenant. Should a second operator appear before stage 11, the answer is a second private single-tenant instance (each still conformant), not runtime tenancy bolted into this store — or, if it is material enough, pulling the IndustryFlow-core timeline forward (Deferred decisions).
+    Should a second operator appear before stage 11, the answer is a second private single-tenant instance (each still conformant), not runtime tenancy bolted into this store — or, if it is material enough, pulling the IndustryFlow-core timeline forward (Deferred decisions).
 
 ### Machine identity (rev 3)
 
@@ -215,9 +213,11 @@ This ADR carries **decisions and rationale only**. Database engine, ERP product/
 
 **I. Build multitenant *operation* into the ERP now.** *Rejected — but note the schema still conforms (decision 16).* Runtime tenancy (isolation, per-tenant partitioning, shared hosting) is unused with one operator and is a foundational `[F]` concern the IndustryFlow core supplies, not this `[D]` domain store; building it now duplicates the core and blurs the core/layer line (decision 2). This rejects tenancy *machinery*, not tenancy *conformance*: the ERP's schema is a single-tenant instantiation of the multitenant core model, so it ingests cleanly at stage 11.
 
+**J. Treat stage 11 as IndustryFlow absorbing and retiring the ERP.** *Rejected:* IndustryGrow is not standalone but also is not disposable — it is an additional domain layer over an independent core (ADR-0001; `GLOSSARY.md` `[F]`/`[D]`). At stage 11 the foundational `[F]` data aligns to `production_unit` in the core while the grow-domain `[D]` layer remains over it (decisions 2, 3). Absorption would erase the layered architecture the project is built on.
+
 **K. Build a schema that ignores tenancy entirely (non-conformant single-tenant model).** *Rejected:* IndustryFlow is multitenant and this ADR must be IndustryFlow-conformant. A model with no tenant dimension would force a remodel at stage 11, defeating the migration-not-rewrite goal (decisions 2, 3). Conform to the multitenant model *and* operate single-tenant — do not conflate the two axes (decision 16).
 
-**J. Treat stage 11 as IndustryFlow absorbing and retiring the ERP.** *Rejected:* IndustryGrow is not standalone but also is not disposable — it is an additional domain layer over an independent core (ADR-0001; `GLOSSARY.md` `[F]`/`[D]`). At stage 11 the foundational `[F]` data aligns to `production_unit` in the core while the grow-domain `[D]` layer remains over it (decisions 2, 3). Absorption would erase the layered architecture the project is built on.
+**L. Run the ERP on the gateway host (rev 2).** The original wording of decisions 1 and 15 invited exactly this, and it is attractive: one box per deployment, nothing else to buy, and the ERP sits next to the machines it describes. *Rejected:* the gateway is the stateless replaceable edge — ADR-0004's replaceability driver requires a unit to be swappable in minutes with no accumulated local state lost, and ADR-0020 decision 5 enumerates exhaustively what may persist there. A system of record is not in that enumeration and cannot be added to it without an ADR. Putting one there converts a drop-in gateway swap into a data-recovery exercise for serial allocation, provisioning bindings, and integration history — the records with the least tolerance for loss. The self-hostability the original wording was reaching for is preserved in decision 1 without naming the one host that breaks it.
 
 **M. Record the gateway's certificate under decision 5 by giving it a synthetic E-instance serial (rev 3).** No new entity, no new decision. *Rejected:* `Exxxx-VVVVVV-NNNNNN` names something the project designs and manufactures (ADR-0017); a gateway is bought (ADR-0019). A synthetic one would put a value in the identity axis that names nothing, and every consumer of the grammar would have to learn the exception. Decision 17 costs one entity and keeps the grammar meaning what it says.
 
@@ -225,17 +225,14 @@ This ADR carries **decisions and rationale only**. Database engine, ERP product/
 
 **O. Record against each node what it is running, so the ERP can report update progress (rev 4).** *Rejected:* this is decision 10 and ADR-0022 decision 9 by another name — firmware-flash events are operational intake, excluded by category. ADR-0029 decision 15 was itself corrected for proposing it, and the correction gives the reason: the observation belongs where the bus is. An ERP field for "running version" could only be filled by a machine reporting in, which is the write ADR-0022 decision 8 rev 1 refuses to give a gateway; left unfilled it is a column that always lies. The question is answerable at the gateway now and enters a system of record at stage 11 with the rest of the operational stream (ADR-0020 decision 9).
 
-**L. Run the ERP on the gateway host (rev 2).** The original wording of decisions 1 and 15 invited exactly this, and it is attractive: one box per deployment, nothing else to buy, and the ERP sits next to the machines it describes. *Rejected:* the gateway is the stateless replaceable edge — ADR-0004's replaceability driver requires a unit to be swappable in minutes with no accumulated local state lost, and ADR-0020 decision 5 enumerates exhaustively what may persist there. A system of record is not in that enumeration and cannot be added to it without an ADR. Putting one there converts a drop-in gateway swap into a data-recovery exercise for serial allocation, provisioning bindings, and integration history — the records with the least tolerance for loss. The self-hostability the original wording was reaching for is preserved in decision 1 without naming the one host that breaks it.
-
 ## Consequences
 
 ### Positive
 
 - **The instance/integration layer finally has a home**, unblocking serial allocation, provisioning binding, and integration tracking for the stage 1–10 survey and first-cultivation work that produces those records (ADR-0016, ADR-0020).
-- **Mobility becomes a query, not archaeology.** ADR-0016's inventory model — an instance moving between positions and deployments — is answered by relational history (decision 6), which is what the model always needed and what neither the flat store nor the repo could give.
+- **Mobility becomes a query.** ADR-0016's inventory model — an instance moving between positions and deployments — is answered by the history decision 6 keeps, which neither the flat store nor the repo could give.
 - **Single source of truth is preserved by construction.** Each boundary (decisions 10–11) leaves the ERP owning only facts no other home owns; type meaning, blobs, SKUs, and the forensic trail stay where they already live.
-- **Stage-11 transition is a migration and re-layering, not a rewrite**, because the schema is an IndustryFlow-conformant subset of the multitenant `production_unit` model and integrates as core-plus-layer (decisions 2, 3).
-- **Simple to run now, ready to scale later.** Operating single-tenant keeps the bring-up store trivial (no tenancy machinery), while the conformant schema (decision 16) means the estate becomes "tenant N" in the multitenant core without a remodel — both benefits at once.
+- **Stage-11 transition is a migration and re-layering, not a rewrite.** The schema is an IndustryFlow-conformant subset of the multitenant `production_unit` model and integrates as core-plus-layer (decisions 2, 3), so the estate enters the core as "tenant N" — while operating single-tenant keeps the bring-up store free of tenancy machinery (decision 16).
 - **Self-builders can run it**, matching the open-core self-build path; the data stays private (decision 14).
 - **The object store keeps its clean flat-blob role**; the ERP adds the queryable index over it (decision 7) without duplicating blob content.
 

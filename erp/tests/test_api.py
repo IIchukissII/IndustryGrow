@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import base64
 import json
+import logging
 from pathlib import Path
 
 import pytest
@@ -619,11 +620,8 @@ def test_instance_renders_to_pdf(client, warehouse):
 
 
 def test_an_instance_pdf_renders_unicode_in_the_record(client, warehouse):
-    """The core PDF fonts are latin-1; operator-entered text is not.
-
-    A removal reason with an em dash or a tick used to raise inside the renderer
-    and surface as a 500 on the report route.
-    """
+    """Operator-entered text is not latin-1 — a removal reason carries whatever
+    was typed, and it reaches the page as typed."""
     inst = _one_instance(client)
     client.put(
         "/api/v1/machines/GBOX_0001",
@@ -693,14 +691,12 @@ def test_a_document_pdf_is_guarded_like_the_read_through(client, warehouse):
 
 
 # ---- the markdown renderer -------------------------------------------------
-# At this level rather than through the route: the bugs below are fpdf2's HTML
-# subset refusing real documents, and the route's guards are tested above.
+# At this level rather than through the route: these are constructs the store's
+# documents contain, and the route's guards are tested above.
 
 
 def test_markdown_with_markup_inside_a_table_cell_renders():
-    """fpdf2 refuses any element nested in a cell, and the store's manuals are full
-    of `code` and bold inside tables. A plain-table test missed this, and every real
-    document 500'd."""
+    """The store's manuals are full of `code` and bold inside table cells."""
     blob = reports.markdown_document(
         object_key="x.md",
         text=(
@@ -711,8 +707,7 @@ def test_markdown_with_markup_inside_a_table_cell_renders():
 
 
 def test_markdown_with_internal_links_renders():
-    """An in-document link records a named destination nothing sets; fpdf2 then
-    refuses to emit the file at all — at output(), not at render."""
+    """A link to a heading anchor no extension generated resolves to nothing."""
     blob = reports.markdown_document(
         object_key="x.md",
         text="# Top\n\nSee [section six](#6-physical-hat).\n\n## 6 Physical HAT\n\nText.\n",
@@ -720,17 +715,20 @@ def test_markdown_with_internal_links_renders():
     assert blob.startswith(b"%PDF-")
 
 
-def test_every_markdown_document_in_the_store_renders():
+def test_every_markdown_document_in_the_store_renders(caplog):
     """The regression that matters: the real corpus, not a fixture.
 
-    Asserts the *formatted* path, not merely that bytes came back. The fallback
+    Asserts the *formatted* path, not merely that bytes came back: the fallback
     produces a valid PDF too, so a check for `%PDF-` alone passes while every
-    document quietly prints as unformatted text — which is what an unsupported
-    tag style did.
+    document quietly prints as unformatted text. The fallback is caught through
+    the log record it writes, because the page text itself is compressed in the
+    output.
     """
     docs = sorted(Path(settings.store_dir).glob("*.md"))
     assert docs, "no markdown in store/ — this test would pass vacuously"
-    for doc in docs:
-        blob = reports.markdown_document(object_key=doc.name, text=doc.read_text())
-        assert blob.startswith(b"%PDF-"), doc.name
-        assert b"Rendered as plain text" not in blob, f"{doc.name} fell back to plain text"
+    with caplog.at_level(logging.ERROR, logger="app.services.reports"):
+        for doc in docs:
+            blob = reports.markdown_document(object_key=doc.name, text=doc.read_text())
+            assert blob.startswith(b"%PDF-"), doc.name
+    fallbacks = [r for r in caplog.records if r.name == "app.services.reports"]
+    assert not fallbacks, f"fell back to plain text: {[r.getMessage() for r in fallbacks]}"

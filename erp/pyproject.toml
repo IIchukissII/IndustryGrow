@@ -15,10 +15,10 @@ dependencies = [
   "pydantic-settings>=2.3",
   "python-multipart>=0.0.9",
   "boto3>=1.34",
-  # PDF reports (app/services/reports.py). Pure Python — no cairo, no pango,
-  # no system libraries, so the single container stays compact (ADR-0021 d15).
-  "fpdf2>=2.8",
-  # Markdown -> HTML for the document PDFs; fpdf2 renders the HTML subset.
+  # PDF reports (app/services/reports.py): both kinds are HTML laid out against
+  # a print stylesheet. Needs Pango and HarfBuzz in the image — see Dockerfile.
+  "weasyprint>=62",
+  # Markdown -> HTML for the document PDFs.
   "markdown>=3.6",
 ]
 
