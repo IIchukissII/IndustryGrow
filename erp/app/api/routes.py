@@ -15,7 +15,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.concurrency import iterate_in_threadpool
-from fastapi.responses import StreamingResponse
+from fastapi.responses import Response, StreamingResponse
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pymongo.errors import DuplicateKeyError
 
@@ -31,7 +31,7 @@ from app.api.deps import (
 from app.config import settings
 from app.db import DOMAIN, FOUNDATION
 from app.models import identifiers
-from app.services import docs, firmware, integration, profiles, registry
+from app.services import docs, firmware, integration, profiles, registry, reports
 from app.services import serials as serials_svc
 from app.services.integration import PositionOccupiedError
 from app.services.warehouse import Warehouse
@@ -208,6 +208,43 @@ async def bind_provisioning(
     return schemas.Ack(detail=f"bound {instance_id}")
 
 
+@router.get("/instances/{instance_id}/report.pdf", tags=["documents"])
+async def instance_report(
+    instance_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    _role: str = Depends(require_read),
+):
+    """The instance dossier as a printable PDF.
+
+    A representation, not a resource: every fact in it is served by the JSON
+    routes above, so this introduces no entity and ADR-0022 d1's enumeration is
+    unchanged. Rendered for monochrome — these get printed and filed.
+
+    `attachment`, unlike the document read-through: a dossier is produced to be
+    kept, and a browser that renders it inline gives an operator a tab instead of
+    a file.
+    """
+    instance = await _require_instance(db, instance_id)
+    identity = await db[FOUNDATION["instance_identity"]].find_one({"_id": instance_id})
+    history = await integration.instance_history(db, instance_id)
+    documents = await docs.docs_for(db, instance_id)
+
+    # Off-thread: rendering is CPU-bound and this handler shares the event loop
+    # with every other request.
+    blob = await asyncio.to_thread(
+        reports.instance_dossier,
+        instance=instance,
+        identity=identity,
+        history=history,
+        documents=documents,
+    )
+    return Response(
+        content=blob,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{instance_id}-dossier.pdf"'},
+    )
+
+
 @router.get(
     "/instances/{instance_id}/history",
     response_model=list[schemas.IntegrationOut],
@@ -250,16 +287,41 @@ async def upload_document(
     await _require_instance(db, instance_id)
 
     # ADR-0017 d11: calibration recurs where quality control does not, so BOTH
-    # calibration records are dated and a later run cannot overwrite an earlier
-    # one. Dating only the -CC left every -CP of an instance sharing one key: the
-    # warehouse put overwrites in place, so a second run destroyed the first run's
-    # raw points while leaving its index row behind. QP/QR/PR are issued once per
-    # instance and take no stamp.
+    # calibration records are stamped and a later run cannot overwrite an earlier
+    # one. QP/QR/PR are issued once per instance and take no stamp.
+    #
+    # To the SECOND, not to the day. A date alone satisfies d11 only for runs on
+    # different days: two calibrations of the same probe on one day produced the
+    # same key, the warehouse put overwrote in place, and the first run's raw
+    # points were gone while its index row remained. Recalibrating twice in a
+    # session is ordinary during bring-up, so the day was the wrong resolution.
+    #
+    # `doc_date` still names the day when the caller supplies one — it is the day
+    # the calibration happened, which may not be the day it is filed — and the
+    # time component comes from the upload either way. It only has to disambiguate
+    # within that day.
     suffix = doc_type
     if doc_type in {"CP", "CC"}:
-        stamp = (doc_date or datetime.now(UTC).date()).strftime("%Y%m%d")
-        suffix = f"{doc_type}-{stamp}"
+        now = datetime.now(UTC)
+        day = (doc_date or now.date()).strftime("%Y%m%d")
+        suffix = f"{doc_type}-{day}T{now.strftime('%H%M%S')}"
     object_key = f"{instance_id}-{suffix}"
+
+    # d11 admits both encodings — dated or sequenced — and this uses each where it
+    # works. The stamp separates runs; a sequence separates what the stamp cannot,
+    # which is two uploads inside one second or a clock that stepped backwards.
+    # Refusing instead would be correct and useless: the operator has the points
+    # in front of them and no way to file them but to wait.
+    if doc_type in {"CP", "CC"}:
+        base, n = object_key, 1
+        while await warehouse.exists(object_key):
+            n += 1
+            object_key = f"{base}-{n}"
+            if n > 99:  # not reachable by clock skew; a bound, not a policy
+                raise HTTPException(
+                    status.HTTP_409_CONFLICT,
+                    f"{base} and 99 sequenced variants all exist",
+                )
 
     valid_until_dt = (
         datetime.combine(valid_until, datetime.min.time(), tzinfo=UTC) if valid_until else None

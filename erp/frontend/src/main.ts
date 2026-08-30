@@ -395,6 +395,15 @@ async function instanceDetail(): Promise<string> {
         <span class="meta">indexed in the warehouse</span></div>
     </section>
 
+    <section class="panel"><div class="ph"><h2>Dossier</h2>
+      <span class="desc">identity, provisioning binding, integration history and documents, as one
+      printable sheet</span></div>
+      <div class="form">
+        <button class="btn" id="rp-pdf">Download PDF</button>
+        <span class="ref">rendered for monochrome — it is meant to be printed and filed</span>
+      </div>
+      <div class="result" id="rp-out"></div></section>
+
     <section class="panel"><div class="ph"><h2>Lifecycle documents</h2>
       <span class="desc">blob → warehouse, key → ERP · QP, QR, CP, CC and PR only</span></div>
       <div class="form">
@@ -764,6 +773,11 @@ function readerDialog(): HTMLDialogElement {
   // before showing it, so a stale body can never be displayed. It only keeps a
   // closed reader from holding a manual's worth of DOM.
   dlg.addEventListener("close", () => {
+    // Revoke before clearing: an image or PDF body holds an object URL, and
+    // dropping the element does not free the blob behind it. A reader used on a
+    // few fabrication packages would otherwise retain them for the session.
+    dlg.querySelectorAll<HTMLImageElement | HTMLIFrameElement>("img[src^=blob\\:], iframe[src^=blob\\:]")
+      .forEach((el) => URL.revokeObjectURL(el.src));
     dlg.innerHTML = "";
   });
   document.body.append(dlg);
@@ -787,6 +801,58 @@ function downloadName(objectKey: string, contentType: string): string {
   const base = objectKey.split("/").pop() || objectKey;
   if (/\.[A-Za-z0-9]{1,8}$/.test(base)) return base;
   return base + (EXT_FOR.get(contentType.split(";")[0].trim().toLowerCase()) ?? "");
+}
+
+/**
+ * A CSV rendered as a table.
+ *
+ * The store's `-L` bills of materials and `-pos` placement files are CSV, and
+ * read as text they are a wall of commas — the columns are the whole point. This
+ * is a deliberately small parser: it handles quoted fields and embedded commas,
+ * quotes and newlines, which is what a spreadsheet export actually emits, and
+ * nothing beyond that.
+ *
+ * A file it cannot parse falls back to plain text rather than to a wrong table,
+ * because a table with the columns silently misaligned is worse than no table.
+ */
+function parseCsv(text: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = "";
+  let quoted = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (quoted) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; } else quoted = false;
+      } else field += c;
+      continue;
+    }
+    if (c === '"') quoted = true;
+    else if (c === ",") { row.push(field); field = ""; }
+    else if (c === "\n") { row.push(field); rows.push(row); row = []; field = ""; }
+    else if (c !== "\r") field += c;
+  }
+  if (field !== "" || row.length) { row.push(field); rows.push(row); }
+  return rows.filter((r) => r.some((cell) => cell.trim() !== ""));
+}
+
+function csvTable(text: string): string {
+  const rows = parseCsv(text);
+  if (rows.length < 2) return `<pre class="rd-body plain">${esc(text)}</pre>`;
+  const [head, ...body] = rows;
+  const width = head.length;
+  const th = head.map((h) => `<th>${esc(h)}</th>`).join("");
+  const tr = body
+    .map((r) => {
+      // Pad or trim to the header width so a ragged row cannot shift every
+      // column after it.
+      const cells = Array.from({ length: width }, (_, i) => r[i] ?? "");
+      return `<tr>${cells.map((c) => `<td>${esc(c)}</td>`).join("")}</tr>`;
+    })
+    .join("");
+  return `<div class="rd-body rd-csv"><table><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table>
+    <div class="rd-csv-foot">${body.length} row${body.length === 1 ? "" : "s"} \u00b7 ${width} columns</div></div>`;
 }
 
 /**
@@ -820,6 +886,7 @@ async function openDocument(instanceId: string | null, objectKey: string): Promi
   let bytes: Blob | null = null;
   let saveAs = objectKey;
   let tabUrl: string | null = null;
+  let objectUrl: string | null = null;
 
   const head = (note = "") => {
     const tab = tabUrl
@@ -845,11 +912,28 @@ async function openDocument(instanceId: string | null, objectKey: string): Promi
       const type = res.headers.get("content-type") ?? "";
       bytes = await res.blob();
       saveAs = downloadName(objectKey, type);
+      const isImage = /^image\//.test(type) || /\.(png|jpe?g|gif|webp|svg)$/i.test(objectKey);
+      const isPdf = /pdf/.test(type) || /\.pdf$/i.test(objectKey);
+      const isCsv = /csv/.test(type) || /\.csv$/i.test(objectKey);
       const textual =
         /^text\/|json|markdown|xml|csv/.test(type) || /\.(md|markdown|txt|csv)$/i.test(objectKey);
-      if (!textual) {
+
+      // Images and PDFs are shown from an object URL over the bytes already
+      // fetched, not from the presigned grant: the grant is optional (a
+      // deployment whose bucket cannot mint one still reads through), and a
+      // viewer that only worked where it could would be the harder case to
+      // explain. The URL is revoked when the dialog closes.
+      if (isImage) {
+        objectUrl = URL.createObjectURL(bytes);
+        body = `<div class="rd-body rd-image"><img src="${objectUrl}" alt="${esc(objectKey)}" /></div>`;
+      } else if (isPdf) {
+        objectUrl = URL.createObjectURL(bytes);
+        body = `<iframe class="rd-body rd-pdf" src="${objectUrl}" title="${esc(objectKey)}"></iframe>`;
+      } else if (isCsv) {
+        body = csvTable(await bytes.text());
+      } else if (!textual) {
         body = `<div class="empty rd-binary"><strong>${esc(type.split(";")[0] || "binary")}</strong>
-          <span>Not a text document. Download it, or open it in a tab to view it.</span></div>`;
+          <span>Not a previewable document. Download it, or open it in a tab to view it.</span></div>`;
       } else {
         const text = await bytes.text();
         const md = /markdown/.test(type) || /\.(md|markdown)$/i.test(objectKey);
@@ -1291,6 +1375,25 @@ function wire(): void {
           return `<span class="rl">Recorded</span>${esc(tag)} is noted as the version running on ${esc(state.machine)}.`;
         }),
       ),
+    );
+  }
+
+  if (state.view === "instance") {
+    $("rp-pdf")?.addEventListener("click", () =>
+      act("rp-out", async () => {
+        // The report is a plain fetch, not a navigation: the route is token
+        // authenticated and a navigation carries no Authorization header. The
+        // blob is handed to a synthetic anchor so the browser saves it under the
+        // filename the server chose.
+        const blob = await api.instanceReport(state.instance!);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${state.instance}-dossier.pdf`;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url));
+        return `<span class="rl">Saved</span>${esc(state.instance)}-dossier.pdf`;
+      }),
     );
   }
 

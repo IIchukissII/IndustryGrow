@@ -383,6 +383,25 @@ button.seg.key:focus-visible { outline: 2px solid var(--violet); outline-offset:
 .rd-head .btn.sm { padding: 5px 11px; font-size: 11.5px; }
 .rd-body { padding: 28px 36px; overflow-y: auto; }
 .rd-binary { display: flex; flex-direction: column; gap: 6px; padding: 40px 0; }
+
+/* An image is shown against a light plate, not the console's dark ground: a
+   board render or a schematic is drawn for paper, and a dark surround inverts
+   the reading of a photograph. Contained rather than cropped — a fabrication
+   drawing is read whole. */
+.rd-body.rd-image { display: flex; align-items: center; justify-content: center; background: #f4f6f8; padding: 18px; }
+.rd-body.rd-image img { max-width: 100%; max-height: 72vh; object-fit: contain; border-radius: 6px; }
+
+/* The PDF viewer is the browser's own. */
+.rd-body.rd-pdf { width: 100%; height: 74vh; border: 0; background: #f4f6f8; }
+
+/* CSV as a table. The store's -L bills of materials and -pos placement files
+   are read column-wise; as text they are a wall of commas. */
+.rd-body.rd-csv { overflow: auto; }
+.rd-body.rd-csv table { border-collapse: collapse; width: 100%; font-family: var(--mono); font-size: 12px; }
+.rd-body.rd-csv th, .rd-body.rd-csv td { text-align: left; padding: 5px 10px; white-space: nowrap; border-bottom: 1px solid var(--line-2); }
+.rd-body.rd-csv th { position: sticky; top: 0; background: var(--void-1); color: var(--ink-3); font-weight: 600; font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; }
+.rd-body.rd-csv tbody tr:hover td { background: rgba(103, 232, 249, 0.05); }
+.rd-csv-foot { padding: 10px 2px 0; font-size: 11px; color: var(--ink-3); }
 .rd-binary strong { font-family: var(--mono); font-size: 12.5px; color: var(--ink-2); }
 
 /* Markdown set for reading. The measure applies to PROSE only: a manual's tables

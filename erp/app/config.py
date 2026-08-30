@@ -44,6 +44,12 @@ class Settings(BaseSettings):
     # (ADR-0017 d15: identifiers are object keys). See `python -m app.store_sync`.
     store_dir: str = Field(default="../store")
 
+    # The mark printed on PDF reports — the README's mono-light logo, rasterised
+    # (app/services/reports.py). Relative paths resolve against erp/; the
+    # container sets an absolute one because it copies img/ to a fixed place.
+    # A missing file prints the report without the mark rather than failing it.
+    report_logo: str = Field(default="../img/industrygrow-logo-mono-light.png")
+
     # REGISTRY.md — the authoritative type registry (ADR-0017 d3, ADR-0019). The
     # ERP reads it for labels and never copies it (ADR-0021 d11); see
     # app/services/registry.py. Relative paths resolve against the erp/ directory.

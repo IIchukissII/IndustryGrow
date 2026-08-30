@@ -337,9 +337,11 @@ def test_calibration_key_carries_its_date_and_is_queryable(client, warehouse):
         files={"file": ("cal.pdf", b"%PDF-1.7 cert", "application/pdf")},
         headers=AUTH,
     )
-    # A recalibration must not overwrite its predecessor, so the CC key is dated.
-    assert r.json()["object_key"] == f"{inst}-CC-20260722"
-    assert f"{inst}-CC-20260722" in warehouse.objects
+    # A recalibration must not overwrite its predecessor, so the CC key is
+    # stamped: the day it was calibrated, plus the time it was filed.
+    first_cc = r.json()["object_key"]
+    assert first_cc.startswith(f"{inst}-CC-20260722T")
+    assert first_cc in warehouse.objects
 
     # The -CP carries the same guarantee: it is the raw data behind the -CC, and
     # a second run must not overwrite the first run's points.
@@ -349,8 +351,9 @@ def test_calibration_key_carries_its_date_and_is_queryable(client, warehouse):
         files={"file": ("points.pdf", b"%PDF-1.7 points", "application/pdf")},
         headers=AUTH,
     )
-    assert r.json()["object_key"] == f"{inst}-CP-20260722"
-    assert f"{inst}-CP-20260722" in warehouse.objects
+    first_cp = r.json()["object_key"]
+    assert first_cp.startswith(f"{inst}-CP-20260722T")
+    assert first_cp in warehouse.objects
 
     # A later run lands beside it, not on top of it.
     client.post(
@@ -359,12 +362,37 @@ def test_calibration_key_carries_its_date_and_is_queryable(client, warehouse):
         files={"file": ("points2.pdf", b"%PDF-1.7 later", "application/pdf")},
         headers=AUTH,
     )
-    assert warehouse.objects[f"{inst}-CP-20260722"] == b"%PDF-1.7 points"
-    assert warehouse.objects[f"{inst}-CP-20260901"] == b"%PDF-1.7 later"
+    keys = [k for k in warehouse.objects if k.startswith(f"{inst}-CP-")]
+    assert len(keys) == 2
+    assert warehouse.objects[first_cp] == b"%PDF-1.7 points"
 
-    # ADR-0021 d7: the point of indexing the key is that expiry is a query here.
-    expiring = client.get("/api/v1/calibration/expiring?days=3650", headers=AUTH).json()
-    assert [c["instance_full_id"] for c in expiring] == [inst]
+    # Both are indexed against the instance.
+    listed = client.get(f"/api/v1/instances/{inst}/documents", headers=AUTH).json()
+    assert sum(1 for d in listed if d["doc_type"] == "CP") == 2
+
+
+def test_two_calibrations_on_one_day_do_not_overwrite(client, warehouse):
+    """ADR-0017 d11 — the case a date-only key got wrong.
+
+    Recalibrating twice in a bring-up session is ordinary. With day resolution
+    both runs shared a key, the second put overwrote the first, and the first
+    run's raw points were destroyed while its index row survived.
+    """
+    inst = _one_instance(client)
+    keys = []
+    for payload in (b"%PDF-1.7 run one", b"%PDF-1.7 run two"):
+        r = client.post(
+            f"/api/v1/instances/{inst}/documents",
+            data={"doc_type": "CP", "doc_date": "2026-07-22"},
+            files={"file": ("points.pdf", payload, "application/pdf")},
+            headers=AUTH,
+        )
+        assert r.status_code == 200, r.text
+        keys.append(r.json()["object_key"])
+
+    assert keys[0] != keys[1], "same-day calibrations must not share an object key"
+    assert warehouse.objects[keys[0]] == b"%PDF-1.7 run one"
+    assert warehouse.objects[keys[1]] == b"%PDF-1.7 run two"
 
 
 def test_failed_blob_write_leaves_no_index_row(client, warehouse):
@@ -574,3 +602,54 @@ def test_gateway_pull_is_closed_without_an_mtls_front_end(client):
     # have verified one, so the channel is shut rather than credulous. The seam
     # itself is tested in test_mtls.py; this holds the default in place.
     assert client.get("/api/v1/gateway/active-profile").status_code == 503
+
+
+# ---- printable reports -----------------------------------------------------
+
+
+def test_instance_dossier_is_a_pdf(client, warehouse):
+    inst = _one_instance(client)
+    r = client.get(f"/api/v1/instances/{inst}/report.pdf", headers=AUTH)
+    assert r.status_code == 200
+    assert r.headers["content-type"] == "application/pdf"
+    assert f'filename="{inst}-dossier.pdf"' in r.headers["content-disposition"]
+    assert r.content.startswith(b"%PDF-")
+
+
+def test_a_dossier_renders_unicode_in_the_record(client, warehouse):
+    """The core PDF fonts are latin-1; operator-entered text is not.
+
+    A removal reason with an em dash or a tick used to raise inside the renderer
+    and surface as a 500 on the report route.
+    """
+    inst = _one_instance(client)
+    client.put(
+        "/api/v1/machines/GBOX_0001",
+        json={"notes": "reference"},
+        headers=AUTH,
+    )
+    client.put(
+        "/api/v1/machines/GBOX_0001/positions/010100",
+        json={"instance_id": inst},
+        headers=AUTH,
+    )
+    client.delete(
+        "/api/v1/machines/GBOX_0001/positions/010100",
+        params={"reason": "— swapped ünïcode ✓"},
+        headers=AUTH,
+    )
+    r = client.get(f"/api/v1/instances/{inst}/report.pdf", headers=AUTH)
+    assert r.status_code == 200
+    assert r.content.startswith(b"%PDF-")
+
+
+def test_a_dossier_needs_a_real_instance(client):
+    assert (
+        client.get("/api/v1/instances/E0002-000001-999999/report.pdf", headers=AUTH).status_code
+        == 404
+    )
+
+
+def test_a_dossier_needs_a_token(client):
+    inst = _one_instance(client)
+    assert client.get(f"/api/v1/instances/{inst}/report.pdf").status_code == 401

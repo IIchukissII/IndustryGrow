@@ -37,11 +37,15 @@ COPY --from=console /repo/erp/frontend/dist ./console
 # mount instead, so a `git pull` updates the registry without a rebuild. That
 # mount is a *directory* for a reason — see the comment on it.
 COPY REGISTRY.md ./REGISTRY.md
+# The mark printed on PDF reports. img/ is copied into the console stage for the
+# bundle; the runtime needs its own copy because the report is rendered here.
+COPY img/industrygrow-logo-mono-light.png ./img/industrygrow-logo-mono-light.png
 
 EXPOSE 8021
 ENV ERP_HOST=0.0.0.0 ERP_PORT=8021 \
     ERP_CONSOLE_DIR=/srv/console \
-    ERP_REGISTRY_PATH=/srv/REGISTRY.md
+    ERP_REGISTRY_PATH=/srv/REGISTRY.md \
+    ERP_REPORT_LOGO=/srv/img/industrygrow-logo-mono-light.png
 # --no-proxy-headers: the gateway mTLS check tests the transport peer against the
 # trusted-proxy list (ADR-0022 d2, app/services/mtls.py). Uvicorn's proxy-header
 # mode would rewrite that address from X-Forwarded-For, i.e. from the request.
