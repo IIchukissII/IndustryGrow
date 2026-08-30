@@ -19,6 +19,8 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Amendment** — decision 5 (2026-08-30): how the offline property is obtained and
   that it is obtained by tooling rather than by procedure. Bounds decision 5; changes
   nothing it decided.
+- **Amendment** — decision 14 (2026-08-30): the firmware signing key as a second root,
+  discharging ADR-0029's deferred custody item.
 
 ## Context and problem
 
@@ -251,6 +253,23 @@ bootstrap tooling is allowed to run.
     the ERP would place the bootstrap procedure in the artifact least entitled to
     perform it, and would suggest a trust relationship the chain does not have: the ERP
     is a *relying party* on this PKI, never an authority within it.
+
+14. **The firmware signing key is a second root under this ceremony** (added
+    2026-08-30). A bare P-256 keypair, not a CA: the bootloader holds its public half
+    and verifies each image directly (ADR-0029 d6), and it is separate from the operator
+    root (ADR-0007 d8). Discharges ADR-0029's deferred custody item.
+
+    Decisions 5 and 6 apply unchanged. Rotation additionally requires re-flashing every
+    bootloader over SWD (ADR-0029 d10): an operator leaf is re-issued over the wire,
+    this key is not.
+
+    **Development keys are outside this decision,** as `deploy/mtls/make-test-ca.sh` is
+    outside the operator root. Marked where created, not custodied, not deployed. A
+    bootloader built with one refuses production images and the reverse.
+
+    **Single-copy custody is a deployment choice.** The reference deployment holds one.
+    Its cost: the estate accepts no further signed image until every bootloader is
+    re-flashed by hand.
 
 ## Alternatives considered
 

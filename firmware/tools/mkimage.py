@@ -119,23 +119,47 @@ def sign(path: str, data: bytes, passphrase=None) -> bytes:
     return r.to_bytes(32, "big") + s.to_bytes(32, "big")
 
 
-def new_key(path: str) -> int:
-    """Write a fresh P-256 private key. Refuses to overwrite one: replacing a
-    signing key means re-flashing every node in service over SWD."""
+def new_key(path: str, passphrase=None, dev: bool = False) -> int:
+    """Write a fresh P-256 signing key, encrypted.
+
+    Refuses to overwrite one: replacing a signing key means re-flashing every node
+    in service over SWD (ADR-0024 d14). Refuses to write one unencrypted for the
+    same reason — it is the one key whose loss cannot be repaired over the wire,
+    and d5's encryption-at-rest applies to it with more force than to the operator
+    root, not less.
+    """
     from cryptography.hazmat.primitives import serialization
     from cryptography.hazmat.primitives.asymmetric import ec
 
     if os.path.exists(path):
         sys.stderr.write(f"mkimage: {path} exists; refusing to overwrite a signing key\n")
         return 1
+    if not passphrase and not dev:
+        sys.stderr.write(
+            "mkimage: --new-key needs --key-pass; a signing key is not written in the "
+            "clear (ADR-0024 d5, d14). For a bench key, pass --dev.\n"
+        )
+        return 1
     pem = ec.generate_private_key(ec.SECP256R1()).private_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PrivateFormat.PKCS8,
-        encryption_algorithm=serialization.NoEncryption(),
+        encryption_algorithm=(
+            serialization.BestAvailableEncryption(passphrase)
+            if passphrase
+            else serialization.NoEncryption()
+        ),
     )
-    with open(path, "wb") as f:
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(fd, "wb") as f:
         f.write(pem)
-    print(f"mkimage: wrote {path} -- keep it out of the repository")
+    if dev and not passphrase:
+        print(
+            f"mkimage: wrote {path} as a DEVELOPMENT key -- unencrypted, not custodied,\n"
+            "         not for any deployment (ADR-0024 d14). A node flashed with a\n"
+            "         bootloader holding this key refuses production images, and vice versa."
+        )
+    else:
+        print(f"mkimage: wrote {path} (encrypted, mode 600) -- keep it out of the repository")
     return 0
 
 
@@ -177,12 +201,17 @@ def main() -> int:
     )
     ap.add_argument("--new-key", metavar="PATH", help="write a new signing key and exit")
     ap.add_argument(
+        "--dev",
+        action="store_true",
+        help="with --new-key: a bench key, unencrypted and not custodied",
+    )
+    ap.add_argument(
         "--public-key", metavar="PATH", help="print a key's public half as hex and exit"
     )
     args = ap.parse_args()
 
     if args.new_key:
-        return new_key(args.new_key)
+        return new_key(args.new_key, key_passphrase(args.key_pass), args.dev)
     if args.public_key:
         return public_key_hex(args.public_key, key_passphrase(args.key_pass))
     for required in (
