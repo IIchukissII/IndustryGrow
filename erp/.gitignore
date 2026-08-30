@@ -2,6 +2,11 @@ __pycache__/
 *.pyc
 .venv/
 .env
+# A deployment host accumulates these when .env is edited in place; they hold the
+# same credentials and only the exact name `.env` was ignored, so git offered
+# them for staging.
+.env.bak*
+.env.*.bak
 .ruff_cache/
 .pytest_cache/
 dist/
