@@ -721,9 +721,16 @@ def test_markdown_with_internal_links_renders():
 
 
 def test_every_markdown_document_in_the_store_renders():
-    """The regression that matters: the real corpus, not a fixture."""
+    """The regression that matters: the real corpus, not a fixture.
+
+    Asserts the *formatted* path, not merely that bytes came back. The fallback
+    produces a valid PDF too, so a check for `%PDF-` alone passes while every
+    document quietly prints as unformatted text — which is what an unsupported
+    tag style did.
+    """
     docs = sorted(Path(settings.store_dir).glob("*.md"))
     assert docs, "no markdown in store/ — this test would pass vacuously"
     for doc in docs:
         blob = reports.markdown_document(object_key=doc.name, text=doc.read_text())
         assert blob.startswith(b"%PDF-"), doc.name
+        assert b"Rendered as plain text" not in blob, f"{doc.name} fell back to plain text"
