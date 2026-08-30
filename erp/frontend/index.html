@@ -8,10 +8,12 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>IndustryGrow — Instance &amp; Integration</title>
-    <!-- The tree-of-life mark, the same asset the console renders (main.ts) and
-         the boards carry. Vite resolves and fingerprints it through img/, which
-         vite.config.ts allows; it is not a second copy of the brand. -->
-    <link rel="icon" type="image/svg+xml" href="../../img/industrygrow-logo.svg" />
+    <!-- The mark as the boards carry it: extracted from the LOGO footprint's
+         B.SilkS polygons on E0002, un-mirrored (a back-layer footprint is drawn
+         mirrored) and squared. One path, no gradients — it survives 16 px, which
+         the full logo does not. It carries its own light/dark fill, so the tab
+         icon follows the browser theme. -->
+    <link rel="icon" type="image/svg+xml" href="../../img/industrygrow-mark.svg" />
   </head>
   <body>
     <div id="app"></div>
