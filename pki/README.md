@@ -70,9 +70,10 @@ op run --env-file=pki/.env.op.tpl -- ./pki/ceremony.sh \
 ```
 
 Refuses an existing `--dir`, and a root and issuing passphrase that are the same.
+Reports the ceremony **incomplete** until custody is done, because no script can
+do or verify that step.
 
-The steps below are what it runs, for an operator driving them by hand or working
-on a machine with no `unshare`.
+Steps 1–3 below are what it runs, for an operator driving them by hand.
 
 ## Step 1 — the operator root
 
