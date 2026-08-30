@@ -109,6 +109,7 @@ def log(message: str) -> None:
 class Config:
     base: str
     chain: Path
+    key: Path | None
     anchor: Path
     timeout: int = DEFAULT_TIMEOUT
     interval: int = DEFAULT_INTERVAL
@@ -124,6 +125,7 @@ class Config:
         return cls(
             base=f"{url}/api/v1/gateway/firmware",
             chain=Path(os.environ.get("IGROW_GATEWAY_CHAIN", PKI_DIR / "gateway-chain.crt")),
+            key=Path(os.environ.get("IGROW_GATEWAY_KEY", PKI_DIR / "gateway.key")),
             anchor=Path(os.environ.get("IGROW_OPERATOR_ROOT", PKI_DIR / "operator-root.crt")),
             timeout=int(os.environ.get("IGROW_FIRMWARE_TIMEOUT", DEFAULT_TIMEOUT)),
             interval=int(os.environ.get("IGROW_FIRMWARE_INTERVAL", DEFAULT_INTERVAL)),
@@ -140,7 +142,10 @@ def _context(config: Config) -> ssl.SSLContext:
         if not path.exists():
             raise FirmwareError(f"no {what} at {path}")
     context = ssl.create_default_context(cafile=str(config.anchor))
-    context.load_cert_chain(str(config.chain), str(config.chain))
+    # Separate key file when there is one; inside the chain otherwise. See the
+    # same note in profile_client.
+    keyfile = str(config.key) if config.key and config.key.exists() else None
+    context.load_cert_chain(str(config.chain), keyfile)
     return context
 
 

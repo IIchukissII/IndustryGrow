@@ -84,6 +84,7 @@ def log(message: str) -> None:
 class Config:
     url: str
     chain: Path  # the gateway's leaf + issuing intermediate (ADR-0024 d1/d3)
+    key: Path | None  # the private key, when it is not inside the chain file
     anchor: Path  # the operator root the ERP's server cert is checked against
     verify_key: Path | None  # the ADR-0025 profile-verification public key
     timeout: int = DEFAULT_TIMEOUT
@@ -103,6 +104,7 @@ class Config:
         return cls(
             url=f"{url}/api/v1/gateway/active-profile",
             chain=Path(os.environ.get("IGROW_GATEWAY_CHAIN", PKI_DIR / "gateway-chain.crt")),
+            key=Path(os.environ.get("IGROW_GATEWAY_KEY", PKI_DIR / "gateway.key")),
             anchor=Path(os.environ.get("IGROW_OPERATOR_ROOT", PKI_DIR / "operator-root.crt")),
             verify_key=Path(verify_key) if verify_key else None,
             timeout=int(os.environ.get("IGROW_PROFILE_TIMEOUT", DEFAULT_TIMEOUT)),
@@ -254,7 +256,12 @@ def pull(config: Config) -> dict:
             raise ProfileError(f"no {what} at {path}")
 
     context = ssl.create_default_context(cafile=str(config.anchor))
-    context.load_cert_chain(str(config.chain), str(config.chain))
+    # The key is a separate file when one exists, and inside the chain otherwise.
+    # Passing the chain as its own keyfile — which this did — works only for a
+    # combined PEM and fails with an opaque "PEM lib" error for the ordinary
+    # layout of a certificate beside its key, which is what the CA tooling emits.
+    keyfile = str(config.key) if config.key and config.key.exists() else None
+    context.load_cert_chain(str(config.chain), keyfile)
     try:
         with urllib.request.urlopen(config.url, timeout=config.timeout, context=context) as reply:
             body = reply.read()
