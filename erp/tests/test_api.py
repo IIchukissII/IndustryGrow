@@ -607,16 +607,16 @@ def test_gateway_pull_is_closed_without_an_mtls_front_end(client):
 # ---- printable reports -----------------------------------------------------
 
 
-def test_instance_dossier_is_a_pdf(client, warehouse):
+def test_instance_renders_to_pdf(client, warehouse):
     inst = _one_instance(client)
     r = client.get(f"/api/v1/instances/{inst}/report.pdf", headers=AUTH)
     assert r.status_code == 200
     assert r.headers["content-type"] == "application/pdf"
-    assert f'filename="{inst}-dossier.pdf"' in r.headers["content-disposition"]
+    assert f'filename="{inst}.pdf"' in r.headers["content-disposition"]
     assert r.content.startswith(b"%PDF-")
 
 
-def test_a_dossier_renders_unicode_in_the_record(client, warehouse):
+def test_an_instance_pdf_renders_unicode_in_the_record(client, warehouse):
     """The core PDF fonts are latin-1; operator-entered text is not.
 
     A removal reason with an em dash or a tick used to raise inside the renderer
@@ -643,13 +643,48 @@ def test_a_dossier_renders_unicode_in_the_record(client, warehouse):
     assert r.content.startswith(b"%PDF-")
 
 
-def test_a_dossier_needs_a_real_instance(client):
+def test_an_instance_pdf_needs_a_real_instance(client):
     assert (
         client.get("/api/v1/instances/E0002-000001-999999/report.pdf", headers=AUTH).status_code
         == 404
     )
 
 
-def test_a_dossier_needs_a_token(client):
+def test_an_instance_pdf_needs_a_token(client):
     inst = _one_instance(client)
     assert client.get(f"/api/v1/instances/{inst}/report.pdf").status_code == 401
+
+
+def test_a_repository_markdown_document_renders_to_pdf(client, warehouse):
+    """The store's -M manuals are markdown; an operator wants them on paper."""
+    key = "SP0004-M-gateway-bringup.md"
+    warehouse.objects[key] = b"# Gateway bring-up\n\nStep one.\n\n| a | b |\n|---|---|\n| 1 | 2 |\n"
+    r = client.get(f"/api/v1/store-documents/{key}/pdf", headers=AUTH)
+    assert r.status_code == 200, r.text
+    assert r.headers["content-type"] == "application/pdf"
+    assert 'filename="SP0004-M-gateway-bringup.pdf"' in r.headers["content-disposition"]
+    assert r.content.startswith(b"%PDF-")
+
+
+def test_only_markdown_renders_to_pdf(client, warehouse):
+    """A CSV through the markdown renderer is noise, not a document."""
+    key = "E0001-000003-L.csv"
+    warehouse.objects[key] = b"ref,value\nR1,10k\n"
+    r = client.get(f"/api/v1/store-documents/{key}/pdf", headers=AUTH)
+    assert r.status_code == 422
+    assert "markdown" in r.json()["detail"]
+
+
+def test_a_document_pdf_is_guarded_like_the_read_through(client, warehouse):
+    # not in the repository's store/
+    assert (
+        client.get("/api/v1/store-documents/not-a-real-doc.md/pdf", headers=AUTH).status_code == 404
+    )
+    # and an instance document must be one this instance has indexed
+    inst = _one_instance(client)
+    assert (
+        client.get(
+            f"/api/v1/instances/{inst}/documents/someone-elses.md/pdf", headers=AUTH
+        ).status_code
+        == 404
+    )

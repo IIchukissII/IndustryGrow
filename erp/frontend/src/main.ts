@@ -395,15 +395,6 @@ async function instanceDetail(): Promise<string> {
         <span class="meta">indexed in the warehouse</span></div>
     </section>
 
-    <section class="panel"><div class="ph"><h2>Dossier</h2>
-      <span class="desc">identity, provisioning binding, integration history and documents, as one
-      printable sheet</span></div>
-      <div class="form">
-        <button class="btn" id="rp-pdf">Download PDF</button>
-        <span class="ref">rendered for monochrome — it is meant to be printed and filed</span>
-      </div>
-      <div class="result" id="rp-out"></div></section>
-
     <section class="panel"><div class="ph"><h2>Lifecycle documents</h2>
       <span class="desc">blob → warehouse, key → ERP · QP, QR, CP, CC and PR only</span></div>
       <div class="form">
@@ -893,10 +884,16 @@ async function openDocument(instanceId: string | null, objectKey: string): Promi
       ? `<a class="btn ghost sm" href="${esc(tabUrl)}" target="_blank" rel="noopener noreferrer">Open in a tab</a>`
       : "";
     const save = bytes ? `<button class="btn ghost sm" id="rd-save">Download</button>` : "";
+    // Markdown only: the renderer draws the HTML subset markdown produces, and a
+    // CSV or a zip through it would be a page of noise rather than a refusal the
+    // operator can read. Offered where it works, absent where it does not.
+    const asPdf = /\.(md|markdown)$/i.test(objectKey)
+      ? `<button class="btn ghost sm" id="rd-pdf">PDF</button>`
+      : "";
     return `<div class="rd-head">
       <span class="rd-key">${esc(objectKey)}</span>
       ${note ? `<span class="rd-note">${esc(note)}</span>` : ""}
-      <span class="rd-acts">${save}${tab}
+      <span class="rd-acts">${save}${asPdf}${tab}
         <button class="btn ghost sm" id="rd-close" aria-label="Close">Close</button></span>
     </div>`;
   };
@@ -949,6 +946,31 @@ async function openDocument(instanceId: string | null, objectKey: string): Promi
 
   reader.innerHTML = `<div class="rd-sheet">${head()}${body}</div>`;
   $("rd-close")?.addEventListener("click", () => reader.close());
+  $("rd-pdf")?.addEventListener("click", async () => {
+    const btn = $<HTMLButtonElement>("rd-pdf");
+    const was = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "rendering…";
+    try {
+      // Rendered by the ERP, not here: one renderer means a printed manual and a
+      // printed dossier share a page frame, and the browser is not asked to
+      // produce a file it would lay out differently on every machine.
+      const blob = await api.documentPdf(instanceId, objectKey);
+      const url = URL.createObjectURL(blob);
+      const a = Object.assign(document.createElement("a"), {
+        href: url,
+        download: objectKey.replace(/\.(md|markdown)$/i, "") + ".pdf",
+      });
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url));
+      btn.textContent = was;
+    } catch (e) {
+      btn.textContent = "failed";
+      btn.title = (e as Error).message;
+    } finally {
+      btn.disabled = false;
+    }
+  });
   $("rd-save")?.addEventListener("click", () => {
     const url = URL.createObjectURL(bytes!);
     const a = Object.assign(document.createElement("a"), { href: url, download: saveAs });
@@ -1378,25 +1400,6 @@ function wire(): void {
     );
   }
 
-  if (state.view === "instance") {
-    $("rp-pdf")?.addEventListener("click", () =>
-      act("rp-out", async () => {
-        // The report is a plain fetch, not a navigation: the route is token
-        // authenticated and a navigation carries no Authorization header. The
-        // blob is handed to a synthetic anchor so the browser saves it under the
-        // filename the server chose.
-        const blob = await api.instanceReport(state.instance!);
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${state.instance}-dossier.pdf`;
-        a.click();
-        setTimeout(() => URL.revokeObjectURL(url));
-        return `<span class="rl">Saved</span>${esc(state.instance)}-dossier.pdf`;
-      }),
-    );
-  }
-
   if (state.view === "firmware") {
     document.querySelectorAll<HTMLElement>("[data-intend]").forEach((btn) =>
       btn.addEventListener("click", () =>
@@ -1501,6 +1504,7 @@ function render(): void {
         <div class="crumb"><h1>${esc(TITLES[state.view])}</h1>
           <span class="ctx">${esc(state.view === "instance" ? (state.instance ?? "") : scoped ? (state.machine ?? "") : "")}</span></div>
         <span class="spacer"></span>
+        ${state.view === "instance" ? `<button class="btn ghost" id="rp-pdf" title="Identity, provisioning, integration history and documents as one printable sheet">PDF</button>` : ""}
         ${state.view === "instance" ? `<button class="btn ghost" id="back">← All instances</button>` : ""}
         ${scoped && opts ? `<select id="mach" aria-label="Cabinet">${opts}</select>` : ""}
       </div>
@@ -1516,6 +1520,30 @@ function render(): void {
   document.getElementById("back")?.addEventListener("click", () => {
     state.view = "instances";
     render();
+  });
+  document.getElementById("rp-pdf")?.addEventListener("click", async (e) => {
+    // A fetch, not a link: the route is token-authenticated and a navigation
+    // carries no Authorization header.
+    const btn = e.currentTarget as HTMLButtonElement;
+    const was = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "…";
+    try {
+      const blob = await api.instanceReport(state.instance!);
+      const url = URL.createObjectURL(blob);
+      const a = Object.assign(document.createElement("a"), {
+        href: url,
+        download: `${state.instance}.pdf`,
+      });
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url));
+      btn.textContent = was;
+    } catch (err) {
+      btn.textContent = "failed";
+      btn.title = (err as Error).message;
+    } finally {
+      btn.disabled = false;
+    }
   });
   document.getElementById("mach")?.addEventListener("change", (e) => {
     state.machine = (e.target as HTMLSelectElement).value;

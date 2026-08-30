@@ -214,7 +214,7 @@ async def instance_report(
     db: AsyncIOMotorDatabase = Depends(get_db),
     _role: str = Depends(require_read),
 ):
-    """The instance dossier as a printable PDF.
+    """One instance as a printable PDF.
 
     A representation, not a resource: every fact in it is served by the JSON
     routes above, so this introduces no entity and ADR-0022 d1's enumeration is
@@ -241,7 +241,7 @@ async def instance_report(
     return Response(
         content=blob,
         media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{instance_id}-dossier.pdf"'},
+        headers={"Content-Disposition": f'attachment; filename="{instance_id}.pdf"'},
     )
 
 
@@ -1094,6 +1094,76 @@ async def document_content(
             status.HTTP_404_NOT_FOUND, f"{instance_id} has no indexed document {object_key}"
         )
     return await _read_through(warehouse, object_key)
+
+
+# Which object keys can be rendered as a PDF. Markdown only: the renderer turns
+# markdown into the HTML subset fpdf2 draws, and handing it a CSV or a zip would
+# produce a page of mojibake rather than an error a caller can act on.
+def _is_markdown(object_key: str) -> bool:
+    return object_key.lower().endswith((".md", ".markdown"))
+
+
+async def _markdown_pdf(warehouse: Warehouse, object_key: str) -> Response:
+    """Fetch one markdown object and render it. Holds no copy of either."""
+    if not _is_markdown(object_key):
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            f"{object_key} is not a markdown document; only .md renders to PDF",
+        )
+    body = await warehouse.get_bytes(object_key)
+    if body is None:
+        raise HTTPException(
+            status.HTTP_502_BAD_GATEWAY, f"{object_key} could not be read from the warehouse"
+        )
+    blob = await asyncio.to_thread(
+        reports.markdown_document,
+        object_key=object_key,
+        text=body.decode("utf-8", "replace"),
+    )
+    stem = object_key.rsplit(".", 1)[0]
+    return Response(
+        content=blob,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{stem}.pdf"'},
+    )
+
+
+@router.get("/store-documents/{object_key}/pdf", tags=["documents"])
+async def store_document_pdf(
+    object_key: str,
+    warehouse: Warehouse = Depends(get_warehouse),
+    _role: str = Depends(require_read),
+):
+    """A repository document as a PDF.
+
+    Guarded exactly as the read-through route is: the key must name a file in the
+    repository's `store/`, resolved against it rather than joined onto it, so a
+    key holding `..` cannot walk out of the mirror.
+    """
+    if not await asyncio.to_thread(_is_store_file, object_key):
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND, f"{object_key} is not a document in the repository's store/"
+        )
+    return await _markdown_pdf(warehouse, object_key)
+
+
+@router.get("/instances/{instance_id}/documents/{object_key}/pdf", tags=["documents"])
+async def instance_document_pdf(
+    instance_id: str,
+    object_key: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    warehouse: Warehouse = Depends(get_warehouse),
+    _role: str = Depends(require_read),
+):
+    """One indexed document as a PDF. Same index guard as the read-through."""
+    doc = await db[FOUNDATION["lifecycle_doc"]].find_one(
+        {"instance_full_id": instance_id, "object_key": object_key}
+    )
+    if doc is None:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND, f"{instance_id} has no indexed document {object_key}"
+        )
+    return await _markdown_pdf(warehouse, object_key)
 
 
 @router.get(
