@@ -1096,31 +1096,80 @@ async def document_content(
     return await _read_through(warehouse, object_key)
 
 
-# Which object keys can be rendered as a PDF. Markdown only: the renderer parses
-# markdown, and handing it a CSV or a zip would produce a page of mojibake rather
-# than an error a caller can act on.
-def _is_markdown(object_key: str) -> bool:
-    return object_key.lower().endswith((".md", ".markdown"))
+# What cannot be rendered, by name. The renderer parses markdown, and a CSV or a
+# zip through it is a page of mojibake rather than an error a caller can act on.
+_UNRENDERABLE_SUFFIXES = (
+    ".csv",
+    ".pdf",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".webp",
+    ".svg",
+    ".zip",
+    ".hex",
+    ".img",
+    ".bin",
+    ".gz",
+    ".tar",
+    ".xlsx",
+    ".docx",
+)
+
+# Binary formats that carry a magic number. A lifecycle document's object key has
+# no extension at all (`E0002-000001-000042-CC-20260827T101500`, ADR-0017 d11 by
+# way of the upload route), so for those the name cannot answer the question and
+# the bytes have to.
+_BINARY_MAGIC = (b"%PDF", b"PK\x03\x04", b"\x89PNG", b"GIF8", b"\xff\xd8\xff", b"\x1f\x8b")
+
+
+def _named_unrenderable(object_key: str) -> bool:
+    return object_key.lower().endswith(_UNRENDERABLE_SUFFIXES)
+
+
+def _as_text(body: bytes) -> str | None:
+    """The document's text, or None when it is not one.
+
+    Markdown is the target, but plain text is a subset of it and every lifecycle
+    document is one or the other — a quality plan or a calibration certificate is
+    filed as whatever the operator produced it as. So the test is "is this text",
+    not "is this named .md".
+    """
+    if body.startswith(_BINARY_MAGIC) or b"\x00" in body[:4096]:
+        return None
+    try:
+        return body.decode("utf-8")
+    except UnicodeDecodeError:
+        return None
 
 
 async def _markdown_pdf(warehouse: Warehouse, object_key: str) -> Response:
-    """Fetch one markdown object and render it. Holds no copy of either."""
-    if not _is_markdown(object_key):
+    """Fetch one document and render it. Holds no copy of either."""
+    # By name first, so a refusal costs no transfer: a zip or a board render is
+    # answered before the bytes are pulled out of the warehouse.
+    if _named_unrenderable(object_key):
         raise HTTPException(
             status.HTTP_422_UNPROCESSABLE_ENTITY,
-            f"{object_key} is not a markdown document; only .md renders to PDF",
+            f"{object_key} is not a text document; only text renders to PDF",
         )
     body = await warehouse.get_bytes(object_key)
     if body is None:
         raise HTTPException(
             status.HTTP_502_BAD_GATEWAY, f"{object_key} could not be read from the warehouse"
         )
+    text = _as_text(body)
+    if text is None:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            f"{object_key} is not a text document; only text renders to PDF",
+        )
     blob = await asyncio.to_thread(
         reports.markdown_document,
         object_key=object_key,
-        text=body.decode("utf-8", "replace"),
+        text=text,
     )
-    stem = object_key.rsplit(".", 1)[0]
+    stem = object_key.rsplit(".", 1)[0] if "." in object_key.rsplit("/", 1)[-1] else object_key
     return Response(
         content=blob,
         media_type="application/pdf",

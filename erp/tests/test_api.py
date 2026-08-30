@@ -666,13 +666,57 @@ def test_a_repository_markdown_document_renders_to_pdf(client, warehouse):
     assert r.content.startswith(b"%PDF-")
 
 
-def test_only_markdown_renders_to_pdf(client, warehouse):
+def test_only_text_renders_to_pdf(client, warehouse):
     """A CSV through the markdown renderer is noise, not a document."""
     key = "E0001-000003-L.csv"
     warehouse.objects[key] = b"ref,value\nR1,10k\n"
     r = client.get(f"/api/v1/store-documents/{key}/pdf", headers=AUTH)
     assert r.status_code == 422
-    assert "markdown" in r.json()["detail"]
+    assert "text" in r.json()["detail"]
+
+
+def test_a_lifecycle_document_renders_to_pdf(client, warehouse):
+    """A `-QP`/`-CC`/`-CP` object key carries no extension at all, so the name
+    cannot say whether it is text. Gating on `.md` hid the PDF from every document
+    an operator files against an instance."""
+    inst = _one_instance(client)
+    r = client.post(
+        f"/api/v1/instances/{inst}/documents",
+        data={"doc_type": "QP"},
+        files={
+            "file": (
+                "plan.md",
+                b"# Quality plan\n\n| Step | Result |\n|---|---|\n| 1 | ok |\n",
+                "application/octet-stream",
+            )
+        },
+        headers=AUTH,
+    )
+    key = r.json()["object_key"]
+    assert "." not in key, key
+
+    r = client.get(f"/api/v1/instances/{inst}/documents/{key}/pdf", headers=AUTH)
+    assert r.status_code == 200, r.text
+    assert r.headers["content-type"] == "application/pdf"
+    assert f'filename="{key}.pdf"' in r.headers["content-disposition"]
+    assert r.content.startswith(b"%PDF-")
+
+
+def test_a_binary_lifecycle_document_does_not_render(client, warehouse):
+    """Most certificates are filed as PDFs. With no extension to refuse, the bytes
+    are what says so — and a PDF re-rendered as markdown would be a page of
+    mojibake over a document that is already printable."""
+    inst = _one_instance(client)
+    r = client.post(
+        f"/api/v1/instances/{inst}/documents",
+        data={"doc_type": "CC"},
+        files={"file": ("cal.pdf", b"%PDF-1.7 binary\x00\x01", "application/pdf")},
+        headers=AUTH,
+    )
+    key = r.json()["object_key"]
+    r = client.get(f"/api/v1/instances/{inst}/documents/{key}/pdf", headers=AUTH)
+    assert r.status_code == 422
+    assert "text" in r.json()["detail"]
 
 
 def test_a_document_pdf_is_guarded_like_the_read_through(client, warehouse):
