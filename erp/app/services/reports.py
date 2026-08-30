@@ -28,6 +28,7 @@ from pathlib import Path
 import markdown as md_lib
 from fpdf import FPDF
 from fpdf.enums import Align
+from fpdf.fonts import TextStyle
 
 from app.config import settings
 
@@ -300,11 +301,70 @@ _FRAGMENT_LINK = re.compile(r'<a\b[^>]*href="#[^"]*"[^>]*>(.*?)</a>', re.S | re.
 
 
 def _flatten_cells(html: str) -> str:
-    return _CELL.sub(lambda m: m.group(1) + _TAG.sub("", m.group(2)).strip() + m.group(3), html)
+    """Strip markup inside a cell, and left-align what remains.
+
+    fpdf2 justifies cell text by default, which stretches a short value across a
+    wide column and reads as a typographic accident. Reference tables are scanned
+    down a column, so every cell is ranged left.
+    """
+
+    def one(m: re.Match[str]) -> str:
+        open_tag = m.group(1)
+        if "align=" not in open_tag.lower():
+            open_tag = open_tag[:-1].rstrip() + ' align="left">'
+        return open_tag + _TAG.sub("", m.group(2)).strip() + m.group(3)
+
+    return _CELL.sub(one, html)
 
 
 def _drop_fragment_links(html: str) -> str:
     return _FRAGMENT_LINK.sub(lambda m: m.group(1), html)
+
+
+# fpdf2's HTML defaults are Times, maroon headings and red list bullets — a look
+# that belongs to no document here and prints badly in monochrome. Everything is
+# restated in the page's own terms: one sans family, black, a heading scale that
+# stays close to the body size because these are procedures rather than covers,
+# and margins that give a heading room without a blank band under it.
+def _h(size: float, top: float, bottom: float) -> TextStyle:
+    return TextStyle(
+        font_family="helvetica",
+        font_style="B",
+        font_size_pt=size,
+        color=INK,
+        t_margin=top,
+        b_margin=bottom,
+    )
+
+
+_HTML_STYLE = {
+    "font_family": "helvetica",
+    # A grey disc, sized down. The default is a red dot at body size, which reads
+    # as a warning rather than a bullet.
+    "li_prefix_color": MUTED,
+    "pre_code_font": "courier",
+    # Rules between rows: the store's tables are reference material, read across.
+    "table_line_separators": True,
+    "tag_styles": {
+        "h1": _h(13.5, 5, 2.5),
+        "h2": _h(11.5, 4.5, 2),
+        "h3": _h(10.5, 4, 1.8),
+        "h4": _h(10, 3.5, 1.5),
+        "h5": _h(9.5, 3, 1.2),
+        "h6": _h(9.5, 3, 1.2),
+        # Body and list text carry the frame's ink, not fpdf2's near-black.
+        "p": TextStyle(font_family="helvetica", font_size_pt=9.5, color=INK, b_margin=1.6),
+        "li": TextStyle(font_family="helvetica", font_size_pt=9.5, color=INK, b_margin=0.8),
+        "code": TextStyle(font_family="courier", font_size_pt=8.5, color=INK),
+        "pre": TextStyle(font_family="courier", font_size_pt=8, color=INK, t_margin=1.5),
+        # No "td"/"th": fpdf2 refuses tag_styles for table cells and raises, which
+        # sends the whole document down the plain-text fallback. Cell alignment is
+        # set on the tag itself in _flatten_cells instead.
+        "blockquote": TextStyle(
+            font_family="helvetica", font_size_pt=9, color=MUTED, l_margin=6, t_margin=2
+        ),
+    },
+}
 
 
 def markdown_document(*, object_key: str, text: str, subject: str | None = None) -> bytes:
@@ -331,7 +391,7 @@ def markdown_document(*, object_key: str, text: str, subject: str | None = None)
     )
     try:
         pdf = page()
-        pdf.write_html(html)
+        pdf.write_html(html, **_HTML_STYLE)
         return bytes(pdf.output())
     except Exception as exc:
         # fpdf2's HTML support is a subset, and it fails in two places: at
