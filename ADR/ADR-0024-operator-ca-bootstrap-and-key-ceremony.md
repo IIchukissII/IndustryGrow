@@ -102,6 +102,8 @@ bootstrap tooling is allowed to run.
    unrecoverable event decision 11 describes. Collapsing the tiers would trade that
    asymmetry away for a shorter chain.
 
+    ![The ceremony: passphrases resolved online, keys generated inside a network namespace, verification, then physical custody gating every issuance](./figures/adr0024-ceremony.svg)
+
    The leaf classes are named, because "all leaves" has hidden one before: the **gateway
    client certificate** (ADR-0022 decision 2), the **ERP server certificate** the gateway
    validates that channel against, and — when node provisioning is built — the **node
@@ -152,26 +154,16 @@ bootstrap tooling is allowed to run.
    applies to device keys, applied to the key that certifies them. "Offline" is a
    property of the machine at generation time, not a promise about the medium.
 
-    > **How "offline" is obtained (added 2026-08-30).** A ceremony whose central
-    > property is established by an operator disconnecting an interface is not
-    > reproducible: it cannot be re-run identically, it cannot be tested, and whether
-    > it held is unverifiable afterwards. So the property is obtained by tooling —
-    > `pki/ceremony.sh` generates the key inside a user and network namespace with no
-    > interface and no routes, asserts that before writing anything, and fails rather
-    > than proceed without it. Every run has the property and a run that could not get
-    > it produces no key.
+    > **How "offline" is obtained (added 2026-08-30).** By tooling, not by procedure:
+    > `pki/ceremony.sh` generates inside a network namespace and asserts it has no
+    > routes before writing a key. An operator disconnecting an interface cannot be
+    > re-run, tested, or verified afterwards; this can.
     >
-    > **This bounds what is claimed.** The host stays connected; what is guaranteed is
-    > that the *generating process* had no path off it. That is weaker than a machine
-    > with no network hardware and stronger than an operator's recollection, and it is
-    > what a self-hosted operator can actually reproduce (ADR-0001 d6). An operator
-    > with a dedicated offline machine should use it — the same script runs there and
-    > the namespace is then redundant rather than load-bearing.
-    >
-    > The passphrase is resolved before isolation, because resolving it needs the
-    > network and the ceremony must not. Custody (decision 6) is unaffected and remains
-    > physical: no script performs it and none can verify it, so the run reports the
-    > ceremony as incomplete until it is done.
+    > **What that claims, and does not.** The host stays connected — what is
+    > guaranteed is that the *generating process* had no path off it. Weaker than a
+    > machine with no network hardware, stronger than recollection, and reproducible
+    > by a self-hoster (ADR-0001 d6). A dedicated offline machine runs the same
+    > script, and the namespace is then redundant rather than load-bearing.
 
 6. **Custody is two encrypted copies on separate removable media, stored in separate
    physical locations, with the passphrase held apart from both.** Two copies because a
