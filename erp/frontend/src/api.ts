@@ -176,8 +176,11 @@ export interface AllocateResult {
 
 const TOKEN_KEY = "erp_operator_token";
 
+// No default. A repo-wide token shipped as the fallback answers 401 on every
+// deployment that set its own (which is every deployment that should), and the
+// console then reads as connected-but-broken rather than as not signed in.
 export function getToken(): string {
-  return localStorage.getItem(TOKEN_KEY) ?? "dev-operator-token";
+  return localStorage.getItem(TOKEN_KEY) ?? "";
 }
 export function setToken(token: string): void {
   localStorage.setItem(TOKEN_KEY, token);
