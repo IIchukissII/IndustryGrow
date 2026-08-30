@@ -205,7 +205,10 @@ setup_dirs() {
     # Where the identity and the profile-verification key live (ADR-0025 d10).
     # provision_identity.py writes the first two; the third is the operator's
     # public key, copied here during commissioning.
-    install -d -m 0755 -o root -g gateway "${CONFIG_DIR}/pki"
+    # 0750, not 0755: the service user reads its identity through the group,
+    # and nothing else on the box has business listing it. Re-running this
+    # also repairs a directory the certificate ceremony left at 0700.
+    install -d -m 0750 -o root -g gateway "${CONFIG_DIR}/pki"
 }
 
 setup_venv() {

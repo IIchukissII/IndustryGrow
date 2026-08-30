@@ -55,13 +55,21 @@ openssl req -new -key server.key -out erp.csr \
         -subj "/CN=industrygrow.local/O=OP-STRAWBERRY-01"
 
 # on the gateway
-sudo install -d -m 0700 /etc/industrygrow/pki
-sudo sh -c 'umask 077; openssl ecparam -name prime256v1 -genkey -noout \
+sudo install -d -m 0750 -o root -g gateway /etc/industrygrow/pki
+sudo sh -c 'umask 027; openssl ecparam -name prime256v1 -genkey -noout \
         -out /etc/industrygrow/pki/gateway.key'
+sudo chgrp gateway /etc/industrygrow/pki/gateway.key
 sudo openssl req -new -key /etc/industrygrow/pki/gateway.key \
         -out /etc/industrygrow/pki/gateway.csr \
         -subj "/CN=GBOX_0001/OU=gateways/O=OP-STRAWBERRY-01"
 ```
+
+**Group `gateway`, not root-only.** Every unit that uses this identity runs as
+`User=gateway` — the profile pull and the firmware timer both. A `0700` directory
+or a `0600` key leaves them unable to read the certificate they authenticate
+with, and the failure surfaces as a permission error on a path, nowhere near the
+certificate ceremony that caused it. Run `provision.sh` before this step, so the
+service user exists.
 
 **The CN is the machine identifier verbatim.** `erp/app/services/mtls.py` derives
 `GBOX_NNNN` from the certificate's subject DN, so a CN that is not an ADR-0017
