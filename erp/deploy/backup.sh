@@ -56,7 +56,24 @@ mkdir -p "$OUT"
 # --- capture, inside the container where mongodump and the credentials live ----
 printf '[backup] capturing (index first, blobs second — ADR-0026 d3)\n'
 "${COMPOSE[@]}" exec -T erp mkdir -p "$REMOTE_DIR"
+
+# The index dump is taken in the MONGO container, which is where the MongoDB
+# Database Tools live. The application image carries none: adding ~150 MB of them
+# so one container can dump the other's database works against the compact single
+# container of ADR-0021 d15. Taken first, which is the ordering ADR-0026 d3
+# requires, and handed to the capture below.
+DUMP_IN_ERP="$REMOTE_DIR/index.archive"
+# Straight from the mongo container into the erp container, never onto this host:
+# the dump is the whole system of record in the clear, and it is encrypted only at
+# the end of this script (ADR-0026 d7).
+"${COMPOSE[@]}" exec -T mongo sh -c \
+  'mongodump --uri="mongodb://$MONGO_INITDB_ROOT_USERNAME:$MONGO_INITDB_ROOT_PASSWORD@localhost:27017/?authSource=admin" --db="${ERP_MONGO_DB:-industrygrow_erp}" --archive --quiet' \
+  | "${COMPOSE[@]}" exec -T erp sh -c "cat > $DUMP_IN_ERP" \
+  || die "could not take the index dump through the mongo service"
+"${COMPOSE[@]}" exec -T erp test -s "$DUMP_IN_ERP" || die "the index dump is empty"
+
 "${COMPOSE[@]}" exec -T erp python -m app.backup save --out "$REMOTE_DIR" \
+  --mongo-archive "$DUMP_IN_ERP" \
   || die "the capture failed; nothing was written"
 
 NAME=$("${COMPOSE[@]}" exec -T erp sh -c "ls -1t $REMOTE_DIR/*.tar.gz | head -1" | tr -d '\r')
