@@ -1506,8 +1506,14 @@ function render(): void {
 
       <div class="oper">
         <span class="lbl">Operator · single tenant</span>
-        <span class="val">${esc(state.meta?.operator_name ?? "not connected")}</span>
-        <span class="tag">${state.meta ? `${esc(state.meta.role)} token · ` : ""}stages 1–10 · pre-cloud record</span>
+        <span class="val">${esc(
+          // Three states, and they need different answers: signed in, no token
+          // yet, or a token the ERP would not take (or an ERP that did not
+          // answer). "not connected" for the second is what makes an operator
+          // check the network instead of the field they have not filled in.
+          state.meta?.operator_name ?? (getToken() ? "not connected" : "not signed in"),
+        )}</span>
+        <span class="tag" id="tok-state">${state.meta ? `${esc(state.meta.role)} token · ` : ""}stages 1–10 · pre-cloud record</span>
       </div>
 
       <nav>
@@ -1527,7 +1533,8 @@ function render(): void {
         <div class="kv"><span class="d" style="background:var(--violet);box-shadow:0 0 8px var(--violet)"></span> meta <b>MongoDB</b></div>
         <div class="kv"><span class="d" style="background:var(--cyan);box-shadow:0 0 8px var(--cyan)"></span> warehouse <b>object store</b></div>
         <label for="tok">Operator token</label>
-        <input id="tok" value="${esc(getToken())}">
+        <input id="tok" value="${esc(getToken())}" placeholder="paste to sign in"
+          autocomplete="off" spellcheck="false" aria-describedby="tok-state">
       </div>
     </aside>
 

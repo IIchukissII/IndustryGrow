@@ -183,7 +183,9 @@ Then `uvicorn app.main:app` and open <http://localhost:8021>. A source checkout 
 never been built says so at `/` instead of 404ing; `ERP_CONSOLE_DIR` points elsewhere
 (the container builds the bundle itself and sets it to `/srv/console`).
 
-Set the operator token in the sidebar (default `dev-operator-token`). The console covers
+Paste an operator token into the sidebar field — it starts empty, and the console reads as
+*not signed in* until one is stored. A checkout that has set no `ERP_API_TOKENS` serves
+`dev-operator-token`. The console covers
 the whole ADR-0022 surface: overview, integration (install/replace/remove by depth),
 instances and serial allocation, an instance page (documents, provisioning, history),
 deployment profiles, and SP stock.
