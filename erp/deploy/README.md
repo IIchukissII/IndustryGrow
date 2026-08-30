@@ -171,8 +171,12 @@ behaviour you want when the service goes away.
 ## 4. Verify
 
 ```bash
-./deploy/verify-deployment.sh --tls-dir /etc/industrygrow/tls
+./deploy/verify-deployment.sh
 ```
+
+It reads the certificate directory and the two published ports off the running
+proxy, so a deployment that moved them off 443/8443 needs no arguments. Pass
+`--tls-dir`, `--https-port` or `--mtls-port` to check somewhere else.
 
 It checks the things that are wrong *silently*: an unauthenticated Mongo, a
 published database or app port, a bare leaf where a chain belongs, an
