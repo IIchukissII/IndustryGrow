@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="560" viewBox="0 0 820 560" role="img" aria-label="The order a gateway is connected to the ERP">
+  <title>Connecting a gateway to the ERP — the order the pieces have to be built in</title>
+  <desc>Four stages, each depending on the previous. Stage one is the operator CA ceremony, run once per operator on a machine that is offline at generation time; the root key leaves on two removable media and the issuing CA stays online to sign. Stage two generates a private key on each host that will use it — the ERP server and the gateway — and emits a certificate signing request, which is the only thing that travels. Stage three signs both requests with the issuing CA and installs chains, not bare leaves. Stage four brings up the mutual-TLS listener on port 8445 and runs the profile and firmware pulls. A node's key is generated inside its ATECC608 and never leaves it; the gateway has no secure element, so its key is generated on the gateway and protected by the host.</desc>
+
+  <defs>
+    <marker id="ag" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#5F5E5A"/></marker>
+    <marker id="agc" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#D85A30"/></marker>
+    <marker id="agg" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#3E7A57"/></marker>
+  </defs>
+
+  <rect x="0.5" y="0.5" width="819" height="559" rx="10" fill="#FFFFFF" stroke="#E5E3DC"/>
+  <text x="410" y="30" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#2C2C2A">Connecting a gateway to the ERP</text>
+  <text x="410" y="48" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#8A8880">each step's precondition is the previous step's output</text>
+
+  <!-- ===== Stage 1: the ceremony ===== -->
+  <rect x="24" y="68" width="772" height="96" rx="8" fill="#FBF9F4" stroke="#E5E3DC"/>
+  <text x="40" y="88" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#2C2C2A">1 · Operator CA — once per operator</text>
+  <text x="240" y="88" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#D85A30" font-weight="600">OFFLINE MACHINE (ADR-0024 d5)</text>
+
+  <rect x="44" y="98" width="150" height="48" rx="6" fill="#FFFFFF" stroke="#D8D5CC"/>
+  <text x="119" y="118" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#2C2C2A">bootstrap-root.sh</text>
+  <text x="119" y="134" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#8A8880">passphrase typed by hand</text>
+
+  <line x1="194" y1="122" x2="228" y2="122" stroke="#5F5E5A" stroke-width="1.4" marker-end="url(#ag)"/>
+
+  <rect x="230" y="98" width="150" height="48" rx="6" fill="#FFFFFF" stroke="#D8D5CC"/>
+  <text x="305" y="118" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#2C2C2A">issue-intermediate.sh</text>
+  <text x="305" y="134" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#8A8880">root signs exactly one</text>
+
+  <line x1="380" y1="122" x2="414" y2="122" stroke="#D85A30" stroke-width="1.4" marker-end="url(#agc)"/>
+
+  <rect x="416" y="98" width="168" height="48" rx="6" fill="#FFFFFF" stroke="#D85A30"/>
+  <text x="500" y="118" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#2C2C2A">custody · 2 media, 2 places</text>
+  <text x="500" y="134" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#8A8880">root key off the disk (d6)</text>
+
+  <line x1="584" y1="122" x2="618" y2="122" stroke="#5F5E5A" stroke-width="1.4" marker-end="url(#ag)"/>
+
+  <rect x="620" y="98" width="156" height="48" rx="6" fill="#F3F6F4" stroke="#3E7A57"/>
+  <text x="698" y="117" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#2C2C2A">issuing CA stays online</text>
+  <text x="698" y="133" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#8A8880">signs every leaf below</text>
+
+  <!-- ===== Stage 2: keys where they live ===== -->
+  <rect x="24" y="180" width="772" height="128" rx="8" fill="#FBF9F4" stroke="#E5E3DC"/>
+  <text x="40" y="200" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#2C2C2A">2 · A key on each host that will use it — only the CSR travels</text>
+
+  <rect x="44" y="212" width="230" height="80" rx="6" fill="#FFFFFF" stroke="#D8D5CC"/>
+  <text x="159" y="232" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#2C2C2A">ERP host</text>
+  <text x="159" y="250" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#5F5E5A">server.key — never moves</text>
+  <text x="159" y="266" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#5F5E5A">CN=industrygrow.local</text>
+  <text x="159" y="282" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#8A8880">→ erp.csr</text>
+
+  <rect x="292" y="212" width="230" height="80" rx="6" fill="#FFFFFF" stroke="#D8D5CC"/>
+  <text x="407" y="232" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#2C2C2A">gateway (SP0004)</text>
+  <text x="407" y="250" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#5F5E5A">gateway.key — software</text>
+  <text x="407" y="266" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#5F5E5A">CN=GBOX_0001</text>
+  <text x="407" y="282" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#8A8880">→ GBOX_0001.csr · ADR-0007 d11</text>
+
+  <rect x="540" y="212" width="236" height="80" rx="6" fill="#F3F6F4" stroke="#3E7A57"/>
+  <text x="658" y="232" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#2C2C2A">node (E0001 carrier)</text>
+  <text x="658" y="250" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#5F5E5A">key generated in ATECC608</text>
+  <text x="658" y="266" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#5F5E5A">never leaves the part</text>
+  <text x="658" y="282" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#8A8880">ADR-0007 d1 — not this path</text>
+
+  <!-- ===== Stage 3: signing ===== -->
+  <rect x="24" y="324" width="772" height="82" rx="8" fill="#FBF9F4" stroke="#E5E3DC"/>
+  <text x="40" y="344" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#2C2C2A">3 · Sign with the issuing CA, install chains</text>
+
+  <rect x="44" y="356" width="210" height="36" rx="6" fill="#FFFFFF" stroke="#D8D5CC"/>
+  <text x="149" y="379" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">sign-csr.sh --profile server</text>
+
+  <rect x="270" y="356" width="222" height="36" rx="6" fill="#FFFFFF" stroke="#D8D5CC"/>
+  <text x="381" y="379" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">sign-csr.sh --profile gateway</text>
+
+  <rect x="508" y="356" width="268" height="36" rx="6" fill="#FDF6F2" stroke="#D85A30"/>
+  <text x="642" y="373" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">install the CHAIN, never the bare leaf</text>
+  <text x="642" y="386" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#8A8880">a leaf alone cannot build a path (ADR-0024 d1)</text>
+
+  <!-- ===== Stage 4: the channel ===== -->
+  <rect x="24" y="422" width="772" height="118" rx="8" fill="#FBF9F4" stroke="#E5E3DC"/>
+  <text x="40" y="442" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#2C2C2A">4 · The channel, and what crosses it</text>
+
+  <rect x="44" y="454" width="200" height="70" rx="6" fill="#FFFFFF" stroke="#D8D5CC"/>
+  <text x="144" y="474" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#2C2C2A">mTLS listener :8445</text>
+  <text x="144" y="491" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#8A8880">proxy verifies the client chain,</text>
+  <text x="144" y="504" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#8A8880">app reads GBOX_NNNN from the DN</text>
+  <text x="144" y="517" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#D85A30">empty proxy list ⇒ 503, fail-closed</text>
+
+  <line x1="244" y1="489" x2="286" y2="489" stroke="#3E7A57" stroke-width="1.4" marker-end="url(#agg)"/>
+
+  <rect x="288" y="454" width="228" height="70" rx="6" fill="#FFFFFF" stroke="#D8D5CC"/>
+  <text x="402" y="474" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#2C2C2A">the gateway pulls</text>
+  <text x="402" y="491" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#8A8880">active profile · intended firmware</text>
+  <text x="402" y="504" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#8A8880">both pure reads — it writes nothing</text>
+  <text x="402" y="517" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#8A8880">ADR-0022 d8, d14</text>
+
+  <line x1="516" y1="489" x2="558" y2="489" stroke="#3E7A57" stroke-width="1.4" marker-end="url(#agg)"/>
+
+  <rect x="560" y="454" width="216" height="70" rx="6" fill="#F3F6F4" stroke="#3E7A57"/>
+  <text x="668" y="474" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#2C2C2A">the bus, from here on</text>
+  <text x="668" y="491" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#8A8880">what a node runs is observed here,</text>
+  <text x="668" y="504" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#8A8880">never recorded in the ERP</text>
+  <text x="668" y="517" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#8A8880">ADR-0029 d15 · ADR-0022 d9</text>
+</svg>

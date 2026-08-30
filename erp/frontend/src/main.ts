@@ -166,7 +166,8 @@ async function act(outId: string, fn: () => Promise<string>): Promise<void> {
 async function overview(): Promise<string> {
   const gbox = state.machine;
   if (!gbox)
-    return `<div class="empty">No cabinets on record yet. Seed one, then allocate serials to fill it.</div>`;
+    return `<div class="empty">No cabinets on record yet. Register one with
+      <code>PUT /api/v1/machines/GBOX_0001</code>, then allocate serials to fill it.</div>`;
   const [estate, cals, all, versions] = await Promise.all([
     api.machineIntegration(gbox),
     api.calibrationExpiring(30).catch(() => [] as LifecycleDoc[]),
