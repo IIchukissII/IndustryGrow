@@ -31,7 +31,7 @@ from app.api.deps import (
 from app.config import settings
 from app.db import DOMAIN, FOUNDATION
 from app.models import identifiers
-from app.services import docs, integration, profiles, registry
+from app.services import docs, firmware, integration, profiles, registry
 from app.services import serials as serials_svc
 from app.services.integration import PositionOccupiedError
 from app.services.warehouse import Warehouse
@@ -322,6 +322,40 @@ async def list_machines(
     return [{"machine_id": m["_id"], "notes": m.get("notes")} async for m in cursor]
 
 
+@router.put("/machines/{gbox}", response_model=schemas.MachineOut, tags=["machines"])
+async def register_machine(
+    gbox: str,
+    body: schemas.MachineRequest,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    _role: str = Depends(require_write),
+):
+    """Enrol a machine (ADR-0021 d4; ADR-0017 d6).
+
+    Every other machine-scoped route — integration, profiles, firmware, the
+    gateway channel — hangs off a `GBOX_NNNN` existing, so without this the
+    record has no way to acquire its first cabinet.
+
+    Upsert on the identifier: machines are *enumerated*, so the identifier is
+    assigned by the operator rather than issued here (unlike a serial, ADR-0022
+    d4), and re-registering one edits its notes instead of failing. Retiring a
+    machine is not this route — `retired_at` is set where a removal is recorded.
+    """
+    if not identifiers.MACHINE_RE.match(gbox):
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            f"{gbox} is not an ADR-0017 machine identifier (GBOX_NNNN)",
+        )
+    await db[FOUNDATION["machine"]].update_one(
+        {"_id": gbox},
+        {
+            "$set": {"tenant_id": settings.operator_uuid, "notes": body.notes},
+            "$setOnInsert": {"created_at": datetime.now(UTC), "retired_at": None},
+        },
+        upsert=True,
+    )
+    return schemas.MachineOut(machine_id=gbox, notes=body.notes)
+
+
 @router.get(
     "/machines/{gbox}/integration",
     response_model=list[schemas.IntegrationOut],
@@ -449,6 +483,98 @@ async def record_active_profile(
     return schemas.Ack(detail=f"recorded {body.version_tag} active on {gbox}")
 
 
+# ============================ firmware (intent + artifacts) =================
+
+
+def _firmware_intent_out(doc: dict) -> schemas.FirmwareIntentOut:
+    release_root = doc["release_root"]
+    version = identifiers.parse_store_key(release_root).version
+    return schemas.FirmwareIntentOut(
+        machine_id=doc["machine_id"],
+        release_root=release_root,
+        selected_at=doc.get("selected_at"),
+        selected_by=doc.get("selected_by"),
+        artifact_keys=firmware.artifact_keys(release_root),
+        version=version,
+        version_label=_version_label(version),
+    )
+
+
+@router.get(
+    "/firmware-releases", response_model=list[schemas.FirmwareReleaseOut], tags=["firmware"]
+)
+async def list_firmware_releases(
+    warehouse: Warehouse = Depends(get_warehouse),
+    _role: str = Depends(require_read),
+):
+    """The firmware releases the warehouse can serve (ADR-0029 d13).
+
+    Listed from the bucket, not from a checkout: the bucket is where a gateway's
+    bytes come from, so it is what decides a release is selectable. A release
+    appears only if both of its slot images are there — one is not servable to
+    whichever node is running the other slot (ADR-0029 d17), and offering it would
+    move that failure to a gateway days later instead of refusing it here.
+    """
+    out = []
+    for root in await firmware.available_releases(warehouse):
+        version = identifiers.parse_store_key(root).version
+        out.append(
+            schemas.FirmwareReleaseOut(
+                release_root=root,
+                version=version,
+                version_label=_version_label(version),
+                artifact_keys=firmware.artifact_keys(root),
+            )
+        )
+    return out
+
+
+@router.put(
+    "/machines/{gbox}/firmware", response_model=schemas.FirmwareIntentOut, tags=["firmware"]
+)
+async def set_firmware_intent(
+    gbox: str,
+    body: schemas.FirmwareIntentRequest,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    warehouse: Warehouse = Depends(get_warehouse),
+    role: str = Depends(require_write),
+):
+    """Record which firmware release this machine's nodes should run (ADR-0022 d14).
+
+    A RECORD write, not an update: nothing here reaches a node. The gateway reads
+    this, compares it against what it observes on the bus, and performs the
+    transfer (ADR-0029 d15-16). There is no flash endpoint and no way to ask this
+    API whether the update happened.
+    """
+    if not identifiers.MACHINE_RE.match(gbox):
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            f"{gbox} is not an ADR-0017 machine identifier (GBOX_NNNN)",
+        )
+    try:
+        doc = await firmware.set_intent(db, warehouse, gbox, body.release_root, selected_by=role)
+    except firmware.UnknownReleaseError as exc:
+        # 404 on the release, not 422 on the request: the body is well-formed and
+        # the identifier is grammatical — what is missing is the artifact set it
+        # names, which is a fact about the warehouse rather than about the request.
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(exc)) from exc
+    return _firmware_intent_out(doc)
+
+
+@router.get(
+    "/machines/{gbox}/firmware", response_model=schemas.FirmwareIntentOut, tags=["firmware"]
+)
+async def get_firmware_intent(
+    gbox: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    _role: str = Depends(require_read),
+):
+    doc = await firmware.intent(db, gbox)
+    if doc is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"no firmware release intended for {gbox}")
+    return _firmware_intent_out(doc)
+
+
 # ============================ machine provisioning ==========================
 
 
@@ -569,6 +695,58 @@ async def gateway_pull_active_profile(
         "document_b64": version["document_b64"],
         "signature": version.get("signature"),
     }
+
+
+@router.get("/gateway/firmware", response_model=schemas.FirmwareIntentOut, tags=["gateway"])
+async def gateway_pull_firmware_intent(
+    gbox: str = Depends(gateway_identity),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    """The gateway pulls the release its machine is meant to run (ADR-0022 d14).
+
+    A pure read, like the profile pull beside it: nothing is written, so the ERP
+    cannot say whether this was ever collected or acted on. The machine identity
+    comes from the mTLS certificate, never a query parameter.
+    """
+    doc = await firmware.intent(db, gbox)
+    if doc is None:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND, "no firmware release intended for this machine"
+        )
+    return _firmware_intent_out(doc)
+
+
+@router.get("/gateway/firmware/{object_key}/content", tags=["gateway"])
+async def gateway_pull_firmware_artifact(
+    object_key: str,
+    gbox: str = Depends(gateway_identity),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    warehouse: Warehouse = Depends(get_warehouse),
+):
+    """One slot image of this machine's intended release, read through (ADR-0022 d14).
+
+    **The key must be an artifact of the release this machine intends**, which is
+    the same guard the indexed-document route applies for the same reason:
+    presigning or streaming whatever key a caller names would turn the gateway
+    channel into a general read primitive over the bucket, and the gateway is the
+    one caller class that has been given no other read of the store at all.
+
+    Comparing against the intended release rather than against the filesystem also
+    scopes the read per machine: a gateway cannot reach an artifact of a release
+    its own machine does not intend.
+    """
+    doc = await firmware.intent(db, gbox)
+    if doc is None:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND, "no firmware release intended for this machine"
+        )
+    if object_key not in firmware.artifact_keys(doc["release_root"]):
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            f"{object_key} is not an artifact of {doc['release_root']}, "
+            "the release this machine intends",
+        )
+    return await _read_through(warehouse, object_key)
 
 
 # ============================ SP stock =====================================

@@ -29,6 +29,7 @@ core; the `domain.*` `[D]` collections stay the IndustryGrow layer.
 | Lifecycle-document index (+ warehouse keys) | `foundation.lifecycle_doc` |
 | SP stock & placement | `foundation.sp_stock`, `foundation.sp_placement` |
 | GBOX domain + deployment profiles | `domain.gbox`, `domain.profile_version`, `domain.gbox_profile_deployment` |
+| Intended firmware release per machine | `domain.firmware_intent` |
 
 ## What it must NOT hold (boundaries — enforce in review)
 
@@ -40,6 +41,7 @@ These are deliberate *absences*. Each would create a second source of truth:
 - **No blobs** — the warehouse holds them; the ERP holds keys only (ADR-0021 d7).
 - **No community profile *templates*** — those live in the public registry (ADR-0001 d5); the ERP stores deployment-specific *instance* versions.
 - **No "deploy profile" action** — the gateway's pull into `active-profile.json` is the single mutation channel (ADR-0015 d4; ADR-0021 d12). This app is a *store*, not a deploy path.
+- **No firmware update action, and no record of what a node runs** — the ERP holds the release an operator *intends* (ADR-0021 d18) and serves its images from the warehouse; the gateway compares that against what it observes on the bus and performs the transfer (ADR-0029 d15-17). There is no flash endpoint and no route a machine may write.
 - **No tenancy machinery** — single-tenant now; multitenancy is IndustryFlow's `[F]` concern (ADR-0021 d16).
 
 ## The warehouse (object store)
@@ -97,9 +99,13 @@ op run --env-file=.env.op.tpl -- python -m app.store_sync
 cp deploy/env.example .env && $EDITOR .env   # ERP_MONGO_USER/_PASSWORD are required
 docker compose up --build                    # app on 127.0.0.1:8021
 docker compose exec erp python -m app.store_sync   # load store/ into the warehouse
-docker compose exec erp python -m app.seed         # load the GBOX_0001 estate
 # open http://localhost:8021
 ```
+
+The database starts empty, and there is no fixture to load into it. Every row is
+one an operator or a provisioning station put there through the API — a system of
+record that invents an estate at startup cannot be told apart from one reporting
+a real one.
 
 Compose refuses to start without `ERP_MONGO_USER` and `ERP_MONGO_PASSWORD`, because
 `mongo:7` runs with authentication disabled unless they are set at first start, and
@@ -119,7 +125,6 @@ docker compose --profile standalone up --build     # + minio on 127.0.0.1:9000/:
 python -m venv .venv && . .venv/bin/activate
 pip install -e ".[dev]"
 # needs a MongoDB on localhost:27017 (docker run -p 27017:27017 mongo:7)
-python -m app.seed
 uvicorn app.main:app --reload --port 8021
 ```
 

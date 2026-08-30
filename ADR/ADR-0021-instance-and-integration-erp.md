@@ -3,19 +3,29 @@ SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
-# ADR-0021 (rev 3): Instance-and-integration ERP — the pre-cloud system of record
+# ADR-0021 (rev 4): Instance-and-integration ERP — the pre-cloud system of record
 
-- **ID:** ADR-0021 (rev 3)
+- **ID:** ADR-0021 (rev 4)
 - **Status:** Accepted
-- **Date:** 2026-07-09 (rev 1: 2026-07-19; rev 2 and rev 3: 2026-07-26)
+- **Date:** 2026-07-09 (rev 1: 2026-07-19; rev 2 and rev 3: 2026-07-26; rev 4: 2026-08-30)
 - **Project:** IndustryGrow
 - **Parent:** ADR-0001
-- **Companions:** ADR-0000, ADR-0004 (rev 1), ADR-0007, ADR-0015, ADR-0016 (rev 1), ADR-0017 (rev 2), ADR-0019, ADR-0020, ADR-0022 (API contract)
-- **Supersedes:** ADR-0021 rev 2 (2026-07-26), and through it rev 1 (2026-07-19) and the initial record (2026-07-09)
+- **Companions:** ADR-0000, ADR-0004 (rev 1), ADR-0007, ADR-0015, ADR-0016 (rev 1), ADR-0017 (rev 2), ADR-0019, ADR-0020, ADR-0022 (API contract), ADR-0029
+- **Supersedes:** ADR-0021 rev 3 (2026-07-26), and through it rev 2 (2026-07-26), rev 1 (2026-07-19) and the initial record (2026-07-09)
 - **Realizes:** ADR-0017 (rev 2) deferred decision "Registry and store location" — the instance/integration layer host
 - **Relates to:** ADR-IF-0001 (planned) — the `production_unit` entity this store's foundational part aligns to when IndustryGrow integrates as a layer over the IndustryFlow core at stage 11
 
 ## Revision history
+
+- **rev 4 (2026-08-30)** — Adds decision 18: the ERP owns the **intended firmware
+  release** recorded against `GBOX_NNNN`. ADR-0029 decision 16 starts a firmware
+  transfer from an operator action recorded in the ERP, and decision 14 has the
+  gateway obtain the artifact from it; neither is representable until this record
+  claims the entity, because ADR-0022 decision 1 binds that API to the entities
+  this one owns and only those. Same division as rev 3: ownership here, exposure
+  in ADR-0022 decision 14. No existing decision changes — decision 10's exclusion
+  of firmware-flash events is what fixes the new entity's boundary, and decision 18
+  is written to sit inside it.
 
 - **rev 3 (2026-07-26)** — Adds decision 17: the ERP owns a **machine's** identity
   binding, not only an E-instance's. Building the gateway side exposed that
@@ -175,6 +185,16 @@ This ADR carries **decisions and rationale only**. Database engine, ERP product/
 
     What the binding is *for* follows from what the ERP already does with decision 7's document index: making expiry a query rather than an archaeology exercise. A short-lived certificate (ADR-0007 decision 7) that nobody is watching expires, and a gateway with an expired certificate stops being able to pull its profile. How the API exposes this — the route, the request shape, and the record's update semantics — is ADR-0022 decision 12.
 
+### Intended firmware release (rev 4)
+
+18. **The ERP also owns the intended firmware release for a machine — the operator's recorded decision about what its nodes should run, against `GBOX_NNNN`.** It holds the released artifact set's object key root (`E0001-VVVVVV-F`, ADR-0029 decision 13; ADR-0017 decision 15) and the record that an operator selected it. It is the ERP's for the reason decision 17's binding is: ADR-0029 decision 16 makes a firmware transfer start from an operator action *recorded in the ERP*, and decision 14 has the gateway fetch the artifact from it, so the fact has to live somewhere pre-cloud and nothing else holds it — the repository publishes the release to every operator alike (`store/`, decision 11), which is precisely not a statement about one cabinet.
+
+    **This is intent, and only intent.** ADR-0029 decision 15 keeps the observation of what a node is *actually* running at the gateway, where the bus is; decision 10 above and ADR-0022 decision 9 exclude firmware-flash events by category. So this entity answers *"what should this machine's nodes run"* and is incapable of answering *"what do they run"* or *"did the update happen"* — the same shape decision 8 gives profiles, where the ERP records the active version and never whether the gateway pulled it. An update that has not happened yet and one that failed are indistinguishable here on purpose: the record is a decision, not a report.
+
+    **Machine-scoped, not node-scoped.** One `F` object per firmware version covers every node type, because firmware identity follows the carrier every node runs and not the module it carries (ADR-0017 rev 2 decision 16; ADR-0029 decision 13). A machine's nodes therefore share one intended release, and *which* of them has reached it is a per-node observation — the gateway's, by decision 15 of ADR-0029, not a row here.
+
+    The artifact bytes stay in the warehouse under their object key, as every other blob does (decision 7): the ERP records the key and serves it by reading through, never holding a copy. How the API exposes all of this — the operator's write, the gateway's pull, and the writes that are deliberately absent — is ADR-0022 decision 14.
+
 ## Alternatives considered
 
 **A. Do not build an ERP; wait for IndustryFlow at stage 11.** *Rejected:* this is ADR-0020 alternative A/B by another name for the instance layer. Serials must be issued, provisioning records bound, and integration tracked *during* stages 1–10 — the survey and first-cultivation campaigns (ADR-0016, ADR-0020) produce exactly these records with no cloud present. The end-state home being IndustryFlow does not remove the bring-up-era need for a home.
@@ -200,6 +220,10 @@ This ADR carries **decisions and rationale only**. Database engine, ERP product/
 **J. Treat stage 11 as IndustryFlow absorbing and retiring the ERP.** *Rejected:* IndustryGrow is not standalone but also is not disposable — it is an additional domain layer over an independent core (ADR-0001; `GLOSSARY.md` `[F]`/`[D]`). At stage 11 the foundational `[F]` data aligns to `production_unit` in the core while the grow-domain `[D]` layer remains over it (decisions 2, 3). Absorption would erase the layered architecture the project is built on.
 
 **M. Record the gateway's certificate under decision 5 by giving it a synthetic E-instance serial (rev 3).** No new entity, no new decision. *Rejected:* `Exxxx-VVVVVV-NNNNNN` names something the project designs and manufactures (ADR-0017); a gateway is bought (ADR-0019). A synthetic one would put a value in the identity axis that names nothing, and every consumer of the grammar would have to learn the exception. Decision 17 costs one entity and keeps the grammar meaning what it says.
+
+**N. Carry the intended firmware release inside the cultivation profile (rev 4).** No new entity: the profile already travels to the gateway over the same channel, signed and versioned. *Rejected:* the profile is one atomically-versioned artifact of setpoints and identified model parameters (decision 13; ADR-0016 alternative D), and a firmware release is neither. The two also version on unrelated clocks — a firmware release is cut when the firmware changes, a profile when the crop or the identified model does — so coupling them makes every firmware selection mint a spurious profile version, and makes a profile rollback silently revert a firmware decision that was never in question. ADR-0015 decision 1's "single mutation interface" governs *gateway control behaviour*, which is what a profile changes; what image a node runs is not that. Decision 18 costs one entity and keeps both records meaning one thing.
+
+**O. Record against each node what it is running, so the ERP can report update progress (rev 4).** *Rejected:* this is decision 10 and ADR-0022 decision 9 by another name — firmware-flash events are operational intake, excluded by category. ADR-0029 decision 15 was itself corrected for proposing it, and the correction gives the reason: the observation belongs where the bus is. An ERP field for "running version" could only be filled by a machine reporting in, which is the write ADR-0022 decision 8 rev 1 refuses to give a gateway; left unfilled it is a column that always lies. The question is answerable at the gateway now and enters a system of record at stage 11 with the rest of the operational stream (ADR-0020 decision 9).
 
 **L. Run the ERP on the gateway host (rev 2).** The original wording of decisions 1 and 15 invited exactly this, and it is attractive: one box per deployment, nothing else to buy, and the ERP sits next to the machines it describes. *Rejected:* the gateway is the stateless replaceable edge — ADR-0004's replaceability driver requires a unit to be swappable in minutes with no accumulated local state lost, and ADR-0020 decision 5 enumerates exhaustively what may persist there. A system of record is not in that enumeration and cannot be added to it without an ADR. Putting one there converts a drop-in gateway swap into a data-recovery exercise for serial allocation, provisioning bindings, and integration history — the records with the least tolerance for loss. The self-hostability the original wording was reaching for is preserved in decision 1 without naming the one host that breaks it.
 

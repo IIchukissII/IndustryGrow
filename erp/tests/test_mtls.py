@@ -31,7 +31,6 @@ def client(monkeypatch, warehouse):
     """The app reached *through* the proxy: peer address 10.9.0.2, which is
     trusted. Tests that need the other side override the peer per request."""
     monkeypatch.setattr(settings, "mongo_mock", True)
-    monkeypatch.setattr(settings, "seed_on_start", False)
     monkeypatch.setattr(settings, "gateway_trusted_proxies", ["10.9.0.0/24"])
     app = create_app()
     app.dependency_overrides[get_warehouse] = lambda: warehouse

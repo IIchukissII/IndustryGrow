@@ -38,6 +38,11 @@ DOMAIN = {
     "gbox": "domain.gbox",
     "profile_version": "domain.profile_version",
     "profile_deployment": "domain.gbox_profile_deployment",
+    # The intended firmware release per machine (ADR-0021 d18). Keyed by
+    # `GBOX_NNNN` as its `_id`, which is the whole uniqueness rule — a machine
+    # has one intended release, and the upsert that maintains it needs no index
+    # to say so.
+    "firmware_intent": "domain.firmware_intent",
 }
 
 

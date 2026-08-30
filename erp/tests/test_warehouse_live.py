@@ -89,7 +89,6 @@ def test_document_upload_reaches_the_real_warehouse(monkeypatch):
     holds something.
     """
     monkeypatch.setattr(settings, "mongo_mock", True)
-    monkeypatch.setattr(settings, "seed_on_start", False)
 
     blob = b"%PDF-1.7 quality plan (live)\n"
 

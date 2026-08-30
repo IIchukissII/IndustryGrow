@@ -35,13 +35,20 @@ jobs:
           ruff check .
           ruff format --check .
       - name: Lint the gateway and signing Python
-        # Neither directory has a suite of its own, and their Python (the
-        # provisioning tool, the profile client, the profile signer, the bring-up
-        # self-test) would otherwise be the only unlinted Python in the repo. Same
-        # config as the ERP's, so there is one style, not two.
+        # Their Python (the provisioning tool, the profile and firmware clients,
+        # the profile signer, the bring-up self-test) would otherwise be the only
+        # unlinted Python in the repo. Same config as the ERP's, so there is one
+        # style, not two.
         run: |
           ruff check --config pyproject.toml ../gateway ../signing
           ruff format --check --config pyproject.toml ../gateway ../signing
+      - name: Test the gateway logic that runs off the bus
+        # The firmware client decides which slot image a node gets (ADR-0029 d17)
+        # from what the node reports, and a wrong answer flashes a wrong-slot
+        # image. That decision is pure, so it is testable here — pycyphal is not
+        # installed and is not imported at module scope, which is what keeps this
+        # runnable without a CAN interface.
+        run: pytest -q ../gateway/tests
       - name: Test
         # `-m "not live"` deselects rather than relies on the ERP_LIVE_WAREHOUSE
         # skip: CI must not be one stray environment variable away from writing

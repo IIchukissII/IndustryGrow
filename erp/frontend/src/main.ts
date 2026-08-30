@@ -31,6 +31,7 @@ type View =
   | "instance"
   | "integration"
   | "profiles"
+  | "firmware"
   | "gateway"
   | "library"
   | "stock";
@@ -41,13 +42,14 @@ const TITLES: Record<View, string> = {
   instance: "Instance",
   integration: "Integration",
   profiles: "Deployment profile",
+  firmware: "Firmware",
   gateway: "Gateway channel",
   library: "Documents",
   stock: "SP stock",
 };
 
 // Views that read one cabinet at a time show the machine picker; the rest do not.
-const MACHINE_SCOPED: View[] = ["overview", "integration", "profiles", "gateway"];
+const MACHINE_SCOPED: View[] = ["overview", "integration", "profiles", "firmware", "gateway"];
 
 const state: {
   view: View;
@@ -554,6 +556,97 @@ async function profiles(): Promise<string> {
 }
 
 /**
+ * Firmware: which release an operator wants this cabinet's nodes running.
+ *
+ * The same three-homes shape the profile view uses, because firmware travels the
+ * same way — published once for everyone, selected here for this cabinet, pulled
+ * and applied by the gateway. The third home is the one that differs: a profile's
+ * active version is at least *recorded*, while what a node is running is only
+ * ever observed on the bus (ADR-0029 d15) and is excluded from this API by
+ * ADR-0022 d9. So the third column here is not a value with a caveat; it is
+ * empty, and the panel below says where the answer actually lives.
+ *
+ * The slot pair is shown on every release rather than hidden as an
+ * implementation detail. It is the fact that explains the rest of the view: a
+ * release is two images, a node takes the one for the slot it is not running,
+ * and that is why the gateway has to identify a node before it can serve it.
+ */
+async function firmware(): Promise<string> {
+  const gbox = state.machine;
+  if (!gbox) return `<div class="empty">No cabinets on record yet.</div>`;
+  const [releases, intent] = await Promise.all([
+    api.listFirmwareReleases(),
+    api.firmwareIntent(gbox),
+  ]);
+
+  const slots = (keys: string[]): string =>
+    keys
+      .map((k) => {
+        const slot = k.endsWith("-slot-a.img") ? "A" : k.endsWith("-slot-b.img") ? "B" : "?";
+        return `<span class="seg pos">slot ${esc(slot)}</span>`;
+      })
+      .join(`<span class="sepx">·</span>`);
+
+  const rows = releases
+    .map((r) => {
+      const chosen = intent?.release_root === r.release_root;
+      return `<div class="slot-row two"><div class="slot-body">
+        <div class="iid"><span class="seg id">${esc(r.release_root)}</span>${
+          r.version_label ? `<span class="sepx">·</span><span class="seg">${esc(r.version_label)}</span>` : ""
+        }</div>
+        <div class="slot-meta">${slots(r.artifact_keys)}<span class="ref">one image per slot</span></div></div>
+        ${
+          chosen
+            ? `<span class="st ok">intended for ${esc(gbox)}</span>`
+            : `<button class="btn ghost" data-intend="${esc(r.release_root)}">Record as intended</button>`
+        }</div>`;
+    })
+    .join("");
+
+  return `
+    <section class="panel"><div class="ph"><h2>Where firmware comes from</h2>
+      <span class="desc">three homes, one direction of travel</span></div>
+      <div class="roles">
+        <div class="role tpl"><span class="pin"></span>
+          <div><div class="r-name">Released</div><div class="r-where">warehouse · signed once · the same artifact for every operator</div></div>
+          <div class="r-ver">${esc(releases[0]?.version_label ?? "—")}<small>${releases.length} published</small></div></div>
+        <div class="role erp"><span class="pin"></span>
+          <div><div class="r-name">Intended here</div><div class="r-where">what an operator chose for this cabinet</div></div>
+          <div class="r-ver">${esc(intent?.version_label ?? "—")}<small>${
+            intent ? `selected ${day(intent.selected_at)}` : "nothing selected"
+          }</small></div></div>
+        <div class="role gw"><span class="pin"></span>
+          <div><div class="r-name">Running on the nodes</div><div class="r-where">observed on the bus, never recorded here</div></div>
+          <div class="r-ver">—<small>ask the gateway</small></div></div>
+      </div>
+      <div class="note"><b>The ERP does not update anything.</b> Choosing a release records what you
+        want; the gateway compares that against what each node reports and performs the transfer over
+        the bus. There is no flash button, by design.</div>
+    </section>
+
+    <section class="panel"><div class="ph"><h2>Choose a release</h2>
+      <span class="desc">${releases.length} published for the carrier every node runs</span></div>
+      ${
+        rows ||
+        `<div class="empty">No firmware releases in the warehouse. Build one with
+          <code>firmware/tools/release.sh --key &lt;pem&gt;</code>, then publish it with
+          <code>python -m app.store_sync</code>; both slot images must be there before a
+          release can be selected.</div>`
+      }
+      <div class="result" id="fw-out"></div></section>
+
+    <section class="panel"><div class="ph"><h2>Whether the nodes took it</h2>
+      <span class="desc">not answerable here, by design</span></div>
+      <div class="empty">The ERP records the release you intend, never what a node is running. A node
+        reports its running image on the bus, and a version written back here would be a machine
+        reporting an operational act, which this API does not accept (ADR-0022 d9).<br><br>
+        To see what ${esc(gbox)}'s nodes are actually running, ask the gateway:
+        <code>firmware_client.py show</code> for the release it holds, or
+        <code>firmware_client.py once --dry-run</code> for what each node needs and why.</div>
+    </section>`;
+}
+
+/**
  * The gateway channel: what the ERP knows about how a cabinet is reached.
  *
  * The shape of this view is set by what the ERP is allowed to own. It shows the
@@ -1028,6 +1121,7 @@ const VIEWS: Record<View, () => Promise<string>> = {
   instance: instanceDetail,
   integration,
   profiles,
+  firmware,
   gateway,
   library,
   stock,
@@ -1199,6 +1293,23 @@ function wire(): void {
     );
   }
 
+  if (state.view === "firmware") {
+    document.querySelectorAll<HTMLElement>("[data-intend]").forEach((btn) =>
+      btn.addEventListener("click", () =>
+        act("fw-out", async () => {
+          const release = btn.dataset.intend!;
+          await api.setFirmwareIntent(state.machine!, release);
+          await renderBody();
+          // Says what was recorded and what was not, because the gap is the part
+          // an operator is most likely to fill in wrongly on their own.
+          return `<span class="rl">Recorded</span>${esc(release)} is what ${esc(
+            state.machine,
+          )} should run. Nothing has been sent to a node — the gateway performs the update.`;
+        }),
+      ),
+    );
+  }
+
   if (state.view === "library") {
     // Narrowing the prefix redraws the plates under the cursor, so the caret is
     // put back where it was — an operator typing an identifier is mid-word, not
@@ -1267,6 +1378,7 @@ function render(): void {
         ${nav("instances", "Instances", count(state.counts.instances))}
         <span class="grp">Traceability</span>
         ${nav("profiles", "Deployment profile")}
+        ${nav("firmware", "Firmware")}
         ${nav("gateway", "Gateway channel")}
         ${nav("library", "Documents")}
         ${nav("stock", "SP stock", count(state.counts.stock))}

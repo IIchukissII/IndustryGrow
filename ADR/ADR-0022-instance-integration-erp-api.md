@@ -3,20 +3,30 @@ SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
-# ADR-0022 (rev 2): Instance-and-integration ERP — the machine- and operator-facing API
+# ADR-0022 (rev 3): Instance-and-integration ERP — the machine- and operator-facing API
 
-- **ID:** ADR-0022 (rev 2)
+- **ID:** ADR-0022 (rev 3)
 - **Status:** Accepted
-- **Date:** 2026-07-19 (accepted 2026-07-21, with decision 1 clarified; rev 1 and rev 2: 2026-07-26)
+- **Date:** 2026-07-19 (accepted 2026-07-21, with decision 1 clarified; rev 1 and rev 2: 2026-07-26; rev 3: 2026-08-30)
 - **Project:** IndustryGrow
-- **Parent:** ADR-0021 (rev 3)
-- **Companions:** ADR-0000, ADR-0004 (rev 1), ADR-0007 (rev 1), ADR-0015, ADR-0016 (rev 1), ADR-0017 (rev 2), ADR-0019, ADR-0020, ADR-0024, ADR-0025
-- **Supersedes:** ADR-0022 rev 1 (2026-07-26), and through it the initial record (2026-07-19, accepted 2026-07-21)
-- **Realizes:** ADR-0021 deferred decisions *"ERP ↔ object store integration"* and *"ERP ↔ gateway profile push"*; and, at rev 1, the API surface for ADR-0021 rev 3 decision 17's machine identity binding (decision 12). ADR-0007's deferred *"`-PR` record format"* is **not** resolved by this — decision 12 records the queryable binding and leaves the blob format and document key deferred
+- **Parent:** ADR-0021 (rev 4)
+- **Companions:** ADR-0000, ADR-0004 (rev 1), ADR-0007 (rev 1), ADR-0015, ADR-0016 (rev 1), ADR-0017 (rev 2), ADR-0019, ADR-0020, ADR-0024, ADR-0025, ADR-0029
+- **Supersedes:** ADR-0022 rev 2 (2026-07-26), and through it rev 1 (2026-07-26) and the initial record (2026-07-19, accepted 2026-07-21)
+- **Realizes:** ADR-0021 deferred decisions *"ERP ↔ object store integration"* and *"ERP ↔ gateway profile push"*; at rev 1, the API surface for ADR-0021 rev 3 decision 17's machine identity binding (decision 12); at rev 3, the API surface for ADR-0021 rev 4 decision 18's intended firmware release, and with it ADR-0029 decisions 14 and 16 (decision 14). ADR-0007's deferred *"`-PR` record format"* is **not** resolved by this — decision 12 records the queryable binding and leaves the blob format and document key deferred
 - **Clarified by:** ADR-0023 (decision 1's type-meaning exclusion — the read-through catalog)
 - **Relates to:** ADR-IF-0001 (planned) — the `production_unit` core whose API this one's foundational operations align to at stage 11
 
 ## Revision history
+
+- **rev 3 (2026-08-30)** — Adds decision 14: the operator route that records a
+  machine's intended firmware release, and the gateway route that pulls it and the
+  artifact it names. ADR-0029 decisions 14 and 16 put the ERP on the firmware path
+  — the operator acts here, the gateway fetches from here — and ADR-0021 rev 4
+  decision 18 claims the entity that makes it representable under decision 1. The
+  same division as rev 1: ownership there, exposure here. Decisions 8's pure-read
+  rule and 9's exclusions are extended to the new routes rather than qualified;
+  alternative Q records the pull-confirmation write refused for firmware, as
+  alternative M records it for profiles.
 
 - **rev 2 (2026-07-26)** — Amends decision 7. It said the ERP returns the object
   key **or a time-limited retrieval URL**, and nothing else; a read-through that
@@ -101,7 +111,7 @@ that the second is closed deliberately.
 
 ### Surface and resource model
 
-1. **The API exposes exactly the entities ADR-0021 owns, and only those:** machines (`GBOX_NNNN`), E-instances and the serial allocator, provisioning bindings (`-PR`), integration records, the lifecycle-document index, deployment profiles and their active-version records, and SP stock/placement. There is no resource for type meaning, telemetry, an audit trail, SKUs/prices, or community template profiles. It is served by the same single container as the ERP (ADR-0021 decision 15); its OpenAPI document is generated from the implementation.
+1. **The API exposes exactly the entities ADR-0021 owns, and only those:** machines (`GBOX_NNNN`), E-instances and the serial allocator, provisioning bindings (`-PR`), integration records, the lifecycle-document index, deployment profiles and their active-version records, a machine's intended firmware release (*rev 3*; ADR-0021 decision 18), and SP stock/placement. There is no resource for type meaning, telemetry, an audit trail, SKUs/prices, or community template profiles. It is served by the same single container as the ERP (ADR-0021 decision 15); its OpenAPI document is generated from the implementation.
 
    *Clarified in place 2026-07-21 by ADR-0023 (ADR-0000 decision 5):* the type-meaning exclusion is of a resource the ERP **owns**. A read-only route serving `REGISTRY.md` as parsed, storing nothing (ADR-0023 decisions 1, 4), is permitted — it is the read-side counterpart of decision 9. Denying the read would only push callers back into keeping their own tables.
 
@@ -180,6 +190,16 @@ that the second is closed deliberately.
 
     Recorded as an additive in-place amendment (ADR-0000 decision 5), not a revision bump: it constrains response shape without changing a decision already on record. It also resolves the *where* of ADR-0017's deferred "identifier validation and parsing tooling" item.
 
+### Firmware — an operator's selection, and a gateway's pull (rev 3)
+
+14. **The API records which firmware release an operator intends for a machine, and serves that release to the machine's gateway; it does not update anything.** The entity is ADR-0021 rev 4 decision 18's; this decision is how it is exposed, which is the division decision 1 requires. It is decision 8's shape applied to firmware, and deliberately so — the two are the same problem, and an operator who has learnt one channel has learnt the other.
+
+    - **The operator writes a selection, keyed by `GBOX_NNNN`.** The request names a released artifact set by its object-key root (`E0001-VVVVVV-F`, ADR-0029 decision 13), which the API validates **against the warehouse** — both slot images must be present there. The warehouse rather than the repository's `store/`, unlike decision 7's read-through routes: those serve documents the repository defines, while this serves the bytes a gateway will fetch, and those come from the bucket (ADR-0021 decision 7). Validating against a checkout would accept a release the gateway then cannot fetch, because mirror and bucket diverge whenever `store_sync` has not run — and it would make a repository mount a precondition for firmware, which it is not. A selection naming a release the bucket cannot serve is refused where an operator can still fix it, rather than becoming a gateway that quietly serves nothing. Upserted, latest-wins, like decision 12's binding: this is a configuration record kept current, and what a machine's intended release *used to be* is not a question this API answers.
+    - **The gateway pulls over its mTLS channel (decision 2), and the pull is a pure read.** It returns the intended release and, on a second route, the artifact bytes — streamed through from the warehouse under decision 7's third form, the ERP holding no copy of an image as it holds no copy of any blob (ADR-0021 decision 7). The machine identity comes from the verified certificate, never a request parameter.
+    - **There is no update, deploy, or flash endpoint, and no write a gateway can make.** The ERP is what the intent is read *from*; the transfer is the gateway's, on the bus it owns (ADR-0029 decision 16). Decision 8's pure-read rule applies here unchanged and for the same reason: an operator records a decision, a machine records nothing at all. So *"is this machine's firmware up to date?"* is not answerable from the ERP — that comparison is the gateway's, against what it observes on the bus (ADR-0029 decision 15) — and consumers present it as a gap rather than closing it (alternative Q).
+
+    **Why the artifact is served by this API rather than fetched from the repository.** The gateway already holds one credential and speaks to one system of record (decision 2); a second fetch path to a public repository would put a component deliberately denied write access to the ERP into a trust relationship with an unauthenticated source, for the one artifact whose substitution matters most. ADR-0029 decision 6 makes that survivable — a node verifies the signature itself, and an unsigned or altered image is refused at the node — but survivable is not the standard for the path an operator is told to use. Serving it here also makes the release an operator selected and the bytes a gateway receives the same object by construction, rather than two lookups that can disagree.
+
 ## Alternatives considered
 
 **A. Amend ADR-0021 instead of a new record.** *Rejected:* an API contract is new material — its own auth model, endpoint semantics, and rejected alternatives — and it *instantiates* two of ADR-0021's deferred decisions rather than qualifying a recorded one. ADR-0000 decision 5's in-place-amendment vehicle is for bounded qualifications, not for a decision surface with its own stage-11 lifecycle.
@@ -199,6 +219,8 @@ that the second is closed deliberately.
 **O. Keep decision 7 as it stood and require a CORS policy on the bucket (rev 2).** The boundary is cleaner: the ERP touches no bytes at all, and one line of bucket configuration makes every grant spendable. *Rejected as a requirement,* and it remains the better arrangement wherever it is available: it makes the deployment depend on a permission the object store may not grant the credentials it was given, and it pushes a configuration step into every future deployment to preserve a property — no duplication — that a read-through does not threaten anyway. An operator who can set the policy should; the API no longer *needs* them to.
 
 **P. Return identifiers as strings and let each consumer parse them (decision 13).** The API stays narrower, the grammar lives in one ADR rather than in a response schema, and any consumer is free to read exactly the fields it needs. *Rejected:* the parse is positional and the failure mode is silent. A consumer that scans a key for "a segment that is `S/D/L/P/M/I/F`" reads a slug word as a document layer and produces a confident wrong answer, and one that assumes the second six-digit field is a version reads a depth as `v2.1.0`. Neither raises anything. Multiplying that across the console, the gateway, and a future IndustryFlow importer buys narrowness at the price of N implementations that can each be wrong differently — and the one place already holding the grammar is the side that stores the identifiers. The narrower surface is real but is the wrong economy: the schema grows by fields that are derived and cheap, the alternative grows by implementations that are load-bearing and silent.
+
+**Q. Let the gateway report the update result back — which nodes took the release, and when (rev 3).** The firmware pull already knows the answer at the moment it matters, the operator has no other way to see whether a selection took effect, and it is one write on a channel the gateway already holds. *Rejected:* it is alternative M with a different payload, and it fails the same caller-class test — the selection is what an *operator decided*, this would be what a *machine and its nodes did*. ADR-0029 decision 15 was corrected for proposing exactly this, and its correction is the governing statement: the observation stays at the gateway, and reaches a system of record at stage 11 with the rest of the operational stream. Accepting it here would also make the firmware routes the only ones where a machine writes, which is the surface decision 9 exists to keep closed. The question is the right question for an operator to ask; the ERP is the wrong place to answer it, and answering it here would cost the property that makes decision 9 checkable — that no route accepts a machine's account of what happened.
 
 **M. Record the gateway's pull — a "last pulled at" timestamp on the machine (rev 1).** One mutable field, overwritten each pull, no history; it would let an operator see at a glance whether a cabinet is actually collecting its profile, which decision 8 otherwise leaves unanswerable. *Rejected:* it is operational intake from a machine caller, which decision 9 excludes by category, and the "it is only one field, not a log" defence does not survive the caller-class test the Context sets out — the active-version record is what an *operator decided*, while this would be what a *machine did*. Its real use is monitoring ("alert me if a gateway has not pulled in an hour"), and monitoring is platform-side (ADR-0004 rev 1 decision 10). It would also convert the single endpoint a gateway calls on a 60-second timer from a read into a write, opening exactly the machine-write surface decision 9 closes. The question is a good one; the ERP is the wrong place to answer it.
 
