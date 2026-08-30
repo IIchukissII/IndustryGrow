@@ -84,9 +84,11 @@ def log(message: str) -> None:
 class Config:
     url: str
     chain: Path  # the gateway's leaf + issuing intermediate (ADR-0024 d1/d3)
-    key: Path | None  # the private key, when it is not inside the chain file
     anchor: Path  # the operator root the ERP's server cert is checked against
     verify_key: Path | None  # the ADR-0025 profile-verification public key
+    # The private key, when it is not inside the chain file. Defaulted so a
+    # caller that predates the split still constructs.
+    key: Path | None = None
     timeout: int = DEFAULT_TIMEOUT
     interval: int = DEFAULT_INTERVAL
 
