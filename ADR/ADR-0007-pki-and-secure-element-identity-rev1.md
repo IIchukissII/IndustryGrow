@@ -3,18 +3,30 @@ SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
-# ADR-0007 (rev 1): PKI, hardware identity, and provisioning
+# ADR-0007 (rev 2): PKI, hardware identity, and provisioning
 
-- **ID:** ADR-0007 (rev 1)
+- **ID:** ADR-0007 (rev 2)
 - **Status:** Accepted
-- **Date:** 2026-07-25
+- **Date:** 2026-07-25 (rev 2: 2026-08-30)
 - **Project:** IndustryGrow
 - **Parent:** ADR-0001
 - **Companions:** ADR-0002 (rev 3), ADR-0004 (rev 1), ADR-0017 (rev 2), ADR-0021, ADR-0022, ADR-0024
 - **Cross-project:** ADR-IF-0007 (IndustryFlow device CA — the SAN-URI tenant identity the stage-11 leaf conforms to)
-- **Supersedes:** ADR-0007 (initial, 2026-06-19)
+- **Supersedes:** ADR-0007 rev 1 (2026-07-25), and through it the initial record (2026-06-19)
 
 ## Revision history
+
+- **rev 2 (2026-08-30)** — Adds decision 11: the gateway's identity anchor is a
+  software-protected key, not a secure element. Decision 4 and this record's
+  drivers assert an ATECC608 on the gateway as a given, carried over from
+  ADR-0002 rev 3's "populated on every board"; the reference gateway is a stock
+  Raspberry Pi 5 (SP0004, a purchased part — ADR-0019 d1) and carries none. The
+  record asserted hardware that is not fitted, which is the drift ADR-0000
+  decision 3 exists to prevent, and it blocked the gateway certificate outright.
+  Decision 1 is unchanged and still governs **nodes**, where the ATECC608 is real
+  (E0001 routes I²C2 to it). Decision 4 is qualified by decision 11, not replaced:
+  the gateway still holds an X.509 P-256 client certificate over mTLS, and only
+  the anchor beneath it changes.
 
 - **rev 1 (2026-07-25)** — Adds decision 10 (identity across operators), resolving
   the identity-envelope half of the deferred *migration / cross-signing* decision
@@ -104,6 +116,21 @@ What remains genuinely open — and is decided below — is the certificate arch
 
     - **d. What the provisioning pipeline must not hard-code.** Because the envelope is operator-specific but the key and the machine identifier are not, the pipeline and the `-PR` it writes must bind to the stable facts, never to the current operator's envelope: the `-PR` keys on `GBOX_NNNN` and the hardware public-key fingerprint (both stable across renewal *and* across re-certification), not on a leaf's CN or certificate serial as though that were the identity; the gateway trust anchor must be **replaceable** — provisioned configuration the unit can be re-anchored on when its operator changes, not a single value compiled in for the life of the hardware (this is a replaceable anchor, not a mandate to trust two operators at once — see the decision 3 note); and no tenant value, root identity, or CN-versus-SAN assumption is baked into anything a later migration cannot rewrite. This is the constraint ADR-0024 deferred as *"what the self-hosted provisioning pipeline must not hard-code"*, warning that a pipeline which bakes in the self-hosted envelope closes the migration path silently. It is now a requirement, not a caution.
 
+### The gateway's anchor (rev 2)
+
+11. **The gateway's key is a software P-256 key, generated on the gateway and protected by the host, because the gateway carries no secure element.** Decision 1 anchors identity in the ATECC608B and decision 4 calls the gateway's certificate "ATECC608-bound". That is true of a **node** — the E0001 carrier routes I²C2 to a populated 608 — and false of the **gateway**, which is a stock single-board computer bought as SP0004 (ADR-0019 d1) with nothing on its I²C bus. The claim entered through ADR-0002 rev 3's "populated on every board", which describes the boards the project *designs*; the gateway is not one of them.
+
+    So the two ends of the mTLS channel are anchored differently, and this decision says so rather than leaving decision 4 asserting hardware that is not fitted:
+
+    - **A node's key is generated on-chip and never leaves the part** (decision 1, unchanged). The serial↔crypto binding of ADR-0017 d8 and the `-PR` record rest on that, and nothing here weakens it.
+    - **A gateway's key is generated on the gateway, stored under the host's access control, and never copied off it.** "Generated where it lives and does not move" is the property decision 1 is actually protecting, and it is the property a host can still keep without a secure element. What is lost is non-exportability against an attacker who is already root on the gateway.
+
+    **What this costs, stated plainly.** A gateway's identity is only as strong as the host: root on the gateway is the private key. ADR-0004's hardening is therefore load-bearing for identity and not merely for availability, and the replaceability driver cuts the other way too — a stolen gateway is a usable credential until its certificate is revoked or expires, which is what makes ADR-0007 d7's short lifetimes and ADR-0024's issuing-CA revocation the compensating controls rather than conveniences.
+
+    **This is not a licence to skip the secure element where one exists.** A gateway that does carry a 608 uses it, under decision 1; this decision covers the case where none is fitted, which is the reference deployment today. Fitting one is a hardware change, and it changes this decision back rather than requiring a new one.
+
+    Consequences for what is already written: `store/SP0004-M-atecc-provisioning.md` provisions a part the reference gateway does not have, and `gateway/provision_identity.py` implements it. Both stay — they are correct for a gateway that has the part — but neither is on the path for the reference deployment, and the gateway-certificate procedure must not require them.
+
 ## Alternatives considered
 
 **A. A single global IndustryGrow root CA with per-operator intermediates.** Simpler chain, one place to manage. *Rejected:* it couples every deployment — including independent self-hosters — to one root key and one revocation authority, making a global key compromise catastrophic and contradicting the fleet-independence and self-hosting goals of ADR-0001. Per-operator roots (decision 3) bound the blast radius to one operator.
@@ -123,6 +150,10 @@ What remains genuinely open — and is decided below — is the certificate arch
 **H. Re-key at migration — a fresh on-chip keypair for commercial operation.** Treat the move as a new enrolment. *Rejected (decision 10a):* the key is the hardware anchor the serial is bound to (ADR-0017 decision 12); re-keying severs that binding, forfeits the provenance the `-PR` exists to carry, and means physically re-provisioning the secure element for what is an operator change, not a hardware change. The whole point of a non-exportable key is that identity travels by re-certification.
 
 **I. Put the machine identifier in the CN of the IndustryFlow leaf too, for symmetry.** Keep one parsing rule across both domains. *Rejected (decision 10b):* ADR-IF-0007 decision 3 deprecates CN-as-identity on the core platform; forcing the CN convention onto its leaf would fork the core rather than conform to it, which ADR-0001's core-plus-layer positioning forbids. The identifier rides the SAN's device segment there instead — same value, the field the core actually reads.
+
+**J. Fit an ATECC608 to the gateway rather than amend the record (rev 2).** The cleanest answer: decision 1 then covers both ends of the channel and they are anchored identically. *Rejected as a precondition, not as an idea:* it puts a hardware purchase on the critical path of every self-hosted deployment, against ADR-0001 decision 6's self-build path, and the gateway is a purchased part whose form the project does not control (ADR-0019 decision 1). A deployment that does fit one gets decision 1 back automatically — decision 11 is written so that is a return to the default rather than a special case.
+
+**K. Leave decision 4 as written and treat the software key as an undocumented exception (rev 2).** *Rejected:* it is exactly the drift ADR-0000 decision 3 exists to prevent. A record asserting a secure element that is not fitted makes every downstream claim resting on it — the `-PR` binding, the audit-batch identity, the replaceability argument — unverifiable, and a later reader cannot tell which parts describe hardware and which describe an assumption.
 
 ## Consequences
 

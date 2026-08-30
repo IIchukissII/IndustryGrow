@@ -93,6 +93,23 @@ cp ca/operator-root.key /media/stick-b/
 shred -u ca/operator-root.key      # or your platform's equivalent
 ```
 
+> `shred` overwrites the blocks a file currently occupies. On an SSD, or any
+> copy-on-write filesystem, the original blocks may survive that — wear levelling
+> and snapshots both defeat it. Generate the root on media you can destroy, or
+> accept that the disk it touched holds a copy until it is wiped or destroyed.
+
+### Where the passphrase lives
+
+Decision 6 requires the passphrase to be held apart from both media. A password
+manager is that: **1Password vault `IndustryGrow`, item `operator-ca`**, fields
+`root_passphrase` and `intermediate_passphrase`.
+
+Generate it there **before** going offline, and type it at the prompt during the
+ceremony. Do not reach for `op run` at this step — it resolves references over
+the network, and this is the one procedure that must run on a machine that is
+offline at generation time (decision 5). `pki/.env.op.tpl` exists for *issuance*,
+which is online by design, and says so.
+
 Then, per decision 6:
 
 - the two media go in **two different physical places** — co-located copies share

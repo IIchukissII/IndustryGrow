@@ -8,7 +8,10 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>IndustryGrow — Instance &amp; Integration</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8D%93%3C/text%3E%3C/svg%3E" />
+    <!-- The tree-of-life mark, the same asset the console renders (main.ts) and
+         the boards carry. Vite resolves and fingerprints it through img/, which
+         vite.config.ts allows; it is not a second copy of the brand. -->
+    <link rel="icon" type="image/svg+xml" href="../../img/industrygrow-logo.svg" />
   </head>
   <body>
     <div id="app"></div>

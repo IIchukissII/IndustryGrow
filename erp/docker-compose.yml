@@ -85,6 +85,18 @@ services:
     # A FastAPI app serving a small index and a console bundle; the ceiling exists
     # so a runaway request cannot crowd out whatever else the host is running.
     mem_limit: ${ERP_MEM_LIMIT:-512m}
+    # Everything in .env reaches the app, so a setting can be configured without
+    # also being mapped below. The explicit `environment:` entries still win.
+    #
+    # Not `ERP_API_TOKENS: ${ERP_API_TOKENS:-}`: pydantic-settings raises on an
+    # empty value for a dict field, so a mapping with an empty fallback breaks
+    # every deployment that does not set it. With env_file, absent is absent and
+    # app/config.py's own default applies.
+    #
+    # This does put the Mongo credentials in the container's environment. They
+    # are already there inside ERP_MONGO_URI below, so it grants nothing new.
+    env_file:
+      - .env
     environment:
       ERP_MONGO_URI: mongodb://${ERP_MONGO_USER:?}:${ERP_MONGO_PASSWORD:?}@mongo:27017/?authSource=admin
       ERP_MONGO_DB: ${ERP_MONGO_DB:-industrygrow_erp}
