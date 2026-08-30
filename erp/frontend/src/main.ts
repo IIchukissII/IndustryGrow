@@ -847,6 +847,27 @@ function csvTable(text: string): string {
 }
 
 /**
+ * Whether the fetched bytes are text.
+ *
+ * Neither the name nor the header can answer this for a lifecycle document: its
+ * object key carries no extension, and its content type is whatever the browser
+ * guessed at upload — often `application/octet-stream`. The same two signals the
+ * ERP uses: an embedded NUL, or a known binary magic number.
+ */
+async function looksTextual(blob: Blob): Promise<boolean> {
+  const head = new Uint8Array(await blob.slice(0, 4096).arrayBuffer());
+  if (head.includes(0)) return false;
+  const magic = [
+    [0x25, 0x50, 0x44, 0x46], // %PDF
+    [0x50, 0x4b, 0x03, 0x04], // zip
+    [0x89, 0x50, 0x4e, 0x47], // PNG
+    [0xff, 0xd8, 0xff], //       JPEG
+    [0x1f, 0x8b], //             gzip
+  ];
+  return !magic.some((m) => m.every((b, i) => head[i] === b));
+}
+
+/**
  * Open one indexed document over the console.
  *
  * The bytes come from the object store, not from the ERP: they stream through
@@ -878,18 +899,21 @@ async function openDocument(instanceId: string | null, objectKey: string): Promi
   let saveAs = objectKey;
   let tabUrl: string | null = null;
   let objectUrl: string | null = null;
+  // Set once the body has been laid out as prose, which is the condition the PDF
+  // action depends on — not the object key's extension. A lifecycle document has
+  // none: the upload route keys it `<instance>-CC-<stamp>` (ADR-0017 d11), so a
+  // name test hides the action on exactly the documents an operator files.
+  let asProse = false;
 
   const head = (note = "") => {
     const tab = tabUrl
       ? `<a class="btn ghost sm" href="${esc(tabUrl)}" target="_blank" rel="noopener noreferrer">Open in a tab</a>`
       : "";
     const save = bytes ? `<button class="btn ghost sm" id="rd-save">Download</button>` : "";
-    // Markdown only: the renderer draws the HTML subset markdown produces, and a
-    // CSV or a zip through it would be a page of noise rather than a refusal the
-    // operator can read. Offered where it works, absent where it does not.
-    const asPdf = /\.(md|markdown)$/i.test(objectKey)
-      ? `<button class="btn ghost sm" id="rd-pdf">PDF</button>`
-      : "";
+    // Text only: a CSV or a zip through the renderer would be a page of noise
+    // rather than a refusal the operator can read. Offered where it works,
+    // absent where it does not.
+    const asPdf = asProse ? `<button class="btn ghost sm" id="rd-pdf">PDF</button>` : "";
     return `<div class="rd-head">
       <span class="rd-key">${esc(objectKey)}</span>
       ${note ? `<span class="rd-note">${esc(note)}</span>` : ""}
@@ -913,7 +937,9 @@ async function openDocument(instanceId: string | null, objectKey: string): Promi
       const isPdf = /pdf/.test(type) || /\.pdf$/i.test(objectKey);
       const isCsv = /csv/.test(type) || /\.csv$/i.test(objectKey);
       const textual =
-        /^text\/|json|markdown|xml|csv/.test(type) || /\.(md|markdown|txt|csv)$/i.test(objectKey);
+        /^text\/|json|markdown|xml|csv/.test(type) ||
+        /\.(md|markdown|txt|csv)$/i.test(objectKey) ||
+        (!isImage && !isPdf && (await looksTextual(bytes)));
 
       // Images and PDFs are shown from an object URL over the bytes already
       // fetched, not from the presigned grant: the grant is optional (a
@@ -933,10 +959,16 @@ async function openDocument(instanceId: string | null, objectKey: string): Promi
           <span>Not a previewable document. Download it, or open it in a tab to view it.</span></div>`;
       } else {
         const text = await bytes.text();
-        const md = /markdown/.test(type) || /\.(md|markdown)$/i.test(objectKey);
-        body = md
-          ? `<article class="rd-body md">${DOMPurify.sanitize(await marked.parse(text))}</article>`
-          : `<pre class="rd-body plain">${esc(text)}</pre>`;
+        // Markdown unless something says otherwise. A lifecycle document arrives
+        // with neither an extension nor, often, a content type better than
+        // octet-stream, and a `-QP` with headings and a table is worth more read
+        // as markdown than as a wall of `<pre>`. Plain text run through it is
+        // paragraphs, which is what it already was.
+        const plain = /^text\/plain/.test(type) || /\.txt$/i.test(objectKey);
+        body = plain
+          ? `<pre class="rd-body plain">${esc(text)}</pre>`
+          : `<article class="rd-body md">${DOMPurify.sanitize(await marked.parse(text))}</article>`;
+        asProse = true;
       }
     }
   } catch (e) {
