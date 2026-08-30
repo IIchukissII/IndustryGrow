@@ -324,6 +324,16 @@ export const api = {
   setFirmwareIntent: (gbox: string, release_root: string) =>
     req<FirmwareIntent>("PUT", `/machines/${gbox}/firmware`, { release_root }),
 
+  // Returns the PDF bytes. Not `req`, which decodes JSON: a report is a file,
+  // and the Authorization header is why it cannot simply be a link.
+  instanceReport: async (instanceId: string): Promise<Blob> => {
+    const res = await fetch(`/api/v1/instances/${instanceId}/report.pdf`, {
+      headers: { Authorization: `Bearer ${getToken()}` },
+    });
+    if (!res.ok) throw new Error(`the report could not be produced (HTTP ${res.status})`);
+    return res.blob();
+  },
+
   calibrationExpiring: (days = 30) =>
     req<LifecycleDoc[]>("GET", `/calibration/expiring?days=${days}`),
   listStock: () => req<SPStock[]>("GET", "/sp-stock"),
