@@ -25,6 +25,7 @@ import hashlib
 import os
 import struct
 import sys
+from pathlib import Path
 
 MAGIC = 0x4947494D  # 'IGIM'
 HEADER_VERSION = 1
@@ -40,8 +41,11 @@ def crc32_mpeg2(data: bytes) -> int:
     for byte in data:
         crc ^= byte << 24
         for _ in range(8):
-            crc = ((crc << 1) ^ 0x04C11DB7) & 0xFFFFFFFF if crc & 0x80000000 \
+            crc = (
+                ((crc << 1) ^ 0x04C11DB7) & 0xFFFFFFFF
+                if crc & 0x80000000
                 else (crc << 1) & 0xFFFFFFFF
+            )
     return crc
 
 
@@ -52,29 +56,65 @@ def stm32_crc32(body: bytes) -> int:
     first, so a little-endian buffer reaches the polynomial in the order
     b3,b2,b1,b0 per word. Reversing each word here is what makes the host and
     the node agree (common/platform/crc32.h)."""
-    swapped = b"".join(body[i:i + 4][::-1] for i in range(0, len(body), 4))
+    swapped = b"".join(body[i : i + 4][::-1] for i in range(0, len(body), 4))
     return crc32_mpeg2(swapped)
 
 
-def load_signer(path: str):
-    """The private key at `path`, as a P-256 signing key."""
+def key_passphrase(spec):
+    """Resolve an OpenSSL-style passphrase spec, or None for an unencrypted key.
+
+    `env:VAR`, `file:PATH` or `pass:VALUE`, matching pki/*.sh so one convention
+    covers both trust roots. `pass:` is accepted for a scripted rehearsal and is
+    visible in the process table; the release path uses `env:`.
+    """
+    if not spec:
+        return None
+    kind, _, rest = spec.partition(":")
+    if kind == "env":
+        value = os.environ.get(rest)
+        if value is None:
+            raise SystemExit(f"mkimage: {rest} is not set")
+        return value.encode()
+    if kind == "file":
+        return Path(rest).read_text().strip().encode()
+    if kind == "pass":
+        return rest.encode()
+    raise SystemExit(f"mkimage: unsupported passphrase spec {spec!r} (env:, file:, pass:)")
+
+
+def load_signer(path: str, passphrase=None):
+    """The private key at `path`, as a P-256 signing key.
+
+    The signing key is held encrypted at rest, as the operator root is
+    (ADR-0024 d5): it is the one key whose compromise cannot be recovered over
+    the wire, because its public half is compiled into a bootloader that only SWD
+    can replace (ADR-0029 d10).
+    """
     from cryptography.hazmat.primitives import serialization
     from cryptography.hazmat.primitives.asymmetric import ec
 
     with open(path, "rb") as f:
-        key = serialization.load_pem_private_key(f.read(), password=None)
+        raw = f.read()
+    try:
+        key = serialization.load_pem_private_key(raw, password=passphrase)
+    except TypeError as exc:  # encrypted key, no passphrase given
+        raise SystemExit(
+            f"mkimage: {path} is encrypted; pass --key-pass env:VAR (or file:/pass:)"
+        ) from exc
+    except ValueError as exc:
+        raise SystemExit(f"mkimage: {path} could not be read: {exc}") from exc
     if not isinstance(key, ec.EllipticCurvePrivateKey) or key.curve.name != "secp256r1":
-        raise SystemExit("mkimage: %s is not a P-256 private key" % path)
+        raise SystemExit(f"mkimage: {path} is not a P-256 private key")
     return key
 
 
-def sign(path: str, data: bytes) -> bytes:
+def sign(path: str, data: bytes, passphrase=None) -> bytes:
     """ECDSA P-256 over SHA-256 of `data`, as raw r||s big-endian. micro-ecc
     takes no DER, so the DER the library returns is unpacked here."""
     from cryptography.hazmat.primitives import hashes
     from cryptography.hazmat.primitives.asymmetric import ec, utils
 
-    der = load_signer(path).sign(data, ec.ECDSA(hashes.SHA256()))
+    der = load_signer(path, passphrase).sign(data, ec.ECDSA(hashes.SHA256()))
     r, s = utils.decode_dss_signature(der)
     return r.to_bytes(32, "big") + s.to_bytes(32, "big")
 
@@ -86,8 +126,7 @@ def new_key(path: str) -> int:
     from cryptography.hazmat.primitives.asymmetric import ec
 
     if os.path.exists(path):
-        sys.stderr.write(
-            "mkimage: %s exists; refusing to overwrite a signing key\n" % path)
+        sys.stderr.write(f"mkimage: {path} exists; refusing to overwrite a signing key\n")
         return 1
     pem = ec.generate_private_key(ec.SECP256R1()).private_bytes(
         encoding=serialization.Encoding.PEM,
@@ -96,18 +135,22 @@ def new_key(path: str) -> int:
     )
     with open(path, "wb") as f:
         f.write(pem)
-    print("mkimage: wrote %s -- keep it out of the repository" % path)
+    print(f"mkimage: wrote {path} -- keep it out of the repository")
     return 0
 
 
-def public_key_hex(path: str) -> int:
+def public_key_hex(path: str, passphrase=None) -> int:
     """Print the public half as 128 hex characters: the uncompressed point
     X||Y without its 0x04 prefix, which is what -DIGROW_VERIFY_KEY_HEX takes."""
     from cryptography.hazmat.primitives import serialization
 
-    point = load_signer(path).public_key().public_bytes(
-        encoding=serialization.Encoding.X962,
-        format=serialization.PublicFormat.UncompressedPoint,
+    point = (
+        load_signer(path, passphrase)
+        .public_key()
+        .public_bytes(
+            encoding=serialization.Encoding.X962,
+            format=serialization.PublicFormat.UncompressedPoint,
+        )
     )
     if (len(point) != 65) or (point[0] != 0x04):
         raise SystemExit("mkimage: unexpected public point encoding")
@@ -122,23 +165,36 @@ def main() -> int:
     ap.add_argument("--version-major", type=int)
     ap.add_argument("--version-minor", type=int)
     ap.add_argument("--hardware-class", type=int)
-    ap.add_argument("--vcs-revision-id", default="0",
-                    help="git commit as hex, or 0 when not a released build")
+    ap.add_argument(
+        "--vcs-revision-id", default="0", help="git commit as hex, or 0 when not a released build"
+    )
     ap.add_argument("--max-body", type=int, help="slot capacity less the header")
     ap.add_argument("--key", help="P-256 private key (PEM) to sign the header with")
+    ap.add_argument(
+        "--key-pass",
+        metavar="SPEC",
+        help="passphrase for an encrypted --key: env:VAR, file:PATH or pass:VALUE",
+    )
     ap.add_argument("--new-key", metavar="PATH", help="write a new signing key and exit")
-    ap.add_argument("--public-key", metavar="PATH",
-                    help="print a key's public half as hex and exit")
+    ap.add_argument(
+        "--public-key", metavar="PATH", help="print a key's public half as hex and exit"
+    )
     args = ap.parse_args()
 
     if args.new_key:
         return new_key(args.new_key)
     if args.public_key:
-        return public_key_hex(args.public_key)
-    for required in ("input", "output", "version_major", "version_minor",
-                     "hardware_class", "max_body"):
+        return public_key_hex(args.public_key, key_passphrase(args.key_pass))
+    for required in (
+        "input",
+        "output",
+        "version_major",
+        "version_minor",
+        "hardware_class",
+        "max_body",
+    ):
         if getattr(args, required) is None:
-            ap.error("--%s is required to build an image" % required.replace("_", "-"))
+            ap.error("--{} is required to build an image".format(required.replace("_", "-")))
 
     with open(args.input, "rb") as f:
         body = f.read()
@@ -152,8 +208,7 @@ def main() -> int:
         sys.stderr.write("mkimage: empty body\n")
         return 1
     if len(body) > args.max_body:
-        sys.stderr.write(
-            "mkimage: body is %d bytes, slot holds %d\n" % (len(body), args.max_body))
+        sys.stderr.write(f"mkimage: body is {len(body)} bytes, slot holds {args.max_body}\n")
         return 1
 
     header = struct.pack(
@@ -164,26 +219,29 @@ def main() -> int:
         args.hardware_class,
         args.version_major,
         args.version_minor,
-        0,                                   # reserved0
+        0,  # reserved0
         int(args.vcs_revision_id, 16),
         stm32_crc32(body),
-        0,                                   # reserved1
+        0,  # reserved1
         hashlib.sha256(body).digest(),
     )
     assert len(header) == SIGNATURE_OFFSET, len(header)
 
     # The signature covers the header up to itself; the body reaches it through
     # the digest already in there, so the header never signs itself.
-    signature = sign(args.key, header) if args.key else b"\x00" * SIGNATURE_LEN
+    signature = (
+        sign(args.key, header, key_passphrase(args.key_pass))
+        if args.key
+        else b"\x00" * SIGNATURE_LEN
+    )
     header += signature
     header += b"\x00" * (HEADER_SIZE - len(header))
 
     with open(args.output, "wb") as f:
         f.write(header + body)
 
-    print("mkimage: %s, %d body bytes, crc %#010x, %s" %
-          (args.output, len(body), stm32_crc32(body),
-           "signed" if args.key else "UNSIGNED"))
+    state = "signed" if args.key else "UNSIGNED"
+    print(f"mkimage: {args.output}, {len(body)} body bytes, crc {stm32_crc32(body):#010x}, {state}")
     return 0
 
 
