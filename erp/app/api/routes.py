@@ -503,33 +503,30 @@ def _firmware_intent_out(doc: dict) -> schemas.FirmwareIntentOut:
 @router.get(
     "/firmware-releases", response_model=list[schemas.FirmwareReleaseOut], tags=["firmware"]
 )
-async def list_firmware_releases(_role: str = Depends(require_read)):
-    """The firmware releases the repository publishes (ADR-0029 d13).
+async def list_firmware_releases(
+    warehouse: Warehouse = Depends(get_warehouse),
+    _role: str = Depends(require_read),
+):
+    """The firmware releases the warehouse can serve (ADR-0029 d13).
 
-    Read-through from `store/`, storing nothing — the same shape the store-document
-    listing has. A release appears here only if both of its slot images are present,
-    because a release missing one cannot serve whichever node is running the other
-    slot (ADR-0029 d17), and offering it would move that failure to a gateway days
-    later instead of refusing it at the selection.
+    Listed from the bucket, not from a checkout: the bucket is where a gateway's
+    bytes come from, so it is what decides a release is selectable. A release
+    appears only if both of its slot images are there — one is not servable to
+    whichever node is running the other slot (ADR-0029 d17), and offering it would
+    move that failure to a gateway days later instead of refusing it here.
     """
-
-    def _scan() -> list[schemas.FirmwareReleaseOut]:
-        out = []
-        for root in firmware.available_releases():
-            version = identifiers.parse_store_key(root).version
-            out.append(
-                schemas.FirmwareReleaseOut(
-                    release_root=root,
-                    version=version,
-                    version_label=_version_label(version),
-                    artifact_keys=firmware.artifact_keys(root),
-                )
+    out = []
+    for root in await firmware.available_releases(warehouse):
+        version = identifiers.parse_store_key(root).version
+        out.append(
+            schemas.FirmwareReleaseOut(
+                release_root=root,
+                version=version,
+                version_label=_version_label(version),
+                artifact_keys=firmware.artifact_keys(root),
             )
-        return out
-
-    # Off-thread for the reason the store listing is: this walks a directory that
-    # may be a network mount, and the loop serves everyone else meanwhile.
-    return await asyncio.to_thread(_scan)
+        )
+    return out
 
 
 @router.put(
@@ -539,6 +536,7 @@ async def set_firmware_intent(
     gbox: str,
     body: schemas.FirmwareIntentRequest,
     db: AsyncIOMotorDatabase = Depends(get_db),
+    warehouse: Warehouse = Depends(get_warehouse),
     role: str = Depends(require_write),
 ):
     """Record which firmware release this machine's nodes should run (ADR-0022 d14).
@@ -554,11 +552,11 @@ async def set_firmware_intent(
             f"{gbox} is not an ADR-0017 machine identifier (GBOX_NNNN)",
         )
     try:
-        doc = await firmware.set_intent(db, gbox, body.release_root, selected_by=role)
+        doc = await firmware.set_intent(db, warehouse, gbox, body.release_root, selected_by=role)
     except firmware.UnknownReleaseError as exc:
         # 404 on the release, not 422 on the request: the body is well-formed and
         # the identifier is grammatical — what is missing is the artifact set it
-        # names, which is a fact about the store rather than about the request.
+        # names, which is a fact about the warehouse rather than about the request.
         raise HTTPException(status.HTTP_404_NOT_FOUND, str(exc)) from exc
     return _firmware_intent_out(doc)
 

@@ -599,12 +599,15 @@ def cmd_serve(args: argparse.Namespace) -> int:
         try:
             asyncio.run(pass_once(config))
             delay = config.interval
-        except FirmwareError as exc:
+        except KeyboardInterrupt:
+            return 0
+        except (FirmwareError, OSError) as exc:
+            # OSError as well as a refusal: the CAN interface can be down or go
+            # away mid-pass, and a loop that runs on a timer must outlive that
+            # rather than exit and leave the machine with nothing polling.
             log(f"pass failed: {exc}")
             delay = min(delay * 2, ceiling)
             log(f"next attempt in {delay}s")
-        except KeyboardInterrupt:
-            return 0
         time.sleep(delay)
 
 

@@ -19,18 +19,14 @@ from __future__ import annotations
 
 import re
 from datetime import UTC, datetime
-from pathlib import Path
 
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from app.config import settings
 from app.db import DOMAIN
 from app.models.identifiers import E_MODULE, VERSION
+from app.services.warehouse import Warehouse
 
-# `Exxxx-VVVVVV-F` — the F-layer prefix an artifact set hangs off. Anchored, so
-# a value that reaches the filesystem below cannot carry a separator or `..`:
-# this regex is the path guard, which is why the scan can join rather than
-# resolve-and-compare as the store-document routes must.
+# `Exxxx-VVVVVV-F` — the F-layer prefix an artifact set hangs off.
 RELEASE_RE = re.compile(rf"^{E_MODULE}-{VERSION}-F$")
 
 # The two artifacts a release must publish to be servable over the bus: header
@@ -53,41 +49,45 @@ def artifact_keys(release_root: str) -> list[str]:
     return [slot_image_key(release_root, slot) for slot in SLOT_IMAGES]
 
 
-def _store_dir() -> Path:
-    return Path(settings.store_dir)
+async def is_release(warehouse: Warehouse, release_root: str) -> bool:
+    """True when both slot images are in the warehouse.
 
+    The warehouse, not the repository's ``store/``: the bytes a gateway is served
+    come from the bucket (ADR-0021 d7), so the bucket is what decides a release
+    can be served. Validating against a checkout would let an operator select a
+    release the gateway then cannot fetch — the mirror and the bucket diverge
+    whenever ``store_sync`` has not run, and the ERP need not have the repository
+    mounted at all to answer this.
 
-def is_release(release_root: str) -> bool:
-    """True when both slot images are present in the repository's ``store/``.
-
-    Both, not either: a release missing one slot image can be selected and then
-    fails at the gateway for whichever node happens to be running the other slot
-    (ADR-0029 d17) — a fault that surfaces one node at a time, days later, far
-    from the selection that caused it.
+    Both images, not either: a release missing one slot image can be selected and
+    then fails at the gateway for whichever node happens to be running the other
+    slot (ADR-0029 d17) — a fault that surfaces one node at a time, days later,
+    far from the selection that caused it.
     """
     if not RELEASE_RE.match(release_root):
         return False
-    store = _store_dir()
-    return all((store / key).is_file() for key in artifact_keys(release_root))
+    for key in artifact_keys(release_root):
+        if not await warehouse.exists(key):
+            return False
+    return True
 
 
-def available_releases() -> list[str]:
-    """Every release the repository publishes, newest-looking last.
+async def available_releases(warehouse: Warehouse) -> list[str]:
+    """Every release the warehouse can serve.
 
-    Read from ``store/`` rather than from the warehouse: the repository is what
-    defines a release exists, and the bucket is a mirror of it (ADR-0022 d1's
-    read-through shape, as for the store-document listing).
+    A suffix scan over a flat keyspace (ADR-0017 d15): S3 filters by prefix only,
+    so the slot-A images are found by listing and filtering. Each candidate is
+    then confirmed to have its slot-B twin.
     """
-    roots = {
-        name[: -len("-slot-a.img")]
-        for name in (p.name for p in _store_dir().iterdir() if p.is_file())
-        if name.endswith("-slot-a.img")
-    }
-    return sorted(root for root in roots if is_release(root))
+    keys = await warehouse.list_prefix("")
+    roots = {k[: -len("-slot-a.img")] for k in keys if k.endswith("-slot-a.img")}
+    found = [root for root in sorted(roots) if RELEASE_RE.match(root)]
+    return [root for root in found if f"{root}-slot-b.img" in set(keys)]
 
 
 async def set_intent(
     db: AsyncIOMotorDatabase,
+    warehouse: Warehouse,
     machine_id: str,
     release_root: str,
     selected_by: str | None = None,
@@ -99,10 +99,11 @@ async def set_intent(
     machine identity binding takes, and for the same reason: it is configuration
     kept current, not a history.
     """
-    if not is_release(release_root):
+    if not await is_release(warehouse, release_root):
         raise UnknownReleaseError(
-            f"{release_root} is not a firmware release in the repository's store/ — "
-            f"expected {', '.join(artifact_keys(release_root))}"
+            f"{release_root} is not a firmware release in the warehouse — expected "
+            f"{', '.join(artifact_keys(release_root))}. Publish it with "
+            f"`python -m app.store_sync`."
         )
     now = datetime.now(UTC)
     await db[DOMAIN["firmware_intent"]].update_one(

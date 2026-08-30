@@ -13,6 +13,8 @@ from `store/`, because that is what makes a release selectable (ADR-0029 d13).
 
 from __future__ import annotations
 
+import asyncio
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -30,6 +32,10 @@ RELEASE = "E0001-000001-F"
 
 @pytest.fixture
 def client(monkeypatch, warehouse):
+    # The release these tests select must be in the bucket, because that is what
+    # makes it selectable (ADR-0022 d14).
+    for slot in ("a", "b"):
+        warehouse.objects[f"{RELEASE}-slot-{slot}.img"] = b"IGIM-header-and-body"
     monkeypatch.setattr(settings, "mongo_mock", True)
     monkeypatch.setattr(settings, "gateway_trusted_proxies", ["10.9.0.0/24"])
     app = create_app()
@@ -41,23 +47,25 @@ def client(monkeypatch, warehouse):
 # ---- what makes a release selectable ---------------------------------------
 
 
-def test_the_repository_publishes_the_release_these_tests_use():
-    # Not a tautology: it is the guard that keeps the rest of this file honest
-    # if the release in store/ is ever renamed or one slot image goes missing.
-    assert firmware.is_release(RELEASE)
-    assert RELEASE in firmware.available_releases()
+def test_a_release_is_what_the_warehouse_can_serve(warehouse):
+    """The bucket decides, not a checkout — it is where the gateway's bytes come from."""
+    assert asyncio.run(firmware.is_release(warehouse, RELEASE)) is False
 
-
-def test_a_release_needs_both_slot_images(monkeypatch, tmp_path):
+    warehouse.objects[f"{RELEASE}-slot-a.img"] = b"header+body"
     # One slot image is not a release: a node running the other slot could not be
     # served, and that failure would surface at a gateway days later (d17).
-    (tmp_path / f"{RELEASE}-slot-a.img").write_bytes(b"header+body")
-    monkeypatch.setattr(settings, "store_dir", str(tmp_path))
-    assert not firmware.is_release(RELEASE)
-    assert firmware.available_releases() == []
+    assert asyncio.run(firmware.is_release(warehouse, RELEASE)) is False
+    assert asyncio.run(firmware.available_releases(warehouse)) == []
 
-    (tmp_path / f"{RELEASE}-slot-b.img").write_bytes(b"header+body")
-    assert firmware.is_release(RELEASE)
+    warehouse.objects[f"{RELEASE}-slot-b.img"] = b"header+body"
+    assert asyncio.run(firmware.is_release(warehouse, RELEASE)) is True
+    assert asyncio.run(firmware.available_releases(warehouse)) == [RELEASE]
+
+
+def test_a_key_that_is_not_a_release_root_is_not_a_release(warehouse):
+    warehouse.objects["E0002-000001-D-slot-a.img"] = b"x"
+    warehouse.objects["E0002-000001-D-slot-b.img"] = b"x"
+    assert asyncio.run(firmware.available_releases(warehouse)) == []
 
 
 def test_releases_are_listed_with_their_decoded_version(client):
@@ -103,7 +111,7 @@ def test_a_release_the_store_does_not_publish_is_refused(client):
         headers=AUTH,
     )
     assert refused.status_code == 404
-    assert "store/" in refused.json()["detail"]
+    assert "warehouse" in refused.json()["detail"]
     # Nothing was recorded by the attempt.
     assert client.get("/api/v1/machines/GBOX_0001/firmware", headers=AUTH).status_code == 404
 
@@ -284,3 +292,22 @@ def test_registering_a_machine_twice_edits_it(client):
 
 def test_a_machine_identifier_is_required(client):
     assert client.put("/api/v1/machines/cabinet-1", json={}, headers=AUTH).status_code == 422
+
+
+def test_the_erp_needs_no_repository_checkout_for_firmware(client, monkeypatch):
+    """The firmware channel does not read store/ at all.
+
+    Pointing store_dir at nothing must not affect it: the ERP serves firmware from
+    the warehouse, so a deployment that has not bind-mounted the repository still
+    has a working firmware channel.
+    """
+    monkeypatch.setattr(settings, "store_dir", "/nonexistent/store")
+    listed = client.get("/api/v1/firmware-releases", headers=AUTH)
+    assert listed.status_code == 200
+    assert [r["release_root"] for r in listed.json()] == [RELEASE]
+    assert (
+        client.put(
+            "/api/v1/machines/GBOX_0001/firmware", json={"release_root": RELEASE}, headers=AUTH
+        ).status_code
+        == 200
+    )

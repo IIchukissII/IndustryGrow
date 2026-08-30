@@ -608,7 +608,7 @@ async function firmware(): Promise<string> {
       <span class="desc">three homes, one direction of travel</span></div>
       <div class="roles">
         <div class="role tpl"><span class="pin"></span>
-          <div><div class="r-name">Released</div><div class="r-where">repository <code>store/</code> · signed once · the same artifact for every operator</div></div>
+          <div><div class="r-name">Released</div><div class="r-where">warehouse · signed once · the same artifact for every operator</div></div>
           <div class="r-ver">${esc(releases[0]?.version_label ?? "—")}<small>${releases.length} published</small></div></div>
         <div class="role erp"><span class="pin"></span>
           <div><div class="r-name">Intended here</div><div class="r-where">what an operator chose for this cabinet</div></div>
@@ -628,9 +628,10 @@ async function firmware(): Promise<string> {
       <span class="desc">${releases.length} published for the carrier every node runs</span></div>
       ${
         rows ||
-        `<div class="empty">No firmware releases in <code>store/</code>. Build one with
-          <code>firmware/tools/release.sh --key &lt;pem&gt;</code>; a release needs both slot
-          images before it can be selected.</div>`
+        `<div class="empty">No firmware releases in the warehouse. Build one with
+          <code>firmware/tools/release.sh --key &lt;pem&gt;</code>, then publish it with
+          <code>python -m app.store_sync</code>; both slot images must be there before a
+          release can be selected.</div>`
       }
       <div class="result" id="fw-out"></div></section>
 
