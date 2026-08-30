@@ -18,6 +18,8 @@ dependencies = [
   # PDF reports (app/services/reports.py). Pure Python — no cairo, no pango,
   # no system libraries, so the single container stays compact (ADR-0021 d15).
   "fpdf2>=2.8",
+  # Markdown -> HTML for the document PDFs; fpdf2 renders the HTML subset.
+  "markdown>=3.6",
 ]
 
 [project.optional-dependencies]

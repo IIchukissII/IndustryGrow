@@ -334,6 +334,21 @@ export const api = {
     return res.blob();
   },
 
+  /** One markdown document as a PDF. Instance documents and repository documents
+   *  live behind different guards, so the path differs; the caller has the same
+   *  instanceId it already used to fetch the bytes. */
+  documentPdf: async (instanceId: string | null, key: string): Promise<Blob> => {
+    const path = instanceId
+      ? `/api/v1/instances/${instanceId}/documents/${encodeURIComponent(key)}/pdf`
+      : `/api/v1/store-documents/${encodeURIComponent(key)}/pdf`;
+    const res = await fetch(path, { headers: { Authorization: `Bearer ${getToken()}` } });
+    if (!res.ok) {
+      const detail = await res.json().then((j) => j.detail).catch(() => res.statusText);
+      throw new Error(String(detail));
+    }
+    return res.blob();
+  },
+
   calibrationExpiring: (days = 30) =>
     req<LifecycleDoc[]>("GET", `/calibration/expiring?days=${days}`),
   listStock: () => req<SPStock[]>("GET", "/sp-stock"),

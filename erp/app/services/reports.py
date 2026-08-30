@@ -24,6 +24,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from pathlib import Path
 
+import markdown as md_lib
 from fpdf import FPDF
 from fpdf.enums import Align
 
@@ -211,11 +212,11 @@ def instance_dossier(
 ) -> bytes:
     """Everything the record holds about one manufactured instance.
 
-    The traceability document: what this serial is, the certificate bound to it,
-    where it has been installed, and which lifecycle documents exist for it.
+    What this serial is, the certificate bound to it, where it has been installed,
+    and which lifecycle documents exist for it.
     """
     instance_id = instance["_id"]
-    pdf = Report("Instance dossier", instance_id)
+    pdf = Report("Instance", instance_id)
     pdf.alias_nb_pages()
     pdf.add_page()
 
@@ -277,4 +278,33 @@ def instance_dossier(
         "the keys above (ADR-0021 d7)."
     )
 
+    return bytes(pdf.output())
+
+
+# fpdf2's write_html understands a useful subset. Tables and fenced code are the
+# two that matter here: the store's `-M` manuals and bring-up protocols use both,
+# and a table flattened to prose is unreadable.
+_MD_EXTENSIONS = ["tables", "fenced_code", "sane_lists"]
+
+
+def markdown_document(*, object_key: str, text: str, subject: str | None = None) -> bytes:
+    """One markdown document as a printable PDF.
+
+    A rendering of a document the API already serves, not a new artifact: the
+    bytes come from the object store and nothing is stored back. The page frame is
+    the dossier's, so a printed manual and a printed dossier file together.
+
+    The document's own text is *not* folded to latin-1 wholesale — it is written
+    through `write_html`, which does its own encoding — but the frame around it is
+    (`Report`), and a character the core fonts cannot show would otherwise raise
+    mid-page. So the body is folded too, and what a reader loses is the exact
+    glyph rather than the whole document.
+    """
+    pdf = Report("Document", subject or object_key)
+    pdf.alias_nb_pages()
+    pdf.add_page()
+    pdf.set_font("Helvetica", "", 10)
+    pdf.set_text_color(*INK)
+    html = md_lib.markdown(_safe(text), extensions=_MD_EXTENSIONS)
+    pdf.write_html(html)
     return bytes(pdf.output())
