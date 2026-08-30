@@ -109,8 +109,8 @@ def log(message: str) -> None:
 class Config:
     base: str
     chain: Path
-    key: Path | None
     anchor: Path
+    key: Path | None = None
     timeout: int = DEFAULT_TIMEOUT
     interval: int = DEFAULT_INTERVAL
 
