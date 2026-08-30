@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import base64
 import json
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -14,6 +15,7 @@ from fastapi.testclient import TestClient
 from app.api.deps import get_warehouse
 from app.config import settings
 from app.main import create_app
+from app.services import reports
 
 AUTH = {"Authorization": "Bearer dev-operator-token"}
 
@@ -688,3 +690,40 @@ def test_a_document_pdf_is_guarded_like_the_read_through(client, warehouse):
         ).status_code
         == 404
     )
+
+
+# ---- the markdown renderer -------------------------------------------------
+# At this level rather than through the route: the bugs below are fpdf2's HTML
+# subset refusing real documents, and the route's guards are tested above.
+
+
+def test_markdown_with_markup_inside_a_table_cell_renders():
+    """fpdf2 refuses any element nested in a cell, and the store's manuals are full
+    of `code` and bold inside tables. A plain-table test missed this, and every real
+    document 500'd."""
+    blob = reports.markdown_document(
+        object_key="x.md",
+        text=(
+            "# Bench\n\n| Step | Command |\n|---|---|\n| First | `provision.sh` and **note** it |\n"
+        ),
+    )
+    assert blob.startswith(b"%PDF-")
+
+
+def test_markdown_with_internal_links_renders():
+    """An in-document link records a named destination nothing sets; fpdf2 then
+    refuses to emit the file at all — at output(), not at render."""
+    blob = reports.markdown_document(
+        object_key="x.md",
+        text="# Top\n\nSee [section six](#6-physical-hat).\n\n## 6 Physical HAT\n\nText.\n",
+    )
+    assert blob.startswith(b"%PDF-")
+
+
+def test_every_markdown_document_in_the_store_renders():
+    """The regression that matters: the real corpus, not a fixture."""
+    docs = sorted(Path(settings.store_dir).glob("*.md"))
+    assert docs, "no markdown in store/ — this test would pass vacuously"
+    for doc in docs:
+        blob = reports.markdown_document(object_key=doc.name, text=doc.read_text())
+        assert blob.startswith(b"%PDF-"), doc.name

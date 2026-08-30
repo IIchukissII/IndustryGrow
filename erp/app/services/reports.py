@@ -21,6 +21,7 @@ the rasterised form; regenerate it with
 
 from __future__ import annotations
 
+import re
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -286,25 +287,61 @@ def instance_dossier(
 # and a table flattened to prose is unreadable.
 _MD_EXTENSIONS = ["tables", "fenced_code", "sane_lists"]
 
+# fpdf2 raises on any element nested inside a table cell — a `code` span or a bold
+# run in a cell is enough, and the store's manuals are full of both. Flattening the
+# cell to its text keeps the table, which is the part that carries the meaning; the
+# alternative fpdf2 leaves open is no table at all.
+_CELL = re.compile(r"(<(?:td|th)\b[^>]*>)(.*?)(</(?:td|th)>)", re.S | re.I)
+_TAG = re.compile(r"<[^>]+>")
+# An in-document link records a named destination that nothing sets, and fpdf2 then
+# refuses to emit the file at all. The heading it points at is on the page anyway,
+# so the link becomes its own text.
+_FRAGMENT_LINK = re.compile(r'<a\b[^>]*href="#[^"]*"[^>]*>(.*?)</a>', re.S | re.I)
+
+
+def _flatten_cells(html: str) -> str:
+    return _CELL.sub(lambda m: m.group(1) + _TAG.sub("", m.group(2)).strip() + m.group(3), html)
+
+
+def _drop_fragment_links(html: str) -> str:
+    return _FRAGMENT_LINK.sub(lambda m: m.group(1), html)
+
 
 def markdown_document(*, object_key: str, text: str, subject: str | None = None) -> bytes:
     """One markdown document as a printable PDF.
 
     A rendering of a document the API already serves, not a new artifact: the
     bytes come from the object store and nothing is stored back. The page frame is
-    the dossier's, so a printed manual and a printed dossier file together.
+    the instance report's, so a printed manual and a printed instance file together.
 
-    The document's own text is *not* folded to latin-1 wholesale — it is written
-    through `write_html`, which does its own encoding — but the frame around it is
-    (`Report`), and a character the core fonts cannot show would otherwise raise
-    mid-page. So the body is folded too, and what a reader loses is the exact
-    glyph rather than the whole document.
+    The text is folded to latin-1 like everything else on the page — the core
+    fonts cannot show more, and a glyph lost beats a document lost.
     """
-    pdf = Report("Document", subject or object_key)
-    pdf.alias_nb_pages()
-    pdf.add_page()
-    pdf.set_font("Helvetica", "", 10)
-    pdf.set_text_color(*INK)
-    html = md_lib.markdown(_safe(text), extensions=_MD_EXTENSIONS)
-    pdf.write_html(html)
-    return bytes(pdf.output())
+
+    def page() -> Report:
+        pdf = Report("Document", subject or object_key)
+        pdf.alias_nb_pages()
+        pdf.add_page()
+        pdf.set_font("Helvetica", "", 10)
+        pdf.set_text_color(*INK)
+        return pdf
+
+    html = _drop_fragment_links(
+        _flatten_cells(md_lib.markdown(_safe(text), extensions=_MD_EXTENSIONS))
+    )
+    try:
+        pdf = page()
+        pdf.write_html(html)
+        return bytes(pdf.output())
+    except Exception as exc:
+        # fpdf2's HTML support is a subset, and it fails in two places: at
+        # write_html for markup it cannot lay out, and at output() for a link
+        # whose destination was never set. Both are caught, and both fall back to
+        # the text — an operator holding a plain page is better served than one
+        # holding a 500, and the reason goes on the page rather than only a log.
+        pdf = page()
+        pdf.note(f"Rendered as plain text — the layout engine refused the markup: {exc}")
+        pdf.set_font("Courier", "", 8.5)
+        pdf.set_text_color(*INK)
+        pdf.multi_cell(0, 4, _safe(text), new_x="LMARGIN", new_y="NEXT")
+        return bytes(pdf.output())
