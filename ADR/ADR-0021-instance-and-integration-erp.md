@@ -3,19 +3,30 @@ SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
-# ADR-0021 (rev 4): Instance-and-integration ERP — the pre-cloud system of record
+# ADR-0021 (rev 5): Instance-and-integration ERP — the pre-cloud system of record
 
-- **ID:** ADR-0021 (rev 4)
+- **ID:** ADR-0021 (rev 5)
 - **Status:** Accepted
-- **Date:** 2026-07-09 (rev 1: 2026-07-19; rev 2 and rev 3: 2026-07-26; rev 4: 2026-08-30)
+- **Date:** 2026-07-09 (rev 1: 2026-07-19; rev 2 and rev 3: 2026-07-26; rev 4 and rev 5: 2026-08-30)
 - **Project:** IndustryGrow
 - **Parent:** ADR-0001
 - **Companions:** ADR-0000, ADR-0004 (rev 1), ADR-0007, ADR-0015, ADR-0016 (rev 1), ADR-0017 (rev 2), ADR-0019, ADR-0020, ADR-0022 (API contract), ADR-0029
-- **Supersedes:** ADR-0021 rev 3 (2026-07-26), and through it rev 2 (2026-07-26), rev 1 (2026-07-19) and the initial record (2026-07-09)
+- **Supersedes:** ADR-0021 rev 4 (2026-08-30), and through it rev 3 (2026-07-26), rev 2 (2026-07-26), rev 1 (2026-07-19) and the initial record (2026-07-09)
 - **Realizes:** ADR-0017 (rev 2) deferred decision "Registry and store location" — the instance/integration layer host
 - **Relates to:** ADR-IF-0001 (planned) — the `production_unit` entity this store's foundational part aligns to when IndustryGrow integrates as a layer over the IndustryFlow core at stage 11
 
 ## Revision history
+
+- **rev 5 (2026-08-30)** — States what *compact* in decision 15 bounds: the
+  entity set, not the image. The ERP renders printed representations of records
+  it already holds — an instance record, a store document — and the layout engine
+  that produces them draws text through the system text-shaping and font stack,
+  which the container therefore carries. Read as a statement about image size,
+  *compact* forbids that; read as the scope statement it is — the
+  asset/traceability core, not a finance/HR suite (alternative H) — a
+  representation that introduces no entity is inside the bound. Decision 15 gains
+  the statement and the limit that goes with it; no ownership boundary, tenancy,
+  or profile-channel decision changes.
 
 - **rev 4 (2026-08-30)** — Adds decision 18: the ERP owns the **intended firmware
   release** recorded against `GBOX_NNNN`. ADR-0029 decision 16 starts a firmware
@@ -170,6 +181,8 @@ This ADR carries **decisions and rationale only**. Database engine, ERP product/
 ### Deployment vehicle
 
 15. **Delivery is a single self-hostable container over a compact document store that indexes the flat object-store warehouse (ADR-0017 decision 15); the concrete product is implementation.** The architectural commitments are: *containerized* (a drop-in the operator runs on a host of their own, matching the self-build path — see decision 1), *single-node and compact* (asset/traceability core, not a finance/HR suite), and *a document metadata store with mutable history over time*. The last is the rev-1 change (see Revision history): the instance/integration layer is the *queryable index over the object store* (decision 7), and the project's storage paradigm is already document/blob-oriented — identifiers are object keys (ADR-0017 decision 15) — so the layer is a **document store, not a relational core**. Integration remains a mutable cross-reference over time (decision 6); in a document store that history is carried by validity-stamped records (an `installed`/`removed` timestamp pair) with a uniqueness constraint per position, not by a relational join engine. Which document database realizes this — the specific product — is an implementation choice per ADR-0000 (Deferred decisions, now **resolved to MongoDB** over the object-store warehouse), recorded with the implementation. This mirrors ADR-0020 fixing the storage *class* (SSD/NVMe) while leaving the SKU to the BOM.
+
+    **Compact bounds the entity set, not the image (rev 5).** The commitment is the scope of the record — the asset/traceability core, against alternative H's finance/HR suite — and single-node self-hostable delivery. A printed representation of records the ERP already owns adds no entity and is inside that bound, so what its renderer needs at runtime (a text-shaping and font stack in the image) is an implementation cost recorded with the implementation. What *does* breach the bound is a dependency that has to be operated: a second service beside the container, or a second node, contradicts *single-node* and *a drop-in the operator runs on a host of their own* regardless of how small it is.
 
 ### Tenancy and integration model
 
