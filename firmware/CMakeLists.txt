@@ -70,6 +70,10 @@ set(IGROW_BOOT_VERSION_MINOR 1)
 # accepted over the bus, because an unsigned image fails verification and a
 # bootloader with no key rejects every image. That is fail-closed by design.
 set(IGROW_SIGNING_KEY "" CACHE STRING "P-256 private key (PEM) used to sign images")
+# The signing key is held encrypted at rest (ADR-0024 d5 custody, applied to the
+# firmware root). The passphrase reaches mkimage.py by environment so it is not in
+# the process table or a build log; `env:VAR` is the spec pki/*.sh already uses.
+set(IGROW_SIGNING_KEY_PASS "" CACHE STRING "Passphrase spec for IGROW_SIGNING_KEY: env:VAR, file:PATH")
 set(IGROW_VERIFY_KEY_HEX "" CACHE STRING "Verification public key, X||Y as 128 hex chars")
 
 # Half a key pair is always a mistake, and a silent one: signed images no node
@@ -271,6 +275,9 @@ if(IGROW_SIGNING_KEY STREQUAL "")
   message(STATUS "igrow: no signing key; images are built UNSIGNED")
 else()
   set(MKIMAGE_KEY_ARG --key "${IGROW_SIGNING_KEY}")
+  if(NOT IGROW_SIGNING_KEY_PASS STREQUAL "")
+    list(APPEND MKIMAGE_KEY_ARG --key-pass "${IGROW_SIGNING_KEY_PASS}")
+  endif()
 endif()
 
 foreach(slot a b)

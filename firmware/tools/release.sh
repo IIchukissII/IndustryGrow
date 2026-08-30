@@ -41,10 +41,12 @@ cd "$ROOT"
 BUILD="firmware/build-release"
 
 SIGNING_KEY=""
+KEY_PASS=""
 UNSIGNED=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --key) SIGNING_KEY="${2:-}"; shift 2 ;;
+    --key-pass) KEY_PASS="${2:-}"; shift 2 ;;
     --unsigned) UNSIGNED=1; shift ;;
     *) echo "release: unknown argument '$1'" >&2; exit 2 ;;
   esac
@@ -72,7 +74,7 @@ if [ -n "$SIGNING_KEY" ]; then
     elif command -v py > /dev/null 2>&1; then PYTHON="py -3"
     else echo "release: no python3 to derive the public key" >&2; exit 2; fi
   fi
-  VERIFY_KEY_HEX="$($PYTHON firmware/tools/mkimage.py --public-key "$SIGNING_KEY")"
+  VERIFY_KEY_HEX="$($PYTHON firmware/tools/mkimage.py --public-key "$SIGNING_KEY" ${KEY_PASS:+--key-pass "$KEY_PASS"})"
 fi
 
 # Cross-build (expects submodules from tools/bootstrap.sh + arm-none-eabi-gcc + nnvg).
@@ -92,6 +94,7 @@ cmake -S firmware -B "$BUILD" -G "$GENERATOR" $MAKE_PROGRAM \
       -DCMAKE_TOOLCHAIN_FILE="$ROOT/firmware/cmake/arm-none-eabi.cmake" \
       -DIGROW_SIGNING_KEY="$SIGNING_KEY" \
       -DIGROW_VERIFY_KEY_HEX="$VERIFY_KEY_HEX" \
+      -DIGROW_SIGNING_KEY_PASS="$KEY_PASS" \
       -DCMAKE_BUILD_TYPE=Release
 cmake --build "$BUILD"
 
