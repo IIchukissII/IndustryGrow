@@ -67,9 +67,11 @@ class Settings(BaseSettings):
     # is actually in front, e.g. ERP_GATEWAY_TRUSTED_PROXIES='["172.20.0.0/16"]'.
     gateway_trusted_proxies: list[str] = Field(default=[])
 
-    # Dev/demo only — run with no external MongoDB and preload the fixture.
+    # Dev/test only — run with no external MongoDB. The database starts empty and
+    # stays that way: the ERP is a system of record, so every row in it is one an
+    # operator or a provisioning station put there (ADR-0021 d1). Nothing invents
+    # an estate at startup.
     mongo_mock: bool = False
-    seed_on_start: bool = False
 
     # Operator console — the built SPA (`erp/frontend/dist`), served at / by this
     # app. Relative paths resolve against the erp/ directory; the container sets

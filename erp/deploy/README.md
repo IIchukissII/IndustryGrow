@@ -121,13 +121,6 @@ puts certificate verification in front of the gateway channel (ADR-0022 d2), and
 it removes the app's published port so nothing can reach the app around the
 proxy. `docker-compose.yml` on its own is a development bring-up.
 
-Seed the type-registry-derived demo data only if you want it — a real deployment
-usually does not:
-
-```bash
-docker compose exec erp python -m app.seed
-```
-
 Mirror the repository `store/` into the warehouse (ADR-0017 d15 object keys):
 
 ```bash

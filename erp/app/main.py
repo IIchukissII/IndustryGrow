@@ -18,10 +18,6 @@ async def lifespan(app: FastAPI):
     db = Database(settings.mongo_uri, settings.mongo_db, mock=settings.mongo_mock)
     if not settings.mongo_mock:
         await ensure_indexes(db)
-    if settings.seed_on_start:
-        from app.seed import seed
-
-        await seed(db.db)
     app.state.db = db
     # One warehouse client for the process: boto3 clients are thread-safe and
     # hold the connection pool, so per-request construction would discard it.

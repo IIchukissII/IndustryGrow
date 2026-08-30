@@ -4,7 +4,6 @@
 # One-command bring-up: the ERP app + its document store (MongoDB).
 #
 #   docker compose up -d
-#   docker compose exec erp python -m app.seed
 #
 # This file alone is a DEVELOPMENT bring-up: it publishes the app port and the
 # gateway channel has no certificate verification in front of it. For anything

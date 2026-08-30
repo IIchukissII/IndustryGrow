@@ -97,9 +97,13 @@ op run --env-file=.env.op.tpl -- python -m app.store_sync
 cp deploy/env.example .env && $EDITOR .env   # ERP_MONGO_USER/_PASSWORD are required
 docker compose up --build                    # app on 127.0.0.1:8021
 docker compose exec erp python -m app.store_sync   # load store/ into the warehouse
-docker compose exec erp python -m app.seed         # load the GBOX_0001 estate
 # open http://localhost:8021
 ```
+
+The database starts empty, and there is no fixture to load into it. Every row is
+one an operator or a provisioning station put there through the API — a system of
+record that invents an estate at startup cannot be told apart from one reporting
+a real one.
 
 Compose refuses to start without `ERP_MONGO_USER` and `ERP_MONGO_PASSWORD`, because
 `mongo:7` runs with authentication disabled unless they are set at first start, and
@@ -119,7 +123,6 @@ docker compose --profile standalone up --build     # + minio on 127.0.0.1:9000/:
 python -m venv .venv && . .venv/bin/activate
 pip install -e ".[dev]"
 # needs a MongoDB on localhost:27017 (docker run -p 27017:27017 mongo:7)
-python -m app.seed
 uvicorn app.main:app --reload --port 8021
 ```
 

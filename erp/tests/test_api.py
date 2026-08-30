@@ -21,7 +21,6 @@ AUTH = {"Authorization": "Bearer dev-operator-token"}
 @pytest.fixture
 def client(monkeypatch, warehouse):
     monkeypatch.setattr(settings, "mongo_mock", True)
-    monkeypatch.setattr(settings, "seed_on_start", False)
     app = create_app()
     app.dependency_overrides[get_warehouse] = lambda: warehouse
     with TestClient(app) as c:
