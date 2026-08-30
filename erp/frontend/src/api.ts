@@ -116,6 +116,38 @@ export interface GatewayChannel {
   unsigned_versions: number;
 }
 
+/**
+ * A firmware release the repository publishes (ADR-0029 d13).
+ *
+ * `artifact_keys` is the pair of slot images. A release is two artifacts because
+ * the application is linked per slot, and which one a node receives depends on
+ * the slot it is not already running — a choice the node makes and the gateway
+ * resolves, never the operator.
+ */
+export interface FirmwareRelease {
+  release_root: string;
+  version: string | null;
+  version_label: string | null;
+  artifact_keys: string[];
+}
+
+/**
+ * The release an operator intends for a machine (ADR-0021 d18).
+ *
+ * Intent, not state. There is no field for what the nodes are running and there
+ * will not be one: that is observed on the bus by the gateway (ADR-0029 d15) and
+ * is excluded from this API by ADR-0022 d9.
+ */
+export interface FirmwareIntent {
+  machine_id: string;
+  release_root: string;
+  selected_at: string | null;
+  selected_by: string | null;
+  artifact_keys: string[];
+  version: string | null;
+  version_label: string | null;
+}
+
 export interface Provisioning {
   cert_serial: string;
   public_key_fingerprint: string;
@@ -283,6 +315,14 @@ export const api = {
     req<Profile>("POST", `/machines/${gbox}/profiles`, { version_tag, document_b64, signature }),
   recordActiveProfile: (gbox: string, version_tag: string) =>
     req<{ ok: boolean }>("PUT", `/machines/${gbox}/active-profile`, { version_tag }),
+
+  listFirmwareReleases: () => req<FirmwareRelease[]>("GET", "/firmware-releases"),
+  // 404 is a real answer here, not a failure: a cabinet with no release selected
+  // is the starting state, and the view says so rather than erroring.
+  firmwareIntent: (gbox: string) =>
+    req<FirmwareIntent>("GET", `/machines/${gbox}/firmware`).catch(() => null),
+  setFirmwareIntent: (gbox: string, release_root: string) =>
+    req<FirmwareIntent>("PUT", `/machines/${gbox}/firmware`, { release_root }),
 
   calibrationExpiring: (days = 30) =>
     req<LifecycleDoc[]>("GET", `/calibration/expiring?days=${days}`),

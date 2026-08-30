@@ -54,6 +54,25 @@ class ProfileVersion(_Base):
     created_by: str | None = None
 
 
+class FirmwareIntent(_Base):
+    """The firmware release an operator intends for a machine (ADR-0021 d18).
+
+    ``release_root`` is an object-key root, ``Exxxx-VVVVVV-F`` (ADR-0029 d13), so
+    the record names the artifact set without copying any of it — the images stay
+    in the warehouse like every other blob (ADR-0021 d7).
+
+    There is no field for what the machine's nodes are *running*, and adding one
+    would be the operational intake ADR-0022 d9 excludes: that observation is the
+    gateway's, taken from the bus (ADR-0029 d15). One release per machine, because
+    one image serves every node type (ADR-0017 d16).
+    """
+
+    machine_id: str = Field(alias="_id")  # -> foundation.machine._id
+    release_root: str
+    selected_at: datetime = Field(default_factory=_utcnow)
+    selected_by: str | None = None
+
+
 class GBoxProfileDeployment(_Base):
     """Which profile version is / was active on which GBOX (ADR-0021 d8).
 

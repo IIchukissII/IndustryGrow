@@ -29,6 +29,7 @@ core; the `domain.*` `[D]` collections stay the IndustryGrow layer.
 | Lifecycle-document index (+ warehouse keys) | `foundation.lifecycle_doc` |
 | SP stock & placement | `foundation.sp_stock`, `foundation.sp_placement` |
 | GBOX domain + deployment profiles | `domain.gbox`, `domain.profile_version`, `domain.gbox_profile_deployment` |
+| Intended firmware release per machine | `domain.firmware_intent` |
 
 ## What it must NOT hold (boundaries — enforce in review)
 
@@ -40,6 +41,7 @@ These are deliberate *absences*. Each would create a second source of truth:
 - **No blobs** — the warehouse holds them; the ERP holds keys only (ADR-0021 d7).
 - **No community profile *templates*** — those live in the public registry (ADR-0001 d5); the ERP stores deployment-specific *instance* versions.
 - **No "deploy profile" action** — the gateway's pull into `active-profile.json` is the single mutation channel (ADR-0015 d4; ADR-0021 d12). This app is a *store*, not a deploy path.
+- **No firmware update action, and no record of what a node runs** — the ERP holds the release an operator *intends* (ADR-0021 d18); the gateway compares it against what it observes on the bus and performs the transfer (ADR-0029 d15-17). There is no flash endpoint and no route a machine may write.
 - **No tenancy machinery** — single-tenant now; multitenancy is IndustryFlow's `[F]` concern (ADR-0021 d16).
 
 ## The warehouse (object store)

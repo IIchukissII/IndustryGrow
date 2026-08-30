@@ -66,6 +66,19 @@ class MachineProvisionRequest(BaseModel):
     cert_not_after: datetime
 
 
+class MachineRequest(BaseModel):
+    """Enrolling a cabinet. The identifier is the path, not the body — machines
+    are enumerated and named by the operator (ADR-0017 d6), so there is nothing
+    for the server to issue."""
+
+    notes: str | None = None
+
+
+class MachineOut(BaseModel):
+    machine_id: str
+    notes: str | None = None
+
+
 class InstallRequest(BaseModel):
     instance_id: str
 
@@ -99,6 +112,24 @@ class ProfileVersionRequest(BaseModel):
 
 class ActiveProfileRequest(BaseModel):
     version_tag: str
+
+
+class FirmwareIntentRequest(BaseModel):
+    """The release an operator intends for a machine (ADR-0022 d14).
+
+    A release is named by its object-key root, never by a slot image: which slot
+    a given node writes is the node's to choose (ADR-0029 d3), and an operator
+    selecting one would be choosing something they cannot know.
+    """
+
+    release_root: str
+
+    @field_validator("release_root")
+    @classmethod
+    def _ok_release(cls, v: str) -> str:
+        if not re.fullmatch(rf"{identifiers.E_MODULE}-{identifiers.VERSION}-F", v):
+            raise ValueError("release_root must be Exxxx-VVVVVV-F (ADR-0029 d13)")
+        return v
 
 
 class SPStockRequest(BaseModel):
@@ -223,6 +254,44 @@ class ProfileOut(BaseModel):
     #: Whether this is the version recorded active on the gateway — a record of a
     #: pull that happened, never a deploy state the ERP drives (ADR-0022 d8).
     active: bool = False
+
+
+class FirmwareIntentOut(BaseModel):
+    """A machine's intended firmware release — and deliberately nothing more.
+
+    There is no ``running_version``, no ``updated_at``, no per-node state, and
+    there will not be. Whether the machine's nodes have reached this release is
+    observed on the bus by the gateway (ADR-0029 d15) and is excluded from this
+    API by ADR-0022 d9 — consumers show it as a gap (ADR-0022 alternative Q).
+
+    ``artifact_keys`` are the objects a gateway may fetch for this release: the
+    two slot images, header plus body, the only form a node can be given over the
+    bus (ADR-0029 d13).
+    """
+
+    machine_id: str
+    release_root: str
+    selected_at: datetime | None = None
+    selected_by: str | None = None
+    artifact_keys: list[str] = []
+    # The version code read out of the release root, as decision 13 requires of
+    # every identifier this API returns.
+    version: str | None = None
+    version_label: str | None = None
+
+
+class FirmwareReleaseOut(BaseModel):
+    """A firmware release the repository publishes and `store_sync` mirrors.
+
+    Not an ERP entity — the same read-through shape as the store-document listing
+    (ADR-0022 d1). What makes a release selectable is that the repository carries
+    both of its slot images, so this lists exactly what an operator may intend.
+    """
+
+    release_root: str
+    version: str | None = None
+    version_label: str | None = None
+    artifact_keys: list[str] = []
 
 
 class MachineIdentityOut(BaseModel):
