@@ -218,7 +218,7 @@ substituted artifact.
 ## Deferred decisions
 
 - **Image header byte layout and the build-time signing step.** An implementation specification.
-- **Bootloader-signing key custody and rotation.** Belongs with the key ceremony (ADR-0024).
+- **Bootloader-signing key custody and rotation — discharged 2026-08-30 by ADR-0024 decision 14.**
 - **Measured bus occupancy of a full image transfer**, by the bit accounting ADR-0002 rev 3 applies
   to telemetry.
 - **Whether the bootloader services or disables the watchdog during a transfer.**
