@@ -528,7 +528,16 @@ async def pass_once(config: Config, dry_run: bool = False) -> int:
     held = catalogue()
     log(f"{machine}: intended release {release}; {len(held)} image(s) held")
 
-    bus = Bus()
+    try:
+        bus = Bus()
+    except OSError as exc:
+        # Attributed here, where it is actually the interface. The caller's
+        # OSError handler cannot tell a missing CAN interface from an unreadable
+        # certificate, and guessing produced a "cannot open can0" for a PKI
+        # permission error that had nothing to do with the bus.
+        raise FirmwareError(
+            f"cannot open {CAN_IFACE}: {exc!r}; is industrygrow-can.service up?"
+        ) from exc
     try:
         nodes = await bus.survey(SURVEY_S)
         if not nodes:
@@ -575,7 +584,10 @@ def cmd_once(args: argparse.Namespace) -> int:
         log(f"pass failed: {exc}")
         return 1
     except OSError as exc:
-        log(f"cannot open {CAN_IFACE}: {exc!r}; is industrygrow-can.service up?")
+        # Whatever this is, it names its own file: the bus is attributed in
+        # pass_once, so anything arriving here is a path the process could not
+        # read — most often an identity file the service user has no access to.
+        log(f"pass failed: {exc!r}")
         return 1
 
 
