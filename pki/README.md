@@ -60,6 +60,25 @@ a passphrase that is not those media.
 whether you did, and no later check will catch it — that is exactly why it is a
 ceremony rather than a build step.
 
+## Run it as one reproducible ceremony
+
+```bash
+op run --env-file=pki/.env.op.tpl -- ./pki/ceremony.sh \
+  --dir ./ca --operator OP-STRAWBERRY-01
+```
+
+That composes steps 1 and 2 below, generates the keys inside a network namespace
+with no interface and no routes (ADR-0024 d5's amendment), and verifies the
+result: the root key is encrypted at rest, the issuing CA verifies against the
+root, the root outlives it (d8), and both are CAs. It refuses to write into an
+existing `--dir`, and refuses a root and issuing passphrase that are the same.
+
+It ends by reporting the ceremony **incomplete**, because custody (step 3) is
+physical and no script can do or verify it.
+
+The steps below are what it runs, for an operator who prefers to drive them by
+hand or is working on a machine with no `unshare`.
+
 ## Step 1 — the operator root
 
 ```bash

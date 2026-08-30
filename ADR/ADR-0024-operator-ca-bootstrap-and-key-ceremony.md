@@ -14,6 +14,12 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Amends:** ADR-0020 decision 5 (permitted gateway persistent state — adds the operator trust anchor)
 - **Realizes:** ADR-0007 deferred decisions *"Self-hoster CA bootstrap tooling and documentation"* and *"Operator root-key ceremony"*
 
+## Revision history
+
+- **Amendment** — decision 5 (2026-08-30): how the offline property is obtained and
+  that it is obtained by tooling rather than by procedure. Bounds decision 5; changes
+  nothing it decided.
+
 ## Context and problem
 
 ADR-0007 decided that trust is rooted **per operator** (decision 3) and then left the
@@ -145,6 +151,27 @@ bootstrap tooling is allowed to run.
    where it will live and does not move — the same principle ADR-0007 decision 1
    applies to device keys, applied to the key that certifies them. "Offline" is a
    property of the machine at generation time, not a promise about the medium.
+
+    > **How "offline" is obtained (added 2026-08-30).** A ceremony whose central
+    > property is established by an operator disconnecting an interface is not
+    > reproducible: it cannot be re-run identically, it cannot be tested, and whether
+    > it held is unverifiable afterwards. So the property is obtained by tooling —
+    > `pki/ceremony.sh` generates the key inside a user and network namespace with no
+    > interface and no routes, asserts that before writing anything, and fails rather
+    > than proceed without it. Every run has the property and a run that could not get
+    > it produces no key.
+    >
+    > **This bounds what is claimed.** The host stays connected; what is guaranteed is
+    > that the *generating process* had no path off it. That is weaker than a machine
+    > with no network hardware and stronger than an operator's recollection, and it is
+    > what a self-hosted operator can actually reproduce (ADR-0001 d6). An operator
+    > with a dedicated offline machine should use it — the same script runs there and
+    > the namespace is then redundant rather than load-bearing.
+    >
+    > The passphrase is resolved before isolation, because resolving it needs the
+    > network and the ceremony must not. Custody (decision 6) is unaffected and remains
+    > physical: no script performs it and none can verify it, so the run reports the
+    > ceremony as incomplete until it is done.
 
 6. **Custody is two encrypted copies on separate removable media, stored in separate
    physical locations, with the passphrase held apart from both.** Two copies because a
