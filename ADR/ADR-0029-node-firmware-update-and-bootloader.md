@@ -19,6 +19,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Amendments** — decision 12 (2026-08-29): the condition that confirms a trial slot, which decision 8 left to the deferred list; bounds decision 8 and answers its deferred item.
 - **Amendments** — decisions 13–16 (2026-08-29): the artifact a node is served, where the gateway gets it, how a running version becomes known, and what starts a transfer; answers the deferred *gateway artifact storage layout and the push-versus-pull trigger*.
 - **Correction** — decision 15 (2026-08-29): as first written it had the gateway report the observed version to the ERP for recording, which ADR-0022 decision 9 excludes by category — operational intake stays platform-side. The observation stays at the gateway; nothing else in decisions 13–16 changes.
+- **Amendment** — decision 17 (2026-08-30): how the gateway picks which of decision 13's two slot artifacts to serve. Building decision 16's transfer exposed that decision 3 has the node choose the target slot while the gateway chooses the file, with nothing on the bus naming the running slot; decision 17 resolves it from the image CRC decision 15 already reads, and fixes what happens when the running image is unrecognised. Bounds decisions 13 and 16; changes neither.
 
 ## Context and problem
 
@@ -154,6 +155,32 @@ node.
     `COMMAND_BEGIN_SOFTWARE_UPDATE` and serves the file. Pull, by the component that owns the bus,
     on a record the operator changed — not a push from a system that cannot see the node.
 
+17. **The gateway identifies the running image by its CRC, and serves the artifact for the other
+    slot; an image it cannot identify stops the update** (added 2026-08-30). Decision 13 publishes
+    one artifact per slot because the application is not position-independent, and decision 3 has
+    the *node* choose the target — the slot that is not running. The gateway chooses the *file*, so
+    the two choices have to agree, and nothing a node exposes names its slot: `GetInfo` reports the
+    image, not where it sits.
+
+    The image is enough. Each `.img` header carries `body_crc32` over its own body, the two slot
+    builds of a release differ, and d15 already has the gateway read `software_image_crc`. Matching
+    that value against the headers of the artifacts it holds names the running release *and* its
+    slot in one comparison — the same exact question d15 asks, which the slot falls out of rather
+    than a second mechanism. A match against the intended release means there is nothing to do; a
+    match against another release gives the slot, and the artifact served is the intended release's
+    other one.
+
+    **No match is a refusal, not a guess.** A node running an image the gateway has never held —
+    bench-flashed, or from a release since removed — leaves the running slot unknown, and the two
+    ways to proceed are both worse than stopping: assuming slot A is wrong for every node that has
+    updated an odd number of times, and trying one slot then the other spends a full transfer and a
+    deliberate failed trial boot to learn one bit. Both write a wrong-slot image, which verifies
+    (d6 covers the artifact, not where it is written), boots to a vector table that is not there,
+    and is reverted by d8. The bootloader survives it; the operator gets a node that failed for a
+    reason nothing reported. So the gateway declines and says which node and which CRC, and an
+    operator resolves it by SWD flash or by making the running release available. Fail-closed, as
+    the profile path is when it cannot verify (ADR-0015 d7).
+
 ## Alternatives considered
 
 **A. One slot, updated in place.** *Rejected:* P1 — an interrupted write leaves no bootable image.
@@ -196,6 +223,9 @@ substituted artifact.
   to telemetry.
 - **Whether the bootloader services or disables the watchdog during a transfer.**
 - **Fleet-wide update order and concurrency.**
+- **How a node running an unrecognised image is brought back under decision 17** without an SWD
+  visit — whether by publishing the running slot on the bus, or by the gateway retaining more
+  release history. Decision 17 fixes the refusal, not the recovery.
 
 ## References
 
