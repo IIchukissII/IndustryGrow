@@ -111,12 +111,29 @@ async def _counter_state(db) -> dict[str, int]:
     return counters
 
 
-def _mongodump(uri: str, database: str, target: Path) -> None:
+def _mongodump(uri: str, database: str, target: Path, *, prepared: Path | None = None) -> None:
+    """Produce the index dump at `target`.
+
+    `prepared` is a dump captured elsewhere and handed in. The application image
+    carries no MongoDB Database Tools — they belong to the database, and adding
+    ~150 MB of them to keep one container self-sufficient works against the
+    compact single container of ADR-0021 d15. So the caller that *has* a Mongo to
+    run them in produces the dump and passes it here; `deploy/backup.sh` does
+    exactly that through the compose `mongo` service.
+
+    The ordering of ADR-0026 d3 is unaffected: the dump is still taken before the
+    blob pass below, whichever side of the container boundary took it.
+    """
+    if prepared is not None:
+        if not prepared.is_file() or prepared.stat().st_size == 0:
+            raise BackupError(f"the prepared index dump {prepared} is missing or empty")
+        shutil.copyfile(prepared, target)
+        return
     if not shutil.which("mongodump"):
         raise BackupError(
-            "mongodump is not on PATH. It ships in the MongoDB Database Tools; inside the\n"
-            "       compose stack, run this through the mongo service instead:\n"
-            "         docker compose exec -T mongo mongodump …"
+            "mongodump is not on PATH. It ships in the MongoDB Database Tools, which this\n"
+            "       image does not carry. Pass a dump in with --mongo-archive, or use\n"
+            "       deploy/backup.sh, which takes it through the compose mongo service."
         )
     done = subprocess.run(
         ["mongodump", f"--uri={uri}", f"--db={database}", f"--archive={target}"],
@@ -127,7 +144,9 @@ def _mongodump(uri: str, database: str, target: Path) -> None:
         raise BackupError(f"mongodump failed: {done.stderr.decode(errors='replace').strip()}")
 
 
-async def save(out_dir: Path, *, stamp: str | None = None) -> Path:
+async def save(
+    out_dir: Path, *, stamp: str | None = None, mongo_archive: Path | None = None
+) -> Path:
     """Capture both stores into one archive. Index first, blobs second (d3)."""
     out_dir.mkdir(parents=True, exist_ok=True)
     stamp = stamp or datetime.now(UTC).strftime("%Y-%m-%dT%H-%M-%SZ")
@@ -152,7 +171,7 @@ async def save(out_dir: Path, *, stamp: str | None = None) -> Path:
                 if doc.get("object_key")
             }
         )
-        _mongodump(settings.mongo_uri, settings.mongo_db, work / DUMP_NAME)
+        _mongodump(settings.mongo_uri, settings.mongo_db, work / DUMP_NAME, prepared=mongo_archive)
         index_taken = datetime.now(UTC)
 
         # --- the blobs, SECOND --------------------------------------------
@@ -400,6 +419,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("save", help="capture both stores into one archive")
     p.add_argument("--out", default="./backups", help="directory to write the archive into")
+    p.add_argument(
+        "--mongo-archive",
+        help="an index dump produced elsewhere (this image carries no mongodump); "
+        "deploy/backup.sh takes it through the compose mongo service",
+    )
 
     p = sub.add_parser("verify", help="check an archive is internally consistent")
     p.add_argument("--archive", required=True)
@@ -428,7 +452,12 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         if args.command == "save":
-            asyncio.run(save(Path(args.out)))
+            asyncio.run(
+                save(
+                    Path(args.out),
+                    mongo_archive=Path(args.mongo_archive) if args.mongo_archive else None,
+                )
+            )
         elif args.command == "verify":
             return verify(Path(args.archive))
         elif args.command == "restore":
