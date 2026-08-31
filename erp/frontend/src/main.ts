@@ -225,7 +225,7 @@ async function overview(): Promise<string> {
         <div class="glowbar" style="background:linear-gradient(90deg,var(--green-d),var(--green))"></div>
         <span class="meta">installed on ${esc(gbox)}</span></div>
       <div class="tile ${cals.length ? "attn" : ""}"><span class="tl">Calibration due ≤30d</span><span class="num">${cals.length}</span>
-        <span class="meta">-CC certificates in the warehouse</span></div>
+        <span class="meta">-CC certificates carrying an expiry ≤30d</span></div>
       <div class="tile"><span class="tl">Profile versions</span><span class="num" style="color:var(--violet)">${versions.length}</span>
         <div class="glowbar" style="background:linear-gradient(90deg,var(--violet-d),var(--violet))"></div>
         <span class="meta">${active ? `${esc(active.version_tag)} active on gateway` : "none recorded active"}</span></div>
@@ -240,7 +240,9 @@ async function overview(): Promise<string> {
 
     <section class="cols">
       <div class="panel"><div class="ph"><h2>Calibration &amp; docs</h2><span class="desc">-CC expiring soon → warehouse keys</span></div>
-        ${calRows || `<div class="empty">No calibration certificates indexed. Upload a -CC from an instance to start the clock.</div>`}</div>
+        ${calRows || `<div class="empty">No calibration certificate expires within 30 days. A -CC filed
+          without an expiry date is indexed but never counted here — it appears on its instance,
+          not on this panel.</div>`}</div>
       <div class="panel"><div class="ph"><h2>Deployment profile</h2><span class="desc">store &amp; record — not a deploy path</span></div>
         <div class="empty">The ERP records which version is active; the gateway <b>pulls</b> it. No deploy button, by design.</div></div>
     </section>
