@@ -343,6 +343,16 @@ install_timesync_service() {
     # time base must not go stale because the telemetry consumer is restarting.
     log "installing industrygrow-timesync.service (Cyphal time master, subject 7168)"
     install -m 0644 "${FILES_DIR}/systemd/industrygrow-timesync.service"         /etc/systemd/system/industrygrow-timesync.service
+
+    # time-sync.target is reached as soon as an NTP client STARTS unless this unit
+    # is enabled; with it, the target waits until the clock is actually
+    # synchronized. The master is ordered after that target, and the reference
+    # gateway has no backup cell on its RTC, so without this it publishes the time
+    # of its last shutdown until NTP converges.
+    if systemctl list-unit-files systemd-time-wait-sync.service >/dev/null 2>&1; then
+        systemctl enable systemd-time-wait-sync.service || true
+    fi
+
     systemctl daemon-reload
     systemctl enable industrygrow-timesync.service
     # restart (not just enable --now) so a re-run picks up updated unit/app code.

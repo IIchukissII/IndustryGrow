@@ -33,6 +33,10 @@ NODE-ID. The dominant master is the master with the LOWEST Node-ID. The gateway
 holds an ID below the node range (ADR-0002 d11), so election is decided without
 a second master ever existing.
 
+CLOCK. The published base is CLOCK_REALTIME, so the master waits for the host
+clock to be synchronized before its first message and reports any later step --
+see TIMESYNC_STAMP below for why that is not optional on this hardware.
+
 Run modes:
   (default)  publish until stopped.
   --once     publish two messages and exit -- the pair a slave needs to
@@ -102,6 +106,38 @@ SCM_TIMESTAMPNS = SO_TIMESTAMPNS
 
 CAN_IFACE = os.environ.get("IGROW_CAN_IFACE", "vcan0")
 NODE_ID = int(os.environ.get("IGROW_CYPHAL_NODE_ID", "1"))
+
+# --- Clock synchronization ---------------------------------------------------
+# The published time base is CLOCK_REALTIME: SO_TIMESTAMPNS stamps the echo from
+# the realtime clock, so whatever the host believes the wall time to be is what
+# every node on the bus adopts. On a host whose clock is corrected after boot the
+# base therefore STEPS, and the nodes step with it -- which is how gbox-dev
+# published a base 16.6 h in the past for the first 34 s of a boot on 2026-08-31.
+#
+# The reference gateway is a Raspberry Pi 5 with no backup cell on its RTC, so it
+# comes up holding the time of its last shutdown and stays there until NTP
+# converges. That is the normal case for this hardware, not a fault.
+#
+# systemd-timesyncd creates this file the first time it synchronizes, and it is
+# also what systemd-time-wait-sync watches to release time-sync.target. Reading it
+# needs no capability, which matters: ProtectClock=yes blocks the @clock syscall
+# group, so adjtimex(2) -- the general answer to "is the clock synchronized" --
+# is not available inside this unit's sandbox.
+TIMESYNC_STAMP = "/run/systemd/timesync/synchronized"
+TIMESYNC_DIR = "/run/systemd/timesync"
+
+# How long to wait for that before publishing anyway. Publishing an unsynchronized
+# base is not the worst outcome -- a base that is wrong but CONSISTENT still gives
+# samples from different nodes a shared origin, which is what ADR-0002 d11 asks
+# for. Never publishing leaves every node stamping UNKNOWN (0). So the wait is
+# bounded and the timeout is a warning, not a failure.
+CLOCK_WAIT_S = float(os.environ.get("IGROW_TIMESYNC_WAIT_S", "120"))
+CLOCK_POLL_S = 0.5
+
+# A realtime-vs-monotonic offset moving by more than this between publications is
+# a step, not drift: NTP slews at parts per million, so half a second of movement
+# inside one 0.9 s period cannot be discipline.
+CLOCK_STEP_S = 0.5
 
 
 def log(msg: str) -> None:
@@ -198,7 +234,39 @@ def read_tx_timestamp(sock: socket.socket, can_id: int, deadline: float) -> int 
         return None
 
 
-def run(iface: str, node_id: int, limit: int | None) -> int:
+def wait_for_clock(timeout: float) -> bool:
+    """Block until the host clock is synchronized, or ``timeout`` passes.
+
+    Returns True when the clock is known-synchronized. A host that does not run
+    systemd-timesyncd at all returns True immediately -- there is nothing to wait
+    for and no reason to hold the bus for two minutes on a vcan bench box.
+    """
+    if timeout <= 0 or not os.path.isdir(TIMESYNC_DIR):
+        return True
+    deadline = time.monotonic() + timeout
+    waited = False
+    while not os.path.exists(TIMESYNC_STAMP):
+        if time.monotonic() >= deadline:
+            log(
+                f"clock still unsynchronized after {timeout:.0f} s; publishing anyway. "
+                "The base will be consistent but not real time, and it will STEP when "
+                "NTP converges."
+            )
+            return False
+        if not waited:
+            log("waiting for the host clock to synchronize before publishing")
+            waited = True
+        time.sleep(CLOCK_POLL_S)
+    if waited:
+        log("host clock synchronized")
+    return True
+
+
+def run(iface: str, node_id: int, limit: int | None, wait_s: float = CLOCK_WAIT_S) -> int:
+    # Before the socket, not after: an unsynchronized master that publishes even
+    # one pair hands every node a time base it will then have to step.
+    wait_for_clock(wait_s)
+
     can_id = make_can_id(node_id)
     sock = open_socket(iface, can_id)
     log(
@@ -210,8 +278,22 @@ def run(iface: str, node_id: int, limit: int | None) -> int:
     previous_tx_usec = 0
     sent = 0
     next_tick = time.monotonic()
+    clock_offset = time.time() - time.monotonic()
 
     while limit is None or sent < limit:
+        # Each pair a slave forms is internally consistent across a step -- both
+        # halves are read on the same side of it -- so this does not corrupt a
+        # correction. What it does is move the whole bus's time base, and the
+        # telemetry either side of it is stamped hours apart. Say so in the
+        # journal, or that discontinuity is unexplainable after the fact.
+        offset = time.time() - time.monotonic()
+        if abs(offset - clock_offset) > CLOCK_STEP_S:
+            log(
+                f"host clock STEPPED by {offset - clock_offset:+.3f} s; the published "
+                "time base moved with it"
+            )
+            clock_offset = offset
+
         frame = make_frame(can_id, transfer_id, previous_tx_usec)
         drain(sock)
         try:
@@ -269,7 +351,15 @@ def main(argv: list[str]) -> int:
         return 2
 
     try:
-        return run(args.iface, args.node_id, 2 if args.once else None)
+        # --once is a manual check of the framing and the echo path, run by hand
+        # against whatever clock the operator has. Holding it for two minutes
+        # would make it useless for that.
+        return run(
+            args.iface,
+            args.node_id,
+            2 if args.once else None,
+            wait_s=0.0 if args.once else CLOCK_WAIT_S,
+        )
     except KeyboardInterrupt:
         return 0
     except OSError as exc:

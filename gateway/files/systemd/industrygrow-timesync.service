@@ -16,11 +16,20 @@
 #
 # It needs no dependency beyond the stdlib — a raw AF_CAN socket, the same access
 # path the pycyphal unit uses, so the same sandbox applies.
+#
+# ORDERED AFTER time-sync.target because the published base is the host's
+# CLOCK_REALTIME: a master that starts before NTP converges hands every node a
+# time base that then steps. time-sync.target only means "the clock is actually
+# synchronized" when systemd-time-wait-sync.service is enabled, which provision.sh
+# does; the ordering alone is not enough, and neither is it enough on its own here
+# — the master waits for the clock itself as well, because a unit file cannot
+# cover the case where the host runs no NTP client at all.
 
 [Unit]
 Description=IndustryGrow bus time-synchronization master (Cyphal 7168) — ADR-0002 d11
 Documentation=https://github.com/IIchukissII/IndustryGrow
-After=network-online.target industrygrow-can.service
+After=network-online.target industrygrow-can.service time-sync.target
+Wants=time-sync.target
 Requires=industrygrow-can.service
 
 [Service]
