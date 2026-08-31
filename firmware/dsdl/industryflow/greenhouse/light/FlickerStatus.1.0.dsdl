@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Mains-frequency flicker seen by the AS7343's flicker ADC. Minted because the
+# standard set carries no flicker type (ADR-0005 d2).
+#
+# Flags, not a measurement -- the device reports detection at two fixed
+# frequencies and nothing about depth or phase. The profile's fixture is DC
+# driven (M02 spec 3), so an asserted flag is a driver fault indication rather
+# than an ambient property.
+#
+# Detected and valid are separate fields on purpose: the device computes the two
+# frequencies independently and can complete a measurement in which neither
+# calculation converged. `detected_*` is meaningless where the matching
+# `*_valid` is false, which a single tri-state per frequency would have hidden
+# behind an encoding every consumer would decode differently.
+#
+# Report only. Like door and leak (ADR-0005 d4), this type carries no command
+# and no actuation contract: the response to a flickering fixture is a
+# gateway-side decision, and M02 switches nothing.
+uavcan.time.SynchronizedTimestamp.1.0 timestamp
+bool valid              # the flicker measurement completed this cycle
+bool saturation         # the flicker ADC saturated; the result may not hold
+bool valid_100hz        # the 100 Hz calculation converged
+bool valid_120hz        # the 120 Hz calculation converged
+bool detected_100hz
+bool detected_120hz
+@extent 16 * 8

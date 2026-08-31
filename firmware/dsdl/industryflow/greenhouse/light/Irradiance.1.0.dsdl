@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Band irradiance -- for M02 the TSL2585's UV-A channel, 315-400 nm (M02 spec
+# 6.4). Minted because the standard set has no irradiance sample type: the
+# nearest, uavcan.si.sample.luminance.Scalar, is candela per square metre, a
+# photometric quantity weighted by the human eye's response, which is the wrong
+# quantity for a UV band by construction (ADR-0005 d2).
+#
+# Watt per square metre, unscaled SI.
+#
+# The value is NOMINAL, not guaranteed. It is the device's raw count scaled by
+# the responsivity of M02 spec 6.4, which the datasheet states as a typical with
+# neither minimum nor maximum, and corrected by the device's own OTP UV
+# calibration factor. The band the figure is anchored at is 365 nm; a source
+# with power elsewhere in 315-400 nm reads against that anchor.
+#
+# The band is not a field. One subject carries one band, so an instrument that
+# grows a second UV channel gets a second subject rather than a discriminator
+# every consumer has to switch on.
+uavcan.time.SynchronizedTimestamp.1.0 timestamp
+float32 watt_per_square_metre
+bool valid   # true = the modulator converted this cycle and did not saturate
+@extent 16 * 8

@@ -49,7 +49,7 @@ Mean canopy PPFD follows from the DLI target and the photoperiod: 17–20 mol·m
 
 | Published quantity | Sensor | Sensor range | Expected operating range | Accuracy |
 |--------------------|--------|--------------|--------------------------|----------|
-| Spectral counts, 11 bands, 405…855 nm | U4 | 0…65 535 counts per band, 16-bit | 10…90 % of full scale, held there by autorange (§6.1); zero in the dark period | Relative between bands; absolute only through §6.2 |
+| Spectral counts, 12 bands, 405…855 nm | U4 | 0…65 535 counts per band, 16-bit | 10…90 % of full scale, held there by autorange (§6.1); zero in the dark period | Relative between bands; absolute only through §6.2 |
 | Clear channel (unfiltered Si) | U4 | 0…65 535 counts | As above | Relative |
 | PPFD (derived, §6.2) | U4 | — | 295–347 µmol·m⁻²·s⁻¹ mean over the photoperiod; 0…full scale across the 30 min ramps; 0 in the dark period | Dominated by the reconstruction coefficients, O-52 |
 | Flicker flag, 50 / 60 Hz | U4 | Flags; ADC5 integrates over `t_int_FD = FD_TIME × 2.78 µs`, FD_TIME 11-bit, raw data optionally written to the FIFO | No flicker expected from a DC-driven fixture; an asserted flag is a driver fault indication | Flag, not a measurement |
@@ -230,7 +230,7 @@ at 6 mA sink, input capacitance 10 pF, leakage ±5 µA, digital I/O absolute max
 | Item | Requirement |
 |------|-------------|
 | ADC | Six independent 16-bit light-to-frequency converters; full scale 65 535 counts per channel |
-| Channel mapping | SMUX, configured after every power-up before any measurement is started |
+| Channel mapping | The device's own three-cycle sequencer, not a written SMUX image. Register, cycle contents and when it is written: §10 |
 | Cycles per full set | **Three.** Eleven filtered bands + clear + flicker exceeds six ADCs by more than one cycle |
 | Integration time | `t_int = (ATIME + 1) × (ASTEP + 1) × 2.78 µs` — DS001046 v6-00 §7 note 4. ATIME at `0x81`, ASTEP at `0xD4`/`0xD5`; neither may be 0 |
 | Gain | AGAIN 0.5× … 2048×, 13 steps, CFG1 register `0xC6` bits AGAIN[4:0] |
@@ -463,19 +463,19 @@ step over the measurement path. The diffuser is fitted after coating or masked d
 | Boot probe addresses | `0x70` on the master segment, then `0x39` on each channel in turn. An ACK is not identification (M01 §10 precedent); each probe shall be backed by a device-specific read: **U4 `ID` at `0x5A` reads `0x81`** (with `REVID` `0x59` and `AUXID` `0x58`), **U3 `ID` at `0x92` reads `0x5C`** (with `REV_ID` `0x91` = `0x11`). Probing `0x39` without a channel selected shall be treated as a U1 fault, not as two absent sensors |
 | Re-probe interval | ≈ 60 s (ADR-0014 d8) |
 | Publish rule | Responders only; partial populations require no rebuild |
-| SMUX | Configured after every power-up, before the first measurement is started. Reference configuration from the vendor application note for the AS7343 — the AS7341's does not apply |
-| U3 power-up state | U3 resets with its ALS disabled. Firmware shall set `PON`, configure the UV modulator gain and integration time, then set `AEN`. The UV channel is read at its own gain, independent of the photopic and IR channels |
+| Channel mapping | `auto_smux` = 3 in CFG20 (`0xD6`), written after every power-up with the spectral engine stopped. The device's ROM sequencer then walks the three cycles of §6.1 and files eighteen results; no SMUX RAM image is written and the vendor's manual SMUX configuration is not used. The cycles are fixed by the device: FZ FY FXL NIR VIS FD, then F2 F3 F4 F6 VIS FD, then F1 F7 F8 F5 VIS FD, into `DATA_0`…`DATA_17` in that order. V3 confirms the assignment against a real luminaire |
+| U3 power-up state | U3 resets with its ALS disabled. Firmware shall write every configuration register — modulator SMUX, gains, sample count — then `PON`, then `AEN`. **`PON` follows the configuration, it does not precede it**: DS001043 v5-00 states `PON` is set only once the host has initialised all other registers. The UV channel is read at its own gain, independent of the photopic and IR channels |
 | Auto zero | `AZ_CONFIG` (`0xDE`) sets how often the spectral-engine offsets are reset to track device temperature. `AZ_NTH_ITERATION` defaults to 255 iterations; one auto zero takes 15 ms typical. Firmware shall set the interval explicitly rather than inherit the default, and shall carry the 15 ms in the acquisition budget |
 | Acquisition | Three integration cycles per full channel set (§6.1); flicker detection mapped to its own ADC when used |
 | Autorange | AGAIN and `t_int` adjusted to hold the brightest mapped channel between 10 % and 90 % of full scale. The setting in force is published with the sample |
 | Derived | PPFD per §6.2, from coefficients read out of the deployment profile, over F1…F7 only |
 | Not derived | DLI. Owned by the gateway (§3.2, ADR-0014 d4) |
-| Deployment constants | `c_i` per §6.2 read from the deployment profile, not compiled in |
+| Deployment constants | `c_i` per §6.2 read from the deployment profile, not compiled in. Carried as the `uavcan.register` entry `industryflow.greenhouse.light.ppfd_coeff`, a `real32[10]` in the §6.3 band order truncated to the PAR window. Volatile: no register but `uavcan.node.id` has a store (ADR-0005 d7), so a commissioned node re-takes them at every restart. All-zero is the uncommissioned state, and 4129 publishes `valid = false` under it |
 | Rail failure | Failure of U2 removes U4, U3 **and U1** from the bus, so the module presents as a single absent device at `0x70` rather than as two absent sensors. The boot probe handles this as absence; *not fitted*, *failed* and *unpowered* remain indistinguishable (O-37) |
 | U1 recovery | U1's RESET is tied to V_CC (§5.2), so a stuck channel is recoverable only by a node power cycle. Firmware shall report a channel that does not respond rather than attempt a reset it has no line for (O-65) |
 | Message timestamps | `uavcan.time.SynchronizedTimestamp` from the gateway time base: the node is a synchronization slave to subject 7168 (ADR-0002 d11), tracking the master as an offset against its own monotonic clock. 0 (UNKNOWN) before the first pair of sync messages and again after the master has been silent for 3 s. Accuracy is milliseconds — reception is timestamped in the polled main loop |
 | Role and zone | Not held by the node; assigned by the gateway (ADR-0014 d7) |
-| Node directory | `firmware/nodes/m02_light/` — does not exist |
+| Node directory | `firmware/nodes/m02_light/` — `sensors.{h,c}`, `module_id.h` and drivers for U1, U3 and U4. Written against the datasheets; no part of §11 is executed |
 | Node-ID | Not a property of the module class: provisioned per instance into carrier flash (ADR-0027), and distinct across the bus. Bring-up assignment for the first instance is **98** |
 | Publication rate | 1 s, subject to the three-cycle acquisition time of §6.1 |
 
@@ -486,7 +486,7 @@ register entries. M05 holds 4096–4102; M01 holds 4112–4121.
 
 | ID | Quantity | Source | Type |
 |----|----------|--------|------|
-| 4128 | Spectral counts, 11 bands + clear, with AGAIN and `t_int` | U4 | `industryflow.greenhouse.light.SpectralSample` |
+| 4128 | Spectral counts, 12 bands + clear, with AGAIN and `t_int` | U4 | `industryflow.greenhouse.light.SpectralSample` |
 | 4129 | PPFD | derived, §6.2 | `industryflow.greenhouse.light.PhotonFluxDensity` (mol·m⁻²·s⁻¹) |
 | 4130 | Flicker flags | U4 | `industryflow.greenhouse.light.FlickerStatus` |
 | 4131 | UV-A irradiance | U3 | `industryflow.greenhouse.light.Irradiance` (W·m⁻²) |
@@ -505,7 +505,7 @@ knows as UV-B or UV-C.
 typical-only, so the subject carries a nominal rather than a guaranteed absolute value; §6.4
 states the limit and V4 measures it.
 
-The `light` sub-namespace is named by ADR-0005 d1 and contains no files. All four types are
+The `light` sub-namespace is named by ADR-0005 d1. All four types are
 minted because the standard set carries no spectral, photon-flux, irradiance or flicker sample
 type (ADR-0005 d2). All are unscaled SI — mol·m⁻²·s⁻¹, W·m⁻² — for the reason ADR-0005 rev 1
 gave for joule over watt-hour: µmol and lux are display conventions, and display is the
@@ -526,7 +526,7 @@ gateway's concern.
 | V8 | §9 M1, M2 | Band counts with and without the fitted diffuser under the same fixture setting; the ratio per band is the diffuser's transmission term for §6.2 |
 | V9 | §7.3 | U4's V_DD measured at the pin under load and during U2's start-up transient, against the 1.98 V absolute maximum |
 | V10 | §7.3, §7.4 | U3's V_DD measured at the pin under load and during U2's start-up transient, against the 1.98 V absolute maximum — the same measurement V9 makes at U4, on the shared rail |
-| V11 | §10 | U3 identified by reading AGEN at `0x02` and matching `0x21`, not by address ACK alone |
+| V12 | §10 | U3 identified by reading `ID` at `0x92` and matching `0x5C`, with `REV_ID` `0x91` = `0x11`, not by address ACK alone. At `0x39` an ACK could equally be U4 reached through the wrong channel |
 
 ## 12. Open items
 

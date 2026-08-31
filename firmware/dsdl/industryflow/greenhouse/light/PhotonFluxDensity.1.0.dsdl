@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Photosynthetic photon flux density at the canopy, 400-700 nm. Minted because
+# the standard set carries no photon-flux type (ADR-0005 d2).
+#
+# mol per square metre per second, unscaled SI. The horticultural convention is
+# micromol, and micro is a display prefix -- the same argument ADR-0005 rev 1
+# made for joule over watt-hour. 300 umol/m2/s is 300e-6 here.
+#
+# Reconstructed on the node from the ten in-window band counts by the
+# coefficients of M02 spec 6.2, which are a COMMISSIONING property of one
+# luminaire spectrum and one optical stack, not a device constant. Until they
+# are written to the node they do not exist, and `valid` is what says so: an
+# uncommissioned node publishes this subject with valid = false rather than
+# falling silent, so that a gateway can tell an uncommissioned module from an
+# absent one.
+#
+# DLI -- this quantity integrated over the photoperiod -- is the gateway's
+# (M02 spec 3.2, ADR-0014 d4). It is not derived here and has no field here.
+uavcan.time.SynchronizedTimestamp.1.0 timestamp
+float32 mol_per_square_metre_per_second
+bool valid   # true = a reconstruction coefficient set is loaded and the bands read
+@extent 16 * 8
