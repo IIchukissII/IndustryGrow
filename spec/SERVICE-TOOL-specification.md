@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # SERVICE-TOOL — specification
 
 - **Status:** Project stage — requirements fixed, no realization committed
-- **Date:** 2026-08-31
+- **Date:** 2026-09-01
 - **Identifier:** none assigned (ADR-0030 d12)
 - **Governing ADRs:** ADR-0030, ADR-0015, ADR-0016, ADR-0028
 - **Companions:** ADR-0002 (rev 3), ADR-0005, ADR-0017 (rev 2), ADR-0020, ADR-0022, ADR-0027
@@ -90,6 +90,7 @@ The tool takes a Cyphal Node-ID from the ADR-0027 allocation and allocates none 
 | **S18** | Every engineering-mode action is recorded where the normal path records it | — | ADR-0030 d10 |
 | **S19** | No telemetry is written to removable media | — | ADR-0030 d11 |
 | **S20** | Subject-ID to type binding is taken from the registry, not restated | generated at build | ADR-0023, ADR-0000 d3 |
+| **S21** | An operator's selection survives a data refresh | selection restored by identity, not index | F1, F2 |
 
 ## 6. Presentation requirements
 
@@ -104,10 +105,14 @@ Requirements on any realization. No part is named.
 
 ## 7. Verification
 
+Entries marked *internal loopback* were executed with the interface transmitting
+to its own receive path, with no bus attached. That covers everything above the
+transceiver — reassembly, decode, model, presentation — and nothing below it.
+
 | # | Verifies | Method | State |
 |---|---|---|---|
 | **V1** | S1, S2 | Saturate the bus at 500 kbit/s while forcing a worst-case repaint; confirm zero drops and that a forced drop is counted | Not executed |
-| **V2** | S4, S5, S6, S7, F2 | Stop one publisher; confirm `LATE` then `STALE` at the specified multiples of its observed period | Not executed |
+| **V2** | S4, S5, S6, S7, F2 | Stop one publisher; confirm `LATE` then `STALE` at the specified multiples of its observed period | **Passed 2026-09-01**, internal loopback. Observed period 999 ms; `LATE` at 5991 ms (S4 bound 2498 ms, S5 bound 5994 ms), `STALE` at 10992 ms |
 | **V3** | S8, P4 | Repeat V2 while on an unrelated view; confirm annunciation | Not executed |
 | **V4** | S10, S11 | Attempt a step out of order and an edit; confirm both refused and the refusal presented | Not executed |
 | **V5** | F3, F4, S12 | Execute one `-M-` protocol end to end; confirm the emitted record files unchanged | Not executed |
@@ -117,12 +122,13 @@ Requirements on any realization. No part is named.
 | **V9** | S17, S18 | Enter engineering mode, act, leave it idle; confirm indication, record and lapse | Not executed |
 | **V10** | I2, I5 | Attach to a live bus and observe for 10 min; confirm no frame is transmitted and no termination is fitted | Not executed |
 | **V11** | S19 | Exercise every export path; confirm no telemetry reaches the media | Not executed |
-| **V12** | F1, S20, I1, I3 | Publish every subject in the registry; confirm each renders with value, unit and age, and that the binding is generated at build rather than hand-listed | Not executed |
+| **V12** | F1, S20, I1, I3 | Publish every subject in the registry; confirm each renders with value, unit and age, and that the binding is generated at build rather than hand-listed | **Partial 2026-09-01**, internal loopback: 3 of the registry's subjects rendered correctly, including unit conversion and multi-frame reassembly. Not yet every subject |
 | **V13** | S9, P3 | Render every state in greyscale; confirm each remains distinguishable | Not executed |
-| **V14** | S3, S6 | Publish one signal at a rate other than 1 Hz; confirm the observed period replaces the assumption and the liveness thresholds follow it | Not executed |
+| **V14** | S3, S6 | Publish one signal at a rate other than 1 Hz; confirm the observed period replaces the assumption and the liveness thresholds follow it | **Passed 2026-09-01**, internal loopback. 2 Hz signal learned 499 ms, 1 Hz signal 1000 ms, per signal |
 | **V15** | S15 | Exercise every emitted artifact; confirm no tool-computed value appears in any of them | Not executed |
 | **V16** | F7, I4 | Import a procedure and export its run result; confirm the round trip | Not executed |
-| **V17** | P2 | Measure the smallest interactive target | Not executed |
+| **V17** | P2 | Measure the smallest interactive target | **Passed 2026-09-01** by calculation on a 5.7 in 640 × 480 panel: pitch 0.181 mm, smallest interactive height 50 px = 9.05 mm. Not a physical measurement |
+| **V18** | S21 | Select a signal, then let the data refresh; confirm the selection is still the one selected | **Passed 2026-09-01**, internal loopback |
 
 ## 8. Open items
 
@@ -135,6 +141,7 @@ Requirements on any realization. No part is named.
 | **O-80** | S17 engineering-mode timeout not chosen | S17, V9 |
 | **O-81** | P1 legibility not expressed as a testable figure, so it has no verification entry | P1 |
 | **O-82** | ADR-0030 d9 adopts a reading of ADR-0028 d9; not confirmed by the maintainers | F4, V5 |
+| **O-83** | No verification has run against a real bus; every executed entry used internal loopback | V1, V8, V10, and the coverage of V12 |
 
 ## 9. Maturity
 
@@ -147,4 +154,5 @@ Requirements on any realization. No part is named.
 Current rung: **Requirements-fixed**.
 
 Reaching *Realization-committed* requires O-76 and O-81. Reaching *As-built* additionally
-requires O-77, without which V6 and V7 cannot run.
+requires O-77, without which V6 and V7 cannot run, and O-83, without which no entry has been
+exercised against real hardware on the far side of a transceiver.
