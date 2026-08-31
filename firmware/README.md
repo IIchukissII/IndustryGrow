@@ -24,6 +24,7 @@ application in one of two slots (ADR-0029 d1). Sources are `AGPL-3.0-or-later` (
 | Boot chain (ADR-0029) | Verified on hardware 2026-08-29: hand-over, fallback, update-state write |
 | Firmware download over CAN | Built — the bootloader is a Cyphal node and a `uavcan.file.Read` client |
 | Image signing (ADR-0029 d6) | Built — needs a key given to the build; an unsigned image is refused |
+| Released `store/E0001-000001-F-*` | All three personalities; **unsigned** — flashes over SWD, refused over the bus. Rebuild with `tools/release.sh --key` before any over-the-air use |
 | Subject-ID registers (ADR-0005 d7) | Not implemented — defaults are compiled in |
 | SCD41 forced recalibration | Not implemented (M01 spec O-5) |
 
