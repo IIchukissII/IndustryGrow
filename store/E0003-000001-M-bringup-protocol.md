@@ -33,12 +33,12 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 | Optical stimuli | Darkness, a broadband lamp, a red LED (630–660 nm), a blue LED (450–470 nm), a mains-driven lamp and a 365 nm UV-A source | §6 |
 | Addresses | `spec/M02-LIGHT-specification.md` §4, §5.1. `E0003` has no pin map of its own | — |
 
-**The released `E0001-000001-F-*` artifacts predate the M02 personality** — their body is
-29 752 bytes against the ≈ 90 KB the current tree builds. Cut a fresh pair before running this
-protocol: `firmware/tools/release.sh --key <pem>` for an image that may also be sent over the
-air, `--unsigned` for a bench board that will only ever be flashed over SWD. An unsigned image
-flashes fine and no node will accept it on the bus, which is the intended asymmetry
-(ADR-0029 d6).
+**The released `E0001-000001-F-*` artifacts carry the M02 personality and are UNSIGNED.** They
+flash over SWD and **no node will accept them over the bus** — that asymmetry is deliberate
+(ADR-0029 d6), and it means this protocol is an SWD procedure end to end. Before any image
+reaches a node over the air it has to be rebuilt signed:
+`firmware/tools/release.sh --key <pem>`. Note that a signed release also rebuilds the
+bootloader with the matching verification key, so the pair is flashed together or not at all.
 
 **Bench gotchas.** Six, and the first is the one that wastes a whole session:
 
