@@ -4,7 +4,8 @@
 """What the gateway subscribes to, and how each subject's payload is read.
 
 ONE COPY, AND IT IS A COPY. The subject-IDs are compiled into the node firmware
-(`nodes/m05_safety/sensors.c`, `nodes/m01_climate/sensors.c`) and described for
+(`nodes/m05_safety/sensors.c`, `nodes/m01_climate/sensors.c`,
+`nodes/m02_light/sensors.c`) and described for
 an operator in the per-module bring-up protocols under `store/`. ADR-0005
 decision 7 makes each one a `uavcan.pub.<name>.id` register with the compiled
 value as a default; until the firmware carries those registers there is no way
@@ -25,6 +26,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import industryflow.greenhouse.climate as _climate
+import industryflow.greenhouse.light as _light
 import industryflow.greenhouse.safety as _safety
 import uavcan.si.sample.electric_current
 import uavcan.si.sample.energy
@@ -57,6 +59,45 @@ def _door(m: Any) -> tuple[float | None, dict | None]:
 
 def _leak(m: Any) -> tuple[float | None, dict | None]:
     return None, {"wet": bool(m.wet), "valid": bool(m.valid)}
+
+
+def _spectrum(m: Any) -> tuple[float | None, dict | None]:
+    # Twelve band counts, the clear channel, and the settings they were taken
+    # at. There is no scalar: counts without the gain and integration time that
+    # produced them are not a measurement (M02 spec 6.1), and the normalized
+    # figure a consumer wants is band / (gain * seconds), computed downstream
+    # rather than baked into a single number here.
+    return None, {
+        "band": [int(v) for v in m.band],
+        "clear": int(m.clear),
+        "gain": float(m.gain),
+        "integration_seconds": float(m.integration_seconds),
+        "saturation": bool(m.saturation),
+    }
+
+
+def _flicker(m: Any) -> tuple[float | None, dict | None]:
+    return None, {
+        "valid": bool(m.valid),
+        "saturation": bool(m.saturation),
+        "valid_100hz": bool(m.valid_100hz),
+        "valid_120hz": bool(m.valid_120hz),
+        "detected_100hz": bool(m.detected_100hz),
+        "detected_120hz": bool(m.detected_120hz),
+    }
+
+
+def _validated_scalar(field: str) -> Extract:
+    # A scalar the node itself marks trustworthy or not. M02 publishes PPFD
+    # before it is commissioned and UV-A through a saturating modulator, and in
+    # both cases the number is present and meaningless; storing it as a bare
+    # scalar would make it indistinguishable from a measured zero.
+    def extract(m: Any) -> tuple[float | None, dict | None]:
+        if not bool(m.valid):
+            return None, {"valid": False}
+        return float(getattr(m, field)), None
+
+    return extract
 
 
 def _gas_sweep(m: Any) -> tuple[float | None, dict | None]:
@@ -101,6 +142,21 @@ SUBJECTS: tuple[Subject, ...] = (
         4120, "u3_temperature", "K", uavcan.si.sample.temperature.Scalar_1_0, _scalar("kelvin")
     ),
     Subject(4121, "u3_humidity", "1", _climate.RelativeHumidity_1_0, _scalar("ratio")),
+    # --- M02-LIGHT (E0003), module class 0x02 ---
+    # 4132 and 4133 were UV-B and UV-C and stay RETIRED, not reassigned
+    # (M02 spec 10.1): nothing may bind a new quantity to either.
+    Subject(4128, "spectrum", "", _light.SpectralSample_1_0, _spectrum),
+    Subject(
+        4129,
+        "ppfd",
+        "mol/(m^2 s)",
+        _light.PhotonFluxDensity_1_0,
+        _validated_scalar("mol_per_square_metre_per_second"),
+    ),
+    Subject(4130, "flicker", "", _light.FlickerStatus_1_0, _flicker),
+    Subject(
+        4131, "uv_a", "W/m^2", _light.Irradiance_1_0, _validated_scalar("watt_per_square_metre")
+    ),
 )
 
 BY_ID = {s.subject_id: s for s in SUBJECTS}

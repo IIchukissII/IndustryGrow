@@ -170,6 +170,10 @@ set(APP_SOURCES
   nodes/m01_climate/drivers/sht4x.c
   nodes/m01_climate/drivers/bme68x.c
   nodes/m01_climate/drivers/scd4x.c
+  nodes/m02_light/sensors.c
+  nodes/m02_light/drivers/tca9543a.c
+  nodes/m02_light/drivers/as7343.c
+  nodes/m02_light/drivers/tsl2585.c
   # --- vendored runtimes + device support ---
   "${LIBCANARD}/libcanard/canard.c"
   "${O1HEAP}/o1heap/o1heap.c"
@@ -190,6 +194,8 @@ function(igrow_target_settings target)
     nodes/m05_safety/drivers
     nodes/m01_climate
     nodes/m01_climate/drivers
+    nodes/m02_light
+    nodes/m02_light/drivers
     "${LIBCANARD}/libcanard"
     "${O1HEAP}/o1heap"
     "${DSDL_GEN_DIR}"

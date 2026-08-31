@@ -35,6 +35,26 @@
  * personality's, not the image's (ADR-0017 d16). Must outlive the call. */
 void registers_init(uint8_t node_id, const char *description);
 
+/* Add a mutable real32-array register backed by the caller's storage, for a
+ * DEPLOYMENT CONSTANT a node cannot carry compiled in. M02's PPFD
+ * reconstruction coefficients are the first: they belong to one luminaire
+ * spectrum and one optical stack, are identified at commissioning against a
+ * reference instrument, and are carried in the deployment profile (M02 spec
+ * 6.2, 10). A firmware constant would be a different instrument's.
+ *
+ * `name` and `values` must outlive the call; `values` is read on every Access
+ * and written in place by a write, so the personality sees changes without
+ * being told. `count` is the exact array length, capped at
+ * REGISTERS_REAL32_MAX; a write of a different length is rejected rather than
+ * partially applied -- a coefficient set is a set, and half of one describes
+ * nothing. Returns false if the table is full.
+ *
+ * Not persistent. Like every register but uavcan.node.id it resets to its
+ * compiled default at power-up, because there is no store behind it
+ * (ADR-0005 d7). */
+#define REGISTERS_REAL32_MAX 16u
+bool registers_add_real32(const char *name, float *values, uint8_t count);
+
 /* Number of registers, for List index bounds. */
 size_t registers_count(void);
 

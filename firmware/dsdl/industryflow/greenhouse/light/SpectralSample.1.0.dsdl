@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# One AS7343 acquisition: twelve filtered bands and the unfiltered clear
+# channel, with the settings they were taken under. Minted because the standard
+# set carries no spectral sample type (ADR-0005 d2).
+#
+# One subject, not thirteen. The bands are one device read in one acquisition
+# and are not separable -- an absent band is not a condition the hardware can
+# present, so ADR-0005 d8's per-sensor absence argument does not reach inside
+# this record (M02 spec 10.1).
+#
+# Counts are raw ADC output and are NOT a measurement on their own: they scale
+# with `gain` and `integration_seconds`, both of which firmware moves at runtime
+# hold the brightest band inside the ADC's range (M02 spec 6.1). A consumer
+# normalizes before comparing two samples:
+#
+#     n_i = band[i] / (gain * integration_seconds)
+#
+# That normalized figure is what the PPFD reconstruction of M02 spec 6.2
+# consumes, and why gain and integration time ride in the same record rather
+# than in a register a consumer would have to have read at the right moment.
+#
+# Band order is ASCENDING PEAK WAVELENGTH, which is the order M02 spec 6.3
+# tables them in -- not the device's readout order, which interleaves three
+# integration cycles. Peaks: 405, 425, 450, 475, 515, 550, 555, 600, 640, 690,
+# 745, 855 nm. F8 (745) and NIR (855) sit outside the 400-700 nm PAR window and
+# are carried for spectrum validation only.
+uavcan.time.SynchronizedTimestamp.1.0 timestamp
+uint16[12] band            # F1 F2 FZ F3 F4 F5 FY FXL F6 F7 F8 NIR, counts
+uint16 clear               # unfiltered silicon, counts
+float32 gain               # spectral gain in force, as a multiplier: 0.5 .. 2048
+float32 integration_seconds   # per band, per integration cycle
+bool saturation            # analog or digital saturation reported for this set
+@extent 64 * 8
