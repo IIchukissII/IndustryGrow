@@ -1,0 +1,150 @@
+<!--
+SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+SPDX-License-Identifier: CC-BY-SA-4.0
+-->
+
+# SERVICE-TOOL — specification
+
+- **Status:** Project stage — requirements fixed, no realization committed
+- **Date:** 2026-08-31
+- **Identifier:** none assigned (ADR-0030 d12)
+- **Governing ADRs:** ADR-0030, ADR-0015, ADR-0016, ADR-0028
+- **Companions:** ADR-0002 (rev 3), ADR-0005, ADR-0017 (rev 2), ADR-0020, ADR-0022, ADR-0027
+
+Rationale for the role, its bounds and the rejected alternatives is in the governing ADRs and is
+not restated. Values marked `verify` are not confirmed against a measurement or a datasheet.
+
+## 1. Scope
+
+Specifies the portable service and diagnostic tool: what it presents, what it executes, what it
+emits, and how each is verified.
+
+Does not specify: the realization or its part selection (ADR-0030 d12); the actuator command
+surface it requests excitation through (ADR-0030 deferred); the content of any `-M-` protocol;
+the `QP` / `CP` / `CC` schemas (ADR-0022); the cultivation profile (ADR-0015).
+
+## 2. Identification
+
+No E-number or SP-number is assigned; the identifier is assigned at design commit and is not
+pre-reserved. Whether it takes an E-number (ADR-0017) or rolls up as a designed accessory
+(ADR-0019 d9) follows from the realization chosen (O-76).
+
+The tool takes a Cyphal Node-ID from the ADR-0027 allocation and allocates none (ADR-0030 d3).
+
+## 3. Function
+
+| # | Function | Reference |
+|---|---|---|
+| **F1** | Presents every subject in the type registry, live, with value, unit and age | ADR-0023, ADR-0030 d1 |
+| **F2** | Judges and presents per-signal liveness | ADR-0030 d1 |
+| **F3** | Executes an `-M-` protocol step by step, each step gated on the previous step's pass | ADR-0028 d1, ADR-0030 d8 |
+| **F4** | Emits the per-instance `QP` / `CP` / `CC` a protocol run produces, for filing | ADR-0028 d3, ADR-0030 d9 |
+| **F5** | Requests bounded excitation of an actuator, while the loops are not in control of it | ADR-0016 d1, ADR-0030 d6, d7 |
+| **F6** | Issues diagnostics that are issuable without it: GetInfo, restart, register access | ADR-0030 d4 |
+| **F7** | Imports a procedure and exports a run result on removable media | ADR-0030 d11 |
+
+### 3.1 Exclusions
+
+| Excluded | Owner |
+|---|---|
+| Telemetry persistence | Gateway (ADR-0020) |
+| Records of any kind | ERP (ADR-0021, ADR-0022) |
+| Control loops | Gateway (ADR-0015 d8) |
+| Setpoints of a running cultivation | Profile (ADR-0015 d1) |
+| System identification | Offline (ADR-0016 d2) |
+| Procedure authorship | The `-M-` document |
+| Trim determination | The filed `-CC` (ADR-0028 d3) |
+| Interlocks | Heating actuator (ADR-0018 d10) |
+
+## 4. Interfaces
+
+| # | Interface | Value | Reference |
+|---|---|---|---|
+| **I1** | Cabinet bus | Classic CAN, 500 kbit/s, extended IDs | ADR-0002 d8 |
+| **I2** | Bus entry state | Listen-only until an operator action; publishes no heartbeat, no diagnostics | ADR-0030 d3 |
+| **I3** | Application protocol | Cyphal/CAN; `uavcan.*` and `industryflow.greenhouse.*` | ADR-0005 |
+| **I4** | Removable media | Read for procedures, signed images and signed profiles; write for run results only | ADR-0030 d11 |
+| **I5** | Termination | None fitted; the tool attaches as a stub | ADR-0002 d8 |
+
+## 5. Software requirements
+
+| # | Requirement | Value | Reference |
+|---|---|---|---|
+| **S1** | Receive path buffers frames independently of the display | ≥ 100 ms of a saturated bus, ≥ 400 frames | I1, F1 |
+| **S2** | Frames dropped for want of buffer are counted and presented | count, not a flag | S1 |
+| **S3** | Default publication period assumed before one is observed | 1 Hz | ADR-0005 d4 |
+| **S4** | Liveness `LATE` threshold | age > 2.5 × observed period | F2 |
+| **S5** | Liveness `STALE` threshold | age > 6 × observed period | F2 |
+| **S6** | Observed period is measured per signal, not assumed per class | smoothed inter-arrival | F2, S3 |
+| **S7** | Liveness bounds clamp the observed period | 250 ms ≤ period ≤ 60 s | S4, S5 |
+| **S8** | A non-`LIVE` signal is annunciated outside the liveness view | visible from any view | F2 |
+| **S9** | Liveness and value states carry a word, never colour alone | — | F1, F2 |
+| **S10** | A protocol step refuses to run when its precondition has not passed | refusal is presented, not silent | F3, ADR-0028 d1 |
+| **S11** | A protocol is executed as carried; the tool offers no edit, reorder or skip | — | F3, ADR-0030 d8 |
+| **S12** | A run result records the protocol identity and version it was produced under | — | F4 |
+| **S13** | Excitation is requested with a duration; the tool never terminates it itself | — | F5, ADR-0030 d7 |
+| **S14** | Excitation is refused while the loops are in control of that actuator | refusal is presented | F5, ADR-0015 d1 |
+| **S15** | Values computed by the tool are presented, never emitted as system input | — | ADR-0030 d5 |
+| **S16** | Vendor command version matches the node firmware | `uavcan.node.ExecuteCommand` 1.0 | F6 |
+| **S17** | Engineering mode is visibly indicated while active and lapses without action | timeout `verify` | ADR-0030 d10 |
+| **S18** | Every engineering-mode action is recorded where the normal path records it | — | ADR-0030 d10 |
+| **S19** | No telemetry is written to removable media | — | ADR-0030 d11 |
+| **S20** | Subject-ID to type binding is taken from the registry, not restated | generated at build | ADR-0023, ADR-0000 d3 |
+
+## 6. Presentation requirements
+
+Requirements on any realization. No part is named.
+
+| # | Requirement | Value | Reference |
+|---|---|---|---|
+| **P1** | Legible at arm's length by a standing technician | `verify` | F1 |
+| **P2** | Operable while wearing gloves | touch target ≥ 9 mm | F3 |
+| **P3** | Distinguishes state without colour discrimination | word plus colour | S9 |
+| **P4** | Presents the bus state from every view | — | S8 |
+
+## 7. Verification
+
+| # | Verifies | Method | State |
+|---|---|---|---|
+| **V1** | S1, S2 | Saturate the bus at 500 kbit/s while forcing a worst-case repaint; confirm zero drops and that a forced drop is counted | Not executed |
+| **V2** | S4, S5, S6, S7, F2 | Stop one publisher; confirm `LATE` then `STALE` at the specified multiples of its observed period | Not executed |
+| **V3** | S8, P4 | Repeat V2 while on an unrelated view; confirm annunciation | Not executed |
+| **V4** | S10, S11 | Attempt a step out of order and an edit; confirm both refused and the refusal presented | Not executed |
+| **V5** | F3, F4, S12 | Execute one `-M-` protocol end to end; confirm the emitted record files unchanged | Not executed |
+| **V6** | F5, S13, ADR-0030 d7 | Request excitation, then remove the tool; confirm the excitation lapses and the fallback profile resumes | Not executed |
+| **V7** | S14 | Request excitation while the loops control that actuator; confirm refusal | Not executed |
+| **V8** | S16, F6 | Issue GetInfo and restart to a node; confirm both answered | Not executed |
+| **V9** | S17, S18 | Enter engineering mode, act, leave it idle; confirm indication, record and lapse | Not executed |
+| **V10** | I2, I5 | Attach to a live bus and observe for 10 min; confirm no frame is transmitted and no termination is fitted | Not executed |
+| **V11** | S19 | Exercise every export path; confirm no telemetry reaches the media | Not executed |
+| **V12** | F1, S20, I1, I3 | Publish every subject in the registry; confirm each renders with value, unit and age, and that the binding is generated at build rather than hand-listed | Not executed |
+| **V13** | S9, P3 | Render every state in greyscale; confirm each remains distinguishable | Not executed |
+| **V14** | S3, S6 | Publish one signal at a rate other than 1 Hz; confirm the observed period replaces the assumption and the liveness thresholds follow it | Not executed |
+| **V15** | S15 | Exercise every emitted artifact; confirm no tool-computed value appears in any of them | Not executed |
+| **V16** | F7, I4 | Import a procedure and export its run result; confirm the round trip | Not executed |
+| **V17** | P2 | Measure the smallest interactive target | Not executed |
+
+## 8. Open items
+
+| # | Item | Blocks |
+|---|---|---|
+| **O-76** | Realization not chosen — installed panel, gateway-served page, or portable instrument | Identification, P1, and any part selection |
+| **O-77** | The actuator command surface carrying the excitation bound does not exist | F5, S13, S14, V6, V7 |
+| **O-78** | Whether a carried procedure is signed, and against which trust root | F7, I4, S11 |
+| **O-79** | `QP` / `CP` / `CC` emission format not fixed against the `/api/v1` filing sequence | F4, S12, V5 |
+| **O-80** | S17 engineering-mode timeout not chosen | S17, V9 |
+| **O-81** | P1 legibility not expressed as a testable figure, so it has no verification entry | P1 |
+| **O-82** | ADR-0030 d9 adopts a reading of ADR-0028 d9; not confirmed by the maintainers | F4, V5 |
+
+## 9. Maturity
+
+| Rung | Content |
+|---|---|
+| **Requirements-fixed** | Functions, interfaces and software requirements fixed; realization open; verification unexecuted |
+| **Realization-committed** | O-76 closed; identifier assigned; presentation requirements resolved to figures |
+| **As-built** | Estimates replaced by measurements; verification executed; open items closed in place |
+
+Current rung: **Requirements-fixed**.
+
+Reaching *Realization-committed* requires O-76 and O-81. Reaching *As-built* additionally
+requires O-77, without which V6 and V7 cannot run.
