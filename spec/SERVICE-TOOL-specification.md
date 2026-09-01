@@ -7,7 +7,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 - **Status:** Project stage — requirements fixed, no realization committed
 - **Date:** 2026-09-01
-- **Identifier:** none assigned (ADR-0030 d12)
+- **Identifier:** `E0010` (REGISTRY.md); realization open (`O-76`)
 - **Governing ADRs:** ADR-0030, ADR-0015, ADR-0016, ADR-0028
 - **Companions:** ADR-0002 (rev 3), ADR-0005, ADR-0017 (rev 2), ADR-0020, ADR-0022, ADR-0027
 
@@ -25,11 +25,18 @@ the `QP` / `CP` / `CC` schemas (ADR-0022); the cultivation profile (ADR-0015).
 
 ## 2. Identification
 
-No E-number or SP-number is assigned; the identifier is assigned at design commit and is not
-pre-reserved. Whether it takes an E-number (ADR-0017) or rolls up as a designed accessory
-(ADR-0019 d9) follows from the realization chosen (O-76).
+| Field | Value | Reference |
+|---|---|---|
+| E-number | `E0010` | ADR-0017 d3 |
+| Version | `E0010-000001` names the first realization | ADR-0017 d5 |
+| Node-ID | taken from the ADR-0027 allocation; the tool allocates none | ADR-0030 d3 |
+| Tool identity in an emitted record | the board's own serial | S28 |
 
-The tool takes a Cyphal Node-ID from the ADR-0027 allocation and allocates none (ADR-0030 d3).
+A realization is a design and takes a version. A populated variant of one design takes its own
+E-number, not a version (ADR-0017 rev 2 d4).
+
+The tool is not equipment: the cabinet operates, controls and records identically without it
+(ADR-0030 d1). An E-number names what the project designs and does not make the thing required.
 
 ## 3. Function
 
@@ -99,6 +106,7 @@ The tool takes a Cyphal Node-ID from the ADR-0027 allocation and allocates none 
 | **S25** | A value the tool measured is distinguishable from an operator judgement in the record | per step | ADR-0030 d5, d9 |
 | **S26** | Document type by run | bring-up → `QP`; calibration → `CP` and `CC` | I7, ADR-0017 d10, d11 |
 | **S27** | The tool emits the record and retains no copy after filing | — | ADR-0030 d2, d9 |
+| **S28** | Emitted record names the tool that performed the run | the tool's board serial | F4, ADR-0030 driver P4 |
 
 ## 6. Presentation requirements
 
@@ -125,7 +133,7 @@ attached as a listen-only stub.
 | **V2** | S4, S5, S6, S7, F2 | Stop one publisher; confirm `LATE` then `STALE` at the specified multiples of its observed period | **Passed 2026-09-01**, internal loopback. Observed period 999 ms; `LATE` at 5991 ms (S4 bound 2498 ms, S5 bound 5994 ms), `STALE` at 10992 ms |
 | **V3** | S8, P4 | Repeat V2 while on an unrelated view; confirm annunciation | Not executed |
 | **V4** | S10, S11 | Attempt a step out of order and an edit; confirm both refused and the refusal presented | **Passed 2026-09-01** against `E0002-000001-M-bringup-protocol`, parsed as carried into 23 steps. A step two ahead was refused "the previous step has not passed"; revising a recorded outcome was refused "a recorded outcome is not revised here". Both refusals presented. The executor exposes no call that edits, reorders or skips |
-| **V5** | F3, F4, S12, S22, S23, S26 | Execute one `-M-` protocol end to end; file the emitted record through I6 and read it back; confirm the blob is unchanged | Not executed |
+| **V5** | F3, F4, S12, S22, S23, S26, S28 | Execute one `-M-` protocol end to end; file the emitted record through I6 and read it back; confirm the blob is unchanged | Not executed |
 | **V6** | F5, S13, ADR-0030 d7 | Request excitation, then remove the tool; confirm the excitation lapses and the fallback profile resumes | Not executed |
 | **V7** | S14 | Request excitation while the loops control that actuator; confirm refusal | Not executed |
 | **V8** | S16, F6 | Issue GetInfo and restart to a node; confirm both answered | **Partial 2026-09-01**, cabinet bus: GetInfo issued by operator action and answered by both nodes, which named them. Restart not issued, so S16's command version is unexercised |
@@ -146,7 +154,7 @@ attached as a listen-only stub.
 
 | # | Item | Blocks |
 |---|---|---|
-| **O-76** | Realization not chosen — installed panel, gateway-served page, or portable instrument | Identification, P1, and any part selection |
+| **O-76** | Realization not chosen — installed panel, gateway-served page, or portable instrument | P1 and any part selection |
 | **O-77** | The actuator command surface carrying the excitation bound does not exist | F5, S13, S14, V6, V7 |
 | **O-78** | Whether a carried procedure is signed, and against which trust root | F7, I4, S11 |
 | **O-80** | S17 engineering-mode timeout not chosen | S17, V9 |
@@ -160,7 +168,7 @@ attached as a listen-only stub.
 | Rung | Content |
 |---|---|
 | **Requirements-fixed** | Functions, interfaces and software requirements fixed; realization open; verification unexecuted |
-| **Realization-committed** | O-76 closed; identifier assigned; presentation requirements resolved to figures |
+| **Realization-committed** | O-76 closed; version assigned; presentation requirements resolved to figures |
 | **As-built** | Estimates replaced by measurements; verification executed; open items closed in place |
 
 Current rung: **Requirements-fixed**.
