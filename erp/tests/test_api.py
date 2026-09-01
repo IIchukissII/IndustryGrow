@@ -149,6 +149,42 @@ def test_document_upload_writes_the_blob_then_indexes_its_key(client, warehouse)
     assert [d["object_key"] for d in listed] == [key]
 
 
+def test_reissuing_a_qp_archives_the_first_issue(client, warehouse):
+    # ADR-0017 d11 gives QP one key per instance, so a second issue is the same
+    # key. Observed 2026-08-24: the put replaced the blob and the first issue's
+    # index row then resolved to the replacement, so the earlier content was
+    # gone and two rows pointed at one object.
+    inst = _one_instance(client)
+    key = f"{inst}-QP"
+
+    client.post(
+        f"/api/v1/instances/{inst}/documents",
+        data={"doc_type": "QP"},
+        files={"file": ("qp.md", b"first issue", "text/markdown")},
+        headers=AUTH,
+    )
+    client.post(
+        f"/api/v1/instances/{inst}/documents",
+        data={"doc_type": "QP"},
+        files={"file": ("qp.md", b"second issue", "text/markdown")},
+        headers=AUTH,
+    )
+
+    # The stable key is the current issue.
+    assert warehouse.objects[key] == b"second issue"
+
+    listed = client.get(f"/api/v1/instances/{inst}/documents", headers=AUTH).json()
+    by_key = {d["object_key"]: d for d in listed}
+
+    # Two rows, two objects, and every row resolves to the bytes it indexed.
+    assert len(listed) == 2
+    assert by_key[key]["status"] == "valid"
+    archived = [k for k in by_key if k != key]
+    assert len(archived) == 1
+    assert by_key[archived[0]]["status"] == "superseded"
+    assert warehouse.objects[archived[0]] == b"first issue"
+
+
 def test_an_indexed_document_can_be_retrieved(client, warehouse):
     # ADR-0022 d7 offers exactly two things for a blob: the key, or a time-limited
     # URL. This is the second — and the API still returns no blob content, which is
