@@ -120,9 +120,9 @@ attached as a listen-only stub.
 | **V5** | F3, F4, S12 | Execute one `-M-` protocol end to end; confirm the emitted record files unchanged | Not executed |
 | **V6** | F5, S13, ADR-0030 d7 | Request excitation, then remove the tool; confirm the excitation lapses and the fallback profile resumes | Not executed |
 | **V7** | S14 | Request excitation while the loops control that actuator; confirm refusal | Not executed |
-| **V8** | S16, F6 | Issue GetInfo and restart to a node; confirm both answered | Not executed |
+| **V8** | S16, F6 | Issue GetInfo and restart to a node; confirm both answered | **Partial 2026-09-01**, cabinet bus: GetInfo issued by operator action and answered by both nodes, which named them. Restart not issued, so S16's command version is unexercised |
 | **V9** | S17, S18 | Enter engineering mode, act, leave it idle; confirm indication, record and lapse | Not executed |
-| **V10** | I2, I5 | Attach to a live bus and observe for 10 min; confirm no frame is transmitted and no termination is fitted | Not executed |
+| **V10** | I2, I5 | Attach to a live bus and observe for 10 min; confirm no frame is transmitted and no termination is fitted | **Partial 2026-09-01**, cabinet bus: 10 min listen-only, 22 078 frames received, 0 transmitted, TEC and REC 0. I2 verified. Termination not inspected, so I5 is not |
 | **V11** | S19 | Exercise every export path; confirm no telemetry reaches the media | Not executed |
 | **V12** | F1, S20, I1, I3 | Publish every subject in the registry; confirm each renders with value, unit and age, and that the binding is generated at build rather than hand-listed | **Partial 2026-09-01**, cabinet bus, 10 min: 17 subjects from two nodes rendered with value, unit and age — 22 830 frames, 9 929 transfers, 0 dropped, 0 unknown, TEC and REC 0. Every subject the bench publishes; the registry's remaining classes have no publisher here |
 | **V13** | S9, P3 | Render every state in greyscale; confirm each remains distinguishable | Not executed |
@@ -143,7 +143,7 @@ attached as a listen-only stub.
 | **O-80** | S17 engineering-mode timeout not chosen | S17, V9 |
 | **O-81** | P1 legibility not expressed as a testable figure, so it has no verification entry | P1 |
 | **O-82** | ADR-0030 d9 adopts a reading of ADR-0028 d9; not confirmed by the maintainers | F4, V5 |
-| **O-83** | V1 and V8 have not run; V1 needs a saturated bus and V8 needs the tool to leave listen-only | V1, V8 |
+| **O-83** | V1 needs a saturated bus; V8's restart half needs a node the bench can afford to take off the bus | V1, V8 |
 
 ## 9. Maturity
 
