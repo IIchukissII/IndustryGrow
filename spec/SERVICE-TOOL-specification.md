@@ -113,7 +113,7 @@ attached as a listen-only stub.
 
 | # | Verifies | Method | State |
 |---|---|---|---|
-| **V1** | S1, S2 | Saturate the bus at 500 kbit/s while forcing a worst-case repaint; confirm zero drops and that a forced drop is counted | Not executed |
+| **V1** | S1, S2 | Saturate the bus at 500 kbit/s while forcing a worst-case repaint; confirm zero drops and that a forced drop is counted | **S2 passed 2026-09-01**: drain stalled until the ring overflowed, loss counted as a count and the path recovered. **S1 partial**: 46 145 frames over 97 s under continuous full-screen repaint, 0 lost, CPU 96 % idle — but at 949 frames/s, 24 % of line rate, which is the bench ceiling (O-83) |
 | **V2** | S4, S5, S6, S7, F2 | Stop one publisher; confirm `LATE` then `STALE` at the specified multiples of its observed period | **Passed 2026-09-01**, internal loopback. Observed period 999 ms; `LATE` at 5991 ms (S4 bound 2498 ms, S5 bound 5994 ms), `STALE` at 10992 ms |
 | **V3** | S8, P4 | Repeat V2 while on an unrelated view; confirm annunciation | Not executed |
 | **V4** | S10, S11 | Attempt a step out of order and an edit; confirm both refused and the refusal presented | Not executed |
@@ -143,7 +143,7 @@ attached as a listen-only stub.
 | **O-80** | S17 engineering-mode timeout not chosen | S17, V9 |
 | **O-81** | P1 legibility not expressed as a testable figure, so it has no verification entry | P1 |
 | **O-82** | ADR-0030 d9 adopts a reading of ADR-0028 d9; not confirmed by the maintainers | F4, V5 |
-| **O-83** | V1 needs a saturated bus; V8's restart half needs a node the bench can afford to take off the bus | V1, V8 |
+| **O-83** | The bench cannot saturate the bus: the gateway's MCP2515 tops out at 949 frames/s, 24 % of line rate, however many generators run. V1's S1 half needs a generator that reaches line rate. V8's restart half needs a node the bench can afford to take off the bus | V1, V8 |
 | **O-84** | The bench carries its termination on the tool and not on M01, so removing the tool leaves the bus with one terminated end | I5, V10 |
 
 ## 9. Maturity
