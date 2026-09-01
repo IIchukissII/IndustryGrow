@@ -108,6 +108,8 @@ Requirements on any realization. No part is named.
 Entries marked *internal loopback* were executed with the interface transmitting
 to its own receive path, with no bus attached. That covers everything above the
 transceiver — reassembly, decode, model, presentation — and nothing below it.
+Entries marked *cabinet bus* were executed against the bench bus of ADR-0002 d8,
+attached as a listen-only stub.
 
 | # | Verifies | Method | State |
 |---|---|---|---|
@@ -122,9 +124,9 @@ transceiver — reassembly, decode, model, presentation — and nothing below it
 | **V9** | S17, S18 | Enter engineering mode, act, leave it idle; confirm indication, record and lapse | Not executed |
 | **V10** | I2, I5 | Attach to a live bus and observe for 10 min; confirm no frame is transmitted and no termination is fitted | Not executed |
 | **V11** | S19 | Exercise every export path; confirm no telemetry reaches the media | Not executed |
-| **V12** | F1, S20, I1, I3 | Publish every subject in the registry; confirm each renders with value, unit and age, and that the binding is generated at build rather than hand-listed | **Partial 2026-09-01**, internal loopback: 3 of the registry's subjects rendered correctly, including unit conversion and multi-frame reassembly. Not yet every subject |
+| **V12** | F1, S20, I1, I3 | Publish every subject in the registry; confirm each renders with value, unit and age, and that the binding is generated at build rather than hand-listed | **Partial 2026-09-01**, cabinet bus, 10 min: 17 subjects from two nodes rendered with value, unit and age — 22 830 frames, 9 929 transfers, 0 dropped, 0 unknown, TEC and REC 0. Every subject the bench publishes; the registry's remaining classes have no publisher here |
 | **V13** | S9, P3 | Render every state in greyscale; confirm each remains distinguishable | Not executed |
-| **V14** | S3, S6 | Publish one signal at a rate other than 1 Hz; confirm the observed period replaces the assumption and the liveness thresholds follow it | **Passed 2026-09-01**, internal loopback. 2 Hz signal learned 499 ms, 1 Hz signal 1000 ms, per signal |
+| **V14** | S3, S6 | Publish one signal at a rate other than 1 Hz; confirm the observed period replaces the assumption and the liveness thresholds follow it | **Passed 2026-09-01**, cabinet bus. Three rates learned per signal from live publishers: 999 ms, 4577 ms, 9998 ms |
 | **V15** | S15 | Exercise every emitted artifact; confirm no tool-computed value appears in any of them | Not executed |
 | **V16** | F7, I4 | Import a procedure and export its run result; confirm the round trip | Not executed |
 | **V17** | P2 | Measure the smallest interactive target | **Passed 2026-09-01** by calculation on a 5.7 in 640 × 480 panel: pitch 0.181 mm, smallest interactive height 50 px = 9.05 mm. Not a physical measurement |
@@ -141,7 +143,7 @@ transceiver — reassembly, decode, model, presentation — and nothing below it
 | **O-80** | S17 engineering-mode timeout not chosen | S17, V9 |
 | **O-81** | P1 legibility not expressed as a testable figure, so it has no verification entry | P1 |
 | **O-82** | ADR-0030 d9 adopts a reading of ADR-0028 d9; not confirmed by the maintainers | F4, V5 |
-| **O-83** | No verification has run against a real bus; every executed entry used internal loopback | V1, V8, V10, and the coverage of V12 |
+| **O-83** | V1 and V8 have not run; V1 needs a saturated bus and V8 needs the tool to leave listen-only | V1, V8 |
 
 ## 9. Maturity
 
@@ -154,5 +156,5 @@ transceiver — reassembly, decode, model, presentation — and nothing below it
 Current rung: **Requirements-fixed**.
 
 Reaching *Realization-committed* requires O-76 and O-81. Reaching *As-built* additionally
-requires O-77, without which V6 and V7 cannot run, and O-83, without which no entry has been
-exercised against real hardware on the far side of a transceiver.
+requires O-77, without which V6 and V7 cannot run, and O-83, which holds the two entries a
+real bus has not yet exercised.
