@@ -65,6 +65,8 @@ The tool takes a Cyphal Node-ID from the ADR-0027 allocation and allocates none 
 | **I3** | Application protocol | Cyphal/CAN; `uavcan.*` and `industryflow.greenhouse.*` | ADR-0005 |
 | **I4** | Removable media | Read for procedures, signed images and signed profiles; write for run results only | ADR-0030 d11 |
 | **I5** | Termination | None fitted; the tool attaches as a stub. The cabinet's two terminated ends are unchanged by attaching or removing the tool | ADR-0002 d8, ADR-0030 d7 |
+| **I6** | Filing | `POST /api/v1/instances/{instance}/documents`, multipart form `doc_type`, `doc_date`, `file` | ADR-0022 d7 |
+| **I7** | Filing document types | `doc_type` ∈ `{QP, QR, CP, CC, PR}`; the object key is issued by the ERP, not by the tool | ADR-0022 d7 |
 
 ## 5. Software requirements
 
@@ -91,6 +93,12 @@ The tool takes a Cyphal Node-ID from the ADR-0027 allocation and allocates none 
 | **S19** | No telemetry is written to removable media | — | ADR-0030 d11 |
 | **S20** | Subject-ID to type binding is taken from the registry, not restated | generated at build | ADR-0023, ADR-0000 d3 |
 | **S21** | An operator's selection survives a data refresh | selection restored by identity, not index | F1, F2 |
+| **S22** | Emitted record form | Markdown; the carried document's step tables with an observed column and a per-step `Pass` / `Fail` | F4, I6 |
+| **S23** | Emitted record names the procedure performed | the `Exxxx-VVVVVV-M-<slug>` identity, verbatim from the carried document | S12, ADR-0030 d8 |
+| **S24** | Instance identity is an input to the run, fixed before step one | the tool allocates no serial and derives none | ADR-0021 d4, ADR-0022 d4 |
+| **S25** | A value the tool measured is distinguishable from an operator judgement in the record | per step | ADR-0030 d5, d9 |
+| **S26** | Document type by run | bring-up → `QP`; calibration → `CP` and `CC` | I7, ADR-0017 d10, d11 |
+| **S27** | The tool emits the record and retains no copy after filing | — | ADR-0030 d2, d9 |
 
 ## 6. Presentation requirements
 
@@ -117,7 +125,7 @@ attached as a listen-only stub.
 | **V2** | S4, S5, S6, S7, F2 | Stop one publisher; confirm `LATE` then `STALE` at the specified multiples of its observed period | **Passed 2026-09-01**, internal loopback. Observed period 999 ms; `LATE` at 5991 ms (S4 bound 2498 ms, S5 bound 5994 ms), `STALE` at 10992 ms |
 | **V3** | S8, P4 | Repeat V2 while on an unrelated view; confirm annunciation | Not executed |
 | **V4** | S10, S11 | Attempt a step out of order and an edit; confirm both refused and the refusal presented | **Passed 2026-09-01** against `E0002-000001-M-bringup-protocol`, parsed as carried into 23 steps. A step two ahead was refused "the previous step has not passed"; revising a recorded outcome was refused "a recorded outcome is not revised here". Both refusals presented. The executor exposes no call that edits, reorders or skips |
-| **V5** | F3, F4, S12 | Execute one `-M-` protocol end to end; confirm the emitted record files unchanged | Not executed. F3 executes; the emission half waits on O-79 |
+| **V5** | F3, F4, S12, S22, S23, S26 | Execute one `-M-` protocol end to end; file the emitted record through I6 and read it back; confirm the blob is unchanged | Not executed |
 | **V6** | F5, S13, ADR-0030 d7 | Request excitation, then remove the tool; confirm the excitation lapses and the fallback profile resumes | Not executed |
 | **V7** | S14 | Request excitation while the loops control that actuator; confirm refusal | Not executed |
 | **V8** | S16, F6 | Issue GetInfo and restart to a node; confirm both answered | **Partial 2026-09-01**, cabinet bus: GetInfo issued by operator action and answered by both nodes, which named them. Restart not issued, so S16's command version is unexercised |
@@ -131,6 +139,8 @@ attached as a listen-only stub.
 | **V16** | F7, I4 | Import a procedure and export its run result; confirm the round trip | Not executed |
 | **V17** | P2 | Measure the smallest interactive target | **Passed 2026-09-01** by calculation on a 5.7 in 640 × 480 panel: pitch 0.181 mm, smallest interactive height 50 px = 9.05 mm. Not a physical measurement |
 | **V18** | S21 | Select a signal, then let the data refresh; confirm the selection is still the one selected | **Passed 2026-09-01**, internal loopback |
+| **V19** | S24, S27 | Complete a run with no instance fixed; confirm no record is emitted, and that a filed run leaves no copy on the tool | Not executed |
+| **V20** | S25 | Complete a step whose observed value the tool measured and one judged by the operator; confirm the record distinguishes them | Not executed |
 
 ## 8. Open items
 
@@ -139,7 +149,6 @@ attached as a listen-only stub.
 | **O-76** | Realization not chosen — installed panel, gateway-served page, or portable instrument | Identification, P1, and any part selection |
 | **O-77** | The actuator command surface carrying the excitation bound does not exist | F5, S13, S14, V6, V7 |
 | **O-78** | Whether a carried procedure is signed, and against which trust root | F7, I4, S11 |
-| **O-79** | `QP` / `CP` / `CC` emission format not fixed against the `/api/v1` filing sequence | F4, S12, V5 |
 | **O-80** | S17 engineering-mode timeout not chosen | S17, V9 |
 | **O-81** | P1 legibility not expressed as a testable figure, so it has no verification entry | P1 |
 | **O-82** | ADR-0030 d9 adopts a reading of ADR-0028 d9; not confirmed by the maintainers | F4, V5 |
