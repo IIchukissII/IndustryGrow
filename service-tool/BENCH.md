@@ -31,10 +31,24 @@ fed by the SMPS, so requesting the LDO there switches off the supply running
 the CPU. The configuration is write-once until a power-on reset, so `NRST` does
 not recover it and SWD reports `No STM32 target found`.
 
-Steps 0 to 4 are **done**. The pair is **FDCAN1 PA11/PA12**, reached with JP1 and
-JP2 fitted, and it is now candidate 0 so a normal boot does not sweep. Ten
-minutes on the cabinet bus: 22 830 frames, 9 929 transfers, 0 dropped, 0 unknown,
-`TEC` and `REC` 0, all 17 subjects of both nodes live with learned periods.
+**CAN IS PROVEN ON THE H757 AND NOT ON THE H753.** The bus run below predates the
+H753 entirely — it was done on the H757, then carrying MB1063 — so read every CAN
+section here as an H757 result unless it says otherwise.
+
+| | H757 | H753 |
+|---|---|---|
+| Above the transceiver | proven | proven, internal loopback |
+| On a real bus | **proven**, see below | **never connected** |
+
+Steps 0 to 4 are **done on the H757**. The pair is **FDCAN1 PA11/PA12**, reached
+with JP1 and JP2 fitted, and it is now candidate 0 so a normal boot does not
+sweep. Ten minutes on the cabinet bus: 22 830 frames, 9 929 transfers, 0 dropped,
+0 unknown, `TEC` and `REC` 0, all 17 subjects of both nodes live with learned
+periods.
+
+The H753 is the board that has never seen a bus. Its first job with one: JP1/JP2,
+CN3, stub under ~30 cm, Micro-Fit pins 3/4/2 (`CAN_H`/`CAN_L`/GND — **never pin
+1, it is +12 V**).
 
 Before the jumpers went on, every candidate read as idle pins -- no frames, no
 errors, `LEC` 7. That signature means *not connected*, never a wrong bit rate,
@@ -87,7 +101,8 @@ printed once and says which of SDRAM, display, touch and joystick came up.
 `tools\mon.ps1 -Port COM4 -Seconds 30` does it. All three ST-LINKs on this
 machine are `VID_0483&PID_374E`; tell them apart by the mass-storage volume.
 
-Observed banner on the H757, no CAN cable attached:
+Observed banner on the H757, **no CAN cable attached** — the honest negative from
+the sweep below, not a regression against the bus run above:
 
 ```
 boot
