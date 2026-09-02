@@ -38,7 +38,7 @@ every CAN section here as H757 unless it says otherwise.
 | | H757 | H753 |
 |---|---|---|
 | Above the transceiver | proven | proven, internal loopback |
-| On a real bus | **proven**, captured below | **proven**, operator-reported 2026-09-02; no capture on file |
+| On a real bus | **proven**, captured below | **proven**, captured 2026-09-02: 10 min listen-only, 26 358 frames, 11 499 transfers, 0 unknown, 0 dropped, TEC/REC 0, 17 subjects live (spec V10) |
 
 Steps 0 to 4 are **done on the H757**. The pair is **FDCAN1 PA11/PA12**, reached
 with JP1 and JP2 fitted, and it is now candidate 0 so a normal boot does not
