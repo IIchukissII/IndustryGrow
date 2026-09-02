@@ -96,7 +96,8 @@ Core/    ST template files, both startup files, the linker script, lv_conf.h
 Six tabs — Bus, Liveness, Nodes, Plot, Values, Protocol.
 
 Driven by the MB1246 five-way alone: arrows move, a click on SEL enters, a hold
-on SEL goes back. The two push-buttons blank and restore the display and take no
+on SEL goes back. Three levels — tab row, landed in a tab, widget selected — so
+entering a tab never lands on a control (`BENCH.md`). The two push-buttons blank and restore the display and take no
 part in navigation. Touch is used where the fitted panel has it.
 
 Ground and accents come from `img/industrygrow-logo.svg`: navy `#0A1428` with
