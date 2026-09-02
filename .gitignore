@@ -30,6 +30,11 @@ __pycache__/
 # Firmware build artifacts (CMake build trees, Nunavut-generated code, binaries)
 firmware/build*/
 firmware/**/build*/
+service-tool/build*/
+
+# Third-party checkouts the service tool builds against (STM32CubeH7, LVGL).
+# Large, upstream, and deliberately not vendored -- see service-tool/README.md.
+service-tool/deps/
 *.elf
 *.o
 *.d

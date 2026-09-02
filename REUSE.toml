@@ -73,3 +73,71 @@ path = "erp/**"
 precedence = "closest"
 SPDX-FileCopyrightText = "2026 The IndustryGrow contributors"
 SPDX-License-Identifier = "AGPL-3.0-or-later"
+
+
+# E0010 service tool firmware (ADR-0030, spec/SERVICE-TOOL-specification.md).
+# Our own source carries an inline SPDX header; precedence = "closest" lets
+# those win and header-less files fall back to this AGPL default, matching the
+# reference-firmware licence the F layer already uses (ADR-0002 d5).
+[[annotations]]
+path = "service-tool/**"
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 The IndustryGrow contributors"
+SPDX-License-Identifier = "AGPL-3.0-or-later"
+
+# STMicroelectronics files retained from the STM32CubeH7 distribution. Each was
+# matched BYTE FOR BYTE against its origin in that distribution and carries the
+# licence that origin's own LICENSE.md states -- the licence is not inferred
+# from the ST copyright notice, which names no licence at all.
+#
+# Projects/STM32H747I-EVAL/Templates/** -> BSD-3-Clause: the CubeMX user-code
+# templates (interrupt vectors, HAL configuration, HAL time base, newlib stubs)
+# and the CubeIDE H747 startup file.
+[[annotations]]
+path = [
+  "service-tool/Core/Inc/stm32h7xx_hal_conf.h",
+  "service-tool/Core/Inc/stm32h7xx_it.h",
+  "service-tool/Core/Src/stm32h7xx_hal_timebase_tim.c",
+  "service-tool/Core/Src/stm32h7xx_it.c",
+  "service-tool/Core/Src/syscalls.c",
+  "service-tool/Core/Src/sysmem.c",
+  "service-tool/Core/Src/system_stm32h7xx.c",
+  "service-tool/Core/Startup/startup_stm32h747xihx.s",
+]
+precedence = "override"
+SPDX-FileCopyrightText = "STMicroelectronics"
+SPDX-License-Identifier = "BSD-3-Clause"
+
+# Drivers/BSP/** -> BSD-3-Clause: the board and component configuration headers,
+# which select which drivers and features the BSP compiles in.
+[[annotations]]
+path = "service-tool/Core/Inc/*_conf.h"
+precedence = "override"
+SPDX-FileCopyrightText = "STMicroelectronics"
+SPDX-License-Identifier = "BSD-3-Clause"
+
+# Drivers/CMSIS/Device/ST/STM32H7xx -> Apache-2.0. The H753 startup file is the
+# CMSIS device template, NOT the CubeIDE one the H747 uses; they come from
+# different trees under different licences, which is why the two startup files
+# are annotated separately.
+[[annotations]]
+path = "service-tool/Core/Startup/startup_stm32h753xx.s"
+precedence = "override"
+SPDX-FileCopyrightText = "STMicroelectronics"
+SPDX-License-Identifier = "Apache-2.0"
+
+# LVGL configuration, from that project's lv_conf_template.h.
+[[annotations]]
+path = "service-tool/Core/Inc/lv_conf.h"
+precedence = "override"
+SPDX-FileCopyrightText = "LVGL Kft"
+SPDX-License-Identifier = "MIT"
+
+# The one file with no counterpart in the STM32CubeH7 distribution: emitted by
+# the STM32CubeIDE generator, carrying ST's "terms in the LICENSE file" notice
+# with no LICENSE file shipped. See LICENSES/LicenseRef-ST-CubeIDE-unstated.txt.
+[[annotations]]
+path = "service-tool/ldscripts/STM32H753XIHX_FLASH.ld"
+precedence = "override"
+SPDX-FileCopyrightText = "STMicroelectronics"
+SPDX-License-Identifier = "LicenseRef-ST-CubeIDE-unstated"

@@ -1,0 +1,21 @@
+LicenseRef-ST-CubeIDE-unstated
+
+Copyright STMicroelectronics.
+
+Applies to files emitted by the STM32CubeIDE code generator and retained in this
+repository under E0010 (REGISTRY.md), currently
+service-tool/ldscripts/STM32H753XIHX_FLASH.ld.
+
+Those files carry the notice
+
+    This software is licensed under terms that can be found in the LICENSE file
+    in the root directory of this software component.
+    If no LICENSE file comes with this software, it is provided AS-IS.
+
+and the generator ships no such LICENSE file, so the terms are not stated. Every
+other STMicroelectronics file here was matched byte for byte against its origin
+in the STM32CubeH7 distribution and carries that origin's licence
+(BSD-3-Clause or Apache-2.0); this one has no counterpart there, so no licence
+is asserted or implied for it by its presence in this repository, and it is not
+covered by this project's own licences. All rights in it remain with
+STMicroelectronics.
