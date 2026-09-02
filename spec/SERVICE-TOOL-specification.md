@@ -42,6 +42,8 @@ E-number, not a version (ADR-0017 rev 2 d4).
 | **R1** | STM32H753I-EVAL (MB1246 + H753XI, single core) | MB1063, 640x480, LTDC parallel RGB, AMPIRE | EXC7200 at I2C `0x08`, functional | `PWR_LDO_SUPPLY` | `-F-h753` |
 | **R2** | STM32H757I-EVAL (MB1246 + H747XI, dual core, CM7 only) | MB1166, 800x480, DSI, OTM8009A | FT6x06 at I2C `0x70`, answers; glass registers no press (`O-85`) | `PWR_DIRECT_SMPS_SUPPLY` | `-F-h757` |
 
+Both reach the cabinet bus on FDCAN1 PA11/PA12 with JP1 and JP2 fitted. R1 is verified under V10; R2 predates R1 and is verified in `service-tool/BENCH.md`.
+
 Two realizations, not two populated variants of one: neither takes an E-number of its own
 (ADR-0017 d5, rev 2 d4). Neither is assigned a version while `O-76` is open (section 9).
 
@@ -168,7 +170,7 @@ attached as a listen-only stub.
 | **V7** | S14 | Request excitation while the loops control that actuator; confirm refusal | Not executed |
 | **V8** | S16, F6 | Issue GetInfo and restart to a node; confirm both answered | **Partial 2026-09-01**, cabinet bus: GetInfo issued by operator action and answered by both nodes, which named them. Restart not issued, so S16's command version is unexercised |
 | **V9** | S17, S18 | Enter engineering mode, act, leave it idle; confirm indication, record and lapse | Not executed |
-| **V10** | I2, I5 | Attach to a live bus and observe for 10 min; confirm no frame is transmitted and no termination is fitted | **I2 passed 2026-09-01**, cabinet bus: 10 min listen-only, 22 078 frames received, 0 transmitted, TEC and REC 0. **I5 FAILED**: a termination is fitted on the tool, and the bench compensated by removing M01's — see O-84 |
+| **V10** | I2, I5 | Attach to a live bus and observe for 10 min; confirm no frame is transmitted and no termination is fitted | **I2 passed 2026-09-01**, cabinet bus: 10 min listen-only, 22 078 frames received, 0 transmitted, TEC and REC 0; realization not recorded. **Re-run on R1 2026-09-02**: 10 min listen-only, 26 358 frames received, 0 transmitted, 11 499 transfers accepted, 0 unknown, 0 dropped, ring 0/512 with 0 lost, TEC and REC 0, 17 subjects from nodes 96 and 97 live throughout. **I5 FAILED**: a termination is fitted on the tool, and the bench compensated by removing M01's — see O-84 |
 | **V11** | S19 | Exercise every export path; confirm no telemetry reaches the media | Not executed |
 | **V12** | F1, S20, I1, I3 | Publish every subject in the registry; confirm each renders with value, unit and age, and that the binding is generated at build rather than hand-listed | **Partial 2026-09-01**, cabinet bus, 10 min: 17 subjects from two nodes rendered with value, unit and age — 22 830 frames, 9 929 transfers, 0 dropped, 0 unknown, TEC and REC 0. Every subject the bench publishes; the registry's remaining classes have no publisher here |
 | **V13** | S9, P3 | Render every state in greyscale; confirm each remains distinguishable | Not executed |
