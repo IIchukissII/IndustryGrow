@@ -1055,7 +1055,14 @@ static void build_header(lv_obj_t *parent)
  * lands somewhere to the left and up, and the control stops being predictable.
  * A person pressing RIGHT means the thing to the right of what is lit up. */
 
-typedef enum { NAV_TABS = 0, NAV_CONTENT } nav_level_t;
+/* Three levels, not two. Entering a tab LANDS in it with nothing selected;
+ * selecting comes after, and only then does ENTER act on anything.
+ *
+ * Two levels put the focus straight onto the first widget of the tab, which on
+ * the Bus tab is "Go normal" -- so the push that entered the tab left the
+ * cursor sitting on a control that changes the CAN mode, and the next push
+ * fired it. Entering a menu must never be one push away from an action. */
+typedef enum { NAV_TABS = 0, NAV_LANDED, NAV_CONTENT } nav_level_t;
 
 static lv_obj_t   *s_tv;
 static nav_level_t s_level;
@@ -1076,7 +1083,6 @@ static void nav_collect(lv_obj_t *parent)
             lv_obj_set_style_outline_width(c, 3, LV_STATE_FOCUSED);
             lv_obj_set_style_outline_opa(c, LV_OPA_COVER, LV_STATE_FOCUSED);
             s_nav[s_nav_count++] = c;
-            lv_group_add_obj(lv_group_get_default(), c);
         }
         nav_collect(c);
     }
@@ -1101,18 +1107,52 @@ static void nav_rebuild(void)
     }
 }
 
-/* The tab row is lit while it holds the navigation, so the two levels are told
- * apart at a glance rather than by remembering which one you are in. */
+/* THE GROUP HOLDS THE SELECTED WIDGET AND NOTHING ELSE.
+ *
+ * LVGL delivers a keypad key to the group's focused object, so an empty group
+ * is a state in which ENTER cannot reach anything -- which is what "landed in
+ * the tab, nothing selected yet" has to mean. Keeping every widget in the group
+ * and trying to unfocus instead does not work: lv_group_focus_obj(NULL) returns
+ * immediately without clearing anything, so the last focused widget stays live.
+ *
+ * Navigation is resolved here from s_nav[] rather than from group order, so the
+ * group is not needed for movement -- only for focus state and key delivery. */
+static void nav_select(lv_obj_t *obj)
+{
+    lv_group_t *g = lv_group_get_default();
+    if (g == NULL) {
+        return;
+    }
+    lv_group_remove_all_objs(g);
+    if (obj == NULL) {
+        return;
+    }
+    lv_group_add_obj(g, obj);
+    lv_group_focus_obj(obj);
+    lv_obj_scroll_to_view(obj, LV_ANIM_OFF);
+}
+
+/* Which level holds the navigation, shown rather than remembered: the tab row
+ * is outlined on the tab level, the tab page on the landed level, and neither
+ * once a widget carries its own focus ring. */
 static void nav_show_level(void)
 {
     if (s_tv == NULL) {
         return;
     }
     lv_obj_t *bar = lv_tabview_get_tab_bar(s_tv);
-    const bool on = (s_level == NAV_TABS);
     lv_obj_set_style_outline_color(bar, IG_SERIES, 0);
-    lv_obj_set_style_outline_width(bar, on ? 3 : 0, 0);
-    lv_obj_set_style_outline_opa(bar, on ? LV_OPA_COVER : LV_OPA_TRANSP, 0);
+    lv_obj_set_style_outline_width(bar, (s_level == NAV_TABS) ? 3 : 0, 0);
+    lv_obj_set_style_outline_opa(bar, (s_level == NAV_TABS) ? LV_OPA_COVER : LV_OPA_TRANSP, 0);
+
+    lv_obj_t *page = lv_obj_get_child(lv_tabview_get_content(s_tv),
+                                      (int32_t)lv_tabview_get_tab_active(s_tv));
+    if (page != NULL) {
+        lv_obj_set_style_outline_color(page, IG_SERIES, 0);
+        lv_obj_set_style_outline_width(page, (s_level == NAV_LANDED) ? 3 : 0, 0);
+        lv_obj_set_style_outline_opa(page, (s_level == NAV_LANDED) ? LV_OPA_COVER : LV_OPA_TRANSP,
+                                     0);
+    }
 }
 
 static void nav_center(lv_obj_t *o, int32_t *cx, int32_t *cy)
@@ -1183,13 +1223,12 @@ static lv_obj_t *nav_nearest(lv_obj_t *from, panel_nav_t dir)
     return best;
 }
 
-static void nav_enter_content(void)
+/* Topmost, then leftmost -- where reading starts. */
+static lv_obj_t *nav_entry_widget(void)
 {
     if (s_nav_count == 0U) {
-        return; /* nothing to focus: stay on the tabs rather than trap the user */
+        return NULL;
     }
-    s_level = NAV_CONTENT;
-    /* Topmost, then leftmost -- where reading starts. */
     lv_obj_t *first = s_nav[0];
     int32_t   bx;
     int32_t   by;
@@ -1204,14 +1243,26 @@ static void nav_enter_content(void)
             by    = cy;
         }
     }
-    lv_group_focus_obj(first);
+    return first;
+}
+
+/* Go into the tab and stop. Nothing is selected and the group is empty, so this
+ * push cannot reach a control and neither can the next one until a direction
+ * has chosen something. */
+static void nav_land(void)
+{
+    if (s_nav_count == 0U) {
+        return; /* an empty tab: stay on the tab row rather than trap the user */
+    }
+    s_level = NAV_LANDED;
+    nav_select(NULL);
     nav_show_level();
 }
 
 static void nav_leave_content(void)
 {
     s_level = NAV_TABS;
-    lv_group_focus_obj(NULL);
+    nav_select(NULL);
     nav_show_level();
 }
 
@@ -1225,6 +1276,9 @@ static void nav_tab_step(int32_t dir)
     const int32_t next = ((int32_t)lv_tabview_get_tab_active(s_tv) + dir + (int32_t)n) % (int32_t)n;
     lv_tabview_set_active(s_tv, (uint32_t)next, LV_ANIM_OFF);
     nav_rebuild();
+    /* The outline belongs to the page that is now showing, not the one that
+     * was. */
+    nav_show_level();
 }
 
 /* Returns true when the UI consumed the event. Declining hands the matching
@@ -1259,10 +1313,28 @@ static bool nav_event(panel_nav_t ev)
             return true;
         case PANEL_NAV_DOWN:
         case PANEL_NAV_ENTER:
-            nav_enter_content();
+            nav_land();
             return true;
         default:
             return true; /* UP and BACK: already at the top */
+        }
+    }
+
+    if (s_level == NAV_LANDED) {
+        switch (ev) {
+        case PANEL_NAV_BACK:
+        case PANEL_NAV_UP:
+            nav_leave_content();
+            return true;
+        case PANEL_NAV_ENTER:
+            return true; /* nothing is selected, so there is nothing to act on */
+        default:
+            /* Any other direction picks the entry widget. The direction chose
+             * to go further in, not which control -- reading order does that. */
+            s_level = NAV_CONTENT;
+            nav_select(nav_entry_widget());
+            nav_show_level();
+            return true;
         }
     }
 
@@ -1271,25 +1343,26 @@ static bool nav_event(panel_nav_t ev)
         nav_leave_content();
         return true;
     case PANEL_NAV_ENTER:
-        return false; /* LVGL activates whatever is focused */
+        return false; /* LVGL activates whatever is selected */
     default:
         break;
     }
 
     if (focused == NULL) {
-        nav_enter_content();
+        nav_land();
         return true;
     }
     lv_obj_t *target = nav_nearest(focused, ev);
     if (target != NULL) {
-        lv_group_focus_obj(target);
-        lv_obj_scroll_to_view(target, LV_ANIM_OFF);
+        nav_select(target);
         return true;
     }
-    /* Nothing that way. Off the top is the tab row, which is what is physically
-     * above the content; the other three edges just hold. */
+    /* Nothing that way. Off the top goes back to the landed state, which is
+     * what is above the widgets; the other three edges hold. */
     if (ev == PANEL_NAV_UP) {
-        nav_leave_content();
+        s_level = NAV_LANDED;
+        nav_select(NULL);
+        nav_show_level();
     }
     return true;
 }

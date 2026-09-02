@@ -130,20 +130,40 @@ same I2C1 the touch controller uses.
 **Everything is reachable from the stick alone.** Neither push-button navigates;
 both still blank and restore the display.
 
-| | Tab row | Inside a tab |
-|---|---|---|
-| LEFT / RIGHT | previous / next tab, wrapping | move to the nearest widget that way |
-| UP / DOWN | — / go into the tab | move that way; UP off the top returns to the tab row |
-| SEL, clicked | go into the tab | activate the focused widget |
-| SEL, held 500 ms | — | back out to the tab row |
+Three levels. Which one holds the navigation is shown, not remembered: the tab
+row is outlined on the first, the tab page on the second, and neither once a
+widget carries its own focus ring.
 
-Two levels, six events, and each event means the same thing wherever it is used.
+| | Tab row | Landed in a tab | Widget selected |
+|---|---|---|---|
+| LEFT / RIGHT | previous / next tab, wrapping | select the entry widget | nearest widget that way |
+| DOWN | go into the tab | select the entry widget | nearest widget that way |
+| UP | — | back out to the tab row | nearest widget that way; off the top returns to landed |
+| SEL, clicked | go into the tab | **nothing** | activate the selected widget |
+| SEL, held 500 ms | — | back out to the tab row | back out to the tab row |
+
+**ENTERING A TAB MUST NOT LAND ON A CONTROL.** With two levels it did, and on the
+Bus tab the first widget in reading order is `Go normal` — so the push that
+entered the tab left the cursor on the control that changes the CAN mode, and the
+next push fired it. The landed level is a state with nothing selected: a
+direction chooses a widget, and only then does SEL act on anything.
+
+Landing is enforced by the group, not by a flag. **The LVGL group holds the
+selected widget and nothing else**, so an empty group is a state in which a key
+cannot reach any object. Keeping every widget in the group and unfocusing
+instead does not work: `lv_group_focus_obj(NULL)` returns immediately without
+clearing anything, so the last focused widget stays live — including while the
+navigation is on the tab row. Movement is resolved from the tool's own
+coordinate list, so the group is needed only for the focus ring and key
+delivery.
+
+The entry widget is topmost then leftmost. The direction that leaves the landed
+level chooses to go further in, not which control: reading order does that.
+
 BACK is a **held SEL** because a five-way has no sixth direction and navigation
-without a way out traps the operator; it fires the moment the hold time is
+without a way out traps the operator. It fires the moment the hold time is
 reached, so the screen changes while the finger is still down and the length of
-the press never has to be guessed. The tab row is outlined while it holds the
-navigation, so the two levels are told apart by looking rather than by
-remembering.
+the press never has to be guessed.
 
 **Direction is resolved against the LAYOUT, not the group order.** LVGL's keypad
 navigation walks the group in creation order, which on a real screen is not the
