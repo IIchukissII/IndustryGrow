@@ -18,6 +18,7 @@ live in [`LICENSES/`](LICENSES/), named by SPDX identifier (REUSE convention).
 | `firmware/` | Reference smart-node firmware (C / libcanard), build and release tooling | GNU Affero General Public License v3.0 or later | [`AGPL-3.0-or-later`](LICENSES/AGPL-3.0-or-later.txt) |
 | `firmware/dsdl/` | DSDL type vocabulary (`industryflow.greenhouse.*`) — the protocol layer, kept permissive so any implementation can speak it | Apache License 2.0 | [`Apache-2.0`](LICENSES/Apache-2.0.txt) |
 | `erp/` | Instance-and-integration ERP application and operator console (ADR-0021 d14) | GNU Affero General Public License v3.0 or later | [`AGPL-3.0-or-later`](LICENSES/AGPL-3.0-or-later.txt) |
+| `service-tool/` | E0010 service-tool firmware (ADR-0030) — the project's own source; the STMicroelectronics and LVGL files it retains are listed under *Third-party content* | GNU Affero General Public License v3.0 or later | [`AGPL-3.0-or-later`](LICENSES/AGPL-3.0-or-later.txt) |
 | `pki/` | Operator CA bootstrap tooling and ceremony runbook (ADR-0024) | GNU Affero General Public License v3.0 or later | [`AGPL-3.0-or-later`](LICENSES/AGPL-3.0-or-later.txt) |
 | `signing/` | Cultivation-profile signing tool and runbook (ADR-0025) | GNU Affero General Public License v3.0 or later | [`AGPL-3.0-or-later`](LICENSES/AGPL-3.0-or-later.txt) |
 | `gateway/` | Gateway host provisioning and hardening material (ADR-0004) — see the note below | Creative Commons Attribution-ShareAlike 4.0 International | [`CC-BY-SA-4.0`](LICENSES/CC-BY-SA-4.0.txt) |
@@ -49,13 +50,36 @@ directory. See `REUSE.toml`.
 
 Content the project did not author keeps its own terms, annotated in
 [`REUSE.toml`](REUSE.toml) with `precedence = "override"` so it wins over the
-directory defaults above. **Neither item below carries a licence grant** — both are
-published by their originator with no licence stated, so neither is covered by this
-project's licences and neither may be treated as though it were.
+directory defaults above.
+
+### Retained under a stated licence
+
+Files kept from the STM32CubeH7 distribution and from LVGL. **Each was matched byte
+for byte against its origin and carries the licence that origin's own `LICENSE.md`
+states** — the licence is not inferred from the copyright notice, which in ST's case
+names no licence at all. That check is why the two startup files differ: they come
+from different trees.
+
+| Object | Origin | SPDX ID |
+|--------|--------|---------|
+| `service-tool/Core/Inc/*_conf.h` | STM32CubeH7 `Drivers/BSP/` — board and component configuration headers | [`BSD-3-Clause`](LICENSES/BSD-3-Clause.txt) |
+| `service-tool/Core/Src/system_stm32h7xx.c`, `stm32h7xx_it.c`, `stm32h7xx_hal_timebase_tim.c`, `syscalls.c`, `sysmem.c`, `Core/Inc/stm32h7xx_hal_conf.h`, `stm32h7xx_it.h`, `Core/Startup/startup_stm32h747xihx.s` | STM32CubeH7 `Projects/STM32H747I-EVAL/Templates/` — CubeMX user-code templates and the CubeIDE H747 startup file | [`BSD-3-Clause`](LICENSES/BSD-3-Clause.txt) |
+| `service-tool/Core/Startup/startup_stm32h753xx.s` | STM32CubeH7 `Drivers/CMSIS/Device/ST/STM32H7xx/Source/Templates/gcc/` | [`Apache-2.0`](LICENSES/Apache-2.0.txt) |
+| `service-tool/Core/Inc/lv_conf.h` | LVGL `lv_conf_template.h` | [`MIT`](LICENSES/MIT.txt) |
+
+The STM32CubeH7 and LVGL checkouts themselves are **not** vendored here; the build
+consumes them from outside the repository (`service-tool/README.md`).
+
+### Retained without a licence grant
+
+**No item below carries a licence grant** — each is published by its originator with
+no licence stated, so none is covered by this project's licences and none may be
+treated as though it were.
 
 | Object | Origin | SPDX ID |
 |--------|--------|---------|
 | `store/SP0005-D-coreboard-snapshot.zip` | WeAct STM32F4 core-board schematic, board outline and 3D model, retained per ADR-0002 rev 3 d4 | [`LicenseRef-WeAct-unstated`](LICENSES/LicenseRef-WeAct-unstated.txt) |
+| `service-tool/ldscripts/STM32H753XIHX_FLASH.ld` | Emitted by the STM32CubeIDE generator; ST's notice points at a `LICENSE` file the generator does not ship, and the file has no counterpart in the STM32CubeH7 distribution to match against | [`LicenseRef-ST-CubeIDE-unstated`](LICENSES/LicenseRef-ST-CubeIDE-unstated.txt) |
 
 The SnapEDA EDA library content for the ams OSRAM AS7331 — symbol, footprint and 3D
 model — was removed on 2026-08-23. ADR-0014 rev 6 withdrew the part from M02-LIGHT and
@@ -78,8 +102,8 @@ Per-file SPDX information follows the [REUSE](https://reuse.software) specificat
   strict-JSON profiles in `profiles/`, and `.gitmodules` / `.gitignore` / `REUSE.toml`
   itself — are annotated in [`REUSE.toml`](REUSE.toml).
 - `REUSE.toml` also sets a per-tree default with `precedence = "closest"` for
-  `store/**` and `erp/**`, so a file carrying its own header always wins over the
-  directory default.
+  `store/**`, `erp/**` and `service-tool/**`, so a file carrying its own header
+  always wins over the directory default.
 
 This document remains the human-readable summary; `REUSE.toml` plus the in-file
 headers are the machine-readable source of truth.

@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # SERVICE-TOOL — specification
 
 - **Status:** Project stage — requirements fixed, no realization committed
-- **Date:** 2026-09-01
+- **Date:** 2026-09-02
 - **Identifier:** `E0010` (REGISTRY.md); realization open (`O-76`)
 - **Governing ADRs:** ADR-0030, ADR-0015, ADR-0016, ADR-0028
 - **Companions:** ADR-0002 (rev 3), ADR-0005, ADR-0017 (rev 2), ADR-0020, ADR-0022, ADR-0027
@@ -19,9 +19,9 @@ not restated. Values marked `verify` are not confirmed against a measurement or 
 Specifies the portable service and diagnostic tool: what it presents, what it executes, what it
 emits, and how each is verified.
 
-Does not specify: the realization or its part selection (ADR-0030 d12); the actuator command
-surface it requests excitation through (ADR-0030 deferred); the content of any `-M-` protocol;
-the `QP` / `CP` / `CC` schemas (ADR-0022); the cultivation profile (ADR-0015).
+Does not specify: the delivered realization or its part selection (ADR-0030 d12); the actuator
+command surface it requests excitation through (ADR-0030 deferred); the content of any `-M-`
+protocol; the `QP` / `CP` / `CC` schemas (ADR-0022); the cultivation profile (ADR-0015).
 
 ## 2. Identification
 
@@ -34,6 +34,36 @@ the `QP` / `CP` / `CC` schemas (ADR-0022); the cultivation profile (ADR-0015).
 
 A realization is a design and takes a version. A populated variant of one design takes its own
 E-number, not a version (ADR-0017 rev 2 d4).
+
+### 2.1 Bench realizations
+
+| # | Host | Display | Touch | Core supply | `F` variant |
+|---|---|---|---|---|---|
+| **R1** | STM32H753I-EVAL (MB1246 + H753XI, single core) | MB1063, 640x480, LTDC parallel RGB, AMPIRE | EXC7200 at I2C `0x08`, functional | `PWR_LDO_SUPPLY` | `-F-h753` |
+| **R2** | STM32H757I-EVAL (MB1246 + H747XI, dual core, CM7 only) | MB1166, 800x480, DSI, OTM8009A | FT6x06 at I2C `0x70`, answers; glass registers no press (`O-85`) | `PWR_DIRECT_SMPS_SUPPLY` | `-F-h757` |
+
+Two realizations, not two populated variants of one: neither takes an E-number of its own
+(ADR-0017 d5, rev 2 d4). Neither is assigned a version while `O-76` is open (section 9).
+
+Neither host is a project design; both are STMicroelectronics evaluation hardware.
+
+`O-84` follows R1.
+
+### 2.2 Firmware
+
+| Field | Value | Reference |
+|---|---|---|
+| Location | `service-tool/` | this document |
+| `F` root | `E0010`, one codebase | ADR-0017 d16 |
+| Build variants | `E0010-VVVVVV-F-h753`, `-F-h757` | ADR-0017 d16 |
+| Target selection | `-DIGROW_BOARD=H753\|H757`, resolved in `Core/Inc/eval_board.h` | this document |
+| Licence | `AGPL-3.0-or-later` | ADR-0002 d5 |
+| Vocabulary | `firmware/dsdl/`, `firmware/third_party/libcanard`, `firmware/third_party/o1heap` | ADR-0023 |
+
+Nothing outside `service-tool/` references it, and the node firmware build does not build it.
+STM32CubeH7 and LVGL are consumed from outside the repository and are not vendored
+(`service-tool/README.md`). The STMicroelectronics and LVGL files retained in `service-tool/`
+keep their own terms (`LICENSE.md`).
 
 The tool is not equipment: the cabinet operates, controls and records identically without it
 (ADR-0030 d1). An E-number names what the project designs and does not make the thing required.
@@ -162,6 +192,7 @@ attached as a listen-only stub.
 | **O-82** | ADR-0030 d9 adopts a reading of ADR-0028 d9; not confirmed by the maintainers | F4, V5 |
 | **O-83** | The bench cannot saturate the bus: the gateway's MCP2515 tops out at 949 frames/s, 24 % of line rate, however many generators run. V1's S1 half needs a generator that reaches line rate. V8's restart half needs a node the bench can afford to take off the bus | V1, V8 |
 | **O-84** | The bench carries its termination on the tool and not on M01, so removing the tool leaves the bus with one terminated end | I5, V10 |
+| **O-85** | R2's MB1166 touch controller answers on I2C and its glass registers no press: 68 joystick presses against 0 touch presses in one session. Whether the fitted daughterboard has no touch panel or an unseated one is not established | P2 on R2 |
 
 ## 9. Maturity
 
