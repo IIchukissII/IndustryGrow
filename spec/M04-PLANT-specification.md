@@ -8,7 +8,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Status:** Working specification. Pre-schematic: `E0005` has no schematic, no layout and no firmware
 - **Date:** 2026-09-03
 - **E-number:** `E0005` · module-ID strap `0b100`
-- **Governing ADRs:** ADR-0014 (rev 6), ADR-0002 (rev 3), ADR-0003, ADR-0005 (rev 1, d11), ADR-0006, ADR-0016, ADR-0017 (rev 2)
+- **Governing ADRs:** ADR-0014 (rev 6), ADR-0002 (rev 3), ADR-0003, ADR-0005 (rev 1, d11 and d12), ADR-0006, ADR-0016, ADR-0017 (rev 2), ADR-0020
 - **Companions:** `M01-CLIMATE-specification.md`, `M02-LIGHT-specification.md`, `M05-SAFETY-specification.md`, `M06-VENTILATION-specification.md`, `M07-AMBIENT-specification.md`
 
 Rationale for the decisions applied here is in the governing ADRs and is not restated.
@@ -33,7 +33,7 @@ rev 1).
 |---|---|
 | Module class | M04-PLANT |
 | Module-ID strap | `0b100` — STRAP_0 low, STRAP_1 low, STRAP_2 high |
-| E-number | `E0005` — assembly populated with the 110° × 75° imager (§6.5) |
+| E-number | `E0005` — assembly populated with the 110° × 75° imager (§6.6) |
 | Bare design | One layout; each standard populated configuration takes its own assembly E-number (ADR-0017 rev 2 d4). The two FOV options share one footprint and differ in ordering code, can height and aperture (§4.1) |
 | Carrier | `E0001`, sensor-module header pair 2×12 + 2×8 (ADR-0014 d5) |
 
@@ -55,9 +55,10 @@ establishes. O-87.
 | Frame statistics — mean, min, max, σ, gradient, hotspot mask (derived, §6.4) | U1 | — | Mean 8…32 °C; σ ≥ NETD 0.14 K | Mean inherits frame accuracy ±1 °C; the spread terms inherit non-uniformity, not frame accuracy |
 | Die temperature Ta | U1 | −40…+85 °C | 20…36 °C — air +8 K (§8 T1) | ±0.5 °C |
 
-Publication rate: **1 Hz** for the statistics record; **one full frame per 5 min or on event**,
-served over `uavcan.file.Read` (ADR-0005 d11, §10.2). Frame cadence is 1 s at the specified
-refresh rate (§6.1).
+Publication rate: **1 Hz** for the statistics record; **one interval frame per minute, or on
+event**, served over `uavcan.file.Read` (ADR-0005 d11 and d12, §6.5, §10.2). Device frame cadence
+is 1 s at the specified refresh rate (§6.1), so one interval frame is the product of 60 device
+frames.
 
 Location: above or beside the canopy, optical axis normal to the canopy plane, with the
 obstacle-free cone of §9 M1 clear. One instance per canopy area at cabinet scale, one per growing
@@ -102,7 +103,7 @@ so this module has no partial population in M01's and M02's sense.
 
 The **FOV option is a populated-BOM variant** (ADR-0014 d2, third dimension): both ordering codes
 share the TO-39 lead pattern of §4.1 and differ in can height, aperture and obstacle-free cone.
-`E0005` names the `BAA` build (§6.5); a `BAB` build takes its own assembly E-number at design
+`E0005` names the `BAA` build (§6.6); a `BAB` build takes its own assembly E-number at design
 commit (ADR-0017 rev 2 d4), as M07's second variant does. Firmware is identical across both
 (§10) — the FOV is not readable from the device.
 
@@ -113,9 +114,8 @@ commit (ADR-0017 rev 2 d4), as M07's second variant does. Firmware is identical 
 | U1 | Melexis MLX90640 | `MLX90640ESF-BAA-000-TU` | 32 × 24 IR array, 768 pixels, factory calibrated | 3.3 V | `0x33` default | EEPROM-programmable, `0x01`…`0xFF` (`0x00` forbidden), cell `0x240F` |
 
 Named by ADR-0014 d4. `0x33` lies outside the `0x50`–`0x57` block ADR-0014 rev 4 d6 reserves for
-the module-ID EEPROM; M04 identifies by strap (§5) and carries no EEPROM of its own. **The address
-shall be left at its factory default** — a device programmed away from `0x33` is not
-interchangeable with a spare, and the boot probe of §10 assumes the default.
+the module-ID EEPROM; M04 identifies by strap (§5) and carries no EEPROM of its own. **The
+address shall be left at its factory default**; the boot probe of §10 assumes it.
 
 ### 4.1 Package
 
@@ -190,7 +190,6 @@ At the 2 Hz refresh rate of §6.1 the module performs **two subpage reads per se
 bus **300 ms of every second — 30 %** at 100 kHz. The carrier's I²C driver is blocking, so that
 figure is also main-loop occupancy; §10 requires the read to be chunked. O-91.
 
-M04 is the only device on its segment, so no other module's traffic is displaced.
 
 ## 6. Measurement requirements
 
@@ -223,7 +222,7 @@ M04 is the only device on its segment, so no other module's traffic is displaced
 
 All figures below hold **under settled isothermal conditions and only where the object fills the
 pixel's field of view** (DS12 §12.1.1). Neither condition is guaranteed by a canopy: leaf edges,
-gaps and background make mixed pixels the normal case (§6.5, O-88).
+gaps and background make mixed pixels the normal case (§6.6, O-88).
 
 | Ta band | Object band | Frame accuracy | Non-uniformity, `BAA` | Non-uniformity, `BAB` |
 |---|---|---|---|---|
@@ -239,8 +238,7 @@ gaps and background make mixed pixels the normal case (§6.5, O-88).
   average (0.2 K minimum, σ 0.05 K). Corner pixels are noisier than central ones, and noise rises
   at lower object temperature (DS12 §12.3).
 - **Long-term drift: an additional ±3 °C for objects around room temperature over years**
-  (DS12 §12.1.1 note 2). That is the operating point of §3, and the term dominates every other
-  line of the budget. O-89.
+  (DS12 §12.1.1 note 2) — the operating point of §3, and the largest term in this budget. O-89.
 - Ta channel: ±0.5 °C.
 
 ### 6.4 Frame statistics
@@ -253,14 +251,30 @@ list, once per complete frame, published at 1 Hz (§10.1).
 | `t_mean` | Arithmetic mean of the valid pixels, K |
 | `t_min`, `t_max` | Extremes over the valid pixels, K |
 | `t_sigma` | Population standard deviation of the valid pixels, K. Floor set by NETD (§6.3) |
-| `gradient_x`, `gradient_y` | Slopes of the least-squares plane fitted to the field, reported as **K across the full frame width and height**, so the value does not depend on pixel count |
+| `gradient_x`, `gradient_y` | Slopes of the least-squares plane fitted to the field, reported as **K across the full frame width and height** |
 | `hotspot_mask` | 768 bits, one per pixel, row-major from pixel 1. Bit set where `T > t_mean + max(k · t_sigma, delta_min)` |
-| `k`, `delta_min` | Deployment constants (§10). Defaults `k` = 3 and `delta_min` = 1.0 K; the floor is ≈ 7 × the `BAA` NETD and keeps a uniform canopy from masking on noise alone |
+| `k`, `delta_min` | Deployment constants (§10). Defaults `k` = 3 and `delta_min` = 1.0 K, the floor ≈ 7 × the `BAA` NETD |
 
 The statistics describe the **whole frame**, not the canopy: no segmentation separates leaf pixels
 from structure, growing medium or luminaire (§3.2). O-88.
 
-### 6.5 Geometry and FOV selection
+### 6.5 Interval product
+
+The frame served at §10.2 is the product of every valid device frame of the interval, computed on
+the node.
+
+| Item | Requirement |
+|------|-------------|
+| Interval | 60 s, aligned to the minute of the gateway time base while synchronized; free-running before the first sync pair |
+| Frames accumulated | Every complete frame whose handshake and Ta are valid (§10), nominally 60. The count is served in the header |
+| Mean plane | Per-pixel arithmetic mean over the accumulated frames. Noise falls as √N: the `BAA` NETD of 0.14 K becomes **0.018 K at N = 60** |
+| σ plane | Per-pixel standard deviation over the same frames — the discriminator between a pixel that held still and one that moved |
+| Event frame | The last complete frame alone, `n_frames` = 1, σ plane zero |
+| Quantization | Mean plane 0.01 K per LSB, 7 × below the averaged plane's 0.018 K noise floor. σ plane 0.02 K per LSB, saturating at 5.10 K |
+| **Numerics** | The variance shall be accumulated by **Welford's method**, or as deviations from a per-pixel reference. **The naive `Σx² − n·x̄²` form shall not be used**: at canopy temperatures `Σx²` ≈ 5.2 · 10⁶ K², where a `float32` ULP is 0.5 K² against the σ² ≈ 0.02 K² being extracted. The subtraction returns noise, and can return a negative variance |
+| Statistics | §6.4's 1 Hz record is computed per frame, unaffected by this accumulation |
+
+### 6.6 Geometry and FOV selection
 
 | | `BAA` | `BAB` |
 |---|---|---|
@@ -279,12 +293,9 @@ Nominal pinhole model. DS12 characterises the FOV only as the 50 % sensitivity w
 | 0.8 m | 2285 × 1228 mm · 71 × 51 mm | 833 × 505 mm · 26 × 21 mm |
 
 **Selection rule: the populated variant is the one whose footprint at the installed height covers
-the canopy area that instance is responsible for** (ADR-0014 d4 — one instance per canopy area at
-cabinet scale, one per growing zone above it). At the 0.3…0.6 m a cabinet luminaire plane allows,
-that is `BAA`, which also carries the lower NETD and the tighter zone-1 non-uniformity (§6.3).
-`BAB` is the variant for a mount far enough back to keep coverage, where its 2.6 × finer sampling
-reduces mixed pixels. The installed height is fixed by no record — ADR-0006 defers cabinet
-dimensions to a mechanical specification — so the rule is stated and its input is open. O-86.
+the canopy area that instance is responsible for** (ADR-0014 d4). At the 0.3…0.6 m a cabinet
+luminaire plane allows, that is `BAA`; `BAB` applies to a mount far enough back to keep coverage,
+at 2.6 × finer sampling. The installed height is fixed by no record. O-86.
 
 ## 7. Power
 
@@ -297,8 +308,6 @@ dimensions to a mechanical specification — so the rule is stated and its input
 | Module contribution | **82.5 mW** — 25 mA maximum at 3.3 V, all on the header rail |
 | Burst reflected to `+12 V` | **None.** U1 draws its current continuously; there is no burst load of the SCD41 class |
 
-U1 is the largest single sensor load in the catalog: 25 mA against M01's 15 mA average and M02's
-0.57 mA total.
 
 ### 7.2 Device current
 
@@ -324,7 +333,7 @@ MCU and CAN transceiver. No rail redesign, and no module-local rail (§4.2).
 | ID | Requirement | Reference |
 |----|-------------|-----------|
 | T1 | **Ta is the die temperature; the air around the device is ≈ 8 K below it** (DS12 §12.1.2 note). Ta shall not be published as air temperature and shall not be substituted for M01's measurement in any derived quantity | §3.2, §10.1 |
-| T2 | 82.5 mW is dissipated inside the can (§7.2). DS12 §14 states that package dissipation both heats the ambient-sensing element above true ambient and creates gradients across the cap. No further heat source shall sit on this module, and the can shall stand clear of the board's other copper | §7.2, V4 |
+| T2 | 82.5 mW is dissipated inside the can (§7.2), which heats the ambient-sensing element and gradients the cap (DS12 §14). No further heat source shall sit on this module, and the can shall stand clear of the board's other copper | §7.2, V4 |
 | T3 | **The device is calibrated for settled conditions and is explicitly not to be subjected to transient thermal conditions** (DS12 §14). The can shall not sit in the luminaire's direct beam, in a fan discharge, or against a surface that swings with the photoperiod. The board sits under the luminaire at the 65…76 W/m² PAR of M02 §3; steady-state rise above canopy air shall be recorded at bring-up, not assumed | §9 M5, V4 |
 | T4 | The accuracy of §6.3 applies only after **4 min** of thermal stabilization from power-on (§6.1). Every frame inside that window is published with `stabilized = false` and is not a measurement of record | §6.1, V4 |
 
@@ -333,13 +342,13 @@ MCU and CAN transceiver. No rail redesign, and no module-local rail (§4.2).
 | ID | Requirement | Reference |
 |----|-------------|-----------|
 | M1 | **The obstacle-free cone shall be clear** — 140° for `BAA`, 90° for `BAB`, referenced to the external aperture (DS12 Figure 25). No enclosure part, cable, standoff, connector or neighbouring component may enter it | §4.1, V2 |
-| M2 | **No window shall stand in the optical path** unless its transmission is measured in the device's band. DS12 states no spectral passband for the filter, and common enclosure materials are opaque in the thermal infrared. An unqualified window makes the module measure the window | §3.2, O-96 |
+| M2 | **No window shall stand in the optical path** unless its transmission is measured in the device's band. DS12 states no spectral passband, and common enclosure materials are opaque in the thermal infrared | §3.2, O-96 |
 | M3 | No conformal coating on the can, the external aperture or the window. Coating everywhere else: the growing volume may condense on excursions | §3.1 |
 | M4 | Contamination of the optical surface causes unspecified error (DS12 §14). Inspection and cleaning belong to the maintenance procedure; the module offers no fault indication for it | §3.1, O-90 |
-| M5 | The optical axis shall be normal to the canopy plane within the device's central-pointing tolerance (5° `BAA`, 3° `BAB`) plus the mounting error, and the can shall be oriented by its **index tab**, not by the can outline | §4.1, §6.5 |
+| M5 | The optical axis shall be normal to the canopy plane within the device's central-pointing tolerance (5° `BAA`, 3° `BAB`) plus the mounting error, and the can shall be oriented by its **index tab**, not by the can outline | §4.1, §6.6 |
 | M6 | U1 is a **four-lead through-hole hermetic can** with 6 ±0.50 mm of lead, on a board otherwise SMT, and is not placed in the reflow pass. The assembly route — hand solder, selective solder, or consignment — shall be fixed before the fab package is ordered | §4.1, O-93 |
-| M7 | Mounting height and orientation are fixed at deployment and recorded as deployment metadata. A height change changes the footprint and the per-pixel area (§6.5) and invalidates commissioning done against the previous geometry | §6.5, ADR-0014 d7 |
-| M8 | Seats on the carrier header pair 2×12 + 2×8. **Mounting holes shall be provided and standoffs populated**: the pin map names M04 among the heavier modules, and the `BAB` can stands 11.25 mm above the seating plane on 6 mm leads | Pin map, header section |
+| M7 | Mounting height and orientation are fixed at deployment and recorded as deployment metadata. A height change changes the footprint and the per-pixel area (§6.6) and invalidates commissioning done against the previous geometry | §6.6, ADR-0014 d7 |
+| M8 | Seats on the carrier header pair 2×12 + 2×8. **Mounting holes shall be provided and standoffs populated** — the pin map names M04 among the heavier modules | Pin map, header section |
 | M9 | The face carrying U1 carries nothing that enters the cone of M1. ADR-0014 d4's reserved space for future leaf-level sensors is **board space only**; this specification defines no footprint for it | ADR-0014 d4 |
 
 ## 10. Firmware requirements
@@ -355,14 +364,19 @@ MCU and CAN transceiver. No rail redesign, and no module-local rail (§4.2).
 | Configuration at start-up | Refresh rate, resolution, reading pattern and subpage mode per §6.1, written to `0x800D` explicitly rather than inherited from the device's EEPROM defaults |
 | Frame read | Chunked, with the main loop serviced between chunks: one read is 150 ms of blocking I²C at 100 kHz, twice a second, and the node owes a 1 Hz heartbeat and the file service throughout (§5.2). O-91 |
 | Statistics | Per §6.4, over the valid-pixel set of §6.2 |
+| Frame validity | A frame whose subpage handshake was missed, or whose Ta moved by more than 2 K from the previous frame, is excluded from the interval accumulation and from the 1 Hz record. The count that did contribute is served in the frame header (§10.2) |
+| Interval accumulation | Per §6.5, by Welford or by deviations from a per-pixel reference. **`Σx² − n·x̄²` is forbidden** — §6.5 gives the arithmetic |
+| Interval alignment | Interval boundaries aligned to the minute of the gateway time base while synchronized; free-running before the first sync pair, with the header's interval bounds telling the reader which it was |
+| **Arithmetic precision** | The compensation chain of §6.2 shall be **single precision throughout** — `sqrtf`, `f`-suffixed literals, no implicit promotion. The STM32F405 has no double-precision unit: the same expressions in `double` cost ≈ 21 ms per frame against ≈ 1 ms (§10.3), which hides at 1 Hz and saturates the node at any higher-rate mode |
+| Event frame | Offered when the hotspot count crosses `n_event`, or `t_max` exceeds `t_mean + delta_event`; both deployment constants, defaults 8 pixels and 5 K. At most one event frame per interval, and it carries the last complete frame alone (§6.5). O-98 |
 | Not derived | Canopy-to-air differential, leaf VPD, DLI — gateway or deferred (§3.2) |
 | Deployment constants | ε, Tr, `k` and `delta_min` read from the deployment profile, carried as the `uavcan.register` entries `industryflow.greenhouse.plant.emissivity`, `.reflected_temperature`, `.hotspot_k` and `.hotspot_delta_min`. Volatile: no register but `uavcan.node.id` has a store (ADR-0005 d7), so a commissioned node re-takes them at every restart. The uncommissioned state is ε = 1 and Tr = Ta − 8 K, and the record publishes the values in force |
-| Memory budget | ≈ 9.8 KB persistent — restored parameters 4.7 KB (α 1536 B, offset 1536 B, Kta 768 B, Kv 768 B, scalars ≈ 100 B), frame buffer 1668 B, compensated field 3072 B, published frame image 1536 B — plus a 1664 B transient for the EEPROM image at start-up. Against 192 KB on the STM32F405 |
+| Compute and memory budget | §10.3 |
 | Message timestamps | `uavcan.time.SynchronizedTimestamp` from the gateway time base, as M01, M02 and M05 |
 | Role and zone | Not held by the node; assigned by the gateway (ADR-0014 d7) |
 | Node directory | `firmware/nodes/m04_plant/` when written. **No firmware exists for this class**; neither stream of ADR-0005 d11 is implemented |
 | Node-ID | Not a property of the module class: provisioned per instance into carrier flash (ADR-0027), and distinct across the bus. Bring-up assignment for the first instance is **99** |
-| Publication rate | 1 s for the statistics record; 5 min or on event for the frame (§10.2) |
+| Publication rate | 1 s for the statistics record; 1 min, or on event, for the served frame (§10.2) |
 
 ### 10.1 Published subjects
 
@@ -389,40 +403,107 @@ Record fields, kelvin wherever a temperature:
 | `emissivity`, `reflected_temperature`, `hotspot_k`, `hotspot_delta_min` | `float32` | Constants in force (§6.2, §6.4) |
 | `defective_pixels` | `uint8` | Count excluded, 0…4 (§6.2) |
 | `stabilized` | `bool` | False for the first 4 min after power-on (§6.1, T4) |
-| `frame_seq` | `uint32` | Sequence of the frame these statistics describe |
-| `frame_available` | `bool` | A full frame for this sequence is served at §10.2 (ADR-0005 d11) |
+| `frame_seq` | `uint32` | Sequence of the interval frame currently served (§10.2). The record's own statistics are for the last device frame, not the interval |
+| `frame_available` | `bool` | An interval frame for this sequence is served at §10.2 (ADR-0005 d11, d12) |
 
 Record size ≈ 140 B, ≈ 20 Cyphal/CAN frames at 1 Hz.
 
-### 10.2 Full frame
+### 10.2 Served frame
 
 | Item | Requirement |
 |---|---|
 | Mechanism | `uavcan.file.Read` — the node serves, the gateway reads (ADR-0005 d11). No type is minted |
-| Trigger | The gateway reads on `frame_available` changing, not by polling. The node offers a frame every 5 min, and on event or alarm |
+| Trigger | The gateway reads on `frame_available` changing, not by polling |
+| Cadence | **One interval frame per minute** (ADR-0005 d12), plus an event frame under §10's event rule |
 | Path | `/plant/frame.bin`, fixed |
-| Content | A 32 B header — magic `IGP1`, `frame_seq` `uint32`, `timestamp` `uint64` µs, `emissivity` `float32`, `reflected_temperature` `float32`, `ta` `float32`, `defective_pixels` `uint8`, remainder reserved — followed by **768 × `uint16` centikelvin**, row-major from pixel 1 (row 1, column 1), little-endian. **1568 B total** |
-| Resolution | 0.01 K over 0…655.35 K, which spans the device's whole −40…+300 °C object range |
-| Content is compensated, not raw | The raw 1668 B RAM image carries no meaning without that device's own calibration constants, which would have to be transferred and bound per instance. The node computes the compensated field for §6.4 already and serves that. ADR-0005 d11 defers the byte layout to this document and costs 1668 B; 1568 B is inside it |
-| Hold policy | The served frame is replaced only at the next offer. A read spanning a replacement is detected by the gateway from the header's `frame_seq` and re-read |
-| Cost | ADR-0005 d11 at 500 kbit/s: 239 frames, ≈ 72 ms, once per 5 min — 0.024 % mean occupancy |
+| Content | The 64 B header below, then the mean plane — 768 × `uint16` centikelvin, row-major from pixel 1 (row 1, column 1), little-endian — then the σ plane, 768 × `uint8`. **2368 B total** |
+| Compensated, not raw | Required by ADR-0005 d12; the raw device image is never served |
+| Hold policy | The served file is replaced only at the next offer. A read spanning a replacement is detected by the gateway from the header's `frame_seq` and re-read |
+| Cost | ≈ 420 Cyphal/CAN frames per minute at 500 kbit/s, ≈ 126 ms — **0.21 % mean occupancy** |
+| Archive rate | 2368 B/min = **3.41 MB per day, 1.25 GB per year, per instance.** Pre-cloud the gateway is the primary durable sink (ADR-0020 d1, d10). O-97 |
+
+Header, little-endian throughout:
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 4 | Magic, `IGP1` |
+| 4 | 1 | Format version, 1 |
+| 5 | 1 | Planes present — bit 0 mean, bit 1 σ |
+| 6 | 1 | Columns, 32 |
+| 7 | 1 | Rows, 24 |
+| 8 | 4 | `frame_seq`, matching the summary record that announced it |
+| 12 | 8 | Interval start, µs, gateway time base |
+| 20 | 8 | Interval end |
+| 28 | 2 | `n_frames` accumulated — 1 marks an event snapshot (§6.5) |
+| 30 | 1 | Defective-pixel count |
+| 31 | 1 | Flags — bit 0 `stabilized`, bit 1 event-triggered, bit 2 time base unsynchronized |
+| 32 | 6 | **Device ID**, EEPROM `0x2407`–`0x2409` (§10) |
+| 38 | 2 | Reserved |
+| 40 | 4 | Emissivity, `float32` |
+| 44 | 4 | Reflected temperature, `float32` K |
+| 48 | 4 | Ta mean over the interval, `float32` K |
+| 52 | 4 | Mean-plane scale, `float32` K/LSB = 0.01 |
+| 56 | 4 | σ-plane scale, `float32` K/LSB = 0.02 |
+| 60 | 4 | CRC-32 over bytes 0…59 and 64…2367 |
+
+The header repeats the device ID and the constants in force: a stored frame is interpretable
+without the record that announced it, and the transfer CRC does not survive storage.
+
+### 10.3 Compute and memory budget
+
+STM32F405 at 168 MHz, Cortex-M4F with a **single-precision** FPU. Per second at the 2 Hz refresh
+rate of §6.1, which delivers one complete frame per second:
+
+| Work | Cost | Share of the second |
+|---|---|---|
+| I²C, two subpage reads | **300 ms** (§5.2) | **30 %** — blocking I/O, not compute |
+| Compensation of 768 pixels, DS12 §11.2, single precision | ≈ 200 cycles/px = 154 k cycles, **≈ 1 ms** | 0.1 % |
+| *The same in `double`* | *≈ 4 500 cycles/px = 3.5 M cycles,* **≈ 21 ms** | *2 %* |
+| Statistics of §6.4 — mean, extremes, σ, plane fit, mask | ≈ 17 k cycles, 0.1 ms | 0.01 % |
+| Interval accumulation, §6.5 | ≈ 12 k cycles, 0.07 ms | 0.01 % |
+| Once per minute: σ plane, quantization, CRC-32 | ≈ 58 k cycles, 0.35 ms | — |
+| Once per minute: serving ≈ 420 CAN frames | ≈ 2 ms | — |
+
+**Compute totals ≈ 1.6 ms of every second — 0.16 %.** The binding constraint is the 300 ms/s of
+blocking I²C (§5.2, O-91). The per-minute archive adds no I²C traffic.
+
+`VSQRT.F32` and `VDIV.F32` are 14 cycles each on the M4F, against ≈ 500 cycles per software
+square root and ≈ 70 per multiply. Both builds close the loop at 1 Hz; at a 16 Hz survey mode on a
+400 kHz bus, `double` is 336 ms/s of compute on top of 600 ms/s of I²C and does not.
+
+| RAM | Size |
+|---|---|
+| Restored calibration parameters — α 1536 B, offset 1536 B, Kta 768 B, Kv 768 B, scalars ≈ 100 B | 4 708 B |
+| Device frame buffer, 834 × `uint16` | 1 668 B |
+| Compensated field, 768 × `float32` | 3 072 B |
+| Interval mean accumulator, 768 × `float32` | 3 072 B |
+| Interval M2 accumulator, 768 × `float32` | 3 072 B |
+| Served file buffer | 2 368 B |
+| **Persistent total** | **17 960 B** |
+| Transient at start-up — EEPROM image, 832 × `uint16` | 1 664 B |
+| **Peak** | **19 624 B** |
+
+Against 128 KB SRAM plus 64 KB CCM on the STM32F405. **The device frame buffer shall not be placed
+in CCM** if the I²C is ever moved to DMA: the F4's DMA controllers cannot reach CCM.
 
 ## 11. Verification
 
 | ID | Verifies | Method |
 |----|----------|--------|
 | V1 | §6.3 | Frame accuracy against a reference target of known emissivity filling the field, at three temperatures spanning 10…30 °C, after the 4 min settling of T4, with the reference read by a contact thermometer. Frame mean within ±1 °C of the reference; per-pixel spread against the zone figures |
-| V2 | §9 M1, §6.5 | Installed footprint measured against the §6.5 table at the installed height, with a warm target moved to each edge of the field; nothing in the frame that is not the intended scene |
-| V3 | §5.2, §10 | Frame read time measured at 100 kHz against 150 ms, and bus occupancy logged over ≥ 1 h at the 2 Hz refresh rate. Heartbeat continuity and file-service responsiveness confirmed **during** frame reads — the failure the chunking requirement exists to prevent |
+| V2 | §9 M1, §6.6 | Installed footprint measured against the §6.6 table at the installed height, with a warm target moved to each edge of the field; nothing in the frame that is not the intended scene |
+| V3 | §5.2, §10 | Frame read time measured at 100 kHz against 150 ms, and bus occupancy logged over ≥ 1 h at the 2 Hz refresh rate. Heartbeat continuity and file-service responsiveness confirmed **during** frame reads |
 | V4 | §6.1, T2, T3, T4 | Cold power-on logged for ≥ 30 min: Ta and frame mean against a fixed reference target, drift across the first 4 min recorded, and the `stabilized` flag observed to clear. Ta compared against canopy air from an M01 instance in the same volume, against T1's 8 K offset |
 | V5 | §4.1 | 1:1 paper printout against the physical part, including the index tab and the lead circle |
 | V6 | §5 | Module-ID readback of `0b100` on the carrier in use |
 | V7 | §7.1 | Node draw measured on `+12 V` against the 360 mW estimate, and U1's own current against 25 mA |
-| V8 | §10.2, §6.4 | A full frame read by the gateway, and `t_mean`, `t_min`, `t_max` recomputed from the file to match the record carrying the same `frame_seq` |
+| V8 | §10.2, §6.4 | An interval frame read by the gateway, its header CRC checked, and the frame-wide mean of its mean plane matched against the arithmetic mean of the 60 `t_mean` values published during that interval, within one quantization step. An event frame read and confirmed to carry `n_frames` = 1 |
 | V9 | §6.2 | Defective-pixel list read from the device EEPROM, the count published, and the excluded pixels confirmed absent from the statistics and interpolated in the served frame |
-| V10 | §6.2, §6.5 | ε and Tr identified at commissioning against a reference target at canopy distance; the identified values recorded as deployment metadata together with the mounting height |
+| V10 | §6.2, §6.6 | ε and Tr identified at commissioning against a reference target at canopy distance; the identified values recorded as deployment metadata together with the mounting height |
 | V11 | §7.3 | Rail measured at U1's VDD pin under load — DC value against 3.3 V ±0.05 V, ripple against the buck's 400 kHz fundamental |
 | V12 | §10 | U1 identified by the three device-ID words at `0x2407`–`0x2409`, non-zero and stable, not by address ACK alone |
+| V13 | §6.5 | 60 consecutive device frames logged raw alongside the interval frame they produced: the mean plane reproduced offline to within one LSB. A warm target then swept through part of the field during one interval — the σ plane shall rise on the swept pixels and stay at the noise floor elsewhere |
+| V14 | §6.5, §10.3 | Compensation of one frame timed on the target with the cycle counter against the ≈ 1 ms of §10.3, and the build checked for double promotion. A synthetic constant-temperature sequence pushed through the accumulator shall return σ = 0, not noise and not a negative variance |
 
 ## 12. Open items
 
@@ -433,17 +514,19 @@ are M02's; O-74 is M05's; O-76 to O-85 are the service tool's.
 
 | ID | Item | Blocks |
 |----|------|--------|
-| O-86 | Mounting height and the canopy area one instance covers are not fixed: ADR-0006 defers cabinet dimensions to a mechanical specification, so the selection rule of §6.5 has no input | FOV variant confirmation, M5, M7, V2 |
+| O-86 | Mounting height and the canopy area one instance covers are not fixed: ADR-0006 defers cabinet dimensions to a mechanical specification, so the selection rule of §6.6 has no input | FOV variant confirmation, M5, M7, V2 |
 | O-87 | Leaf emissivity, reflected apparent temperature and the canopy-to-air differential band of §3 are not established. ε = 1 and Tr = Ta − 8 K are placeholders, not values | Absolute canopy temperature, expected range, V10 |
 | O-88 | No canopy segmentation exists, so §6.4's statistics are frame-wide and include structure, medium and luminaire pixels. ADR-0014 d4 defers the pipeline | Meaning of every statistic, leaf VPD, hotspot interpretation |
 | O-89 | DS12 states an additional ±3 °C over years for objects around room temperature — the operating point of §3 — with no re-referencing scheme. Whether the module is periodically referenced against a known target, against M01's air temperature at a settled night point, or replaced on an interval | Absolute accuracy over service life, calibration protocol |
 | O-90 | The device carries no humidity rating in DS12 and its optical surface is exposed in a volume that may condense. Post-condensation validity, recovery and M4's inspection interval are undefined | Excursion handling, data validity, maintenance procedure |
 | O-91 | One frame read blocks the I²C driver for 150 ms and the module reads twice a second. §10's chunking requirement is stated but unimplemented and unverified, and the carrier driver's blocking I²C is its precondition | Heartbeat continuity, file service, V3 |
-| O-92 | DS12 defines the accuracy zones graphically with no pixel-index boundaries, and gives no per-pixel angular map or lens-distortion figure. Neither per-zone weighting of the statistics nor an exact pixel-to-position mapping can be stated | §6.3 zone application, §6.5 geometry |
+| O-92 | DS12 defines the accuracy zones graphically with no pixel-index boundaries, and gives no per-pixel angular map or lens-distortion figure. Neither per-zone weighting of the statistics nor an exact pixel-to-position mapping can be stated | §6.3 zone application, §6.6 geometry |
 | O-93 | The assembly route for a four-lead through-hole hermetic can on an otherwise SMT board is not fixed, and DS12 states no MSL and no soldering profile | Fab package, assembly quote, M6 |
 | O-94 | Node power unmeasured | Distribution-board sizing, O-31 |
 | O-95 | Rail deviation and ripple at the module unmeasured against §7.3's ±0.05 V recommendation | V11, absolute accuracy |
 | O-96 | No IR-transmissive window is specified, and DS12 states no spectral passband against which one could be qualified. Whether the module looks into the growing volume unglazed, or an enclosure window is qualified by measurement | Enclosure design, M2 |
+| O-97 | The frame archive is 3.41 MB per day per instance (§10.2), against an ADR-0020 d2 buffer whose bound is set in time and sized for scalar telemetry. Pre-cloud the gateway is the primary durable sink, so retention, downsampling and export of the archive are unowned | Gateway storage sizing, ADR-0020 d2 |
+| O-98 | The event-trigger constants `n_event` and `delta_event` (§10) have defaults but no basis: no record establishes what canopy excursion is worth a frame | Event path, V8 |
 
 ## 13. Maturity
 

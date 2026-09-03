@@ -17,7 +17,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 - **rev 1 (2026-06-17)** — Energy reverts from watt-hours to **joule**: accumulated S0 energy is now published on the standard `uavcan.si.sample.energy.Scalar` (joule), and the bespoke `industryflow.greenhouse.safety.EnergyWh` type is **dropped**. The initial record made Wh a deliberate SI exception because the meter is defined in imp/kWh; on review that is cosmetic — the node scales a dimensionless pulse count by a constant either way (`J = pulses × 3 600 000 / imp_per_kWh`, exact), Wh carries no precision advantage (float32 relative error is unit-independent), and human-facing kWh is a gateway/platform display concern. Keeping energy in base SI restores wire-uniformity and lets it **reuse** a standard type instead of minting one (decision 2). Affects decision 3, the positive-consequences type tally, and adds alternative H; no other decision changed.
 
-- **Amendments** — decision 11 (2026-08-29): which mechanism carries M04's two telemetry streams; answers the deferred *aggregate/multi-frame record types* for that module and qualifies ADR-0014 decision 4 on direction only.
+- **Amendments** — decision 11 (2026-08-29): which mechanism carries M04's two telemetry streams; answers the deferred *aggregate/multi-frame record types* for that module and qualifies ADR-0014 decision 4 on direction only. Decision 12 (2026-09-03): the frame's cadence and payload are downstream values, defaulting to one node-preprocessed interval frame per minute; qualifies decision 11 and ADR-0014 decision 4 on cadence only.
 
 ## Context and problem
 
@@ -105,6 +105,22 @@ A note on scope. This ADR is the **foundation and the worked first example (M05-
     Frame availability is a field in the summary record; the gateway reads on change rather than polling. This **qualifies ADR-0014 decision 4 on direction only**, bounded: "pushed" there names the cadence, and the Cyphal file service is a pull, so the gateway performs the transfer. The mechanism, the cadence and the trigger in that decision are unchanged.
 
     Cost, at ADR-0002 rev 3's 500 kbit/s: 1668 B is 239 Cyphal/CAN frames, ~72 ms, once per 5 minutes — 0.024 % mean occupancy. The frame's byte layout stays deferred to when the module is built.
+
+12. **The frame's cadence and payload are downstream values; the default is one node-preprocessed interval frame per minute** *(added 2026-09-03)*.
+
+    Decision 11 tabulates a 1668 B frame every 5 minutes. **Which quantity leaves the node, in what layout, and how often are concrete values** and belong to the module specification under ADR-0000 decision 2, as this record's own subject-ID defaults do under decision 7. This decision states that ownership and the bound on it. Decision 11's mechanism — `uavcan.file.Read`, the node serves, the gateway reads on availability — is unchanged, as is the 1 Hz summary subject and its minted type.
+
+    | | Decision 11, 2026-08-29 | Default under this amendment |
+    |---|---|---|
+    | Cadence | 5 min, or on event | **1 min**, or on event |
+    | Payload | the full 32 × 24 frame, 1668 B | the **interval product** — per-pixel mean and per-pixel temporal standard deviation over the frames of the interval, 2368 B |
+    | Cost at 500 kbit/s | 239 frames, ~72 ms, 0.024 % | ~420 frames, ~126 ms, **0.21 %** |
+
+    **The bound: the payload stays a node-preprocessed product and never the raw device image.** That is decision 11's reuse ground and ADR-0020's "features, not raw frames" driver, and it is the condition under which the cadence is downstream at all. An interval frame costs no additional I²C traffic — the node already reads every frame at 1 Hz to compute the summary.
+
+    This qualifies **ADR-0014 decision 4 on cadence only**, as decision 11 qualified it on direction only: the mechanism, the trigger and the event path in that decision are unchanged.
+
+    It takes up the steady-state half of **ADR-0020 decision 12's** deferred direction — fuller thermal capture than on-node features. The survey-campaign half, higher-rate or raw capture during an ADR-0016 campaign, stays deferred there. The gateway-side consequence is ADR-0020's: ~3.4 MB per day per instance, against a buffer whose bound decision 2 there sets in time rather than in capacity.
 
 ## Consequences
 
