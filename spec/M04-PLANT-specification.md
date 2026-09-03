@@ -52,13 +52,13 @@ establishes. O-87.
 | Published quantity | Sensor | Sensor range | Expected operating range | Accuracy |
 |--------------------|--------|--------------|--------------------------|----------|
 | Canopy temperature field, 32 × 24 = 768 pixels | U1 | −40…+300 °C object; Ta −40…+85 °C | 8…32 °C surface, 12…28 °C Ta | Frame ±1 °C; per-pixel = frame + non-uniformity, ±1.5 °C in zone 1 (§6.3), under the conditions §6.3 states |
-| Frame statistics — mean, min, max, σ, gradient, hotspot mask (derived, §6.4) | U1 | — | Mean 8…32 °C; σ ≥ NETD 0.14 K | Mean inherits frame accuracy ±1 °C; the spread terms inherit non-uniformity, not frame accuracy |
+| Frame statistics — mean, min, max, σ, gradient, hotspot mask (derived, §6.4) | U1 | — | Mean 8…32 °C; σ ≥ 0.18 K, the noise of the 4-frame mean it is computed on | Mean inherits frame accuracy ±1 °C; the spread terms inherit non-uniformity, not frame accuracy |
 | Die temperature Ta | U1 | −40…+85 °C | 20…36 °C — air +8 K (§8 T1) | ±0.5 °C |
 
 Publication rate: **1 Hz** for the statistics record; **one interval frame per minute, or on
-event**, served over `uavcan.file.Read` (ADR-0005 d11 and d12, §6.5, §10.2). Device frame cadence
-is 1 s at the specified refresh rate (§6.1), so one interval frame is the product of 60 device
-frames.
+event**, served over `uavcan.file.Read` (ADR-0005 d11 and d12, §6.5, §10.2). The device delivers a
+complete frame every 250 ms (§6.1), so the 1 Hz record is computed on four frames and one interval
+frame is the product of 240.
 
 Location: above or beside the canopy, optical axis normal to the canopy plane, with the
 obstacle-free cone of §9 M1 clear. One instance per canopy area at cabinet scale, one per growing
@@ -143,7 +143,7 @@ The footprint shall be checked against the physical part with a 1:1 paper printo
 |---|----------|-------|--------|
 | C1 | Bulk decoupling at U1 VDD | 10 µF ceramic | DS12 §14 — 100 nF plus 10 µF close to the VDD and VSS pins |
 | C2 | HF decoupling at U1 VDD | 100 nF ceramic | DS12 §14 |
-| R1, R2 | I²C pull-ups, SCL and SDA | 4.7 kΩ to 3.3 V | §5.1 |
+| R1, R2 | I²C pull-ups, SCL and SDA | 2.2 kΩ to 3.3 V | §5.1 |
 
 No regulator, no bus switch, no level translator: U1 runs from the header's 3.3 V and its digital
 pins are 5 V tolerant (§5.1). M04 generates no module-local rail, so O-43 is not reopened here.
@@ -170,26 +170,28 @@ correctly.
 | | Requirement |
 |---|---|
 | Bus | I2C1, one segment, one device, board-mounted. No switch, no second segment |
-| Speed | 100 kHz standard mode, the platform default set by the shared carrier driver. U1 supports FM+ to 1 MHz, but **EEPROM operations are limited to 400 kHz** (DS12 Table 5 note 5), which includes the calibration read of §6.2 |
+| Speed | **400 kHz.** U1 is the only device on the segment and supports FM+ to 1 MHz; the STM32F405's I²C peripheral tops out at 400 kHz, and DS12 Table 5 note 5 limits EEPROM operations to 400 kHz — the two ceilings coincide, so one rate serves both the calibration read of §6.2 and the frame reads. The 100 kHz platform default of M01 and M02 is set per node by the personality, not by the carrier |
 | Levels | SDA and SCL are 5 V tolerant and referenced to the pull-up rail, not to VDD. V_IH 0.7 · VDD, V_IL 0.3 · VDD, V_OL 0.4 V at 3 mA sink |
-| Pull-ups | R1, R2, 4.7 kΩ to 3.3 V, on the module; the carrier carries none (O-51). Sink 0.70 mA against the 3 mA V_OL condition, and against the **10 mA** ceiling DS12 Table 5 note 4 places on the SDA driver for thermal reasons (absolute maximum 40 mA) |
-| Sizing check | Rise time at 100 kHz admits ≈ 250 pF on the segment, against board traces and U1's 10 pF pin capacitance. DS12 Figure 26 uses 1 kΩ; 4.7 kΩ is retained at 100 kHz and **shall be re-sized to ≈ 1 kΩ if the bus is raised to 400 kHz or above** (§5.2) |
+| Pull-ups | R1, R2, **2.2 kΩ** to 3.3 V, on the module; the carrier carries none (O-51). Sink 1.5 mA against the 3 mA V_OL condition, and against the **10 mA** ceiling DS12 Table 5 note 4 places on the SDA driver for thermal reasons (absolute maximum 40 mA) |
+| Sizing check | Fast mode allows 300 ns of rise time. At 2.2 kΩ that admits 161 pF on the segment, against U1's 10 pF pin capacitance and short board traces. DS12 Figure 26 uses 1 kΩ, which would sink 3.3 mA — at the V_OL test condition rather than below it |
 | Address | `0x33`. No device on this module occupies `0x50`–`0x57` |
 
 ### 5.2 Bus occupancy
 
-One frame read is the whole RAM image, 834 words = **1668 B**, at 9 clocks per byte:
+One subpage read is the whole RAM image, 834 words = **1668 B**, at 9 clocks per byte:
 
-| Bus clock | One frame read | Highest refresh rate whose subpage interval exceeds it |
+| Bus clock | One read | Highest refresh rate whose subpage interval exceeds it |
 |---|---|---|
-| 100 kHz | **150 ms** | 4 Hz (250 ms) |
-| 400 kHz | 37.5 ms | 16 Hz (62.5 ms) |
-| 1 MHz, FM+ | 15.0 ms | 32 Hz (31.25 ms) |
+| 100 kHz | 150 ms | 4 Hz (250 ms) |
+| **400 kHz** | **37.5 ms** | **16 Hz** (62.5 ms) |
+| 1 MHz, FM+ | 15.0 ms | 32 Hz — not reachable, the STM32F405 I²C stops at 400 kHz |
 
-At the 2 Hz refresh rate of §6.1 the module performs **two subpage reads per second** and holds the
-bus **300 ms of every second — 30 %** at 100 kHz. The carrier's I²C driver is blocking, so that
-figure is also main-loop occupancy; §10 requires the read to be chunked. O-91.
+At the 8 Hz refresh rate of §6.1 the module performs eight reads per second and holds the bus
+**300 ms of every second — 30 %**. The carrier's I²C driver is blocking, so that figure is also
+main-loop occupancy; §10 requires the read to be chunked. O-91.
 
+16 Hz is reachable at 600 ms/s. It is not specified: §6.3 shows the interval noise floor does not
+move with refresh rate, so the second 300 ms of main loop buys time resolution only.
 
 ## 6. Measurement requirements
 
@@ -198,8 +200,8 @@ figure is also main-loop occupancy; §10 requires the read to be chunked. O-91.
 | Item | Requirement |
 |------|-------------|
 | Reading pattern | **Chess** (`0x800D` bit 12 = 1, factory default). The device is calibrated in chess pattern; interleaved (TV) mode shall not be used |
-| Refresh rate | **2 Hz** (`0x800D` bits 9:7 = `010`, the device default) — one subpage each 500 ms, one **complete frame each 1 s**, matching the 1 Hz statistics cadence of ADR-0014 d4 |
-| ADC resolution | 18 bit (`0x800D` bits 11:10 = `10`, default) |
+| Refresh rate | **8 Hz** (`0x800D` bits 9:7 = `100`) — one subpage each 125 ms, **four complete frames per second**, 240 per interval, 300 ms/s of bus (§5.2) |
+| ADC resolution | **19 bit** (`0x800D` bits 11:10 = `11`), not the 18-bit default. DS12 §12.3: higher resolution lowers quantization noise. The compensation chain corrects for a resolution differing from the calibration one through the resolution-control coefficient (DS12 §11.1.17). DS12 states no interaction between resolution and refresh rate; saturation at 19 bit and 8 Hz is a bench check, V15 |
 | Subpage mode | Enabled, alternating (`0x800D` bit 0 = 1, bit 3 = 0). **Both subpages are required**: the Ta computation combines them, so Ta refreshes at half the subpage rate |
 | Frame handshake | Poll bit 3 of the status register `0x8000` (new data available), read the subpage, clear the bit. Bits 2:0 of the same register name the subpage measured |
 | Data hold | Overwrite enabled (`0x800D` bit 2 = 0, default): a missed read is overwritten by the next frame rather than stalling acquisition |
@@ -234,9 +236,18 @@ gaps and background make mixed pixels the normal case (§6.6, O-88).
   operating point of §3 that is **±1.5 °C** for `BAA` and ±2 °C for `BAB`.
 - **The zones are defined graphically** (DS12 Figure 18): a central zone 1, a surrounding zone 2,
   and corner patches of zone 3 on `BAA` only. DS12 gives no pixel-index boundaries. O-92.
-- **NETD at 1 Hz, all pixels:** `BAA` 0.14 K average (0.1 K minimum, σ 0.05 K); `BAB` 0.25 K
-  average (0.2 K minimum, σ 0.05 K). Corner pixels are noisier than central ones, and noise rises
-  at lower object temperature (DS12 §12.3).
+- **Noise is integration-time limited.** Per-frame RMS noise scales as √(refresh rate), from
+  DS12 Figure 19 (`BAA`): 0.09 K at 0.5 Hz, **0.14 K at 1 Hz**, 0.19 at 2 Hz, 0.26 at 4 Hz,
+  **0.36 at 8 Hz**, 0.52 at 16 Hz, 1.05 at 64 Hz. Table 14's 0.14 K average (0.1 K minimum,
+  σ 0.05 K) and the `BAB` figure of 0.25 K are the **1 Hz** values. Corner pixels are noisier than
+  central ones, and noise rises at lower object temperature (DS12 §12.3).
+- **The noise of a fixed-length average does not move with refresh rate.** Doubling the rate halves
+  the integration per frame and doubles the frame count, and the two cancel: over 60 s the floor is
+  0.14 K/√30 = **0.025 K** at 2 Hz, at 8 Hz and at 16 Hz alike (§6.5). Refresh rate buys time
+  resolution, not noise.
+- **Non-uniformity is the dominant error and it does not average away.** ±0.5 K in zone 1 is
+  fixed-pattern — 20 × the temporal floor above, and correctable only by a per-unit flat field
+  this specification does not define. O-99.
 - **Long-term drift: an additional ±3 °C for objects around room temperature over years**
   (DS12 §12.1.1 note 2) — the operating point of §3, and the largest term in this budget. O-89.
 - Ta channel: ±0.5 °C.
@@ -244,7 +255,8 @@ gaps and background make mixed pixels the normal case (§6.6, O-88).
 ### 6.4 Frame statistics
 
 Computed on the node from the compensated field of §6.2, over the 768 pixels less the defective
-list, once per complete frame, published at 1 Hz (§10.1).
+list, once per second on the mean of that second's four complete frames (§6.1), published at 1 Hz
+(§10.1). The 4-frame mean carries 0.18 K of noise against 0.36 K in a single frame (§6.3).
 
 | Statistic | Definition |
 |---|---|
@@ -253,7 +265,7 @@ list, once per complete frame, published at 1 Hz (§10.1).
 | `t_sigma` | Population standard deviation of the valid pixels, K. Floor set by NETD (§6.3) |
 | `gradient_x`, `gradient_y` | Slopes of the least-squares plane fitted to the field, reported as **K across the full frame width and height** |
 | `hotspot_mask` | 768 bits, one per pixel, row-major from pixel 1. Bit set where `T > t_mean + max(k · t_sigma, delta_min)` |
-| `k`, `delta_min` | Deployment constants (§10). Defaults `k` = 3 and `delta_min` = 1.0 K, the floor ≈ 7 × the `BAA` NETD |
+| `k`, `delta_min` | Deployment constants (§10). Defaults `k` = 3 and `delta_min` = 1.0 K, the floor ≈ 5 × the noise of the 4-frame mean |
 
 The statistics describe the **whole frame**, not the canopy: no segmentation separates leaf pixels
 from structure, growing medium or luminaire (§3.2). O-88.
@@ -266,11 +278,11 @@ the node.
 | Item | Requirement |
 |------|-------------|
 | Interval | 60 s, aligned to the minute of the gateway time base while synchronized; free-running before the first sync pair |
-| Frames accumulated | Every complete frame whose handshake and Ta are valid (§10), nominally 60. The count is served in the header |
-| Mean plane | Per-pixel arithmetic mean over the accumulated frames. Noise falls as √N: the `BAA` NETD of 0.14 K becomes **0.018 K at N = 60** |
-| σ plane | Per-pixel standard deviation over the same frames — the discriminator between a pixel that held still and one that moved |
+| Frames accumulated | Every complete frame whose handshake and Ta are valid (§10), **nominally 240** at the 8 Hz refresh rate of §6.1. The count is served in the header |
+| Mean plane | Per-pixel arithmetic mean over the accumulated frames. 0.36 K per frame at 8 Hz over N = 240 gives **0.025 K**, the fixed-integration-time floor of §6.3 |
+| σ plane | Per-pixel standard deviation over the same frames — the discriminator between a pixel that held still and one that moved, on 240 samples |
 | Event frame | The last complete frame alone, `n_frames` = 1, σ plane zero |
-| Quantization | Mean plane 0.01 K per LSB, 7 × below the averaged plane's 0.018 K noise floor. σ plane 0.02 K per LSB, saturating at 5.10 K |
+| Quantization | **The mean plane is `float32`, unquantized** — it is the quantity of record and carries the whole compensation chain's output as computed. The σ plane is `uint8` at 0.02 K per LSB, saturating at 5.10 K, below the 0.025 K floor it describes |
 | **Numerics** | The variance shall be accumulated by **Welford's method**, or as deviations from a per-pixel reference. **The naive `Σx² − n·x̄²` form shall not be used**: at canopy temperatures `Σx²` ≈ 5.2 · 10⁶ K², where a `float32` ULP is 0.5 K² against the σ² ≈ 0.02 K² being extracted. The subtraction returns noise, and can return a negative variance |
 | Statistics | §6.4's 1 Hz record is computed per frame, unaffected by this accumulation |
 
@@ -362,7 +374,7 @@ MCU and CAN transceiver. No rail redesign, and no module-local rail (§4.2).
 | Publish rule | Responders only; an absent U1 means an absent subject and no served file, not an error (ADR-0005 d8) |
 | Calibration restore | Read the 832-word EEPROM once after power-on at ≤ 400 kHz and restore per DS12 §11.1 (§6.2). A failed or implausible restore shall disable publication rather than publish uncompensated data |
 | Configuration at start-up | Refresh rate, resolution, reading pattern and subpage mode per §6.1, written to `0x800D` explicitly rather than inherited from the device's EEPROM defaults |
-| Frame read | Chunked, with the main loop serviced between chunks: one read is 150 ms of blocking I²C at 100 kHz, twice a second, and the node owes a 1 Hz heartbeat and the file service throughout (§5.2). O-91 |
+| Frame read | Chunked, with the main loop serviced between chunks: one read is 37.5 ms of blocking I²C at 400 kHz, eight times a second, and the node owes a 1 Hz heartbeat and the file service throughout (§5.2). O-91 |
 | Statistics | Per §6.4, over the valid-pixel set of §6.2 |
 | Frame validity | A frame whose subpage handshake was missed, or whose Ta moved by more than 2 K from the previous frame, is excluded from the interval accumulation and from the 1 Hz record. The count that did contribute is served in the frame header (§10.2) |
 | Interval accumulation | Per §6.5, by Welford or by deviations from a per-pixel reference. **`Σx² − n·x̄²` is forbidden** — §6.5 gives the arithmetic |
@@ -416,11 +428,11 @@ Record size ≈ 140 B, ≈ 20 Cyphal/CAN frames at 1 Hz.
 | Trigger | The gateway reads on `frame_available` changing, not by polling |
 | Cadence | **One interval frame per minute** (ADR-0005 d12), plus an event frame under §10's event rule |
 | Path | `/plant/frame.bin`, fixed |
-| Content | The 64 B header below, then the mean plane — 768 × `uint16` centikelvin, row-major from pixel 1 (row 1, column 1), little-endian — then the σ plane, 768 × `uint8`. **2368 B total** |
+| Content | The 64 B header below, then the mean plane — 768 × `float32` kelvin, row-major from pixel 1 (row 1, column 1), little-endian — then the σ plane, 768 × `uint8`. **3904 B total** |
 | Compensated, not raw | Required by ADR-0005 d12; the raw device image is never served |
 | Hold policy | The served file is replaced only at the next offer. A read spanning a replacement is detected by the gateway from the header's `frame_seq` and re-read |
-| Cost | ≈ 420 Cyphal/CAN frames per minute at 500 kbit/s, ≈ 126 ms — **0.21 % mean occupancy** |
-| Archive rate | 2368 B/min = **3.41 MB per day, 1.25 GB per year, per instance.** Pre-cloud the gateway is the primary durable sink (ADR-0020 d1, d10). O-97 |
+| Cost | ≈ 670 Cyphal/CAN frames per minute at 500 kbit/s, ≈ 200 ms — **0.34 % mean occupancy** |
+| Archive rate | 3904 B/min = **5.62 MB per day, 2.05 GB per year, per instance.** Pre-cloud the gateway is the primary durable sink (ADR-0020 d1, d10). O-97 |
 
 Header, little-endian throughout:
 
@@ -442,34 +454,37 @@ Header, little-endian throughout:
 | 40 | 4 | Emissivity, `float32` |
 | 44 | 4 | Reflected temperature, `float32` K |
 | 48 | 4 | Ta mean over the interval, `float32` K |
-| 52 | 4 | Mean-plane scale, `float32` K/LSB = 0.01 |
+| 52 | 4 | Mean-plane format — `1` = `float32` kelvin, unscaled |
 | 56 | 4 | σ-plane scale, `float32` K/LSB = 0.02 |
-| 60 | 4 | CRC-32 over bytes 0…59 and 64…2367 |
+| 60 | 4 | CRC-32 over bytes 0…59 and 64…3903 |
 
 The header repeats the device ID and the constants in force: a stored frame is interpretable
 without the record that announced it, and the transfer CRC does not survive storage.
 
 ### 10.3 Compute and memory budget
 
-STM32F405 at 168 MHz, Cortex-M4F with a **single-precision** FPU. Per second at the 2 Hz refresh
-rate of §6.1, which delivers one complete frame per second:
+STM32F405 at 168 MHz, Cortex-M4F with a **single-precision** FPU. Per second at the 8 Hz refresh
+rate of §6.1 — four complete frames per second:
 
 | Work | Cost | Share of the second |
 |---|---|---|
-| I²C, two subpage reads | **300 ms** (§5.2) | **30 %** — blocking I/O, not compute |
-| Compensation of 768 pixels, DS12 §11.2, single precision | ≈ 200 cycles/px = 154 k cycles, **≈ 1 ms** | 0.1 % |
-| *The same in `double`* | *≈ 4 500 cycles/px = 3.5 M cycles,* **≈ 21 ms** | *2 %* |
-| Statistics of §6.4 — mean, extremes, σ, plane fit, mask | ≈ 17 k cycles, 0.1 ms | 0.01 % |
-| Interval accumulation, §6.5 | ≈ 12 k cycles, 0.07 ms | 0.01 % |
-| Once per minute: σ plane, quantization, CRC-32 | ≈ 58 k cycles, 0.35 ms | — |
-| Once per minute: serving ≈ 420 CAN frames | ≈ 2 ms | — |
+| I²C, eight subpage reads at 400 kHz | **300 ms** (§5.2) | **30 %** — blocking I/O, not compute |
+| Compensation, 4 × 768 pixels, DS12 §11.2, single precision | 4 × ≈ 154 k cycles, **≈ 4 ms** | 0.4 % |
+| *The same in `double`* | *4 × ≈ 3.5 M cycles,* **≈ 84 ms** | *8 %* |
+| Statistics of §6.4, on the 4-frame mean | ≈ 17 k cycles, 0.1 ms | 0.01 % |
+| Interval accumulation, §6.5, four frames | ≈ 48 k cycles, 0.3 ms | 0.03 % |
+| Once per minute: σ plane, CRC-32 | ≈ 58 k cycles, 0.35 ms | — |
+| Once per minute: serving ≈ 670 CAN frames | ≈ 3 ms | — |
 
-**Compute totals ≈ 1.6 ms of every second — 0.16 %.** The binding constraint is the 300 ms/s of
-blocking I²C (§5.2, O-91). The per-minute archive adds no I²C traffic.
+**Compute totals ≈ 4.4 ms of every second — 0.44 %.** The binding constraint is the 300 ms/s of
+blocking I²C (§5.2, O-91). The per-minute archive adds no I²C traffic — every frame it averages
+was already read for the statistics.
 
 `VSQRT.F32` and `VDIV.F32` are 14 cycles each on the M4F, against ≈ 500 cycles per software
-square root and ≈ 70 per multiply. Both builds close the loop at 1 Hz; at a 16 Hz survey mode on a
-400 kHz bus, `double` is 336 ms/s of compute on top of 600 ms/s of I²C and does not.
+square root and ≈ 70 per multiply. `float32`'s ULP at 300 K is 0.00003 K, against a 0.025 K
+interval floor and a 16-bit device word — it carries more digits than the instrument produces.
+`double` returns none of them and costs 84 ms/s here, and 336 ms/s at 16 Hz on top of that mode's
+600 ms/s of I²C, where the node stops closing its loop.
 
 | RAM | Size |
 |---|---|
@@ -478,10 +493,10 @@ square root and ≈ 70 per multiply. Both builds close the loop at 1 Hz; at a 16
 | Compensated field, 768 × `float32` | 3 072 B |
 | Interval mean accumulator, 768 × `float32` | 3 072 B |
 | Interval M2 accumulator, 768 × `float32` | 3 072 B |
-| Served file buffer | 2 368 B |
-| **Persistent total** | **17 960 B** |
+| Served file buffer | 3 904 B |
+| **Persistent total** | **19 496 B** |
 | Transient at start-up — EEPROM image, 832 × `uint16` | 1 664 B |
-| **Peak** | **19 624 B** |
+| **Peak** | **21 160 B** |
 
 Against 128 KB SRAM plus 64 KB CCM on the STM32F405. **The device frame buffer shall not be placed
 in CCM** if the I²C is ever moved to DMA: the F4's DMA controllers cannot reach CCM.
@@ -492,7 +507,7 @@ in CCM** if the I²C is ever moved to DMA: the F4's DMA controllers cannot reach
 |----|----------|--------|
 | V1 | §6.3 | Frame accuracy against a reference target of known emissivity filling the field, at three temperatures spanning 10…30 °C, after the 4 min settling of T4, with the reference read by a contact thermometer. Frame mean within ±1 °C of the reference; per-pixel spread against the zone figures |
 | V2 | §9 M1, §6.6 | Installed footprint measured against the §6.6 table at the installed height, with a warm target moved to each edge of the field; nothing in the frame that is not the intended scene |
-| V3 | §5.2, §10 | Frame read time measured at 100 kHz against 150 ms, and bus occupancy logged over ≥ 1 h at the 2 Hz refresh rate. Heartbeat continuity and file-service responsiveness confirmed **during** frame reads |
+| V3 | §5.1, §5.2, §10 | Subpage read time measured at 400 kHz against 37.5 ms, and bus occupancy logged over ≥ 1 h at the 8 Hz refresh rate with zero I²C errors — including the EEPROM restore, which runs at the same rate as its 400 kHz ceiling. Heartbeat continuity and file-service responsiveness confirmed **during** frame reads |
 | V4 | §6.1, T2, T3, T4 | Cold power-on logged for ≥ 30 min: Ta and frame mean against a fixed reference target, drift across the first 4 min recorded, and the `stabilized` flag observed to clear. Ta compared against canopy air from an M01 instance in the same volume, against T1's 8 K offset |
 | V5 | §4.1 | 1:1 paper printout against the physical part, including the index tab and the lead circle |
 | V6 | §5 | Module-ID readback of `0b100` on the carrier in use |
@@ -502,7 +517,8 @@ in CCM** if the I²C is ever moved to DMA: the F4's DMA controllers cannot reach
 | V10 | §6.2, §6.6 | ε and Tr identified at commissioning against a reference target at canopy distance; the identified values recorded as deployment metadata together with the mounting height |
 | V11 | §7.3 | Rail measured at U1's VDD pin under load — DC value against 3.3 V ±0.05 V, ripple against the buck's 400 kHz fundamental |
 | V12 | §10 | U1 identified by the three device-ID words at `0x2407`–`0x2409`, non-zero and stable, not by address ACK alone |
-| V13 | §6.5 | 60 consecutive device frames logged raw alongside the interval frame they produced: the mean plane reproduced offline to within one LSB. A warm target then swept through part of the field during one interval — the σ plane shall rise on the swept pixels and stay at the noise floor elsewhere |
+| V13 | §6.5, §6.3 | 240 consecutive device frames logged raw alongside the interval frame they produced: the mean plane reproduced offline bit for bit. Per-pixel temporal noise measured against a fixed target — per frame against the 0.36 K of §6.3, and over the interval against 0.025 K. A warm target then swept through part of the field during one interval: the σ plane shall rise on the swept pixels and stay at the noise floor elsewhere |
+| V15 | §6.1 | 19-bit resolution confirmed not to saturate the ADC across the operating scene, by imaging the hottest surface in the growing volume — the luminaire — at the mounting distance and confirming no pixel rails. The resolution-control coefficient confirmed applied by comparing one frame computed at 18 and at 19 bit against the same scene |
 | V14 | §6.5, §10.3 | Compensation of one frame timed on the target with the cycle counter against the ≈ 1 ms of §10.3, and the build checked for double promotion. A synthetic constant-temperature sequence pushed through the accumulator shall return σ = 0, not noise and not a negative variance |
 
 ## 12. Open items
@@ -525,8 +541,9 @@ are M02's; O-74 is M05's; O-76 to O-85 are the service tool's.
 | O-94 | Node power unmeasured | Distribution-board sizing, O-31 |
 | O-95 | Rail deviation and ripple at the module unmeasured against §7.3's ±0.05 V recommendation | V11, absolute accuracy |
 | O-96 | No IR-transmissive window is specified, and DS12 states no spectral passband against which one could be qualified. Whether the module looks into the growing volume unglazed, or an enclosure window is qualified by measurement | Enclosure design, M2 |
-| O-97 | The frame archive is 3.41 MB per day per instance (§10.2), against an ADR-0020 d2 buffer whose bound is set in time and sized for scalar telemetry. Pre-cloud the gateway is the primary durable sink, so retention, downsampling and export of the archive are unowned | Gateway storage sizing, ADR-0020 d2 |
+| O-97 | The frame archive is 5.62 MB per day per instance (§10.2), against an ADR-0020 d2 buffer whose bound is set in time and sized for scalar telemetry. Pre-cloud the gateway is the primary durable sink, so retention, downsampling and export of the archive are unowned | Gateway storage sizing, ADR-0020 d2 |
 | O-98 | The event-trigger constants `n_event` and `delta_event` (§10) have defaults but no basis: no record establishes what canopy excursion is worth a frame | Event path, V8 |
+| O-99 | **Fixed-pattern non-uniformity, ±0.5 K in zone 1, is the largest error left and averaging does not touch it** (§6.3). A per-unit flat field measured against a uniform target would correct it, and M04 is the first class whose trim the device cannot hold: 768 corrections have no home in the MLX90640, while ADR-0028 d2 requires a trim to live in the device whose behaviour it corrects and its alternative A rejects the carrier store. Needs an ADR-0028 decision before any flat field is specified, and a uniform reference target the project does not own | Spatial accuracy, ADR-0028, commissioning |
 
 ## 13. Maturity
 
