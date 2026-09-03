@@ -8,7 +8,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Status:** Working specification. Pre-schematic: `E0005` has no schematic, no layout and no firmware
 - **Date:** 2026-09-03
 - **E-number:** `E0005` · module-ID strap `0b100`
-- **Governing ADRs:** ADR-0014 (rev 6), ADR-0002 (rev 3), ADR-0003, ADR-0005 (rev 1, d11 and d12), ADR-0006, ADR-0016, ADR-0017 (rev 2), ADR-0020
+- **Governing ADRs:** ADR-0014 (rev 6), ADR-0002 (rev 3), ADR-0003, ADR-0005 (rev 1, d11 and d12), ADR-0006, ADR-0016, ADR-0017 (rev 2), ADR-0020, ADR-0027, ADR-0028 (d10)
 - **Companions:** `M01-CLIMATE-specification.md`, `M02-LIGHT-specification.md`, `M05-SAFETY-specification.md`, `M06-VENTILATION-specification.md`, `M07-AMBIENT-specification.md`
 
 Rationale for the decisions applied here is in the governing ADRs and is not restated.
@@ -99,7 +99,8 @@ and is **not** air temperature (§8 T1).
 ### 3.3 Partial populations
 
 M04 has one sensor. A population without it has no function and is not a defined configuration,
-so this module has no partial population in M01's and M02's sense.
+so this module has no partial population in M01's and M02's sense. U2 is not optional either: it
+holds the trim (§6.7), and a module without it declares none (ADR-0028 d5, d10).
 
 The **FOV option is a populated-BOM variant** (ADR-0014 d2, third dimension): both ordering codes
 share the TO-39 lead pattern of §4.1 and differ in can height, aperture and obstacle-free cone.
@@ -114,8 +115,9 @@ commit (ADR-0017 rev 2 d4), as M07's second variant does. Firmware is identical 
 | U1 | Melexis MLX90640 | `MLX90640ESF-BAA-000-TU` | 32 × 24 IR array, 768 pixels, factory calibrated | 3.3 V | `0x33` default | EEPROM-programmable, `0x01`…`0xFF` (`0x00` forbidden), cell `0x240F` |
 
 Named by ADR-0014 d4. `0x33` lies outside the `0x50`–`0x57` block ADR-0014 rev 4 d6 reserves for
-the module-ID EEPROM; M04 identifies by strap (§5) and carries no EEPROM of its own. **The
-address shall be left at its factory default**; the boot probe of §10 assumes it.
+the module-ID EEPROM, which this module fits at `0x50` as U2 (§4.2) to hold the flat-field trim of
+§6.7. M04 still identifies by strap (§5). **U1's address shall be left at its factory default**;
+the boot probe of §10 assumes it.
 
 ### 4.1 Package
 
@@ -144,6 +146,12 @@ The footprint shall be checked against the physical part with a 1:1 paper printo
 | C1 | Bulk decoupling at U1 VDD | 10 µF ceramic | DS12 §14 — 100 nF plus 10 µF close to the VDD and VSS pins |
 | C2 | HF decoupling at U1 VDD | 100 nF ceramic | DS12 §14 |
 | R1, R2 | I²C pull-ups, SCL and SDA | 2.2 kΩ to 3.3 V | §5.1 |
+| U2 | Serial EEPROM — the flat-field store | 24Cxx class, **≥ 4 KB**, 1.7…3.6 V, 400 kHz at 3.3 V, −40…+85 °C, address `0x50` with A0–A2 to GND | §6.7, ADR-0028 d10 |
+| C3 | U2 decoupling | 100 nF at the pin | — |
+
+U2 is a store, not a sensor: it measures nothing and publishes nothing. Byte 0 holds the class ID
+of ADR-0014 d6 whether or not the carrier reads it; the flat-field record starts at byte 16 (§6.7).
+Its ordering part is fixed at schematic capture.
 
 No regulator, no bus switch, no level translator: U1 runs from the header's 3.3 V and its digital
 pins are 5 V tolerant (§5.1). M04 generates no module-local rail, so O-43 is not reopened here.
@@ -153,7 +161,7 @@ pins are 5 V tolerant (§5.1). M04 generates no module-local rail, so O-43 is no
 | Interface | Use |
 |-----------|-----|
 | Header A pin 1 / 3 — 3V3, GND | Supply |
-| Header A pin 4 / 5 — I2C_SCL, I2C_SDA | U1 |
+| Header A pin 4 / 5 — I2C_SCL, I2C_SDA | U1, U2 |
 | Header B pins 3–5 — STRAP_0..2 | Tied to `0b100`: STRAP_0 low, STRAP_1 low, STRAP_2 high |
 | Header B pin 1 / 2 — 3V3, GND | Strap reference |
 
@@ -170,11 +178,11 @@ correctly.
 | | Requirement |
 |---|---|
 | Bus | I2C1, one segment, one device, board-mounted. No switch, no second segment |
-| Speed | **400 kHz.** U1 is the only device on the segment and supports FM+ to 1 MHz; the STM32F405's I²C peripheral tops out at 400 kHz, and DS12 Table 5 note 5 limits EEPROM operations to 400 kHz — the two ceilings coincide, so one rate serves both the calibration read of §6.2 and the frame reads. The 100 kHz platform default of M01 and M02 is set per node by the personality, not by the carrier |
+| Speed | **400 kHz.** U1 supports FM+ to 1 MHz, the STM32F405's I²C peripheral tops out at 400 kHz, and DS12 Table 5 note 5 limits U1's EEPROM operations to the same 400 kHz — the ceilings coincide, so one rate serves the calibration read of §6.2, the frame reads and U2. U2 shall be a part rated for 400 kHz at 3.3 V. The 100 kHz platform default of M01 and M02 is set per node by the personality, not by the carrier |
 | Levels | SDA and SCL are 5 V tolerant and referenced to the pull-up rail, not to VDD. V_IH 0.7 · VDD, V_IL 0.3 · VDD, V_OL 0.4 V at 3 mA sink |
 | Pull-ups | R1, R2, **2.2 kΩ** to 3.3 V, on the module; the carrier carries none (O-51). Sink 1.5 mA against the 3 mA V_OL condition, and against the **10 mA** ceiling DS12 Table 5 note 4 places on the SDA driver for thermal reasons (absolute maximum 40 mA) |
-| Sizing check | Fast mode allows 300 ns of rise time. At 2.2 kΩ that admits 161 pF on the segment, against U1's 10 pF pin capacitance and short board traces. DS12 Figure 26 uses 1 kΩ, which would sink 3.3 mA — at the V_OL test condition rather than below it |
-| Address | `0x33`. No device on this module occupies `0x50`–`0x57` |
+| Sizing check | Fast mode allows 300 ns of rise time. At 2.2 kΩ that admits 161 pF on the segment, against 10 pF at U1, ≈ 8 pF at U2 and short board traces. DS12 Figure 26 uses 1 kΩ, which would sink 3.3 mA — at the V_OL test condition rather than below it |
+| Address | U1 `0x33`, U2 `0x50` — the block ADR-0014 rev 4 d6 reserves, occupied here by design (§4.2). No collision, and U2's 5 ms self-timed write cycle falls in commissioning only |
 
 ### 5.2 Bus occupancy
 
@@ -246,8 +254,8 @@ gaps and background make mixed pixels the normal case (§6.6, O-88).
   0.14 K/√30 = **0.025 K** at 2 Hz, at 8 Hz and at 16 Hz alike (§6.5). Refresh rate buys time
   resolution, not noise.
 - **Non-uniformity is the dominant error and it does not average away.** ±0.5 K in zone 1 is
-  fixed-pattern — 20 × the temporal floor above, and correctable only by a per-unit flat field
-  this specification does not define. O-99.
+  fixed-pattern — 20 × the temporal floor above. The flat-field trim of §6.7 corrects its offset
+  component; its determination protocol is open, O-99.
 - **Long-term drift: an additional ±3 °C for objects around room temperature over years**
   (DS12 §12.1.1 note 2) — the operating point of §3, and the largest term in this budget. O-89.
 - Ta channel: ±0.5 °C.
@@ -309,6 +317,23 @@ the canopy area that instance is responsible for** (ADR-0014 d4). At the 0.3…0
 luminaire plane allows, that is `BAA`; `BAB` applies to a mount far enough back to keep coverage,
 at 2.6 × finer sampling. The installed height is fixed by no record. O-86.
 
+### 6.7 Flat-field trim
+
+M04 declares one calibration trim (ADR-0028 d1 step 4).
+
+| Item | Requirement |
+|------|-------------|
+| Corrects | The **offset component of fixed-pattern non-uniformity**, ±0.5 K in zone 1 (§6.3) — the residual after the device's factory calibration, static and unaffected by averaging |
+| Does not correct | The sensitivity component, which scales with `To − Ta`. A one-point field is exact at its determination temperature and degrades away from it; over the 8…32 °C band of §3 that residual is unmeasured. A two-point field needs two uniform targets and is not specified. O-99 |
+| Form | 768 × `int16`, 0.01 K per LSB, one offset per pixel, subtracted after the compensation chain of §6.2 and before the statistics of §6.4 and the accumulation of §6.5 |
+| Store | **U2** (§4.2), by ADR-0028 d10: the MLX90640 has no user cell for 768 corrections, so the trim lives on the module rather than in the corrected device |
+| Layout in U2 | Byte 0 class ID (ADR-0014 d6), bytes 1–15 reserved, byte 16 onward a 32 B header — magic `IGFF`, version, kind, pixel count, **U1's 48-bit device ID**, determination scene temperature and Ta as `float32` K, determination time, CRC-32 — followed by the 1536 B table. 1568 B in all |
+| Binding | The header's device ID shall match the `0x2407`–`0x2409` read of §10. A field whose ID does not match is **not applied**, and the mismatch is reported — this is the module-swap failure ADR-0028 alternative A names, closed by construction |
+| Voided by | Replacement of U1 (ADR-0028 d8), or a change to any validity condition its `-CC` names (ADR-0028 d7) |
+| Absent | The node publishes uncorrected and reports it (ADR-0028 d5): `flat_field = false` in the record of §10.1 and in the frame header of §10.2. Firmware writes no default back |
+| Written | Over the bus on a running node (ADR-0028 d4), never at flash time. `uavcan.file.Write` to `/plant/flatfield.bin`; the node validates the CRC and the device ID before committing to U2 |
+| Determination | Not specified here. The protocol, the uniform reference target and the choice between a one- and two-point field are open, O-99, and produce the `-CP` / `-CC` records of ADR-0028 d1 |
+
 ## 7. Power
 
 ### 7.1 Node
@@ -326,6 +351,7 @@ at 2.6 × finer sampling. The installed height is fixed by no record. O-86.
 | # | Device | Operating | Rail |
 |---|--------|-----------|------|
 | U1 | MLX90640 | **25 mA max** (DS12 Table 5); "less than 23 mA" on DS12 §1. No sleep or standby state is offered — measurement runs continuously while the device is powered | 3.3 V |
+| U2 | 24Cxx EEPROM | Standby ≈ 1 µA; ≤ 3 mA while writing, which happens at commissioning only (§6.7) | 3.3 V |
 
 ### 7.3 3.3 V rail
 
@@ -375,6 +401,7 @@ MCU and CAN transceiver. No rail redesign, and no module-local rail (§4.2).
 | Calibration restore | Read the 832-word EEPROM once after power-on at ≤ 400 kHz and restore per DS12 §11.1 (§6.2). A failed or implausible restore shall disable publication rather than publish uncompensated data |
 | Configuration at start-up | Refresh rate, resolution, reading pattern and subpage mode per §6.1, written to `0x800D` explicitly rather than inherited from the device's EEPROM defaults |
 | Frame read | Chunked, with the main loop serviced between chunks: one read is 37.5 ms of blocking I²C at 400 kHz, eight times a second, and the node owes a 1 Hz heartbeat and the file service throughout (§5.2). O-91 |
+| Flat field | Read U2 at boot, validate the CRC and match the header's device ID against U1's (§6.7). Apply per pixel after compensation, before the statistics and the accumulation. A missing, corrupt or foreign field is reported, not silently ignored, and publication continues uncorrected |
 | Statistics | Per §6.4, over the valid-pixel set of §6.2 |
 | Frame validity | A frame whose subpage handshake was missed, or whose Ta moved by more than 2 K from the previous frame, is excluded from the interval accumulation and from the 1 Hz record. The count that did contribute is served in the frame header (§10.2) |
 | Interval accumulation | Per §6.5, by Welford or by deviations from a per-pixel reference. **`Σx² − n·x̄²` is forbidden** — §6.5 gives the arithmetic |
@@ -415,6 +442,7 @@ Record fields, kelvin wherever a temperature:
 | `emissivity`, `reflected_temperature`, `hotspot_k`, `hotspot_delta_min` | `float32` | Constants in force (§6.2, §6.4) |
 | `defective_pixels` | `uint8` | Count excluded, 0…4 (§6.2) |
 | `stabilized` | `bool` | False for the first 4 min after power-on (§6.1, T4) |
+| `flat_field` | `bool` | A flat-field trim bound to this U1 is in force (§6.7) |
 | `frame_seq` | `uint32` | Sequence of the interval frame currently served (§10.2). The record's own statistics are for the last device frame, not the interval |
 | `frame_available` | `bool` | An interval frame for this sequence is served at §10.2 (ADR-0005 d11, d12) |
 
@@ -448,7 +476,7 @@ Header, little-endian throughout:
 | 20 | 8 | Interval end |
 | 28 | 2 | `n_frames` accumulated — 1 marks an event snapshot (§6.5) |
 | 30 | 1 | Defective-pixel count |
-| 31 | 1 | Flags — bit 0 `stabilized`, bit 1 event-triggered, bit 2 time base unsynchronized |
+| 31 | 1 | Flags — bit 0 `stabilized`, bit 1 event-triggered, bit 2 time base unsynchronized, bit 3 flat field applied (§6.7) |
 | 32 | 6 | **Device ID**, EEPROM `0x2407`–`0x2409` (§10) |
 | 38 | 2 | Reserved |
 | 40 | 4 | Emissivity, `float32` |
@@ -473,6 +501,7 @@ rate of §6.1 — four complete frames per second:
 | *The same in `double`* | *4 × ≈ 3.5 M cycles,* **≈ 84 ms** | *8 %* |
 | Statistics of §6.4, on the 4-frame mean | ≈ 17 k cycles, 0.1 ms | 0.01 % |
 | Interval accumulation, §6.5, four frames | ≈ 48 k cycles, 0.3 ms | 0.03 % |
+| Flat-field subtraction, §6.7, four frames | ≈ 9 k cycles, 0.05 ms | 0.01 % |
 | Once per minute: σ plane, CRC-32 | ≈ 58 k cycles, 0.35 ms | — |
 | Once per minute: serving ≈ 670 CAN frames | ≈ 3 ms | — |
 
@@ -493,10 +522,11 @@ interval floor and a 16-bit device word — it carries more digits than the inst
 | Compensated field, 768 × `float32` | 3 072 B |
 | Interval mean accumulator, 768 × `float32` | 3 072 B |
 | Interval M2 accumulator, 768 × `float32` | 3 072 B |
+| Flat field, 768 × `int16` (§6.7) | 1 536 B |
 | Served file buffer | 3 904 B |
-| **Persistent total** | **19 496 B** |
-| Transient at start-up — EEPROM image, 832 × `uint16` | 1 664 B |
-| **Peak** | **21 160 B** |
+| **Persistent total** | **21 032 B** |
+| Transient at start-up — U1's EEPROM image, 832 × `uint16` | 1 664 B |
+| **Peak** | **22 696 B** |
 
 Against 128 KB SRAM plus 64 KB CCM on the STM32F405. **The device frame buffer shall not be placed
 in CCM** if the I²C is ever moved to DMA: the F4's DMA controllers cannot reach CCM.
@@ -518,8 +548,9 @@ in CCM** if the I²C is ever moved to DMA: the F4's DMA controllers cannot reach
 | V11 | §7.3 | Rail measured at U1's VDD pin under load — DC value against 3.3 V ±0.05 V, ripple against the buck's 400 kHz fundamental |
 | V12 | §10 | U1 identified by the three device-ID words at `0x2407`–`0x2409`, non-zero and stable, not by address ACK alone |
 | V13 | §6.5, §6.3 | 240 consecutive device frames logged raw alongside the interval frame they produced: the mean plane reproduced offline bit for bit. Per-pixel temporal noise measured against a fixed target — per frame against the 0.36 K of §6.3, and over the interval against 0.025 K. A warm target then swept through part of the field during one interval: the σ plane shall rise on the swept pixels and stay at the noise floor elsewhere |
-| V15 | §6.1 | 19-bit resolution confirmed not to saturate the ADC across the operating scene, by imaging the hottest surface in the growing volume — the luminaire — at the mounting distance and confirming no pixel rails. The resolution-control coefficient confirmed applied by comparing one frame computed at 18 and at 19 bit against the same scene |
 | V14 | §6.5, §10.3 | Compensation of one frame timed on the target with the cycle counter against the ≈ 1 ms of §10.3, and the build checked for double promotion. A synthetic constant-temperature sequence pushed through the accumulator shall return σ = 0, not noise and not a negative variance |
+| V15 | §6.1 | 19-bit resolution confirmed not to saturate the ADC across the operating scene, by imaging the hottest surface in the growing volume — the luminaire — at the mounting distance and confirming no pixel rails. The resolution-control coefficient confirmed applied by comparing one frame computed at 18 and at 19 bit against the same scene |
+| V16 | §6.7 | A flat field written over the bus, read back from U2 after a power cycle, and confirmed applied by the record's `flat_field` flag and the frame header. A field carrying a foreign device ID offered to the node and confirmed **refused** and reported. Non-uniformity measured against a uniform target before and after, to record what the correction actually bought |
 
 ## 12. Open items
 
@@ -543,7 +574,7 @@ are M02's; O-74 is M05's; O-76 to O-85 are the service tool's.
 | O-96 | No IR-transmissive window is specified, and DS12 states no spectral passband against which one could be qualified. Whether the module looks into the growing volume unglazed, or an enclosure window is qualified by measurement | Enclosure design, M2 |
 | O-97 | The frame archive is 5.62 MB per day per instance (§10.2), against an ADR-0020 d2 buffer whose bound is set in time and sized for scalar telemetry. Pre-cloud the gateway is the primary durable sink, so retention, downsampling and export of the archive are unowned | Gateway storage sizing, ADR-0020 d2 |
 | O-98 | The event-trigger constants `n_event` and `delta_event` (§10) have defaults but no basis: no record establishes what canopy excursion is worth a frame | Event path, V8 |
-| O-99 | **Fixed-pattern non-uniformity, ±0.5 K in zone 1, is the largest error left and averaging does not touch it** (§6.3). A per-unit flat field measured against a uniform target would correct it, and M04 is the first class whose trim the device cannot hold: 768 corrections have no home in the MLX90640, while ADR-0028 d2 requires a trim to live in the device whose behaviour it corrects and its alternative A rejects the carrier store. Needs an ADR-0028 decision before any flat field is specified, and a uniform reference target the project does not own | Spatial accuracy, ADR-0028, commissioning |
+| O-99 | The flat-field trim of §6.7 has a store (ADR-0028 d10) and no **determination protocol**: the project owns no uniform reference target, and whether a one-point field suffices across the 8…32 °C band or a two-point field is required is unsettled. Until it is determined, ±0.5 K of fixed-pattern non-uniformity stands (§6.3) | Spatial accuracy, the `-CP` / `-CC` records, V16 |
 
 ## 13. Maturity
 
@@ -554,6 +585,6 @@ DSDL types do not exist.
 | Rung | Content | Reached when |
 |------|---------|--------------|
 | **Pre-schematic** ← here | Complement and requirements fixed; values estimated or `verify` | ADR-0014 d4 fixes the part ✔; DS12 values transcribed ✔ |
-| **Schematic captured** | Parts fixed to ordering part numbers; schematic exists; component values determined | FOV variant confirmed against O-86; `E0005-000001` schematic exists |
+| **Schematic captured** | Parts fixed to ordering part numbers; schematic exists; component values determined | FOV variant confirmed against O-86; U2's ordering part fixed; `E0005-000001` schematic exists |
 | **Schematic-frozen** | Remaining `verify` resolved, footprints checked against physical parts. `L` releases here | O-93 and O-96 closed; V5 executed |
 | **As-built** | Estimates replaced by measured values; §11 executed | `E0005` fabricated and bench-verified; O-94 and O-95 measured |
