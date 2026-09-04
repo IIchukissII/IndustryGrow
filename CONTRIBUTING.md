@@ -205,7 +205,7 @@ Get-ChildItem store\E000?-??????.kicad_* | ForEach-Object {
 ```
 
 ```powershell
-'E0001-000003','E0002-000001','E0003-000001','E0006-000001' | ForEach-Object {
+'E0001-000003','E0002-000001','E0003-000001','E0005-000001','E0006-000001' | ForEach-Object {
   $s = @("store\$_.kicad_sch","store\$_.kicad_pro","store\$_.kicad_prl") | Where-Object { Test-Path $_ }
   Compress-Archive -Path $s -DestinationPath "store\$_-S-src.zip" -Force
   $d = @("store\$_.kicad_pcb","store\$_.kicad_dru","store\$_.kicad_pro","store\$_.kicad_prl") | Where-Object { Test-Path $_ }

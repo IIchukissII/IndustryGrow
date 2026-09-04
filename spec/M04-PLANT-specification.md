@@ -5,8 +5,8 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 # M04-PLANT — module specification
 
-- **Status:** Working specification. Pre-schematic: `E0005` has no schematic, no layout and no firmware
-- **Date:** 2026-09-03
+- **Status:** Working specification. Schematic captured — `store/E0005-000001-S-src.zip`. No layout, no fab package, no firmware
+- **Date:** 2026-09-04
 - **E-number:** `E0005` · module-ID strap `0b100`
 - **Governing ADRs:** ADR-0014 (rev 6), ADR-0002 (rev 3), ADR-0003, ADR-0005 (rev 1, d11 and d12), ADR-0006, ADR-0016, ADR-0017 (rev 2), ADR-0020, ADR-0027, ADR-0028 (d10)
 - **Companions:** `M01-CLIMATE-specification.md`, `M02-LIGHT-specification.md`, `M05-SAFETY-specification.md`, `M06-VENTILATION-specification.md`, `M07-AMBIENT-specification.md`
@@ -129,15 +129,17 @@ the boot probe of §10 assumes it.
 | Aperture | Ø2.60 ±0.10 mm, flush | Ø3.90 ±0.10 mm in an **M5 threaded** external aperture |
 | Overall width across the index tab | 10.03 ±0.20 mm; tab 0.80 ±0.10 mm, at 45° to the lead pattern | Same |
 | Lead circle | Ø5.84 ±0.18 mm, 4 leads at 90° | Same |
-| Lead | Ø0.45 ±0.05 mm, 6 ±0.50 mm long | Same |
-| Pin order, from below, from the tab | VDD, GND, SDA, SCL | VDD, GND, SDA, SCL |
+| Lead | **Two diameters, Ø0.45 ±0.05 mm and Ø0.70 mm**; 6 ±0.50 mm long. DS12 Figure 29 dimensions both and identifies neither lead. Board holes are 1.0 mm, clearing the larger (V5) | Same |
+| Lead seal | Ø1.12 ±0.05 mm glass seal in the base plate, three of four leads | Same |
+| Pin numbering | **1 SDA · 2 VDD · 3 GND · 4 SCL** (DS12 Table 3), clockwise from the tab **in bottom view** (DS12 Figure 2), counter-clockwise seen from the component side | Same |
 | Obstacle-free zone | **140°**, referenced to the external aperture | **90°** |
 
 Dimensions from DS12 Figures 28 and 29; the obstacle-free cones from DS12 Figure 25. The external
 aperture is fitted before factory calibration and is part of the device.
 
 The footprint shall be checked against the physical part with a 1:1 paper printout before ordering
-(V5). The check shall include the index tab, which fixes pin 1 and does not sit on the lead circle.
+(V5). The check shall cover the index tab, which fixes pin 1 and does not sit on the lead circle;
+the rotational sense of the pin numbering; and both lead diameters against the 1.0 mm hole.
 
 ### 4.2 Supporting parts
 
@@ -146,12 +148,15 @@ The footprint shall be checked against the physical part with a 1:1 paper printo
 | C1 | Bulk decoupling at U1 VDD | 10 µF ceramic | DS12 §14 — 100 nF plus 10 µF close to the VDD and VSS pins |
 | C2 | HF decoupling at U1 VDD | 100 nF ceramic | DS12 §14 |
 | R1, R2 | I²C pull-ups, SCL and SDA | 2.2 kΩ to 3.3 V | §5.1 |
-| U2 | Serial EEPROM — the flat-field store | 24Cxx class, **≥ 4 KB**, 1.7…3.6 V, 400 kHz at 3.3 V, −40…+85 °C, address `0x50` with A0–A2 to GND | §6.7, ADR-0028 d10 |
+| U2 | Serial EEPROM — the flat-field store | **M24C64-RMN6TP**, 64 kbit = **8 KB**, SO8, 1.8…5.5 V, 400 kHz, −40…+85 °C, 32 B page, 5 ms write, 10⁶ cycles. `E0`–`E2` to GND → address `0x50`; `WC` to GND → writes enabled | §6.7, ADR-0028 d10 |
 | C3 | U2 decoupling | 100 nF at the pin | — |
+| R3, R4, R5 | Module-ID strap ties — R3 `STRAP_0` to GND, R4 `STRAP_1` to GND, R5 `STRAP_2` to 3.3 V | 0 Ω | §5, ADR-0014 d6 |
 
 U2 is a store, not a sensor: it measures nothing and publishes nothing. Byte 0 holds the class ID
 of ADR-0014 d6 whether or not the carrier reads it; the flat-field record starts at byte 16 (§6.7).
-Its ordering part is fixed at schematic capture.
+Its record is 1568 B (§6.7) against 8 KB, and a two-point field would be 3104 B.
+Substitution: any SO8 24C64 on the JEDEC-standard pinout, rated 400 kHz at 3.3 V over
+−40…+85 °C.
 
 No regulator, no bus switch, no level translator: U1 runs from the header's 3.3 V and its digital
 pins are 5 V tolerant (§5.1). M04 generates no module-local rail, so O-43 is not reopened here.
@@ -539,7 +544,7 @@ in CCM** if the I²C is ever moved to DMA: the F4's DMA controllers cannot reach
 | V2 | §9 M1, §6.6 | Installed footprint measured against the §6.6 table at the installed height, with a warm target moved to each edge of the field; nothing in the frame that is not the intended scene |
 | V3 | §5.1, §5.2, §10 | Subpage read time measured at 400 kHz against 37.5 ms, and bus occupancy logged over ≥ 1 h at the 8 Hz refresh rate with zero I²C errors — including the EEPROM restore, which runs at the same rate as its 400 kHz ceiling. Heartbeat continuity and file-service responsiveness confirmed **during** frame reads |
 | V4 | §6.1, T2, T3, T4 | Cold power-on logged for ≥ 30 min: Ta and frame mean against a fixed reference target, drift across the first 4 min recorded, and the `stabilized` flag observed to clear. Ta compared against canopy air from an M01 instance in the same volume, against T1's 8 K offset |
-| V5 | §4.1 | 1:1 paper printout against the physical part, including the index tab and the lead circle |
+| V5 | §4.1 | 1:1 paper printout of `industrygrow:MLX90640_TO-39-4` against the physical part: index tab, lead circle, rotational sense of the pin numbering, and both lead diameters in the 1.0 mm hole |
 | V6 | §5 | Module-ID readback of `0b100` on the carrier in use |
 | V7 | §7.1 | Node draw measured on `+12 V` against the 360 mW estimate, and U1's own current against 25 mA |
 | V8 | §10.2, §6.4 | An interval frame read by the gateway, its header CRC checked, and the frame-wide mean of its mean plane matched against the arithmetic mean of the 60 `t_mean` values published during that interval, within one quantization step. An event frame read and confirmed to carry `n_frames` = 1 |
@@ -578,13 +583,13 @@ are M02's; O-74 is M05's; O-76 to O-85 are the service tool's.
 
 ## 13. Maturity
 
-**Pre-schematic.** The complement is fixed by ADR-0014 d4 and every device value here is stated
-from DS12. `E0005` has no schematic, no layout, no fab package and no firmware, and the `plant`
-DSDL types do not exist.
+**Schematic captured.** `E0005-000001` is ERC-clean at 16 warnings, all of them the unused header
+signals this module leaves free (§5). It has no layout, no fab package and no firmware, and the
+`plant` DSDL types do not exist.
 
 | Rung | Content | Reached when |
 |------|---------|--------------|
-| **Pre-schematic** ← here | Complement and requirements fixed; values estimated or `verify` | ADR-0014 d4 fixes the part ✔; DS12 values transcribed ✔ |
-| **Schematic captured** | Parts fixed to ordering part numbers; schematic exists; component values determined | FOV variant confirmed against O-86; U2's ordering part fixed; `E0005-000001` schematic exists |
+| **Pre-schematic** | Complement and requirements fixed; values estimated or `verify` | ADR-0014 d4 fixes the part ✔; DS12 values transcribed ✔ |
+| **Schematic captured** ← here | Parts fixed to ordering part numbers; schematic exists; component values determined | U2 fixed to `M24C64-RMN6TP` ✔; `E0005-000001-S-src.zip` ✔. Not gated by O-86 — one lead pattern serves both FOV options (§4.1) |
 | **Schematic-frozen** | Remaining `verify` resolved, footprints checked against physical parts. `L` releases here | O-93 and O-96 closed; V5 executed |
 | **As-built** | Estimates replaced by measured values; §11 executed | `E0005` fabricated and bench-verified; O-94 and O-95 measured |
