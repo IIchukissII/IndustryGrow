@@ -5,23 +5,17 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 # Gateway ATECC608 identity provisioning — `SP0004-M-atecc-provisioning`
 
-- **Type:** HOW document (Manual, document layer **M** — ADR-0017 d9). It owns the
-  *how* and the ATECC608 *values*; the *why* is delegated to the ADRs by number
-  (ADR-0000 d2/d3).
+- **Type:** Manual, document layer **M** (ADR-0017 d9). Carries the ATECC608 values.
 - **Subject:** the gateway Raspberry Pi's on-board **ATECC608B** secure element =
   part of **SP0004** (REGISTRY.md; ADR-0019 d2 — SP0004 is the one SP part with
   per-instance identity, its ATECC-bound certificate). Node-carrier (E0001)
   provisioning is a separate concern (ADR-0007 d5, not built).
-- **Identifier:** the filename is the object key; form `SPxxxx-<layer>-<slug>` per
-  the SP document-layer convention in `REGISTRY.md`.
 - **Companion automation:** the gateway provisioning tool
   [`gateway/provision_identity.py`](../gateway/provision_identity.py), which
   performs §4–§8, and the operator CA in the repo's `pki/` directory
-  (`sign-csr.sh` signs the CSR it produces). This document is the tool's
-  specification; where the two disagree, this document is right and the tool is a
-  bug. It reaches the Pi with the rest of the `gateway/` bundle (`deploy.ps1`) and
-  is deliberately *not* installed by `provision.sh`: provisioning is a later phase
-  than bring-up and needs a dependency the bring-up venv does not carry (§5).
+  (`sign-csr.sh` signs the CSR it produces). Where tool and document disagree, the document is
+  right. The tool reaches the Pi with the `gateway/` bundle (`deploy.ps1`); `provision.sh` does
+  not install it — it needs a dependency the bring-up venv does not carry (§5).
 - **Stage:** roadmap Production / Phase 2 (ADR-0017) — serials and identity are
   assigned here, after the bench bring-up of `SP0004-M-gateway-bringup`.
 - **Validation status — READ THIS.** The ATECC608 config words and lock sequence
@@ -74,8 +68,7 @@ part being on the BOM (ADR-0007 d1).
 > vendor serial plus the ATECC-bound certificate (ADR-0019 d2), and it *is* a
 > machine `GBOX_NNNN` (ADR-0022 d1). It has no `Exxxx-VVVVVV-NNNNNN` instance serial,
 > and the `-PR` lifecycle-document suffix proper is defined on those E-instances
-> (ADR-0022 d7) — node provisioning, not this. This document is the **gateway's**
-> ATECC provisioning; its binding is machine-scoped (§8).
+> (ADR-0022 d7) — node provisioning, not this. The binding here is machine-scoped (§8).
 
 ---
 

@@ -5,17 +5,12 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 # M01-CLIMATE bring-up protocol — `E0002-000001-M-bringup-protocol`
 
-- **Type:** HOW document (Manual, document layer **M** — ADR-0017 d9). It owns the *how*; the
-  *why* is delegated to the ADRs by number (ADR-0000 d2/d3).
+- **Type:** Manual, document layer **M** (ADR-0017 d9).
 - **Subject:** the design `E0002-000001` (M01-CLIMATE), on an `E0001` carrier.
-- **Identifier:** the filename is the object key; form `Exxxx-VVVVVV-<layer>-<slug>`.
-- **Scope:** type-level. This document is the **procedure**. Executing it against one instance
-  produces that instance's `-QP` (Quality Protocol, ADR-0017 d10), which holds the serials, the
-  ATECC608 identity and the measured values.
-- **Result data does not live here.** Serials, instance identity and measured values are
-  production data; they go to the ERP lifecycle-document index and the warehouse object
-  `Exxxx-VVVVVV-NNNNNN-QP` (ADR-0021 d7), never into this repo (ADR-0017, *Registry and store
-  location*). The result columns below stay blank in the repo copy.
+- **Scope:** type-level. One execution against one instance produces that instance's `-QP`
+  (ADR-0017 d10): serials, ATECC608 identity, measured values.
+- **Results:** to the ERP lifecycle index as `Exxxx-VVVVVV-NNNNNN-QP` (ADR-0021 d7), not this
+  repo. Result columns stay blank here.
 
 ---
 
