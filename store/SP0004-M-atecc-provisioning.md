@@ -74,8 +74,8 @@ part being on the BOM (ADR-0007 d1).
 
 ## 3. Slot map and config zone (the ADR-0007 d9 values)
 
-ADR-0007 d9 leaves the concrete slot numbers, key-config words, and lock sequence
-to this document. Here they are.
+ADR-0007 d9 leaves the concrete slot numbers, key-config words and lock sequence to this
+document.
 
 **Part variant.** Use a **TrustCUSTOM** ATECC608B (blank, config zone unlocked). A
 **TrustFLEX** part ships pre-locked with a factory key and Microchip-signed cert —
@@ -263,15 +263,11 @@ certificate-metadata inputs ADR-0022 d5 names** — public-key fingerprint, cert
 serial, validity, never a private key — referenced here rather than restated
 (ADR-0000 d3).
 
-**Where the binding goes — settled after this document was first written.** This
-section originally recorded that whether a gateway's binding reused ADR-0022 d5's
-E-instance route or needed its own was not settled in any ADR. It is now:
-**ADR-0021 rev 3 d17** gives the ERP ownership of a *machine* identity binding, and
-**ADR-0022 rev 1 d12** gives it its own machine-scoped route. So this step ends by
-submitting the binding to that route, and the tool emits exactly its request body —
-no hand-translation. What remains deferred is narrower than it was: the `-PR`
-*document blob* format and whether a machine gets a lifecycle document at all
-(d12's own scope note; board card 17's tail).
+**Where the binding goes.** **ADR-0021 rev 3 d17** gives the ERP ownership of a *machine*
+identity binding; **ADR-0022 rev 1 d12** gives it its own machine-scoped route. This step
+ends by submitting the binding to that route, and the tool emits exactly its request body —
+no hand-translation. Deferred: the `-PR` *document blob* format, and whether a machine gets a
+lifecycle document at all (d12's own scope note; board card 17's tail).
 
 **Ordering (a workflow constraint, not an axis redefinition).** The CSR's CN is the
 machine identifier `GBOX_NNNN` (§1), so that machine must be registered in the ERP
