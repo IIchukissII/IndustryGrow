@@ -6,8 +6,8 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # IndustryGrow / IndustryFlow — Glossary (controlled vocabulary)
 
 > Status: Draft
-> Scope: terminology only. This document binds **words to meanings**; it does
-> not make or restate engineering decisions.
+> Scope: terminology only. Binds **words to meanings**; makes and restates no engineering
+> decision.
 
 ## Authority
 
