@@ -5,11 +5,8 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 # Gateway bring-up Manual — `SP0004-M-gateway-bringup`
 
-- **Type:** HOW document (Manual, document layer **M** — ADR-0017 d9). It owns the
-  *how*; the *why* is delegated to the ADRs by number (ADR-0000 d2/d3).
+- **Type:** Manual, document layer **M** (ADR-0017 d9).
 - **Subject:** the gateway Raspberry Pi = **SP0004** (REGISTRY.md; ADR-0019 d7).
-- **Identifier:** the filename is the object key; form `SPxxxx-<layer>-<slug>` per
-  the SP document-layer convention in `REGISTRY.md`.
 - **Companion automation:** in the repo's `gateway/` directory — `provision.sh`,
   `deploy.ps1`, `files/`, `requirements.txt`, `gateway.env.example`.
 - **Stage:** roadmap stage 1 (CAN bring-up), bench host `gbox-dev`.
