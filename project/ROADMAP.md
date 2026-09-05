@@ -11,19 +11,13 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Parent:** ADR-0001
 - **Companions:** ADR-0002, ADR-0004, ADR-0014, ADR-0015, ADR-0016, ADR-0018, ADR-0020
 
-## What this document is
+## Scope
 
-This is the execution map for IndustryGrow: the order in which capabilities are
-built and, more importantly, the dependencies between them. It complements the
-ADRs without competing with them. The ADRs remain the single source of truth for
-*decisions and rationale* (ADR-0000); this roadmap only **references** those
-decisions and arranges them in build order. Where a stage rests on a decision,
-the governing ADR is named — the roadmap does not restate the argument, the same
-way the glossary and the ADRs do not restate each other.
+The execution map: build order and the dependencies between capabilities. Non-normative —
+decisions and rationale stay in the ADRs (ADR-0000), named where a stage rests on one.
 
-The map below is the authoritative view. The stage table further down is a linear
-reading of it for convenience, but the **dependency structure — not the
-numbering — governs build order.**
+The map below is the authoritative view; the stage table further down is a linear reading of
+it. **The dependency structure, not the numbering, governs build order.**
 
 ![IndustryGrow roadmap dependency map](figures/industrygrow-roadmap-map.svg)
 
