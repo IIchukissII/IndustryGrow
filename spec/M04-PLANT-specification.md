@@ -5,8 +5,8 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 # M04-PLANT — module specification
 
-- **Status:** Working specification. Schematic captured — `store/E0005-000001-S-src.zip`. No layout, no fab package, no firmware
-- **Date:** 2026-09-04
+- **Status:** Working specification. Schematic and layout captured — `store/E0005-000001-S-src.zip`, `store/E0005-000001-D-src.zip`. No fab package, no firmware
+- **Date:** 2026-09-05
 - **E-number:** `E0005` · module-ID strap `0b100`
 - **Governing ADRs:** ADR-0014 (rev 6), ADR-0002 (rev 3), ADR-0003, ADR-0005 (rev 1, d11 and d12), ADR-0006, ADR-0016, ADR-0017 (rev 2), ADR-0020, ADR-0027, ADR-0028 (d10)
 - **Companions:** `M01-CLIMATE-specification.md`, `M02-LIGHT-specification.md`, `M05-SAFETY-specification.md`, `M06-VENTILATION-specification.md`, `M07-AMBIENT-specification.md`
@@ -583,13 +583,14 @@ are M02's; O-74 is M05's; O-76 to O-85 are the service tool's.
 
 ## 13. Maturity
 
-**Schematic captured.** `E0005-000001` is ERC-clean at 16 warnings, all of them the unused header
-signals this module leaves free (§5). It has no layout, no fab package and no firmware, and the
-`plant` DSDL types do not exist.
+**Schematic and layout captured.** `E0005-000001` is ERC-clean at 16 warnings, all of them the
+unused header signals this module leaves free (§5), and the two-layer layout is DRC-clean with 0
+unconnected pads and no schematic-parity difference. It has no fab package and no firmware, and
+the `plant` DSDL types do not exist.
 
 | Rung | Content | Reached when |
 |------|---------|--------------|
 | **Pre-schematic** | Complement and requirements fixed; values estimated or `verify` | ADR-0014 d4 fixes the part ✔; DS12 values transcribed ✔ |
-| **Schematic captured** ← here | Parts fixed to ordering part numbers; schematic exists; component values determined | U2 fixed to `M24C64-RMN6TP` ✔; `E0005-000001-S-src.zip` ✔. Not gated by O-86 — one lead pattern serves both FOV options (§4.1) |
+| **Schematic and layout captured** ← here | Parts fixed to ordering part numbers; schematic and board exist; component values determined | U2 fixed to `M24C64-RMN6TP` ✔; `E0005-000001-S-src.zip` ✔; `E0005-000001-D-src.zip` ✔, 104.90 × 46.99 mm on the E0002 header positions, U1 on the face away from the carrier (M9). Not gated by O-86 — one lead pattern serves both FOV options (§4.1) |
 | **Schematic-frozen** | Remaining `verify` resolved, footprints checked against physical parts. `L` releases here | O-93 and O-96 closed; V5 executed |
 | **As-built** | Estimates replaced by measured values; §11 executed | `E0005` fabricated and bench-verified; O-94 and O-95 measured |
