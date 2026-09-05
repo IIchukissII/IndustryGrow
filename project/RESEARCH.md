@@ -11,21 +11,13 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Parent:** ADR-0001
 - **Companions:** ADR-0014, ADR-0015, ADR-0016; `MOTIVATION.md`; `project/ROADMAP.md`
 
-## What this document is
+## Scope
 
-`MOTIVATION.md` states *why* IndustryGrow exists — the gap it is built to close.
-This document is the *how*: the directions of research that gap opens, how those
-directions depend on one another, and what each returns — first as a result on
-the testbed (the strawberry cabinet, ADR-0001 decision 6), then as a feature of
-an eventual commercial deployment.
-
-It is non-normative. The ADRs remain the single source of truth for decisions and
-rationale (ADR-0000); this document only **arranges** the research lines those
-decisions make possible. Where a line rests on a decision, the governing ADR is
-named. The architecture itself — the survey/identification lifecycle, reduced-order
-state-space modeling, the profile as single mutation channel — is settled in
-ADR-0016, ADR-0015, and ADR-0014. The value here is in the **interlock** between
-the lines, not in any single one.
+The research lines the gap in `MOTIVATION.md` opens: how they depend on one another and what
+each returns — first on the testbed (the strawberry cabinet, ADR-0001 d6), then as a feature of
+a commercial deployment. Non-normative — decisions and rationale stay in the ADRs (ADR-0000),
+named where a line rests on one. The architecture itself is settled in ADR-0014, ADR-0015 and
+ADR-0016.
 
 ## The research lines
 
