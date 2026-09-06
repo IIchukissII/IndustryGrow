@@ -104,6 +104,28 @@ void cyphal_diagnostic_u32(uint8_t severity, const char *text, uint32_t value);
 typedef uint8_t (*cyphal_command_fn)(uint16_t command, const uint8_t *param, size_t param_len);
 void cyphal_set_command_handler(cyphal_command_fn fn);
 
+/* --- server side: the services a personality answers ----------------------
+ *
+ * The skeleton answers GetInfo, the register interface and ExecuteCommand for
+ * every node. A personality may answer more: M04 serves its interval frame over
+ * uavcan.file.Read and takes its flat-field trim over uavcan.file.Write
+ * (ADR-0005 d11, M04 spec 6.7, 10.2).
+ *
+ * The request reaches the handler as its raw payload and the handler writes the
+ * serialized response, because the personality is the only thing that knows the
+ * type -- the same division as the response subscription below. Returning 0
+ * sends nothing, which is the right answer to a request that did not
+ * deserialize. `response` is CYPHAL_SERVICE_RESPONSE_MAX bytes.
+ *
+ * Registered services also appear in uavcan.node.port.List, so a consumer
+ * discovers them rather than having to know M04 serves a file.
+ */
+#define CYPHAL_SERVICE_RESPONSE_MAX 320u
+typedef size_t (*cyphal_service_fn)(uint8_t from_node_id,
+                                    const uint8_t *request, size_t request_size,
+                                    uint8_t *response, size_t response_capacity);
+bool cyphal_serve(uint16_t service_id, size_t extent, cyphal_service_fn fn);
+
 /* --- client side: the service requests this node originates ----------------
  *
  * The bootloader downloads an image with uavcan.file.Read (ADR-0029 d5), which

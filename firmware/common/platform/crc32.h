@@ -26,4 +26,17 @@ uint32_t crc32_mpeg2_words(const uint32_t *words, uint32_t count);
  * of words. Used for image bodies, which mkimage.py pads to a word. */
 uint32_t crc32_mpeg2_region(const void *addr, uint32_t bytes);
 
+/* The same CRC over more than one region. A record that carries its own CRC has
+ * a hole where that field sits, so the value covers two ranges rather than one
+ * -- M04's served frame header and its flat-field record both do (M04 spec
+ * 6.7, 10.2). Each region must start word-aligned and be a whole number of
+ * words; the unit holds the running value between calls.
+ *
+ *   crc32_mpeg2_begin(); crc32_mpeg2_feed(a, na); crc32_mpeg2_feed(b, nb);
+ *   uint32_t crc = crc32_mpeg2_end();
+ */
+void crc32_mpeg2_begin(void);
+void crc32_mpeg2_feed(const void *addr, uint32_t bytes);
+uint32_t crc32_mpeg2_end(void);
+
 #endif /* IGROW_PLATFORM_CRC32_H */

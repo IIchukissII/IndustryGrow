@@ -5,7 +5,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 # M04-PLANT — module specification
 
-- **Status:** Working specification. Schematic and layout captured — `store/E0005-000001-S-src.zip`, `store/E0005-000001-D-src.zip`. No fab package, no firmware
+- **Status:** Working specification. Schematic and layout captured — `store/E0005-000001-S-src.zip`, `store/E0005-000001-D-src.zip`. Firmware written against DS12 and unverified — no hardware. No fab package
 - **Date:** 2026-09-05
 - **E-number:** `E0005` · module-ID strap `0b100`
 - **Governing ADRs:** ADR-0014 (rev 6), ADR-0002 (rev 3), ADR-0003, ADR-0005 (rev 1, d11 and d12), ADR-0006, ADR-0016, ADR-0017 (rev 2), ADR-0020, ADR-0027, ADR-0028 (d10)
@@ -418,7 +418,7 @@ MCU and CAN transceiver. No rail redesign, and no module-local rail (§4.2).
 | Compute and memory budget | §10.3 |
 | Message timestamps | `uavcan.time.SynchronizedTimestamp` from the gateway time base, as M01, M02 and M05 |
 | Role and zone | Not held by the node; assigned by the gateway (ADR-0014 d7) |
-| Node directory | `firmware/nodes/m04_plant/` when written. **No firmware exists for this class**; neither stream of ADR-0005 d11 is implemented |
+| Node directory | `firmware/nodes/m04_plant/` — personality, `mlx90640` and `m24c64` drivers, interval accumulation, flat-field record. Both streams of ADR-0005 d11 implemented: subject 4144 and the served frame. Datasheet-authored, **nothing in §11 executed** |
 | Node-ID | Not a property of the module class: provisioned per instance into carrier flash (ADR-0027), and distinct across the bus. Bring-up assignment for the first instance is **99** |
 | Publication rate | 1 s for the statistics record; 1 min, or on event, for the served frame (§10.2) |
 
@@ -571,7 +571,7 @@ are M02's; O-74 is M05's; O-76 to O-85 are the service tool's.
 | O-88 | No canopy segmentation exists, so §6.4's statistics are frame-wide and include structure, medium and luminaire pixels. ADR-0014 d4 defers the pipeline | Meaning of every statistic, leaf VPD, hotspot interpretation |
 | O-89 | DS12 states an additional ±3 °C over years for objects around room temperature — the operating point of §3 — with no re-referencing scheme. Whether the module is periodically referenced against a known target, against M01's air temperature at a settled night point, or replaced on an interval | Absolute accuracy over service life, calibration protocol |
 | O-90 | The device carries no humidity rating in DS12 and its optical surface is exposed in a volume that may condense. Post-condensation validity, recovery and M4's inspection interval are undefined | Excursion handling, data validity, maintenance procedure |
-| O-91 | One frame read blocks the I²C driver for 150 ms and the module reads twice a second. §10's chunking requirement is stated but unimplemented and unverified, and the carrier driver's blocking I²C is its precondition | Heartbeat continuity, file service, V3 |
+| O-91 | One subpage read blocks the I²C driver for 37.5 ms and the module reads eight times a second (§5.2). §10's chunking requirement is implemented at 128 words per pass, ≈ 5.8 ms, and is unverified against heartbeat continuity and file-service responsiveness on hardware | V3 |
 | O-92 | DS12 defines the accuracy zones graphically with no pixel-index boundaries, and gives no per-pixel angular map or lens-distortion figure. Neither per-zone weighting of the statistics nor an exact pixel-to-position mapping can be stated | §6.3 zone application, §6.6 geometry |
 | O-93 | The assembly route for a four-lead through-hole hermetic can on an otherwise SMT board is not fixed, and DS12 states no MSL and no soldering profile | Fab package, assembly quote, M6 |
 | O-94 | Node power unmeasured | Distribution-board sizing, O-31 |
@@ -585,8 +585,9 @@ are M02's; O-74 is M05's; O-76 to O-85 are the service tool's.
 
 **Schematic and layout captured.** `E0005-000001` is ERC-clean at 16 warnings, all of them the
 unused header signals this module leaves free (§5), and the two-layer layout is DRC-clean with 0
-unconnected pads and no schematic-parity difference. It has no fab package and no firmware, and
-the `plant` DSDL types do not exist.
+unconnected pads and no schematic-parity difference. It has no fab package. Firmware and the
+`industryflow.greenhouse.plant` type exist and are datasheet-authored: the compensation chain has
+met no device, and no §11 verification is executed.
 
 | Rung | Content | Reached when |
 |------|---------|--------------|

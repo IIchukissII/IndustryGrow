@@ -15,6 +15,40 @@
 static uint32_t s_attempts;
 static uint32_t s_failures;
 
+/* The bus clock in force. Held rather than written once, because i2c_init() is
+ * also the escape from a wedged bus (abort_transfer below) -- a re-init that
+ * dropped a 400 kHz personality back to the 100 kHz default would leave M04
+ * reading frames at four times the intended bus occupancy and nothing would say
+ * so. */
+static uint32_t s_hz = 100000u;
+
+/* CCR and TRISE may only be written with the peripheral disabled (RM0090
+ * 27.6.8). PCLK1 is 42 MHz: standard mode CCR = 42e6/(2*100e3) = 210 with
+ * TRISE = FREQ + 1; fast mode, 2:1 duty, CCR = 42e6/(3*400e3) = 35 with
+ * TRISE = 300 ns * 42 MHz + 1. */
+static void apply_speed(void)
+{
+    const uint32_t pe = I2C1->CR1 & I2C_CR1_PE;
+    I2C1->CR1 &= ~I2C_CR1_PE;
+    I2C1->CR2 = 42u; /* FREQ = APB1 MHz */
+    if (s_hz >= 400000u) {
+        I2C1->CCR = I2C_CCR_FS | 35u;
+        I2C1->TRISE = 13u;
+    } else {
+        I2C1->CCR = 210u;
+        I2C1->TRISE = 43u;
+    }
+    I2C1->CR1 |= pe;
+}
+
+void i2c_set_speed(uint32_t hz)
+{
+    s_hz = hz;
+    if ((RCC->APB1ENR & RCC_APB1ENR_I2C1EN) != 0u) {
+        apply_speed();
+    }
+}
+
 static void count(int rc)
 {
     if (s_attempts != UINT32_MAX) {
@@ -59,13 +93,12 @@ void i2c_init(void)
     GPIOB->AFR[0] &= ~((0xFu << (I2C_SCL_PIN * 4u)) | (0xFu << (I2C_SDA_PIN * 4u)));
     GPIOB->AFR[0] |= (4u << (I2C_SCL_PIN * 4u)) | (4u << (I2C_SDA_PIN * 4u));
 
-    /* Reset then configure for 100 kHz on PCLK1 = 42 MHz. */
+    /* Reset, then the bus clock in force -- 100 kHz unless a personality has
+     * raised it (i2c_set_speed). */
     I2C1->CR1 = I2C_CR1_SWRST;
     I2C1->CR1 = 0u;
-    I2C1->CR2 = 42u;                 /* FREQ = APB1 MHz */
-    I2C1->CCR = 210u;                /* Sm: 42e6 / (2 * 100e3) */
-    I2C1->TRISE = 43u;               /* FREQ + 1 */
-    I2C1->CR1 = I2C_CR1_PE;
+    apply_speed();
+    I2C1->CR1 |= I2C_CR1_PE;
 }
 
 /* Flags a failed transaction leaves behind, and why none of them may survive

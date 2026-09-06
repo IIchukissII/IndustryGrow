@@ -9,13 +9,25 @@
 #include <stddef.h>
 #include <stdint.h>
 
-/* Blocking I2C1 master on PB6/PB7 (AF4), standard mode 100 kHz — the sensor-
- * module bus (M05: INA226, TMP117; M01: SHT45, BME688, SCD41). 7-bit addresses.
- * All calls return 0 on success, <0 on NACK/timeout.
+/* Blocking I2C1 master on PB6/PB7 (AF4) — the sensor-module bus (M05: INA226,
+ * TMP117; M01: SHT45, BME688, SCD41; M02: TCA9543A, AS7343, TSL2585; M04:
+ * MLX90640, M24C64). 7-bit addresses. All calls return 0 on success, <0 on
+ * NACK/timeout.
  *
- * 100 kHz is the platform default and is set here, not by any device on a module
- * (M01 spec §5.1): every part on every module so far tolerates it. */
+ * 100 kHz is the platform default and is what this leaves behind (M01 spec
+ * §5.1): every part on every module so far tolerates it. A personality that
+ * needs more raises it with i2c_set_speed() for as long as its module is
+ * fitted. */
 void i2c_init(void);
+
+/* Bus clock, standard mode (100 kHz) or fast mode (400 kHz). 100 kHz is what
+ * i2c_init() leaves behind and what M01, M02 and M05 run at; M04 raises it
+ * because its frame read is 1668 bytes eight times a second, which is 300 ms of
+ * every second at 400 kHz and 1.2 s at 100 kHz (M04 spec 5.1, 5.2).
+ *
+ * The rate is a PERSONALITY choice, not a carrier one: it is set by what is in
+ * the socket. Anything other than 400000 selects standard mode. */
+void i2c_set_speed(uint32_t hz);
 
 /* True if a device ACKs its address (used for presence-probing, ADR-0014 d8). */
 bool i2c_probe(uint8_t addr7);

@@ -60,6 +60,18 @@ static CanardRxSubscription s_execcmd_sub;
 static CanardRxSubscription s_resp_sub;      /* the one client subscription */
 static uint16_t s_resp_port;                 /* 0 = none registered */
 static cyphal_response_fn s_resp_fn;
+
+/* Services a personality answers, beyond the three the skeleton owns. Two
+ * slots, because M04 serves exactly two -- the interval frame over
+ * uavcan.file.Read and the flat-field trim over uavcan.file.Write. A third
+ * caller adds a slot; a table sized for callers that do not exist would be
+ * guesswork. */
+#define CYPHAL_SERVED_MAX 2u
+static struct {
+    uint16_t port; /* 0 = free */
+    cyphal_service_fn fn;
+    CanardRxSubscription sub;
+} s_served[CYPHAL_SERVED_MAX];
 static bool s_pending_reset; /* set by ExecuteCommand RESTART, acted on after TX flush */
 static const char *s_node_name = "org.industrygrow.node"; /* set by cyphal_init() */
 
@@ -228,6 +240,25 @@ bool cyphal_request(uint16_t service_id, uint8_t server_node_id, uint8_t *transf
      * request's response to the next one. */
     *transfer_id = (uint8_t)((*transfer_id + 1u) & CANARD_TRANSFER_ID_MAX);
     return tx_push_rc(&meta, size, payload) > 0;
+}
+
+bool cyphal_serve(uint16_t service_id, size_t extent, cyphal_service_fn fn)
+{
+    if ((service_id == 0u) || (fn == NULL)) {
+        return false;
+    }
+    for (unsigned i = 0; i < CYPHAL_SERVED_MAX; i++) {
+        if ((s_served[i].port != 0u) && (s_served[i].port != service_id)) {
+            continue;
+        }
+        s_served[i].port = service_id;
+        s_served[i].fn = fn;
+        return canardRxSubscribe(&s_canard, CanardTransferKindRequest,
+                                 (CanardPortID)service_id, extent,
+                                 CANARD_DEFAULT_TRANSFER_ID_TIMEOUT_USEC,
+                                 &s_served[i].sub) >= 0;
+    }
+    return false;
 }
 
 bool cyphal_subscribe_response(uint16_t service_id, size_t extent, cyphal_response_fn fn)
@@ -449,13 +480,21 @@ static void publish_port_list(void)
     uavcan_node_port_SubjectIDList_1_0_select_sparse_list_(&m.subscribers);
     m.subscribers.sparse_list.count = 0;
 
-    /* Servers: the three the skeleton answers. Clients: none. */
+    /* Servers: the three the skeleton answers, plus whatever the personality
+     * registered -- M04's file services are discoverable the same way its
+     * subjects are. Clients: none. */
     nunavutSetBit(m.servers.mask_bitpacked_, sizeof(m.servers.mask_bitpacked_),
                   uavcan_node_GetInfo_1_0_FIXED_PORT_ID_, true);
     nunavutSetBit(m.servers.mask_bitpacked_, sizeof(m.servers.mask_bitpacked_),
                   uavcan_register_Access_1_0_FIXED_PORT_ID_, true);
     nunavutSetBit(m.servers.mask_bitpacked_, sizeof(m.servers.mask_bitpacked_),
                   uavcan_node_ExecuteCommand_1_0_FIXED_PORT_ID_, true);
+    for (unsigned i = 0; i < CYPHAL_SERVED_MAX; i++) {
+        if (s_served[i].port != 0u) {
+            nunavutSetBit(m.servers.mask_bitpacked_, sizeof(m.servers.mask_bitpacked_),
+                          s_served[i].port, true);
+        }
+    }
 
     size_t sz = sizeof(buf);
     if (uavcan_node_port_List_1_0_serialize_(&m, buf, &sz) < 0) {
@@ -672,6 +711,26 @@ static void handle_execcmd(const CanardRxTransfer *req)
     }
 }
 
+/* A request on a port a personality registered. The buffer is static because a
+ * uavcan.file.Read response carries 256 bytes of payload and the RX path runs
+ * on the main stack. */
+static void handle_served(const CanardRxTransfer *req)
+{
+    for (unsigned i = 0; i < CYPHAL_SERVED_MAX; i++) {
+        if ((s_served[i].port == 0u) || (s_served[i].port != req->metadata.port_id)) {
+            continue;
+        }
+        static uint8_t buf[CYPHAL_SERVICE_RESPONSE_MAX];
+        const size_t sz = s_served[i].fn(req->metadata.remote_node_id,
+                                         (const uint8_t *)req->payload, req->payload_size,
+                                         buf, sizeof(buf));
+        if (sz > 0u) {
+            respond(req, (CanardPortID)s_served[i].port, buf, sz);
+        }
+        return;
+    }
+}
+
 static void flush_tx(void)
 {
     const uint64_t now = micros64();
@@ -719,6 +778,7 @@ static void pump_rx(void)
                     handle_execcmd(&transfer);
                     break;
                 default:
+                    handle_served(&transfer);
                     break;
                 }
             } else if (transfer.metadata.transfer_kind == CanardTransferKindMessage) {

@@ -19,6 +19,7 @@ application in one of two slots (ADR-0029 d1). Sources are `AGPL-3.0-or-later` (
 | M05-SAFETY (`E0006`) | Verified on hardware; seven subjects publish (4096–4102) |
 | M01-CLIMATE (`E0002`) | Verified on hardware 2026-08-24; ten subjects publish (4112–4121) |
 | M02-LIGHT (`E0003`) | Written against the datasheets; four subjects (4128–4131). **No hardware — nothing in M02 spec §11 is executed** |
+| M04-PLANT (`E0005`) | Written against the datasheet; one subject (4144) plus an interval frame served over `uavcan.file.Read`. **No hardware — nothing in M04 spec §11 is executed** |
 | Node-ID store (ADR-0027) | Built; verified on hardware 2026-08-28 |
 | U3 temperature offset | Implemented as vendor command 3; applied per instance `-CC` (ADR-0028) |
 | Boot chain (ADR-0029) | Verified on hardware 2026-08-29: hand-over, fallback, update-state write |
@@ -59,7 +60,7 @@ A Cyphal/CAN node. Application protocol and wire vocabulary are fixed elsewhere.
 
 The **carrier `E0001` is the parent**: `common/carrier/` owns the bus, LEDs, MCU socket and node
 identity shared by every node. A **node `nodes/<type>/` is a child**: it asserts a module-ID strap
-pattern and adds its sensor personality. M03 and M04 become sibling `nodes/`, each adding one line to
+pattern and adds its sensor personality. M03 becomes a sibling `nodes/`, adding one line to
 `nodes/registry.c`.
 
 ```
@@ -88,13 +89,18 @@ firmware/
 │   ├── m01_climate/
 │   │   ├── module_id.h (0x01)  sensors.{h,c}
 │   │   └── drivers/  sht4x bme68x scd4x · sensirion (shared CRC-8/word codec)
-│   └── m02_light/
-│       ├── module_id.h (0x02)  sensors.{h,c}
-│       └── drivers/  tca9543a (bus switch) as7343 tsl2585
+│   ├── m02_light/
+│   │   ├── module_id.h (0x02)  sensors.{h,c}
+│   │   └── drivers/  tca9543a (bus switch) as7343 tsl2585
+│   └── m04_plant/
+│       ├── module_id.h (0x04)  sensors.{h,c}
+│       │   frame.{h,c} (accumulation + served file) flatfield.{h,c} (the trim)
+│       └── drivers/  mlx90640 (imager) m24c64 (trim store U2)
 ├── dsdl/industryflow/greenhouse/
 │   ├── safety/    DoorStatus, LeakStatus
 │   ├── climate/   RelativeHumidity, Co2Concentration, GasResistance
-│   └── light/     SpectralSample, PhotonFluxDensity, Irradiance, FlickerStatus
+│   ├── light/     SpectralSample, PhotonFluxDensity, Irradiance, FlickerStatus
+│   └── plant/     CanopyThermalSummary
 ├── third_party/                  ← submodules: libcanard, o1heap, cmsis, regulated types,
 │                                     micro-ecc (BSD-2-Clause; P-256 verification)
 └── tools/                        ← bootstrap.sh, release.sh, mkimage.py
@@ -162,9 +168,19 @@ leaving the one before it room to grow.
 | 4130 | flicker flags | U4 AS7343 | `…light.FlickerStatus` |
 | 4131 | UV-A irradiance | U3 TSL2585 | `…light.Irradiance` (W·m⁻²) |
 
+| ID | M04 subject | Source | Type |
+|----|-------------|--------|------|
+| 4144 | canopy thermal summary, 32×24 field | U1 MLX90640, derived | `…plant.CanopyThermalSummary` (K) |
+
 4132 and 4133 were UV-B and UV-C and are **retired, not reassigned** (ADR-0014 rev 6): nothing
 may bind a new quantity to either. 4129 carries a `valid` flag because PPFD needs commissioning
 coefficients the node does not have until they are written (M02 spec 6.2, O-52).
+
+M04 publishes statistics, not the field: the 768-pixel frame is served over `uavcan.file.Read` at
+`/plant/frame.bin`, one interval frame per minute, and the record announces it through `frame_seq`
+and `frame_available` (ADR-0005 d11, d12). Its flat-field trim arrives the other way, over
+`uavcan.file.Write` at `/plant/flatfield.bin`, and is committed to the module's own EEPROM bound to
+the imager's device ID (ADR-0028 d10).
 
 Only 4112–4114 are admissible for VPD and the climate control loop. 4118–4121 are the secondary
 sources of M01 spec §4; 4120 and 4121 are valid for an instance once its `-CC` is filed (O-45,
