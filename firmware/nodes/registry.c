@@ -28,6 +28,8 @@
 #include "m01_climate/module_id.h"
 #include "m02_light/sensors.h"
 #include "m02_light/module_id.h"
+#include "m04_plant/sensors.h"
+#include "m04_plant/module_id.h"
 
 static const node_personality_t s_personalities[] = {
     {
@@ -50,6 +52,13 @@ static const node_personality_t s_personalities[] = {
         .cyphal_name = "org.industrygrow.node.m02",
         .init = m02_sensors_init,
         .spin = m02_sensors_spin,
+    },
+    {
+        .module_id = M04_MODULE_ID,
+        .name = "M04-PLANT (E0005)",
+        .cyphal_name = "org.industrygrow.node.m04",
+        .init = m04_sensors_init,
+        .spin = m04_sensors_spin,
     },
 };
 

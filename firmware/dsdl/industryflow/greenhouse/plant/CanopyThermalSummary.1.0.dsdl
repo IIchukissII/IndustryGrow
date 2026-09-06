@@ -1,0 +1,51 @@
+# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# One second of canopy surface temperature, as statistics over the 32x24 field.
+# Minted because the standard set carries no field-statistics type (ADR-0005 d2).
+#
+# ONE subject, not six scalars (ADR-0005 d11): mean, extremes, spread and
+# gradient describe one frame, and split across separate subjects they would
+# describe no frame in particular. The field itself is not published at all --
+# it is served over uavcan.file.Read as one interval frame per minute
+# (ADR-0005 d12, M04 spec 10.2), and `frame_seq` and `frame_available` are how
+# this record announces one.
+#
+# Kelvin throughout. The statistics run over the valid-pixel set: the device's
+# own defective list is excluded, never interpolated into a statistic
+# (M04 spec 6.2, 6.4).
+#
+# The statistics are FRAME-WIDE, not canopy-wide. No segmentation separates leaf
+# pixels from structure, growing medium or luminaire (M04 spec 3.2, O-88), so a
+# consumer that treats `t_mean` as a leaf temperature is reading more into it
+# than the node measured.
+#
+# The constants in force ride in the record because they are deployment values
+# that arrive over the register interface and can change between two samples
+# (M04 spec 6.2, 10). Statistics without them are not a measurement.
+uavcan.time.SynchronizedTimestamp.1.0 timestamp
+
+float32 t_mean          # K, arithmetic mean of the valid pixels
+float32 t_min           # K
+float32 t_max           # K
+float32 t_sigma         # K, population standard deviation over the valid pixels
+float32 gradient_x      # K across the full frame width, least-squares plane
+float32 gradient_y      # K across the full frame height
+uint8[96] hotspot_mask  # 768 bits, row-major from pixel 1, LSB first
+
+float32 ta              # K, imager DIE temperature -- NOT air temperature (M04 spec 8 T1)
+
+float32 emissivity              # in force this sample
+float32 reflected_temperature   # K, in force this sample
+float32 hotspot_k               # sigma multiplier in force
+float32 hotspot_delta_min       # K, hotspot floor in force
+
+uint8 defective_pixels  # excluded from the statistics, 0..4 (M04 spec 6.2)
+bool stabilized         # false for the first 4 min after power-on (M04 spec 6.1)
+bool flat_field         # a flat-field trim bound to this device is applied (M04 spec 6.7)
+
+uint32 frame_seq        # the interval frame currently served; these statistics
+                        # are the last device frame's, not the interval's
+bool frame_available    # an interval frame for that sequence is served
+
+@extent 256 * 8

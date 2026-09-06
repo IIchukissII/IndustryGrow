@@ -72,9 +72,11 @@ Not written. Written when the following exist:
 
 | Missing | Reference |
 |---|---|
-| `plant` personality in the carrier image, `firmware/nodes/m04_plant/` | spec §10 |
-| `industryflow.greenhouse.plant` DSDL types | spec §10.1 |
 | A fabricated `E0005-000001` | `-D-fab.zip`, blocked on O-93 and V5 |
+
+The `plant` personality (`firmware/nodes/m04_plant/`, strap `0b100`) and the
+`industryflow.greenhouse.plant` type are in the carrier image; both are datasheet-authored and
+unverified.
 
 Sections owed: flash and boot; bxCAN and Cyphal enumeration; I²C presence probe, U1 `0x33` and
 U2 `0x50`; frame capture and statistics; flat-field determination per spec §6.7. First instance
