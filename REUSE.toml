@@ -37,10 +37,10 @@ precedence = "override"
 SPDX-FileCopyrightText = "WeAct Studio"
 SPDX-License-Identifier = "LicenseRef-WeAct-unstated"
 
-# Project images/logos, ADR figures, the roadmap figure, and this manifest itself
+# Project images/logos, ADR and spec figures, the roadmap figure, and this manifest itself
 # (no inline-comment option for the binary PNGs; SVGs kept uniform with them).
 [[annotations]]
-path = ["img/**", "ADR/figures/**", "project/figures/*.svg", "project/figures/*.png", "REUSE.toml", ".gitignore"]
+path = ["img/**", "ADR/figures/**", "spec/figures/**", "project/figures/*.svg", "project/figures/*.png", "REUSE.toml", ".gitignore"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 The IndustryGrow contributors"
 SPDX-License-Identifier = "CC-BY-SA-4.0"
