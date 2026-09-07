@@ -83,8 +83,14 @@ CO₂ accumulation in an occupied room — moves to `A01-CLIMATE`'s unpopulated 
    | `A03-ROOTZONE` | Nutrient solution | EC, pH, root-zone delivery | on commit | none |
 
    Media with no actuator class: the plant, which M04-PLANT observes; the cabinet utility, which
-   is sense-only under ADR-0018 decision 9; and the boundary, which M07-AMBIENT observes. Air
-   transport is not a class — an air mover is an element of the apparatus whose medium it serves.
+   is sense-only under ADR-0018 decision 9; and the boundary, which M07-AMBIENT observes.
+
+   **Air transport is not a class** — an air mover is an element of the apparatus whose medium it
+   serves. This takes a position on ADR-0014's deferred *ventilation / pollination subsystem
+   boundary* and discharges it for actuator classification only; which `node_role` M06 takes is a
+   sensor-side question and stays with ADR-0014. Pollination follows: ADR-0003 decision 13
+   pollinates mechanically by pulsed airflow over the flowering zone, so the pollination pulse is
+   a command mode of the grow-volume air mover — an element of `A01-CLIMATE` — and not a class.
 
    Names follow decision 1's sequence. A class ID is assigned when that class's specification is
    committed, not here (ADR-0017 d5). New classes continue the sequence.
@@ -165,7 +171,7 @@ CO₂ accumulation in an occupied room — moves to `A01-CLIMATE`'s unpopulated 
 
 **B. Number actuator classes from `0x80` with no name form, using the hex ID alone.** *Rejected:* every other artifact class in the project carries a readable identifier (ADR-0017); a bare ID is not usable in a BOM or a registry row.
 
-**C. One actuator class per device rather than per regulated variable.** *Rejected:* multiplies classes with each hardware change; the regulated variable is what the profile addresses and is stable across device choices.
+**C. One actuator class per device rather than per medium.** *Rejected:* multiplies classes with each hardware change; the medium an apparatus acts on is stable across device choices.
 
 **D. A single generic actuator class parameterized by EEPROM contents.** *Rejected:* the safe output, interlock set and demand range differ per class and are safety-relevant; one class would defer them all to runtime data.
 
@@ -209,7 +215,7 @@ CO₂ accumulation in an occupied room — moves to `A01-CLIMATE`'s unpopulated 
 ## References
 
 - ADR-0003: Strawberry day-neutral profile — regulated variables, CO₂ as a variant.
-- ADR-0014 (rev 4): Sensor node taxonomy — decision 5 header contract, decision 6 class ID, decision 9 (this record's origin).
+- ADR-0014 (rev 4): Sensor node taxonomy — decision 5 header contract, decision 6 class ID, decision 9 (this record's origin), deferred ventilation / pollination subsystem boundary.
 - ADR-0015: Gateway profile caching and local control loops — decision 11 interlock independence, decision 18 cascade and demand form.
 - ADR-0016 (rev 1): Empirical survey and state-space modeling — biological subspace, decision 2.
 - ADR-0018: Power distribution and rail monitoring — decisions 5, 7, 8, 9, 10.

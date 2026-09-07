@@ -92,7 +92,7 @@ and executes it (ADR-0015 d18).
 | ID | Element | Device | Command range | Expected operating range | Resolution |
 |---|---|---|---|---|---|
 | `E1` | Main thermoelectric stack | 2 × 40 × 40 mm module, series | −1.000 … +1.000, signed; positive heats the grow volume | −0.30 … 0 | 0.001 (`verify` against DSDL type, `O-102`) |
-| `E2` | Main-tract fan | ebm-papst 612/614 NHH, integral to the exchanger | 0.000 … 1.000 | 0.4 … 1.0 | 0.001 |
+| `E2` | Main-tract fan | ebm-papst 612/614 NHH, integral to the exchanger | 0.000 … 1.000 | 0.4 … 1.0 continuous, 1.0 in the `D15` pulse | 0.001 |
 | `E3` | Subcooler thermoelectric module | 1 × 40 × 40 mm module | 0.000 … 1.000, unsigned; cooling only | 0 … 0.30 | 0.001 |
 | `E4` | Reheater | Resistive element on the hot section | 0.000 … 1.000 | 0 … 0.70 | 0.001 |
 | `E5` | Humidity-tract fan | Sepa MFB 50 E 05 A | 0.000 … 1.000 | 0.17 … 0.40 | 0.001 |
@@ -222,6 +222,7 @@ Module-ID straps are not used for identification by this module (ADR-0031 d10). 
 | `D12` | `E4` is the last element of the humidity tract, downstream of HX2. `E4` is inhibited whenever `T5` is tripped or `E5` demand is below `D13`'s minimum | `T5` |
 | `D13` | `E5` starts with a full-scale pulse of 250 ms (`verify`) before settling to its commanded duty; commanded duty below 0.15 is driven as zero | `E5` |
 | `D14` | `E6` is commanded as a pulse train against a commissioned minimum open time; it is inhibited whenever `E5` demand is zero. Verified at the CO₂ population only | `O-110` |
+| `D15` | `E2` also carries the pollination pulse: a full-scale excursion over the flowering zone at the profile's duration and interval, issued by the gateway as an ordinary demand. No pulse timing is node-local | ADR-0003 d13, ADR-0031 rev 1 d2 |
 
 ## 7. Power
 
@@ -299,7 +300,7 @@ Module-ID straps are not used for identification by this module (ADR-0031 d10). 
 | `V13` | `D11` | Command a coil setpoint below +1 °C; confirm cooling demand is driven to zero at the floor and that HX2 does not frost over 8 h |
 | `V14` | `D12`, `T9` | Run the humidity tract at its design point; measure the humidity ratio and temperature at tract inlet and outlet, and the HX2-to-HX3 conduction by substituting a known electrical load for `E3` |
 | `V15` | `D13` | Command `E5` from zero to 0.17; confirm the start pulse and that the rotor starts on ten of ten attempts |
-| `V16` | `D6` | Command every element independently at three levels; confirm no element's demand moves another |
+| `V16` | `D6`, `D15` | Command every element independently at three levels; confirm no element's demand moves another. Command the pollination pulse; confirm `E2` reaches full for the commanded duration and returns to its prior demand |
 | `V17` | `F9` | Force a driver fault at reduced `VREF`; confirm zero drive on both strings, the published state, and the latch |
 | `V18` | `F11` | Open the U9 I²C link with all elements running; confirm `E1`, `E3`, `E4` reach zero and `E2`, `E5` run full |
 | `V19` | `F1`, `F6`, `F12` | Read the published class ID; confirm `0x80`. Enumerate every published subject; confirm no energy or consumption quantity is among them, and that the unpopulated CO₂ branch publishes and accepts nothing |
