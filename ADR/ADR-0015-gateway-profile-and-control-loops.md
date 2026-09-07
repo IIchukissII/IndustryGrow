@@ -12,6 +12,10 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Parent:** ADR-0001
 - **Companions:** ADR-0002 (rev 3), ADR-0003, ADR-0004 (rev 1)
 
+## Revision history
+
+- **Amendments** — decision 18 (2026-09-07): control is cascaded — decision 8's loop is the outer loop, and actuator-local output conditioning and fail-safe run on the actuator node. Bounds decision 8 and the deferred PID-gain entry; reverses nothing.
+
 ## Context and problem
 
 ADR-0001 framed IndustryGrow as an open-core platform where cultivation profiles describe the operating parameters for a crop. ADR-0003 specified the first reference profile (strawberry day-neutral). ADR-0004 rev 1 defined the gateway as a stateless edge — minimal persistent state, forensic trail on IndustryFlow.
@@ -120,6 +124,18 @@ This ADR commits to Architecture B and specifies the contract between gateway an
 
 17. **No ML on gateway in phase 1.** Rule-based control only. ML lives in platform-side advanced-control modules, which feed back via profile generation. On-edge ML may become relevant in future commercial gateway tiers (e.g., Allwinner T527 with NPU per ADR-0002 rev 3 alternative K) but is out of scope here.
 
+18. **Control is cascaded: the supervisory loop on the gateway, actuator-local conditioning on the node.** *(amendment, 2026-09-07)*
+
+    Decision 8 is unchanged and remains the **outer** loop: profile setpoints in, an actuator demand out, at the gateway's loop rate. This decision bounds what sits below that demand.
+
+    - **What crosses the bus is a demand plus a validity deadline**, not a switch state. A node receives a normalized demand for its own actuator and the horizon over which that demand stays valid.
+    - **The node owns the actuator's own timescale.** Output conditioning — pulse-width/PWM generation, slew and rate limiting, minimum on- and off-time, saturation handling — runs in node firmware at the actuator's rate. That rate is milliseconds and cannot be served by a bus-rate loop. Where an actuator has a locally measurable state of its own (fan speed, pump flow), a single-variable regulator on that state also runs on the node.
+    - **A stale demand fails safe at the node.** When the validity deadline passes with no fresh demand, the node drives its actuator to that class's safe output. No gateway liveness signal is required — the deadline travels with the demand. Which output is safe per actuator class is the deferred actuator-taxonomy ADR's (ADR-0014 decision 9).
+    - **All cross-coupling stays in the outer loop.** No actuator here drives exactly one regulated variable: the lamp is both PPFD and a heat input, the humidifier both a vapor source and a latent-heat sink, the fan the transport coefficient on all of them. That is resolved in the gateway's model, where the multi-sensor system view exists (ADR-0016). Node-level regulators are single-variable by construction: a node holds no model and sees no other node's telemetry.
+    - **No part of the profile reaches a node.** Alternative E is rejected on its stated ground, distributing the profile, and that ground is untouched: a node holds no profile, no schedule and no model — only a demand and a deadline. Outer-loop gains and model parameters remain profile content; a node's conditioning parameters (minimum on-time, slew limit, PWM period) are properties of the actuator hardware, set at commissioning per ADR-0028, not of the cultivation.
+
+    Reason: an actuator left latched on when the bus goes quiet is a physical hazard, and a 1 Hz supervisory loop cannot emit a millisecond pulse train. Both are actuator-local; neither is a reason to move cultivation logic off the gateway.
+
 ## Alternatives considered
 
 **A. Gateway as passive bridge, cloud as controller.** Gateway forwards telemetry to cloud, cloud computes control output, cloud sends actuator commands. *Rejected:* network-dependent control is fragile (plants die during outages); larger security surface (cloud compromise = physical compromise); operational coupling of cloud reliability to cabinet reliability.
@@ -167,6 +183,8 @@ This ADR adds clarity to several existing decisions without changing them:
   > **Narrowed by ADR-0025 (decision 1):** the *signature scheme* item is split by artifact. ADR-0025 takes the deployment-specific **instance** profile on the ERP-to-gateway channel; what stays here is the **community template** side this entry's own qualifier names — contributor authorship, key publication, and whether registry templates carry signatures at all. The schema, version compatibility rules, and registry mechanics are untouched and remain ADR-0009's.
 - **Actuator-module taxonomy** — which Cyphal actuator nodes exist, what commands they accept, how PWM/setpoint flows work. Separate future ADR.
 - **Control-loop tuning and PID gain storage** — are PID gains part of the profile, or part of platform-default tunings, or per-cabinet calibration? Likely part of the profile, but needs explicit decision.
+
+  > **Bounded by decision 18:** the split by *level* is settled — outer-loop gains and model parameters are profile content, a node's actuator-conditioning parameters are commissioning-set hardware properties. What stays open is this entry's own question for the outer loop: profile, platform default, or per-cabinet calibration.
 - **What happens on profile-sync failure for extended period.** Gateway continues with last-known-good profile indefinitely? Triggers an alert? Triggers a refresh of CA trust? Operational concern, decide when implementing.
 - **Profile rollback API on platform side.** Does IndustryFlow expose "revert this cabinet to profile version N-1" as a UI/API operation? Recommended yes, but specifics belong to platform roadmap.
 - **Audit-trail of control decisions.** When the gateway issues an actuator command, is this captured in the telemetry stream? Recommended: yes, treat actuator commands as a publication channel on Cyphal that gets forwarded to IndustryFlow same as telemetry. Confirm in actuator-taxonomy ADR.
