@@ -20,6 +20,17 @@
 #define REG_GAIN_STEP0_H     0xD5u /* modulator 2 low nibble */
 #define REG_SMUX_STEP0_L     0xDCu /* photodiodes 0-3 to modulators */
 #define REG_SMUX_STEP0_H     0xDDu /* photodiodes 4-5 to modulators */
+#define REG_SMUX_STEP1_H     0xDFu /* [7:4] saturation-AGC sequencer pattern */
+#define REG_SMUX_STEP2_H     0xE1u /* [7:4] predict-AGC sequencer pattern */
+
+/* Both AGC modes reset to 1111b -- enabled for every sequencer step. The
+ * pattern shares a register with sequencer-step photodiode mapping this driver
+ * does not configure, so it is cleared by read-modify-write, not by a store. */
+#define AGC_STEP_PATTERN 0xF0u
+
+/* MEAS_MODE0 as the datasheet resets it: ALS_SCALE 4, every mode bit clear.
+ * Written rather than assumed, because the device is never reset here. */
+#define MEAS_MODE0_DEFAULT 0x04u
 
 #define ID_TSL2585 0x5Cu
 
@@ -107,10 +118,27 @@ bool tsl2585_present(void)
 
 int tsl2585_init(void)
 {
-    /* Every configuration register before PON. The device is explicit that PON
-     * is set only once the host has initialised the rest, which is the order
-     * used here; M02 spec 10 asks for the gain and integration time to be in
-     * place before AEN, and they are. */
+    /* Stop the engine before configuring it, and do not assume reset values.
+     *
+     * NOTHING RESETS THIS DEVICE. It has no reset pin here and shares the
+     * module rail, so an MCU restart -- a watchdog, an SWD reset, an OTA --
+     * leaves it running with whatever the previous session left behind. Its
+     * gain registers are sequencer-owned while a measurement is live, so
+     * configuration written over a running engine does not stick: measured on
+     * E0003-000001, modulator 2 read back 4x after being written 1024x, and
+     * ENABLE carried an FDEN this driver never sets. Clearing PON stops the
+     * oscillator and, per the datasheet, clears FDEN and AEN with it, which is
+     * the only state reset the part offers.
+     *
+     * Everything the driver depends on is then written rather than inherited.
+     * Configuration goes in before PON, as the device requires; M02 spec 10
+     * asks for the gain and integration time to be in place before AEN. */
+    if (wr(REG_ENABLE, 0x00u) < 0) {
+        return -1;
+    }
+    if (wr(REG_MEAS_MODE0, MEAS_MODE0_DEFAULT) < 0) {
+        return -1;
+    }
     if (wr(REG_MOD_CHANNEL_CTRL, 0x00u) < 0) { /* all three modulators enabled */
         return -1;
     }
@@ -120,6 +148,34 @@ int tsl2585_init(void)
     if (wr(REG_SMUX_STEP0_H, SMUX_H_UV_ON_MOD2) < 0) {
         return -1;
     }
+    /* Disable both AGC modes before the gain is set, so that the gain written
+     * below is the last word on it.
+     *
+     * The device resets with saturation AGC (0xDF[7:4]) and predict AGC
+     * (0xE1[7:4]) enabled for all four sequencer steps, and an active AGC OWNS
+     * the gain registers -- the datasheet says of each MOD_GAIN field that it
+     * is "updated by the AGC, if activated". Left on, it walks modulator 2 off
+     * the responsivity anchor of M02 spec 6.4 and the published W/m2 is scaled
+     * by a gain the host did not choose. Measured on E0003-000001: modulator 2
+     * programmed at 1024x read back at 4x, eight steps down, driven there by
+     * analog saturation on the IR modulator rather than by anything in the UV
+     * path -- the modulators share the sequencer, so saturation anywhere moves
+     * the gain everywhere. ALS_DATA_VALID never asserted while that was going
+     * on, which published every UV sample as invalid. */
+    uint8_t agc = 0u;
+    if (rd(REG_SMUX_STEP1_H, &agc) < 0) {
+        return -1;
+    }
+    if (wr(REG_SMUX_STEP1_H, (uint8_t)(agc & (uint8_t)~AGC_STEP_PATTERN)) < 0) {
+        return -1;
+    }
+    if (rd(REG_SMUX_STEP2_H, &agc) < 0) {
+        return -1;
+    }
+    if (wr(REG_SMUX_STEP2_H, (uint8_t)(agc & (uint8_t)~AGC_STEP_PATTERN)) < 0) {
+        return -1;
+    }
+
     if (wr(REG_GAIN_STEP0_L, (uint8_t)((GAIN_128X << 4) | GAIN_128X)) < 0) {
         return -1;
     }
@@ -182,8 +238,19 @@ int tsl2585_read_uv(tsl2585_uv_t *out)
     /* 0xFFFF is analog saturation and 0xFFFE is a result the selected data
      * format could not express. Both are sentinels, not counts. */
     const bool sentinel = (raw >= 0xFFFEu);
+    /* Modulator 2's own saturation, and nothing else's.
+     *
+     * STATUS2's ALS_DIGITAL_SATURATION is a device-wide flag: it reports that
+     * some ALS counter overflowed the selected data format, not which one.
+     * Modulators 0 and 1 carry the photopic and IR photodiodes this module
+     * does not publish, and indoors they saturate readily while the UV path
+     * sits near the bottom of its range -- measured on E0003-000001, where
+     * that flag alone marked every UV sample invalid with modulator 2 clear of
+     * both its own saturation indicators. A flag that cannot name a modulator
+     * cannot invalidate one. The per-register sentinel above and the two
+     * modulator-2 flags below are what speak for this channel. */
     const bool saturated = sentinel ||
-                           ((st2 & (STATUS2_MOD2_ANALOG_SAT | STATUS2_ALS_DIGITAL_SAT)) != 0u) ||
+                           ((st2 & STATUS2_MOD2_ANALOG_SAT) != 0u) ||
                            ((als_status & ALS_STATUS_DATA2_ANALOG_SAT) != 0u);
 
     /* Scaled data is the result shifted down; shift it back before it means
@@ -205,5 +272,46 @@ int tsl2585_read_uv(tsl2585_uv_t *out)
     out->gain = gain;
     out->watt_per_square_metre = uw_per_cm2 * UW_PER_CM2_TO_W_PER_M2;
     out->valid = ((st2 & STATUS2_ALS_DATA_VALID) != 0u) && !saturated;
+    return 0;
+}
+
+int tsl2585_bench_dump(tsl2585_bench_t *out)
+{
+    /* The identity first. At 0x39 the AS7343 answers to the same address, so a
+     * dump that reaches the wrong device would otherwise read as a plausible
+     * set of TSL2585 registers rather than as a bus-switch fault. */
+    if (rd(REG_ID, &out->id) < 0) {
+        return -1;
+    }
+
+    /* Same order as tsl2585_read_uv(): STATUS2 alone and first, so that what
+     * this reports about ALS_DATA_VALID is what the sample path would have
+     * seen rather than the cleared state left behind by reading ALS_STATUS. */
+    if (rd(REG_STATUS2, &out->status2) < 0) {
+        return -1;
+    }
+
+    uint8_t reg = REG_ALS_STATUS;
+    uint8_t buf[9];
+    if (i2c_write_read(TSL2585_ADDR, &reg, 1u, buf, sizeof(buf)) < 0) {
+        return -1;
+    }
+    out->als_status = buf[0];
+    out->als_status2 = buf[7];
+    out->als_status3 = buf[8];
+
+    if ((rd(REG_ENABLE, &out->enable) < 0) ||
+        (rd(REG_MEAS_MODE0, &out->meas_mode0) < 0) ||
+        (rd(REG_MOD_CHANNEL_CTRL, &out->mod_ctrl) < 0) ||
+        (rd(REG_GAIN_STEP0_L, &out->gain_step0_l) < 0) ||
+        (rd(REG_GAIN_STEP0_H, &out->gain_step0_h) < 0) ||
+        (rd(REG_SMUX_STEP0_L, &out->smux_step0_l) < 0) ||
+        (rd(REG_SMUX_STEP0_H, &out->smux_step0_h) < 0) ||
+        (rd(REG_ALS_NR_SAMPLES0, &out->nr_samples0) < 0) ||
+        (rd(REG_ALS_NR_SAMPLES1, &out->nr_samples1) < 0) ||
+        (rd(REG_SMUX_STEP1_H, &out->agc_asat) < 0) ||
+        (rd(REG_SMUX_STEP2_H, &out->agc_predict) < 0)) {
+        return -1;
+    }
     return 0;
 }
