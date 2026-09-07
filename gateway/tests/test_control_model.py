@@ -103,3 +103,69 @@ def _plant(params, u_fan):
     finally:
         for k, v in saved.items():
             setattr(cm, k, v)
+
+
+def test_ambient_slots_drop_out_when_no_ambient_node():
+    """A survey with no ambient node cannot produce these, so they must not be
+    reported as missing -- that would demand numbers nobody can measure."""
+    with_amb = set(cm.missing_slots(ambient=True))
+    without = set(cm.missing_slots(ambient=False))
+    assert with_amb - without == set(cm.AMBIENT_SLOTS)
+
+
+def test_absent_ambient_is_not_computed_and_not_defaulted():
+    """The whole point: passing None omits the term, it does not substitute a
+    value. The two demands must differ by exactly the ambient feedforward."""
+    saved = {k: getattr(cm, k) for k in cm.DEMO}
+    for k, v in cm.DEMO.items():
+        setattr(cm, k, v)
+    try:
+        amb = (18.0, 7.0)
+        state = (20.0, 9.0, 19.0)
+        with_amb = cm.OuterLoop().step((22.0, 0.90), state, (1.0, 0.5), amb)
+        without = cm.OuterLoop().step((22.0, 0.90), state, (1.0, 0.5), None)
+        expected = cm.mat_vec(cm.M_FF_AMB, list(amb))
+        for a, b, e in zip(without, with_amb, expected, strict=True):
+            assert 0.0 < a < 1.0 and 0.0 < b < 1.0, "clamped; the test proves nothing"
+            assert abs((b - a) - e) < 1e-12
+    finally:
+        for k, v in saved.items():
+            setattr(cm, k, v)
+
+
+def test_losing_ambient_does_not_move_the_operating_point():
+    """Under a constant ambient the two configurations must settle in the same
+    place: the feedforward buys transient speed against an ambient CHANGE, not
+    a different equilibrium. What is lost is identifiability and response time,
+    which is why this is checked rather than assumed."""
+    with_amb = _settle((18.0, 7.0))
+    without = _settle(None)
+    assert abs(with_amb[0] - without[0]) < 0.05
+    assert abs(with_amb[1] - without[1]) < 0.005
+
+
+def test_the_vpd_loop_holds_its_setpoint_either_way():
+    """Temperature cannot hold here -- the lamp outheats the only cooling path,
+    so the heater demand sits clamped at zero and a positive offset remains.
+    The mist has authority in both directions, so VPD must reach setpoint."""
+    for ambient in ((18.0, 7.0), None):
+        assert abs(_settle(ambient)[1] - 0.90) < 0.01, f"ambient={ambient}"
+
+
+def _settle(ambient, hours=3.0):
+    saved = {k: getattr(cm, k) for k in cm.DEMO}
+    for k, v in cm.DEMO.items():
+        setattr(cm, k, v)
+    try:
+        plant = cm.Plant(cm.T0, 0.5)
+        plant.x = [20.0, 20.0, 9.0]
+        loop = cm.OuterLoop()
+        for _ in range(int(hours * 3600 / cm.T0)):
+            t_air, _, v_air = plant.x
+            d = loop.step((22.0, 0.90), (t_air, v_air, t_air - 1.0), (1.0, 0.5), ambient)
+            plant.step([d[0], 1.0, d[1], 0.5], [18.0, 7.0])
+        t_air, _, v_air = plant.x
+        return t_air, cm.leaf_vpd(v_air, t_air - 1.0)
+    finally:
+        for k, v in saved.items():
+            setattr(cm, k, v)

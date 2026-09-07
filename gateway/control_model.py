@@ -98,7 +98,14 @@ B0_V_MIST = None  # (g/m^3)/s per unit mist duty   -- vapor source
 B1_T_MIST = None  # flow improves evaporation, so it deepens the cooling
 B1_V_MIST = None  # flow improves evaporation, so it raises the vapor yield
 
-# E: disturbance matrix (ambient enters through the same exchange terms)
+# E: disturbance matrix. The plant always has this term -- the cabinet exchanges
+# with the room regardless. What an absent ambient node removes is the ability to
+# IDENTIFY it: ambient enters through the same exchange path as the loss, so in
+# the ideal lumped model E_T_AMB = -(A0_T_T + u_fan*A1_T_T), one coefficient
+# split across two matrices. With no ambient regressor the two cannot be
+# separated, A0_T_T absorbs the loss at whatever ambient the run happened to sit
+# at, and the identified model is valid only near that point. A modelling limit,
+# not a control failure -- the loop still regulates, the integrator carries it.
 E_T_AMB = None
 E_V_AMB = None
 
@@ -133,10 +140,15 @@ ARW_FACTOR = None
 # stationary_decoupler() from the plant's steady-state gain.
 D_DEC = None
 
-# Feedforward of the known inputs and the ambient, section 7.1:
-# [u_heat, u_mist] <- [u_lamp, u_fan, T_amb, v_amb]. This is what cancels the
-# lamp's heat and the mist's cooling before the PI ever sees them.
-M_FF = None
+# Feedforward, section 7.1, split by whether its input is always available.
+# Both are derived from the plant matrices during identification.
+#   M_FF_DRIVE  [u_heat, u_mist] <- [u_lamp, u_fan]      always present: the
+#               gateway commands both, so their values are known by definition.
+#               This is what cancels the lamp's heat before the PI sees it.
+#   M_FF_AMB    [u_heat, u_mist] <- [T_amb, v_amb]       OPTIONAL, and computed
+#               only when an ambient node is publishing.
+M_FF_DRIVE = None
+M_FF_AMB = None
 
 # Reserved for the ADR-0016 swap: state feedback and an observer replace the
 # PI + decoupler pair once a reduced-order model is identified (stage 8).
@@ -153,9 +165,24 @@ SLEW_PER_S = None  # demand units per second
 SAFE_OUTPUT = None  # per actuator class; the taxonomy ADR owns which
 
 
-def missing_slots():
-    """Every parameter still awaiting a number from identification."""
-    skip = ("STATES", "INPUTS", "DISTURBANCES")
+# Parameters that exist only when an ambient node is publishing. An absent input
+# is not defaulted and its terms are not computed -- the same rule the node
+# firmware already applies to an unpopulated sensor (ADR-0014 d2: probe the bus,
+# publish only what answers). Substituting a plausible constant for a missing
+# measurement is the failure this forbids: the loop would then feed forward a
+# number nobody measured and no residual would show it.
+AMBIENT_SLOTS = ("E_T_AMB", "E_V_AMB", "M_FF_AMB")
+
+
+def missing_slots(ambient=True):
+    """Parameters still awaiting a number, for the configuration in use.
+
+    With no ambient node the ambient slots are not missing -- they are not
+    applicable, and reporting them would demand numbers no survey can produce.
+    """
+    skip = ("STATES", "INPUTS", "DISTURBANCES", "AMBIENT_SLOTS")
+    if not ambient:
+        skip += AMBIENT_SLOTS
     return sorted(k for k, v in globals().items() if k.isupper() and k not in skip and v is None)
 
 
@@ -275,7 +302,12 @@ def zoh(a, b, dt):
 # Plant
 # --------------------------------------------------------------------------
 class Plant:
-    """x' = A(u_fan) x + B(u_fan) u + E w, sampled at dt, with input dead time."""
+    """x' = A(u_fan) x + B(u_fan) u + E w, sampled at dt, with input dead time.
+
+    E w is unconditional: the cabinet exchanges with the room whether or not
+    anything is measuring the room. What an absent ambient node removes is the
+    controller's knowledge of w and the ability to identify E -- not the term.
+    """
 
     def __init__(self, dt, u_fan):
         self.a = mat_add(
@@ -398,20 +430,27 @@ class OuterLoop:
         self.pi_t = PiArw(KP_T, TN_T, T0, lo=-2.0, hi=2.0)
         self.pi_v = PiArw(KP_V, TN_V, T0, lo=-2.0, hi=2.0)
 
-    def step(self, setpoint, measured, known):
+    def step(self, setpoint, measured, drive, ambient=None):
         """setpoint = (T_sp, vpd_sp)
         measured  = (T_air, v_air, T_leaf)
         The VPD setpoint is converted to a v_air setpoint here, so the loop
         itself is linear and the psychrometrics stay in the setpoint path.
-        known     = (u_lamp, u_fan, T_amb, v_amb)
+        drive     = (u_lamp, u_fan) -- commanded, so always known
+        ambient   = (T_amb, v_amb), or None when no ambient node is publishing.
+                    None means the ambient feedforward is not computed. It is
+                    never replaced by a default; the PI integrator absorbs the
+                    unmeasured ambient instead, more slowly and with no warning
+                    that it is doing so.
         returns   = (demand_heat, demand_mist), each 0..1
         """
         t_air, v_air, t_leaf = measured
         e_t = setpoint[0] - t_air
         e_v = vapor_for_vpd(setpoint[1], t_leaf) - v_air
-        fb = mat_vec(D_DEC, [self.pi_t.step(e_t), self.pi_v.step(e_v)])
-        ff = mat_vec(M_FF, list(known))
-        return tuple(min(1.0, max(0.0, f + g)) for f, g in zip(fb, ff, strict=True))
+        out = mat_vec(D_DEC, [self.pi_t.step(e_t), self.pi_v.step(e_v)])
+        out = [p + q for p, q in zip(out, mat_vec(M_FF_DRIVE, list(drive)), strict=True)]
+        if ambient is not None:
+            out = [p + q for p, q in zip(out, mat_vec(M_FF_AMB, list(ambient)), strict=True)]
+        return tuple(min(1.0, max(0.0, v)) for v in out)
 
 
 # --------------------------------------------------------------------------
@@ -471,7 +510,8 @@ DEMO = {
     "KP_V": 0.40,
     "TN_V": 300.0,
     "ARW_FACTOR": 0.96,
-    "M_FF": [[0.0] * 4, [0.0] * 4],
+    "M_FF_DRIVE": [[0.0, 0.0], [0.0, 0.0]],
+    "M_FF_AMB": [[-0.02, 0.0], [0.0, -0.01]],
     "PWM_PERIOD": 10.0,
     "MIN_ON": 1.0,
     "MIN_OFF": 1.0,
@@ -490,12 +530,18 @@ def main(argv=None):
     )
     ap.add_argument("--hours", type=float, default=6.0)
     ap.add_argument(
+        "--no-ambient",
+        action="store_true",
+        help="run with no ambient node: the ambient terms are not computed",
+    )
+    ap.add_argument(
         "--fan", type=float, default=0.5, help="fan operating point; the LPV scheduling variable"
     )
     args = ap.parse_args(argv)
 
+    ambient = not args.no_ambient
     if not args.demo:
-        gaps = missing_slots()
+        gaps = missing_slots(ambient=ambient)
         print(f"unidentified parameters: {len(gaps)}")
         for k in gaps:
             print("  " + k)
@@ -516,6 +562,7 @@ def main(argv=None):
     plant.x = [20.0, 20.0, 9.0]
 
     print("# DEMO_ONLY -- placeholder coefficients, not a tuning")
+    print(f"# ambient node: {'present' if ambient else 'absent, feedforward not computed'}")
     print(f"# G(0) = {g0}")
     print(f"# RGA  = {rga(g0)}")
     print("t_s,T_air,T_mass,v_air,RH,leaf_VPD,PPFD,u_heat,u_mist,u_lamp")
@@ -525,7 +572,10 @@ def main(argv=None):
         t_air, t_mass, v_air = plant.x
         t_leaf = t_air - 1.0  # placeholder; M04 measures this (ADR-0014)
         d_heat, d_mist = loop.step(
-            (22.0, 0.90), (t_air, v_air, t_leaf), (u_lamp, args.fan, 18.0, 7.0)
+            (22.0, 0.90),
+            (t_air, v_air, t_leaf),
+            (u_lamp, args.fan),
+            (18.0, 7.0) if ambient else None,
         )
         u = [heat.step(d_heat, True), u_lamp, mist.step(d_mist, True), args.fan]
         plant.step(u, [18.0, 7.0])
