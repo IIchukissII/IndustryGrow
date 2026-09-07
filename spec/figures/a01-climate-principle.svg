@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="780" height="612" viewBox="0 0 780 612" role="img" aria-label="A01-CLIMATE working principle">
+  <title>A01-CLIMATE — working principle</title>
+  <desc>The gateway issues one demand with a validity deadline per commanded element. The node conditions each demand and drives two DRV8262 stages from the +24 V section, with the remaining elements driven by an I2C PWM expander on the module. Four hardware interlocks gate both driver enables directly and cannot be overridden by firmware. Two air tracts run in parallel from the grow volume: a main tract of 56 cubic metres per hour whose two-module thermoelectric stack sets air temperature and is held above the grow-volume dew point, and a humidity tract of 1.7 cubic metres per hour whose subcooler sets humidity ratio at a commanded coil temperature, drains its condensate at a thermal break, and reheats at constant humidity ratio. Both stacks reject into one water loop that dissipates into the room.</desc>
+
+  <defs>
+    <marker id="ar" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#5F5E5A"/></marker>
+    <marker id="ars" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#D85A30"/></marker>
+    <marker id="arb" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#7A8DA6"/></marker>
+  </defs>
+
+  <rect x="0.5" y="0.5" width="779" height="611" rx="10" fill="#FFFFFF" stroke="#E5E3DC"/>
+  <text x="390" y="28" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12.5" fill="#2C2C2A">A01-CLIMATE — working principle</text>
+
+  <!-- ============ command band ============ -->
+  <rect x="30" y="46" width="150" height="40" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="105" y="62" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">Gateway</text>
+  <text x="105" y="76" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">supervisory loop</text>
+
+  <line x1="180" y1="66" x2="300" y2="66" stroke="#5F5E5A" stroke-width="1.2" marker-end="url(#ar)"/>
+  <text x="240" y="60" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">6 demands + deadline</text>
+
+  <rect x="304" y="46" width="270" height="40" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="439" y="62" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">A01-CLIMATE node — E0011 on E0001-000100</text>
+  <text x="439" y="76" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">dead band · dwell · slew · derate · fail-safe</text>
+
+  <path d="M439 86 L439 96" fill="none" stroke="#5F5E5A" stroke-width="1" stroke-dasharray="3 3" marker-end="url(#ar)"/>
+
+  <!-- ============ power + drive band ============ -->
+  <rect x="24" y="100" width="96" height="44" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="72" y="118" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">+24 V</text>
+  <text x="72" y="132" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">C5 module, 10 A</text>
+  <line x1="120" y1="122" x2="136" y2="122" stroke="#5F5E5A" stroke-width="1.2" marker-end="url(#ar)"/>
+
+  <rect x="140" y="100" width="188" height="44" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="234" y="118" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">U5 DRV8262 — single H-bridge</text>
+  <text x="234" y="132" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">E1 · signed · current-regulated</text>
+
+  <rect x="336" y="100" width="188" height="44" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="430" y="118" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">U6 DRV8262 — dual half-bridge</text>
+  <text x="430" y="132" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">E3 subcooler · E4 reheat · unsigned</text>
+
+  <rect x="532" y="100" width="216" height="44" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="640" y="118" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">U9 PWM expander — I²C</text>
+  <text x="640" y="132" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">E2 · E5 · E6 · PH · nSLEEP</text>
+
+  <!-- ============ interlock rail ============ -->
+  <rect x="140" y="158" width="384" height="46" rx="4" fill="#FDF4F0" stroke="#D85A30"/>
+  <text x="332" y="176" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#2C2C2A">T2 water block 60 °C · T3 grow volume 5 / 35 °C · T4 coolant flow · T5 tract airflow</text>
+  <text x="332" y="194" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#D85A30">hardware — firmware reads state, cannot override or re-arm</text>
+  <path d="M200 158 L200 146" fill="none" stroke="#D85A30" stroke-width="1.2" marker-end="url(#ars)"/>
+  <path d="M464 158 L464 146" fill="none" stroke="#D85A30" stroke-width="1.2" marker-end="url(#ars)"/>
+  <text x="332" y="216" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">enable</text>
+
+  <!-- ============ grow volume ============ -->
+  <rect x="24" y="232" width="510" height="300" rx="6" fill="#FBFBF9" stroke="#C9C6BC"/>
+  <text x="38" y="250" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">GROW VOLUME · 0.43 m³ · 20 / 14 °C · VPD 0.8–1.2 kPa</text>
+
+  <!-- main tract -->
+  <text x="42" y="274" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#7A8DA6">main tract · 56 m³/h · sets air temperature</text>
+
+  <rect x="42" y="284" width="222" height="60" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="153" y="302" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">HX1 Fischer LA 6 150 12 + E2 fan</text>
+  <text x="153" y="317" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">R_th 0.17 K/W · base 15.8 / 9.6 °C</text>
+  <text x="153" y="332" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#7A8DA6">held above dew point — no condensate</text>
+
+  <path d="M153 344 L153 358" fill="none" stroke="#7A8DA6" stroke-width="1.2" marker-end="url(#arb)"/>
+
+  <rect x="42" y="360" width="222" height="46" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="153" y="378" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">E1 — TEC × 2, series</text>
+  <text x="153" y="393" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">Q_c 25 / 26 W · i 0.23–0.26 · 1.45–1.68 A</text>
+
+  <text x="42" y="428" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">intake at the floor · discharge is a</text>
+  <text x="42" y="441" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">ceiling slot ≤ 20 mm, horizontal (M4)</text>
+
+  <!-- humidity tract -->
+  <text x="288" y="274" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#7A8DA6">humidity tract · 1.7 m³/h · sets humidity ratio</text>
+
+  <rect x="288" y="284" width="230" height="30" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="403" y="303" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#2C2C2A">E5 Sepa MFB 50 · 17 % · start pulse</text>
+  <path d="M403 314 L403 326" fill="none" stroke="#7A8DA6" stroke-width="1.2" marker-end="url(#arb)"/>
+
+  <rect x="288" y="328" width="230" height="60" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="403" y="346" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">HX2 LAM 5 100 + E3 — TEC × 1</text>
+  <text x="403" y="361" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">coil 7.6 / 5.5 °C · β 0.053 · Q_c 10.8 W</text>
+  <text x="403" y="376" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#7A8DA6">setpoint is coil temperature · floor +1 °C</text>
+  <path d="M403 388 L403 400" fill="none" stroke="#7A8DA6" stroke-width="1.2" marker-end="url(#arb)"/>
+
+  <rect x="288" y="402" width="230" height="44" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="403" y="420" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">TB1 thermal break · ≤ 1 W</text>
+  <text x="403" y="435" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">low point · liquid seal · all condensate</text>
+  <path d="M403 446 L403 458" fill="none" stroke="#7A8DA6" stroke-width="1.2" marker-end="url(#arb)"/>
+  <line x1="518" y1="424" x2="556" y2="424" stroke="#5F5E5A" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#ar)"/>
+  <text x="562" y="421" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">drain, cleared</text>
+  <text x="562" y="433" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">of the volume</text>
+
+  <rect x="288" y="460" width="230" height="44" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="403" y="478" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">HX3 LAM 5 50 + E4 reheat — last</text>
+  <text x="403" y="493" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">6.6 W · base 25.4 °C · out 20 °C / 45.9 %RH</text>
+
+  <!-- ============ rejection loop and room ============ -->
+  <rect x="552" y="232" width="196" height="300" rx="6" fill="#FBFBF9" stroke="#C9C6BC"/>
+  <text x="566" y="250" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">ROOM · 22 °C</text>
+
+  <line x1="264" y1="383" x2="618" y2="383" stroke="#7A8DA6" stroke-width="1.2" marker-end="url(#arb)" stroke-dasharray="0"/>
+  <line x1="518" y1="358" x2="618" y2="358" stroke="#7A8DA6" stroke-width="1.2" marker-end="url(#arb)"/>
+
+  <rect x="566" y="284" width="168" height="46" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="650" y="302" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">WB1, WB2 water blocks</text>
+  <text x="650" y="317" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">also the clamping plates</text>
+
+  <rect x="566" y="396" width="168" height="60" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="650" y="414" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">rejection loop</text>
+  <text x="650" y="429" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">≥ 65 W at ≤ 25 °C supply</text>
+  <text x="650" y="444" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">pump free-runs · SF1 feeds T4</text>
+
+  <path d="M650 330 L650 392" fill="none" stroke="#7A8DA6" stroke-width="1.2" marker-end="url(#arb)"/>
+  <path d="M650 456 L650 486" fill="none" stroke="#7A8DA6" stroke-width="1.2" marker-end="url(#arb)"/>
+  <text x="650" y="502" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">room air · rise ≤ 2 K (T8)</text>
+
+  <!-- ============ footnotes ============ -->
+  <text x="24" y="556" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">trips are thermistor plus comparator · reported temperatures U1–U4 are DS18B20 on one 1-Wire bus · U9 and the ID EEPROM share the header I²C</text>
+  <text x="24" y="572" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">the main tract sets the wet edge of the reachable VPD band, the humidity tract the dry edge · E6 CO₂ valve is not populated in the baseline</text>
+  <text x="24" y="588" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">values marked verify in §3–§10 are not confirmed against a datasheet</text>
+</svg>
