@@ -59,7 +59,7 @@ A01 drives the grow-volume air temperature bidirectionally against a setpoint is
 gateway. It conditions the demand, limits it on its own rejection-side temperature (`D9`), and
 executes it (ADR-0015 d18, ADR-0031 d4).
 
-![Gateway demand into a conditioned node, a current-mode buck and H-bridge from +24 V, three hardware interlocks gating driver enable, and a thermoelectric string between a grow-volume exchanger and a water block](./figures/a01-thermal-principle.svg)
+![Gateway demand into a conditioned node, a DRV8262 H-bridge with integrated current regulation from +24 V through L1, three hardware interlocks gating driver enable, and a thermoelectric string between a grow-volume exchanger and a water block](./figures/a01-thermal-principle.svg)
 
 ### 3.1 Commanded quantity
 
