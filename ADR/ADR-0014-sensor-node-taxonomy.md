@@ -226,6 +226,8 @@ Zone count is not an architectural decision — it is a deployment-time choice m
 
 9. **Out of scope for this ADR:**
    - **Actuator modules** (LED drivers, pump drivers, heater control, dosing peristaltic control). These follow the same carrier + module pattern but require their own taxonomy ADR. The scale-aware multi-instance pattern is expected to apply analogously.
+
+     > **Resolved by ADR-0031.** The actuator taxonomy is written: class namespace, class list, command semantics, safe output per class, and the interlock kinds.
    - **Camera.** The cabinet camera is not a Cyphal node — it connects directly to the gateway. Covered by the gateway and platform layers.
    - **Detailed PCB layout** for any of the seven sensor modules.
    - **Detailed pH/EC front-end schematic, layout, and isolation strategy.** May warrant its own ADR once analytics-module schematic capture begins.
