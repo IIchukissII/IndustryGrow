@@ -122,13 +122,10 @@ int tsl2585_init(void)
      *
      * NOTHING RESETS THIS DEVICE. It has no reset pin here and shares the
      * module rail, so an MCU restart -- a watchdog, an SWD reset, an OTA --
-     * leaves it running with whatever the previous session left behind. Its
-     * gain registers are sequencer-owned while a measurement is live, so
-     * configuration written over a running engine does not stick: measured on
-     * E0003-000001, modulator 2 read back 4x after being written 1024x, and
-     * ENABLE carried an FDEN this driver never sets. Clearing PON stops the
-     * oscillator and, per the datasheet, clears FDEN and AEN with it, which is
-     * the only state reset the part offers.
+     * leaves it running with whatever the previous session left behind, which
+     * on this module has included another device's register values. Clearing
+     * PON stops the oscillator and, per the datasheet, clears FDEN and AEN
+     * with it, which is the only state reset the part offers.
      *
      * Everything the driver depends on is then written rather than inherited.
      * Configuration goes in before PON, as the device requires; M02 spec 10
@@ -152,16 +149,12 @@ int tsl2585_init(void)
      * below is the last word on it.
      *
      * The device resets with saturation AGC (0xDF[7:4]) and predict AGC
-     * (0xE1[7:4]) enabled for all four sequencer steps, and an active AGC OWNS
+     * (0xE1[7:4]) enabled for all four sequencer steps, and an active AGC owns
      * the gain registers -- the datasheet says of each MOD_GAIN field that it
-     * is "updated by the AGC, if activated". Left on, it walks modulator 2 off
-     * the responsivity anchor of M02 spec 6.4 and the published W/m2 is scaled
-     * by a gain the host did not choose. Measured on E0003-000001: modulator 2
-     * programmed at 1024x read back at 4x, eight steps down, driven there by
-     * analog saturation on the IR modulator rather than by anything in the UV
-     * path -- the modulators share the sequencer, so saturation anywhere moves
-     * the gain everywhere. ALS_DATA_VALID never asserted while that was going
-     * on, which published every UV sample as invalid. */
+     * is "updated by the AGC, if activated". Left on it would walk modulator 2
+     * off the responsivity anchor of M02 spec 6.4, and the published W/m2
+     * would carry a gain the host did not choose. Disabled here so that the
+     * gain written below is the one in force. */
     uint8_t agc = 0u;
     if (rd(REG_SMUX_STEP1_H, &agc) < 0) {
         return -1;

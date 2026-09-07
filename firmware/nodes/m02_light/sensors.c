@@ -471,8 +471,12 @@ static void publish_all(void)
     }
 
     /* Last, so the setting a set was taken at is the one already published
-     * with it. */
-    if (have_spectrum) {
+     * with it -- but back on U4 first. The UV read above leaves the switch on
+     * U3, and both parts answer at 0x39, so an autorange step taken from here
+     * writes the AS7343's ENABLE, ATIME and ASTEP into the TSL2585 instead.
+     * It ACKs, so as7343_set_range() reports success and s_atime/s_again start
+     * describing a device that never received them. */
+    if (have_spectrum && (tca9543a_select(TCA9543A_CH_U4) == 0)) {
         autorange(&spectrum);
     }
 }
