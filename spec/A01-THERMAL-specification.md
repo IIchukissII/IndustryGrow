@@ -8,14 +8,11 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Status:** Working specification, pre-schematic capture. `E0011` not laid out, not fabricated
 - **Date:** 2026-09-07
 - **E-number:** `E0011` · module class ID `0x80`
-- **Governing ADRs:** ADR-0014 (rev 4), ADR-0015, ADR-0016, ADR-0017 (rev 2), ADR-0018, ADR-0003
+- **Governing ADRs:** ADR-0031, ADR-0014 (rev 4), ADR-0015, ADR-0016, ADR-0017 (rev 2), ADR-0018, ADR-0003
 - **Companions:** `M01-CLIMATE-specification.md`, `M05-SAFETY-specification.md`, `M06-VENTILATION-specification.md`, `M07-AMBIENT-specification.md`
 
 Rationale for the decisions applied here is in the governing ADRs and is not restated.
 Values marked `verify` are not confirmed against the manufacturer datasheet.
-
-No actuator-taxonomy ADR exists (ADR-0014 decision 9, deferred). Requirements below that would
-normally cite one carry `O-101`.
 
 ## 1. Scope
 
@@ -33,7 +30,7 @@ rejection-loop plumbing as a purchased assembly.
 | | Value |
 |---|---|
 | Module class | A01-THERMAL |
-| Module class ID | `0x80` — first actuator class (ADR-0014 rev 4 d6, actuator range `0x80`–`0xFE`) |
+| Module class ID | `0x80` — first actuator class (ADR-0031 d1, d2; range per ADR-0014 rev 4 d6) |
 | ID transport | Serial EEPROM, 24Cxx class, byte 0, I²C `0x50` (ADR-0014 d6). The 3-bit strap cannot express `0x80` |
 | E-number | `E0011` — first assembly. A populate variant takes its own assembly E-number at design commit (ADR-0017 rev 2 d4) |
 | Bare design | One layout, one class ID, one firmware image |
@@ -123,12 +120,12 @@ Module-ID straps `STRAP_0`–`STRAP_2` are not used by this module (`O-100`).
 |---|---|---|
 | `D1` | The four modules are wired as one series string. Element voltage is `V = αΔT + IR`; at ΔT = 15 K the string settles at 2.9 A across `+24 V` (`verify`) | `O-103` |
 | `D2` | Drive is closed-loop **current**, not duty. String current limit 3.0 A (`verify`). The sense element serves this loop only; no energy or consumption quantity is published from it | ADR-0018 d5 |
-| `D3` | Direction reversal is by H-bridge. Reversal is permitted only after the drive has been at zero for `D5` | `O-101` |
+| `D3` | Direction reversal is by H-bridge. Reversal is permitted only after the drive has been at zero for `D5` | ADR-0031 d5 |
 | `D4` | Switching frequency ≥ 20 kHz, output filtered so the string sees DC ripple ≤ 5 % of setpoint current (`verify`) | `O-103` |
-| `D5` | Dead band \|demand\| < 0.05 commands zero drive; minimum dwell at zero before a sign change is 60 s (`verify`) | ADR-0015 d18 |
-| `D6` | The cold-side fan is a separate command, independently settable from the thermal demand | ADR-0016 d2 |
+| `D5` | Dead band \|demand\| < 0.05 commands zero drive; minimum dwell at zero before a sign change is 60 s (`verify`) | ADR-0031 d5 |
+| `D6` | The cold-side fan is a separate command, independently settable from the thermal demand | ADR-0031 d3, d4 |
 | `D7` | Demand slew is limited to 0.05 s⁻¹ (`verify`) | ADR-0015 d18 |
-| `D8` | A demand whose validity deadline has expired drives the string to zero and the cold-side fan to full | ADR-0015 d18 |
+| `D8` | A demand whose validity deadline has expired drives the string to zero and the cold-side fan to full | ADR-0031 d6 |
 
 ## 7. Power
 
@@ -145,9 +142,9 @@ Module-ID straps `STRAP_0`–`STRAP_2` are not used by this module (`O-100`).
 | ID | Requirement | Reference |
 |---|---|---|
 | `T1` | Cooling capacity ≥ 85 W at ΔT = 15 K, hot face ≤ 45 °C (`verify`). Sufficiency against the cabinet loss coefficient is unresolved until identification | `O-105` |
-| `T2` | **Hot-face over-temperature trip**, independent of the MCU, gateway and cloud: thermistor → comparator → driver enable. Trip at 80 °C (`verify`; module solder limit 138 °C for Bi-Sn, `verify`) | `O-101` |
-| `T3` | **Grow-volume over-temperature trip**, independent of the MCU, gateway and cloud: thermistor on a lead in the grow volume → comparator → driver enable. Trip at 35 °C (`verify`) | ADR-0018 d10 |
-| `T4` | **Coolant-flow interlock**: loss of flow in the rejection loop removes driver enable in hardware | `O-101` |
+| `T2` | **Hot-face over-temperature trip** (self-protective), independent of the MCU, gateway and cloud: thermistor → comparator → driver enable. Trip at 80 °C (`verify`; module solder limit 138 °C for Bi-Sn, `verify`) | ADR-0031 d7 |
+| `T3` | **Grow-volume over-temperature trip** (process-protective), independent of the MCU, gateway and cloud: thermistor on a lead in the grow volume → comparator → driver enable. Trip at 35 °C (`verify`) | ADR-0018 d10, ADR-0031 d7 |
+| `T4` | **Coolant-flow interlock** (self-protective): loss of flow in the rejection loop removes driver enable in hardware | ADR-0031 d7 |
 | `T5` | `T2`, `T3` and `T4` act on the driver enable directly. Firmware reads their state but cannot override or re-arm any of them | ADR-0015 d11, ADR-0018 d10 |
 | `T6` | Rejection loop dissipates ≥ 160 W continuous at a coolant-to-room ΔT of 15 K (`verify`) | `D1`, `T1` |
 | `T7` | Condensate forming on the grow-volume face is collected and drained clear of the volume | `O-107` |
@@ -193,8 +190,8 @@ Module-ID straps `STRAP_0`–`STRAP_2` are not used by this module (`O-100`).
 
 ## 12. Open items
 
-- `O-100` — Actuator class IDs require the EEPROM transport, so A01 cannot run on carrier `E0001-000003`. Blocks fabrication until `E0001-000100` exists.
-- `O-101` — No actuator-taxonomy ADR (ADR-0014 d9). Blocks ratification of `D3`, `T2`, `T4` and the `A0x` class-naming form.
+- `O-100` — Actuator class IDs require the EEPROM transport, so A01 cannot run on carrier `E0001-000003` (ADR-0031 d10). Blocks fabrication until `E0001-000100` exists.
+- ~~`O-101`~~ — ~~No actuator-taxonomy ADR (ADR-0014 d9). Blocks ratification of `D3`, `T2`, `T4` and the `A0x` class-naming form.~~ — closed 2026-09-07 by ADR-0031.
 - `O-102` — No DSDL type for a signed actuator demand with a validity deadline. Blocks `F3`.
 - `O-103` — Thermoelectric module not selected; α, R, K, clamping force and TIM are unconfirmed. Blocks `D1`, `D4`, `M1`, `M2`.
 - `O-104` — Vega 650 startup, inhibit and output-isolation behaviour unconfirmed against the manual. Blocks `P2`.

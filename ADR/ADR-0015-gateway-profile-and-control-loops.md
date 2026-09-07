@@ -182,6 +182,8 @@ This ADR adds clarity to several existing decisions without changing them:
 
   > **Narrowed by ADR-0025 (decision 1):** the *signature scheme* item is split by artifact. ADR-0025 takes the deployment-specific **instance** profile on the ERP-to-gateway channel; what stays here is the **community template** side this entry's own qualifier names — contributor authorship, key publication, and whether registry templates carry signatures at all. The schema, version compatibility rules, and registry mechanics are untouched and remain ADR-0009's.
 - **Actuator-module taxonomy** — which Cyphal actuator nodes exist, what commands they accept, how PWM/setpoint flows work. Separate future ADR.
+
+  > **Resolved by ADR-0031.** Decision 2 lists the classes, decisions 4–5 the command semantics, decision 6 the safe output per class that decision 18 defers here.
 - **Control-loop tuning and PID gain storage** — are PID gains part of the profile, or part of platform-default tunings, or per-cabinet calibration? Likely part of the profile, but needs explicit decision.
 
   > **Bounded by decision 18:** the split by *level* is settled — outer-loop gains and model parameters are profile content, a node's actuator-conditioning parameters are commissioning-set hardware properties. What stays open is this entry's own question for the outer loop: profile, platform default, or per-cabinet calibration.
