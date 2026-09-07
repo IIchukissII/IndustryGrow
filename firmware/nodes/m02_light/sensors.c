@@ -228,6 +228,34 @@ static uint8_t m02_command(uint16_t command, const uint8_t *param, size_t param_
                               "M02 UV raw counts =", (uint32_t)uv.raw);
         cyphal_diagnostic_u32(uavcan_diagnostic_Severity_1_0_NOTICE,
                               "M02 UV gain x1 =", (uint32_t)uv.gain);
+        /* The registers behind the sample. `valid` is a conclusion drawn
+         * from three of them at once, so a false reading says nothing on its
+         * own about which one produced it; these say. Packed four bytes to a
+         * record because a burst of single-value diagnostics loses its tail. */
+        tsl2585_bench_t d = {0};
+        if (tsl2585_bench_dump(&d) == 0) {
+            cyphal_diagnostic_u32(uavcan_diagnostic_Severity_1_0_NOTICE,
+                                  "M02 UV 92,9D,94,9C =",
+                                  ((uint32_t)d.id << 24) |
+                                  ((uint32_t)d.status2 << 16) |
+                                  ((uint32_t)d.als_status << 8) | d.als_status3);
+            cyphal_diagnostic_u32(uavcan_diagnostic_Severity_1_0_NOTICE,
+                                  "M02 UV 9B,80,81,40 =",
+                                  ((uint32_t)d.als_status2 << 24) |
+                                  ((uint32_t)d.enable << 16) |
+                                  ((uint32_t)d.meas_mode0 << 8) | d.mod_ctrl);
+            cyphal_diagnostic_u32(uavcan_diagnostic_Severity_1_0_NOTICE,
+                                  "M02 UV D4,D5,DC,DD =",
+                                  ((uint32_t)d.gain_step0_l << 24) |
+                                  ((uint32_t)d.gain_step0_h << 16) |
+                                  ((uint32_t)d.smux_step0_l << 8) | d.smux_step0_h);
+            cyphal_diagnostic_u32(uavcan_diagnostic_Severity_1_0_NOTICE,
+                                  "M02 UV 85,86,DF,E1 =",
+                                  ((uint32_t)d.nr_samples0 << 24) |
+                                  ((uint32_t)d.nr_samples1 << 16) |
+                                  ((uint32_t)d.agc_asat << 8) | d.agc_predict);
+        }
+
         return uavcan_node_ExecuteCommand_Response_1_0_STATUS_SUCCESS;
     }
     default:
