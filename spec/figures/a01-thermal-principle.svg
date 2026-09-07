@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="720" height="470" viewBox="0 0 720 470" role="img" aria-label="A01-THERMAL working principle">
   <title>A01-THERMAL — working principle</title>
-  <desc>The gateway issues a signed demand with a validity deadline. The node conditions it and drives a current-mode buck and an H-bridge from the +24 V section. Three hardware interlocks — radiator, grow volume, coolant flow — gate the driver enable directly and cannot be overridden by firmware. The thermoelectric string sits between a finned exchanger in the grow volume and a water block in the rejection loop; the direction of heat flow follows the sign of the demand.</desc>
+  <desc>The gateway issues a signed demand with a validity deadline. The node conditions it and drives a a DRV8262 H-bridge with integrated current regulation from the +24 V section. Three hardware interlocks — radiator, grow volume, coolant flow — gate the driver enable directly and cannot be overridden by firmware. The thermoelectric string sits between a finned exchanger in the grow volume and a water block in the rejection loop; the direction of heat flow follows the sign of the demand.</desc>
 
   <defs>
     <marker id="a31" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#5F5E5A"/></marker>
@@ -25,8 +25,7 @@
   <text x="437" y="80" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">dead band · dwell · slew · fail-safe</text>
 
   <!-- node drives the two PWM stages -->
-  <path d="M437 90 L437 104 L225 104 L225 118" fill="none" stroke="#5F5E5A" stroke-width="1" stroke-dasharray="3 3" marker-end="url(#a31)"/>
-  <path d="M437 104 L400 104 L400 118" fill="none" stroke="#5F5E5A" stroke-width="1" stroke-dasharray="3 3" marker-end="url(#a31)"/>
+  <path d="M437 90 L437 104 L310 104 L310 118" fill="none" stroke="#5F5E5A" stroke-width="1" stroke-dasharray="3 3" marker-end="url(#a31)"/>
 
   <!-- power band -->
   <rect x="24" y="122" width="104" height="44" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
@@ -35,15 +34,9 @@
 
   <line x1="128" y1="144" x2="146" y2="144" stroke="#5F5E5A" stroke-width="1.2" marker-end="url(#a31)"/>
 
-  <rect x="150" y="122" width="150" height="44" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
-  <text x="225" y="140" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">Buck — current mode</text>
-  <text x="225" y="154" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">3.0 A limit · PWM_1</text>
-
-  <line x1="300" y1="144" x2="326" y2="144" stroke="#5F5E5A" stroke-width="1.2" marker-end="url(#a31)"/>
-
-  <rect x="330" y="122" width="140" height="44" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
-  <text x="400" y="140" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">H-bridge — direction</text>
-  <text x="400" y="154" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">PWM_2 · PWM_3</text>
+  <rect x="150" y="122" width="320" height="44" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="310" y="140" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">DRV8262 — H-bridge + current regulation</text>
+  <text x="310" y="154" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">EN · PH · VREF · IPROPI · 100 % duty</text>
 
   <!-- interlocks -->
   <rect x="540" y="112" width="152" height="28" rx="3" fill="#FDF3E7" stroke="#E0B080"/>
@@ -61,7 +54,10 @@
   <text x="616" y="235" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">override or re-arm</text>
 
   <!-- drive down to the string -->
-  <line x1="400" y1="166" x2="400" y2="292" stroke="#5F5E5A" stroke-width="1.2" marker-end="url(#a31)"/>
+  <line x1="400" y1="166" x2="400" y2="206" stroke="#5F5E5A" stroke-width="1.2"/>
+  <rect x="376" y="206" width="48" height="20" rx="3" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="400" y="220" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#2C2C2A">L1</text>
+  <line x1="400" y1="226" x2="400" y2="292" stroke="#5F5E5A" stroke-width="1.2" marker-end="url(#a31)"/>
 
   <!-- thermal band -->
   <text x="360" y="272" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#5F5E5A">heat path — direction follows the sign of the demand</text>

@@ -98,15 +98,16 @@ Full scale corresponds to the string current limit of `D2`, not to the module's 
 | RT1 | NTC 10 kΩ B25/85 3435, at the radiator | `T2` trip element | — | — |
 | RT2 | NTC 10 kΩ, on a lead in the grow volume | `T3` trip element (ADR-0018 d10) | — | — |
 | TEC1–TEC4 | 40 × 40 mm, 127 couple, `Imax` 6.0 A, `Umax` 15.4 V, `Qmax` 57 W at `Th` 25 °C, `ΔTmax` 68 K (`verify`) | Bidirectional heat pump | Series string | `+24 V` actuator |
-| U3 | Synchronous buck, current-mode, ≥ 4 A continuous (`verify`) | String current control (`D2`) | — | `+24 V` |
-| U4 | Full H-bridge, ≥ 4 A continuous (`verify`) | Direction reversal (`D3`) | — | buck output |
+| U3 | TI DRV8262, HTSSOP-44, **single-H-bridge mode**. 4.5…60 V; 50 mΩ HS+LS; 20 A TEC capability single-bridge; integrated charge pump for 100 % duty; integrated high-side current sense, IPROPI ±4 %; UVLO, CPUV, OCP, OTSD, `nFAULT` | Direction and current regulation in one part (`D2`, `D3`) | 3.3 V logic, `+24 V` power | `+24 V` |
+| L1 | Series inductor, string side (`verify` — value from `D4`) | Ripple filter for the driver's off-time chopping | — | — |
 | U5 | Comparator, radiator trip on `RT1` (`T2`) | Hardware interlock | 3.3 V | 3V3 |
 | U6 | Comparator, grow-volume trip on `RT2` (`T3`) | Hardware interlock (ADR-0018 d10) | 3.3 V | 3V3 |
 | U7 | 24Cxx serial EEPROM, I²C `0x50` | Module class ID (ADR-0014 d6) | 3.3 V | 3V3 |
 | SF1 | Coolant-flow switch, purchased (`T4`) | Rejection-loop interlock | — | — |
 
 No trip element is a digital part: `T2`, `T3` and `T4` act without the MCU (ADR-0031 d7), so
-`U1` and `U2` report and derate but trip nothing.
+`U1` and `U2` report and derate but trip nothing. `U3` integrates the high-side current sense,
+so no shunt is fitted; the interlocks act on `U3`'s enable, not through it.
 
 Addresses `0x50`–`0x57` are reserved project-wide for the ID EEPROM (ADR-0014 d6); no other
 device on this module occupies them.
@@ -115,16 +116,17 @@ device on this module occupies them.
 
 | Header signal | Carrier pin | Use |
 |---|---|---|
-| `PWM_1` | PC6 / TIM3_CH1 | Buck control (`D2`) |
-| `PWM_2` | PC7 / TIM3_CH2 | H-bridge direction A (`D3`) |
-| `PWM_3` | PB0 / TIM3_CH3 | H-bridge direction B (`D3`) |
+| `PWM_1` | PC6 / TIM3_CH1 | `U3` EN — drive magnitude (`D2`) |
+| `PWM_2` | PC7 / TIM3_CH2 | `U3` PH — direction (`D3`) |
+| `PWM_3` | PB0 / TIM3_CH3 | `U3` VREF — current limit setpoint, RC-filtered to analog (`D2`) |
 | `PWM_4` | PB1 / TIM3_CH4 | Cold-side fan command (`D6`) |
 | `OW_DATA` | PA0 | `U1`, `U2` on one 1-Wire bus; external 4.7 kΩ pull-up (`E0001` pin map) |
-| `ADC_1`, `ADC_2` | PC4, PC5 | Unused |
+| `ADC_1` | PC4 | `U3` IPROPI — string current (`D2`) |
+| `ADC_2` | PC5 | `U3` `nFAULT` — digital input (`F9`) |
 | `GPIO_1` | PA9 | `T2` interlock state (input) |
 | `GPIO_2` | PA10 | `T3` interlock state (input) |
 | `GPIO_3` | PA15 | `T4` interlock state (input) |
-| `GPIO_4` | PB12 | Driver enable (output) |
+| `GPIO_4` | PB12 | `U3` nSLEEP — driver enable (output) |
 | `I2C1_SCL` / `I2C1_SDA` | PB6 / PB7 | ID EEPROM `0x50` |
 
 Module-ID straps `STRAP_0`–`STRAP_2` are not used by this module (`O-100`).
@@ -134,9 +136,9 @@ Module-ID straps `STRAP_0`–`STRAP_2` are not used by this module (`O-100`).
 | ID | Requirement | Reference |
 |---|---|---|
 | `D1` | The four modules are wired as one series string. Element voltage is `V = αΔT + IR`; at ΔT = 15 K the string settles at 2.9 A across `+24 V` (`verify`) | `O-103` |
-| `D2` | Drive is closed-loop **current**, not duty. String current limit 3.0 A (`verify`). The sense element serves this loop only; no energy or consumption quantity is published from it | ADR-0018 d5 |
-| `D3` | Direction reversal is by H-bridge. Reversal is permitted only after the drive has been at zero for `D5` | ADR-0031 d5 |
-| `D4` | Switching frequency ≥ 20 kHz, output filtered so the string sees DC ripple ≤ 5 % of setpoint current (`verify`) | `O-103` |
+| `D2` | Drive is closed-loop **current**, not duty, regulated by `U3` against the `VREF` setpoint. String current limit 3.0 A (`verify`). `U3`'s integrated sense serves this loop only; no energy or consumption quantity is published from it | ADR-0018 d5 |
+| `D3` | Direction reversal is by the `U3` PH input. Reversal is permitted only after the drive has been at zero for `D5` | ADR-0031 d5 |
+| `D4` | `U3` off-time chopping is set to one of 7 / 16 / 24 / 32 µs; `L1` is sized so the string sees ripple ≤ 5 % of setpoint current (`verify`) | `O-103` |
 | `D5` | Dead band \|demand\| < 0.05 commands zero drive; minimum dwell at zero before a sign change is 60 s (`verify`) | ADR-0031 d5 |
 | `D6` | The cold-side fan is a separate command, independently settable from the thermal demand | ADR-0031 d3, d4 |
 | `D7` | Demand slew is limited to 0.05 s⁻¹ (`verify`) | ADR-0015 d18 |
@@ -150,7 +152,8 @@ Module-ID straps `STRAP_0`–`STRAP_2` are not used by this module (`O-100`).
 | `P1` | Node logic is powered from the `+12 V` SELV sensor bus and derives 3.3 V on the carrier. The actuator string is **not** on that rail | ADR-0018 d3 |
 | `P2` | The string is fed from the `+24 V` actuator section: TDK-Lambda Vega 650 (`K60050B`), C5 module, 24 V 10 A. Chassis total 650 W is shared across fitted modules (`verify`) | ADR-0018 d3, `O-104` |
 | `P3` | String draw at `D2` limit: 70 W, 2.9 A (`verify`). One C5 module carries the string with the balance available to other branches | `D1` |
-| `P4` | Per-branch overcurrent protection is the supply module's own current limit; no central per-load fuse | ADR-0018 d8 |
+| `P4` | Per-branch overcurrent protection is the supply module's own current limit plus `U3` OCP; no central per-load fuse | ADR-0018 d8 |
+| `P6` | `U3` dissipates 0.45 W at the `D2` limit (50 mΩ HS+LS × 3.0 A²). The thermal pad is bonded to a copper pour sized for it (`verify`) | `U3` |
 | `P5` | The switched return is not shared with the logic or analog ground at the module. Isolation of the command path lives at this actuator | ADR-0018 d7, d8 |
 
 ## 8. Thermal requirements and interlocks
@@ -186,6 +189,7 @@ Module-ID straps `STRAP_0`–`STRAP_2` are not used by this module (`O-100`).
 | `F3` | The inner loop runs on the node at the actuator's rate; the gateway issues the demand and its validity deadline only | ADR-0015 d18 |
 | `F4` | Enforce `D2`, `D5`, `D7`, `D8` and `D9` in node firmware, independently of the commanded value | ADR-0015 d18 |
 | `F8` | Loss of `U1` for more than 5 s (`verify`) is treated as the `D9` ceiling reached | `D9` |
+| `F9` | A `U3` `nFAULT` assertion drives the string to zero, is published as drive state `fault`, and is latched until the node is reset | `U3` |
 | `F5` | Publish the trip state of `T2`, `T3` and `T4`. A trip is reported and latched in telemetry until the node is reset | `T5` |
 | `F6` | Publish no energy or consumption quantity | ADR-0018 d5 |
 | `F7` | Deployment constants — current limit, dead band, dwell, slew, fan mapping — are node-local and set at commissioning, not carried in the profile | ADR-0015 d18, ADR-0028 |
@@ -195,7 +199,7 @@ Module-ID straps `STRAP_0`–`STRAP_2` are not used by this module (`O-100`).
 | ID | Verifies | Method |
 |---|---|---|
 | `V1` | `D1`, `P3` | Measure string current and voltage at 24 V against a hot face held at 25 °C; record the ΔT–current curve |
-| `V2` | `D2`, `D4` | Measure string current ripple at 25 %, 50 % and 100 % of the limit with a current probe |
+| `V2` | `D2`, `D4` | Measure string current and its ripple at 25 %, 50 % and 100 % of the limit with a current probe; cross-check against IPROPI |
 | `V3` | `D3`, `D5` | Command a sign reversal; confirm zero drive is held for the dwell and that no reversal occurs inside it |
 | `V4` | `D7`, `D8` | Command a step to full scale; confirm slew. Stop publishing the demand; confirm the string reaches zero and the fan full within the deadline |
 | `V5` | `T1`, `T6` | Step the string to the limit into a cabinet at a known start temperature; record the pull-down curve and the coolant rise |
@@ -209,13 +213,15 @@ Module-ID straps `STRAP_0`–`STRAP_2` are not used by this module (`O-100`).
 | `V13` | `D9`, `F8` | Raise the radiator past 50 °C with the demand at full scale; record the derate curve and the 60 °C clamp. Disconnect `U1`; confirm the clamp |
 | `V14` | `T8` | Run at the `T6` rejection load for 4 h in the installed room; record the ambient rise |
 | `V15` | `M6` | Thermograph the printed parts at the `T6` rejection load; confirm no surface exceeds 60 °C |
+| `V16` | `F9` | Force a `U3` fault (short an output at reduced `VREF`); confirm zero drive, the published state, and the latch |
+| `V17` | `P6` | Measure `U3` case temperature at the `D2` limit for 1 h |
 
 ## 12. Open items
 
 - `O-100` — Actuator class IDs require the EEPROM transport, so A01 cannot run on carrier `E0001-000003` (ADR-0031 d10). The `E0001-000100` pin map must also carry the 1-Wire line §5 claims (ADR-0014 rev 4 deferred item). Blocks fabrication.
 - ~~`O-101`~~ — ~~No actuator-taxonomy ADR (ADR-0014 d9). Blocks ratification of `D3`, `T2`, `T4` and the `A0x` class-naming form.~~ — closed 2026-09-07 by ADR-0031.
 - `O-102` — No DSDL type for a signed actuator demand with a validity deadline. Blocks `F3`.
-- `O-103` — Thermoelectric module not selected; α, R, K, clamping force and TIM are unconfirmed. Blocks `D1`, `D4`, `M1`, `M2`.
+- `O-103` — Thermoelectric module not selected; α, R, K, clamping force and TIM are unconfirmed, and `L1` follows from them. `U3` continuous RMS current by package is unread. Blocks `D1`, `D4`, `M1`, `M2`.
 - `O-104` — Vega 650 startup, inhibit and output-isolation behaviour unconfirmed against the manual. Blocks `P2`.
 - `O-105` — Cabinet loss coefficient unidentified (ADR-0016 survey). Blocks sufficiency of `T1`.
 - `O-106` — Outdoor deployment variant not specified.
@@ -230,4 +236,4 @@ Module-ID straps `STRAP_0`–`STRAP_2` are not used by this module (`O-100`).
 | As-built | Not reached |
 
 Next rung requires: `O-103` closed (module selected, datasheet values substituted), `O-104`
-closed, `O-102` closed, and `D2`/`D4`/`D9` component values computed against the selected module.
+closed, `O-102` closed, and `D2`/`D4`/`D9` component values — `L1`, `VREF` divider, `U3` off-time — computed against the selected module.
