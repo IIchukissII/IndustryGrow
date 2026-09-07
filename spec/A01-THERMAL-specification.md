@@ -23,7 +23,7 @@ firmware requirements, and their verification.
 Not specified here: carrier design (`store/E0001-VVVVVV-D-pinmap.md`), the outdoor deployment
 variant, the cultivation setpoints themselves (`profiles/strawberry-day-neutral-v1.json`),
 control-loop structure and gains (ADR-0015 d8/d18, `gateway/control_model.py`), the
-rejection-loop plumbing as a purchased assembly.
+rejection-loop plumbing as a purchased assembly, the outdoor deployment variant.
 
 ## 2. Identification
 
@@ -36,20 +36,30 @@ rejection-loop plumbing as a purchased assembly.
 | Bare design | One layout, one class ID, one firmware image |
 | Carrier | `E0001-000100` or later (ADR-0014 d6). **Not `E0001-000003`** — see `O-100` |
 
-### 2.1 Deployment variants
+### 2.1 Deployment variant — indoor
 
-| | **Indoor** | **Outdoor** |
-|---|---|---|
-| Thermal boundary | A cabinet or chamber inside a building | A greenhouse envelope |
-| Rejection medium | Room air, or a liquid loop to room air | Not specified — `O-106` |
-| Environmental qualification | Indoor, as M01–M05 | Not specified — `O-106` |
+This document specifies the indoor variant. The outdoor variant is not specified (`O-106`).
 
-This document specifies the indoor variant only.
+| | Indoor |
+|---|---|
+| Thermal boundary | A cabinet or chamber standing inside a building |
+| Ambient | The room enclosing the cabinet — the volume the enclosure exchanges with, one step out (ADR-0014 d4) |
+| Ambient air temperature | 15…30 °C (`M07-AMBIENT-specification.md`, indoor variant) |
+| Ambient relative humidity | 25…65 %RH (same) |
+| Rejection sink | The same room air. Rejected heat re-enters the cabinet's own boundary condition |
+| Rejection load into the room | 160 W continuous (`T6`), bounded by `T8` |
+| Grow-volume setpoints | 20 °C day, 14 °C night (`profiles/strawberry-day-neutral-v1.json`) |
+| Cold-face condensation | Present whenever the face is below the grow-volume dew point; drained per `T7` |
+| Field bus leaves the enclosure | No |
+| Environmental qualification | Indoor, as M01–M05 |
 
 ## 3. Function
 
 A01 drives the grow-volume air temperature bidirectionally against a setpoint issued by the
-gateway. It regulates nothing locally; it conditions a demand and executes it (ADR-0015 d18).
+gateway. It conditions the demand, limits it on its own rejection-side temperature (`D9`), and
+executes it (ADR-0015 d18, ADR-0031 d4).
+
+![Gateway demand into a conditioned node, a current-mode buck and H-bridge from +24 V, three hardware interlocks gating driver enable, and a thermoelectric string between a grow-volume exchanger and a water block](./figures/a01-thermal-principle.svg)
 
 ### 3.1 Commanded quantity
 
@@ -63,8 +73,8 @@ Full scale corresponds to the string current limit of `D2`, not to the module's 
 
 | Published quantity | Sensor | Sensor range | Expected operating range | Accuracy |
 |---|---|---|---|---|
-| Rejection-side (hot-face) temperature | U1 NTC 10 kΩ B25/85 3435, on `ADC_1` | −20…+150 °C (`verify`) | 20…60 °C | ±1.5 K (`verify`) |
-| Grow-volume-side (cold-face) temperature | U2 NTC 10 kΩ, on `ADC_2` | −20…+150 °C (`verify`) | 5…40 °C | ±1.5 K (`verify`) |
+| Rejection-side (radiator) temperature | U1 DS18B20, 1-Wire | −55…+125 °C (`verify`) | 20…60 °C, ceiling 60 °C (`D9`) | ±0.5 K over −10…+85 °C (`verify`) |
+| Grow-volume-side (exchanger) temperature | U2 DS18B20, same 1-Wire bus | −55…+125 °C (`verify`) | 5…40 °C | ±0.5 K over −10…+85 °C (`verify`) |
 | Applied demand echo | — (firmware state) | −1.000 … +1.000 | −1.0 … +1.0 | exact |
 | Drive state | — (firmware state) | `off` / `heat` / `cool` / `inhibited` / `tripped` | — | exact |
 | Interlock state | `T2`, `T3`, `T4` hardware lines, on `GPIO_1`–`GPIO_3` | `armed` / `tripped` per line | `armed` | exact |
@@ -84,14 +94,19 @@ Full scale corresponds to the string current limit of `D2`, not to the module's 
 
 | Ref | Device | Function | Supply | Rail |
 |---|---|---|---|---|
-| TEC1–TEC4 | Thermoelectric module, 40 × 40 mm, 127 couple, `Imax` 6.0 A, `Umax` 15.4 V, `Qmax` 57 W at `Th` 25 °C, `ΔTmax` 68 K (`verify`) | Bidirectional heat pump | Series string | `+24 V` actuator |
+| U1, U2 | DS18B20, 1-Wire, TO-92 or stainless sheath, 12-bit, 750 ms conversion (`verify`) | Reported radiator and exchanger temperature; input to `D9` | 3.3 V | 3V3 |
+| RT1 | NTC 10 kΩ B25/85 3435, at the radiator | `T2` trip element | — | — |
+| RT2 | NTC 10 kΩ, on a lead in the grow volume | `T3` trip element (ADR-0018 d10) | — | — |
+| TEC1–TEC4 | 40 × 40 mm, 127 couple, `Imax` 6.0 A, `Umax` 15.4 V, `Qmax` 57 W at `Th` 25 °C, `ΔTmax` 68 K (`verify`) | Bidirectional heat pump | Series string | `+24 V` actuator |
 | U3 | Synchronous buck, current-mode, ≥ 4 A continuous (`verify`) | String current control (`D2`) | — | `+24 V` |
 | U4 | Full H-bridge, ≥ 4 A continuous (`verify`) | Direction reversal (`D3`) | — | buck output |
-| U5 | Comparator, hot-face trip (`T2`) | Hardware interlock | 3.3 V | 3V3 |
-| U6 | Comparator, grow-volume trip (`T3`) | Hardware interlock (ADR-0018 d10) | 3.3 V | 3V3 |
+| U5 | Comparator, radiator trip on `RT1` (`T2`) | Hardware interlock | 3.3 V | 3V3 |
+| U6 | Comparator, grow-volume trip on `RT2` (`T3`) | Hardware interlock (ADR-0018 d10) | 3.3 V | 3V3 |
 | U7 | 24Cxx serial EEPROM, I²C `0x50` | Module class ID (ADR-0014 d6) | 3.3 V | 3V3 |
-| RT1 | Thermistor on a lead, grow volume | `T3` trip sensor (ADR-0018 d10) | — | — |
 | SF1 | Coolant-flow switch, purchased (`T4`) | Rejection-loop interlock | — | — |
+
+No trip element is a digital part: `T2`, `T3` and `T4` act without the MCU (ADR-0031 d7), so
+`U1` and `U2` report and derate but trip nothing.
 
 Addresses `0x50`–`0x57` are reserved project-wide for the ID EEPROM (ADR-0014 d6); no other
 device on this module occupies them.
@@ -104,8 +119,8 @@ device on this module occupies them.
 | `PWM_2` | PC7 / TIM3_CH2 | H-bridge direction A (`D3`) |
 | `PWM_3` | PB0 / TIM3_CH3 | H-bridge direction B (`D3`) |
 | `PWM_4` | PB1 / TIM3_CH4 | Cold-side fan command (`D6`) |
-| `ADC_1` | PC4 | Hot-face thermistor |
-| `ADC_2` | PC5 | Cold-face thermistor |
+| `OW_DATA` | PA0 | `U1`, `U2` on one 1-Wire bus; external 4.7 kΩ pull-up (`E0001` pin map) |
+| `ADC_1`, `ADC_2` | PC4, PC5 | Unused |
 | `GPIO_1` | PA9 | `T2` interlock state (input) |
 | `GPIO_2` | PA10 | `T3` interlock state (input) |
 | `GPIO_3` | PA15 | `T4` interlock state (input) |
@@ -126,6 +141,7 @@ Module-ID straps `STRAP_0`–`STRAP_2` are not used by this module (`O-100`).
 | `D6` | The cold-side fan is a separate command, independently settable from the thermal demand | ADR-0031 d3, d4 |
 | `D7` | Demand slew is limited to 0.05 s⁻¹ (`verify`) | ADR-0015 d18 |
 | `D8` | A demand whose validity deadline has expired drives the string to zero and the cold-side fan to full | ADR-0031 d6 |
+| `D9` | Radiator temperature from `U1` derates the demand: full scale below 50 °C, linear to zero at **60 °C**, re-enable below 45 °C (`verify`). Runs on the node and applies to any commanded value | ADR-0031 d4, `M6` |
 
 ## 7. Power
 
@@ -142,12 +158,13 @@ Module-ID straps `STRAP_0`–`STRAP_2` are not used by this module (`O-100`).
 | ID | Requirement | Reference |
 |---|---|---|
 | `T1` | Cooling capacity ≥ 85 W at ΔT = 15 K, hot face ≤ 45 °C (`verify`). Sufficiency against the cabinet loss coefficient is unresolved until identification | `O-105` |
-| `T2` | **Hot-face over-temperature trip** (self-protective), independent of the MCU, gateway and cloud: thermistor → comparator → driver enable. Trip at 80 °C (`verify`; module solder limit 138 °C for Bi-Sn, `verify`) | ADR-0031 d7 |
-| `T3` | **Grow-volume over-temperature trip** (process-protective), independent of the MCU, gateway and cloud: thermistor on a lead in the grow volume → comparator → driver enable. Trip at 35 °C (`verify`) | ADR-0018 d10, ADR-0031 d7 |
+| `T2` | **Radiator over-temperature trip** (self-protective), independent of the MCU, gateway and cloud: `RT1` → `U5` → driver enable. Trip at 80 °C (`verify`; module solder limit 138 °C for Bi-Sn, `verify`), 20 K above the `D9` ceiling | ADR-0031 d7 |
+| `T3` | **Grow-volume over-temperature trip** (process-protective), independent of the MCU, gateway and cloud: `RT2` → `U6` → driver enable. Trip at 35 °C (`verify`) | ADR-0018 d10, ADR-0031 d7 |
 | `T4` | **Coolant-flow interlock** (self-protective): loss of flow in the rejection loop removes driver enable in hardware | ADR-0031 d7 |
 | `T5` | `T2`, `T3` and `T4` act on the driver enable directly. Firmware reads their state but cannot override or re-arm any of them | ADR-0015 d11, ADR-0018 d10 |
 | `T6` | Rejection loop dissipates ≥ 160 W continuous at a coolant-to-room ΔT of 15 K (`verify`) | `D1`, `T1` |
 | `T7` | Condensate forming on the grow-volume face is collected and drained clear of the volume | `O-107` |
+| `T8` | The room absorbs the `T6` rejection load with an ambient rise ≤ 2 K (`verify`). Ambient outside 15…30 °C is outside this variant | §2.1 |
 
 ## 9. Mechanical requirements
 
@@ -157,16 +174,18 @@ Module-ID straps `STRAP_0`–`STRAP_2` are not used by this module (`O-100`).
 | `M2` | Both faces carry a thermal interface material rated for continuous 100 °C (`verify`) | `O-103` |
 | `M3` | The assembly penetrates the cabinet wall; the penetration is sealed and thermally broken so the two faces do not short around the module | `O-107` |
 | `M4` | The grow-volume-side heatsink is positioned in the circulation path, not in still air | ADR-0003 air movement |
-| `M5` | `RT1` reaches the grow volume on a lead; no I²C crosses that lead | ADR-0014 d3, ADR-0018 d10 |
+| `M5` | `RT2` reaches the grow volume on a lead; no I²C crosses that lead | ADR-0014 d3, ADR-0018 d10 |
+| `M6` | Printed parts are PETG. No printed part is in direct thermal contact with a TEC hot face, the radiator or the water block, and no printed surface exceeds **60 °C** continuous (`verify` — PETG HDT ≈ 70 °C at 0.45 MPa) | `O-107` |
 
 ## 10. Firmware requirements
 
 | ID | Requirement | Reference |
 |---|---|---|
 | `F1` | Read the class ID from EEPROM `0x50` byte 0 at boot. `0x00` and `0xFF` are *unidentified*, never a class | ADR-0014 d6 |
-| `F2` | Publish only the quantities in §3.2 whose devices respond at boot | ADR-0014 d2 |
+| `F2` | Enumerate the 1-Wire bus at boot and publish only the quantities in §3.2 whose devices respond | ADR-0014 d2 |
 | `F3` | The inner loop runs on the node at the actuator's rate; the gateway issues the demand and its validity deadline only | ADR-0015 d18 |
-| `F4` | Enforce `D2`, `D5`, `D7` and `D8` in node firmware, independently of the commanded value | ADR-0015 d18 |
+| `F4` | Enforce `D2`, `D5`, `D7`, `D8` and `D9` in node firmware, independently of the commanded value | ADR-0015 d18 |
+| `F8` | Loss of `U1` for more than 5 s (`verify`) is treated as the `D9` ceiling reached | `D9` |
 | `F5` | Publish the trip state of `T2`, `T3` and `T4`. A trip is reported and latched in telemetry until the node is reset | `T5` |
 | `F6` | Publish no energy or consumption quantity | ADR-0018 d5 |
 | `F7` | Deployment constants — current limit, dead band, dwell, slew, fan mapping — are node-local and set at commissioning, not carried in the profile | ADR-0015 d18, ADR-0028 |
@@ -187,10 +206,13 @@ Module-ID straps `STRAP_0`–`STRAP_2` are not used by this module (`O-100`).
 | `V10` | `T7` | Run at the cooling limit with the grow volume above dew point for 4 h; confirm no free water inside the volume |
 | `V11` | `F1` | Read the published class ID; confirm `0x80` |
 | `V12` | `D6` | Command fan and thermal demand independently; confirm neither forces the other |
+| `V13` | `D9`, `F8` | Raise the radiator past 50 °C with the demand at full scale; record the derate curve and the 60 °C clamp. Disconnect `U1`; confirm the clamp |
+| `V14` | `T8` | Run at the `T6` rejection load for 4 h in the installed room; record the ambient rise |
+| `V15` | `M6` | Thermograph the printed parts at the `T6` rejection load; confirm no surface exceeds 60 °C |
 
 ## 12. Open items
 
-- `O-100` — Actuator class IDs require the EEPROM transport, so A01 cannot run on carrier `E0001-000003` (ADR-0031 d10). Blocks fabrication until `E0001-000100` exists.
+- `O-100` — Actuator class IDs require the EEPROM transport, so A01 cannot run on carrier `E0001-000003` (ADR-0031 d10). The `E0001-000100` pin map must also carry the 1-Wire line §5 claims (ADR-0014 rev 4 deferred item). Blocks fabrication.
 - ~~`O-101`~~ — ~~No actuator-taxonomy ADR (ADR-0014 d9). Blocks ratification of `D3`, `T2`, `T4` and the `A0x` class-naming form.~~ — closed 2026-09-07 by ADR-0031.
 - `O-102` — No DSDL type for a signed actuator demand with a validity deadline. Blocks `F3`.
 - `O-103` — Thermoelectric module not selected; α, R, K, clamping force and TIM are unconfirmed. Blocks `D1`, `D4`, `M1`, `M2`.
@@ -208,4 +230,4 @@ Module-ID straps `STRAP_0`–`STRAP_2` are not used by this module (`O-100`).
 | As-built | Not reached |
 
 Next rung requires: `O-103` closed (module selected, datasheet values substituted), `O-104`
-closed, `O-102` closed, and `D2`/`D4` component values computed against the selected module.
+closed, `O-102` closed, and `D2`/`D4`/`D9` component values computed against the selected module.
