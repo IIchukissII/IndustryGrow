@@ -167,7 +167,7 @@ unrecorded change is the silent override ADR-0000 d4 forbids, expressed as a men
 ## Deferred decisions
 
 - The actuator command surface that decision 7 constrains — the bound, the fallback
-  trigger and the liveness condition — belongs with the environmental-actuator record,
+  trigger and the liveness condition — belongs with the actuator taxonomy (ADR-0031),
   not here.
 - Whether a procedure carried to the interface is signed, and against which trust root,
   follows ADR-0025 rather than being settled here.

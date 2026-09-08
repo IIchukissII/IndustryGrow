@@ -6,9 +6,9 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # A01-CLIMATE — module specification
 
 - **Status:** Working specification, pre-schematic capture. `E0011` not laid out, not fabricated
-- **Date:** 2026-09-07
+- **Date:** 2026-09-08
 - **E-number:** `E0011` · module class ID `0x80`
-- **Governing ADRs:** ADR-0031 (rev 1), ADR-0014 (rev 4), ADR-0015, ADR-0016, ADR-0017 (rev 2), ADR-0018, ADR-0003
+- **Governing ADRs:** ADR-0031 (rev 1), ADR-0032, ADR-0014 (rev 4), ADR-0015, ADR-0016, ADR-0017 (rev 2), ADR-0018, ADR-0003
 - **Companions:** `M01-CLIMATE-specification.md`, `M05-SAFETY-specification.md`, `M06-VENTILATION-specification.md`, `M07-AMBIENT-specification.md`
 - **Supersedes:** `spec/A01-THERMAL-specification.md` (2026-09-07)
 
@@ -45,6 +45,7 @@ This document specifies the indoor variant. The outdoor variant is not specified
 
 | | Indoor |
 |---|---|
+| Deployment envelope | Canopy ≤ 1 m², enclosed volume ≤ 3 m³, day cooling load ≤ 150 W (ADR-0032 d1) |
 | Thermal boundary | A cabinet standing inside a building |
 | Ambient | The room enclosing the cabinet, one step out (ADR-0014 d4) |
 | Ambient air temperature | 15…30 °C (`M07-AMBIENT-specification.md`, indoor variant); 22 °C is the design value |
@@ -217,8 +218,8 @@ Module-ID straps are not used for identification by this module (ADR-0031 d10). 
 | `D7` | Demand slew is limited to 0.05 s⁻¹ on `E1` and `E3` (`verify`) | ADR-0015 d18 |
 | `D8` | A demand whose validity deadline has expired drives its element to the safe output: `E1`, `E3`, `E4`, `E6` to zero; `E2` and `E5` to full | ADR-0031 rev 1 d6 |
 | `D9` | Water-block temperature from U1 derates every thermoelectric demand: full scale below 35 °C, linear to zero at **45 °C**, re-enable below 32 °C (`verify`). Runs on the node and applies to any commanded value | ADR-0031 d4 |
-| `D10` | Main exchanger base temperature from U2 is floored so the surface stays above the grow-volume dew point. The operative floor arrives with the demand — 13.4 °C day, 3.7 °C night at the wet edge of the band (`verify`). The node holds a commissioned absolute minimum of 3.0 °C (`verify`) that no command lowers. `E1` cooling demand is derated to hold whichever floor is higher | ADR-0015 d18, `O-102` |
-| `D11` | `E3` is unidirectional. Its demand is conditioned against a coil-temperature setpoint measured at U3, with a hard floor of **+1 °C** (`verify`) below which cooling demand is driven to zero | ADR-0003 d7 |
+| `D10` | Main exchanger base temperature from U2 is floored so the surface stays above the grow-volume dew point. The operative floor arrives with the demand — 13.4 °C day, 3.7 °C night at the wet edge of the band (`verify`). The node holds a commissioned absolute minimum of 3.0 °C (`verify`) that no command lowers. `E1` cooling demand is derated to hold whichever floor is higher | ADR-0032 d5, ADR-0015 d18, `O-102` |
+| `D11` | `E3` is unidirectional. Its demand is conditioned against a coil-temperature setpoint measured at U3, with a hard floor of **+1 °C** (`verify`) below which cooling demand is driven to zero | ADR-0032 d4, ADR-0003 d7 |
 | `D12` | `E4` is the last element of the humidity tract, downstream of HX2. `E4` is inhibited whenever `T5` is tripped or `E5` demand is below `D13`'s minimum | `T5` |
 | `D13` | `E5` starts with a full-scale pulse of 250 ms (`verify`) before settling to its commanded duty; commanded duty below 0.15 is driven as zero | `E5` |
 | `D14` | `E6` is commanded as a pulse train against a commissioned minimum open time; it is inhibited whenever `E5` demand is zero. Verified at the CO₂ population only | `O-110` |
@@ -240,13 +241,13 @@ Module-ID straps are not used for identification by this module (ADR-0031 d10). 
 
 | ID | Requirement | Reference |
 |---|---|---|
-| `T1` | `E1` removes ≥ 26 W from the grow volume at a module ΔT of 15 K with the string at `i` ≤ 0.30 of `Imax` (`verify`) | §2.2, `O-105` |
+| `T1` | `E1` removes ≥ 26 W from the grow volume at a module ΔT of 15 K with the string at `i` ≤ 0.30 of `Imax` (`verify`) | ADR-0032 d6, §2.2, `O-105` |
 | `T2` | **Rejection over-temperature trip** (self-protective), independent of the MCU, gateway and cloud: `RT1` → U7 → driver enable on U5 and U6. Trip at 60 °C (`verify`), 15 K above the `D9` ceiling | ADR-0031 d7 |
 | `T3` | **Grow-volume temperature window trip** (process-protective), independent of the MCU, gateway and cloud: `RT2` → U8 → driver enable on U5 and U6. High trip 35 °C, low trip 5 °C (both `verify`) | ADR-0018 d10, ADR-0031 d7 |
 | `T4` | **Coolant-flow interlock** (self-protective): loss of flow in the rejection loop removes driver enable on U5 and U6 in hardware | ADR-0031 d7 |
 | `T5` | **Humidity-tract airflow interlock** (self-protective): loss of the `FA1` alarm output removes drive from **both** `E3` and `E4` in hardware | ADR-0031 d7 |
-| `T6` | The rejection loop dissipates ≥ 65 W continuous with supply water at ≤ 25 °C in a 22 °C room (`verify`) | `P3`, `T1` |
-| `T7` | Condensate forms only on HX2, is collected at the `TB1` low point through a liquid seal, and is drained clear of the grow volume. HX1 runs above the grow-volume dew point under `D10` and forms none | `O-107` |
+| `T6` | The rejection loop dissipates ≥ 65 W continuous with supply water at ≤ 25 °C in a 22 °C room (`verify`) | ADR-0032 d3, `P3`, `T1` |
+| `T7` | Condensate forms only on HX2, is collected at the `TB1` low point through a liquid seal, and is drained clear of the grow volume. HX1 runs above the grow-volume dew point under `D10` and forms none | ADR-0032 d5, `O-107` |
 | `T8` | The room absorbs the `T6` rejection load with an ambient rise ≤ 2 K (`verify`). Ambient outside 15…30 °C is outside this variant | §2.1 |
 | `T9` | Conduction between HX2 and HX3 through `TB1` is ≤ 1 W at a section-to-section ΔT of 18 K (`verify`) | `M7` |
 | `T10` | `T2`–`T5` act on the driver enables directly. Firmware reads their state but cannot override or re-arm any of them | ADR-0015 d11, ADR-0018 d10 |
@@ -277,7 +278,7 @@ Module-ID straps are not used for identification by this module (ADR-0031 d10). 
 | `F7` | Deployment constants — current limits, dead band, dwell, slew, the `D10` floor, the `D11` coil floor, fan mapping — are node-local and set at commissioning, not carried in the profile | ADR-0015 d18, ADR-0028 |
 | `F8` | Loss of U1 for more than 5 s (`verify`) is treated as the `D9` ceiling reached; loss of U2 or U3 drives `E1` or `E3` respectively to zero | `D9`, `D10`, `D11` |
 | `F9` | A `nFAULT` assertion drives both strings to zero, is published as drive state `fault`, and is latched until the node is reset | U5, U6 |
-| `F10` | The humidity setpoint the node accepts is a **coil temperature** for U3, not a humidity or VPD value. No M01 quantity is an input to this node | ADR-0031 d8, `D11` |
+| `F10` | The humidity setpoint the node accepts is a **coil temperature** for U3, not a humidity or VPD value. No M01 quantity is an input to this node | ADR-0032 d4, ADR-0031 d8, `D11` |
 | `F11` | Loss of the U9 I²C link drives every U9-borne element to its `D8` safe output. `E2` and `E5` are wired so that a de-asserted U9 output runs them at full without firmware acting | ADR-0031 rev 1 d6, d11, `O-113` |
 | `F12` | An unpopulated branch publishes no demand echo and accepts no demand for its elements | §3.4, ADR-0014 d2 |
 
@@ -333,7 +334,7 @@ Module-ID straps are not used for identification by this module (ADR-0031 d10). 
 - `O-112` — HX1 `Rth` 0.17 K/W is a catalogue figure that excludes spreading from two point-source modules on the base. It sets `D10` directly. Bench measurement required: a resistor of known power, thermocouples on the base and in the stream.
 - `O-113` — U9 part not selected; `F11`'s fail-to-safe wiring follows from its output behaviour when its outputs are de-asserted. Blocks `F11`.
 - `O-114` — The luminaire's position relative to the grow volume sets 19 W or 32 W of §2.2 day load and decides whether `D10` binds at the wet edge of the band. Owned by A02-LIGHT and the enclosure, consumed here.
-- `O-115` — No governing ADR for cabinet climate conditioning. Five decisions in this document carry no recorded rationale: thermoelectric rather than a compressor cycle, the chilled-water interface that keeps the cold source replaceable at scale, humidity by subcool-and-reheat rather than injection, the `D10` dew-point floor, and the operating point below `i` = 0.3. The sizing sources belong to that record — Incropera et al., *Fundamentals of Heat and Mass Transfer* 7th ed.; ISO 6946; Alduchov & Eskridge (1996), *J. Appl. Meteorol.* 35(4) 601–609; ASHRAE Handbook Fundamentals ch. 1; Goldsmid, *Introduction to Thermoelectricity*; Rowe (ed.), *CRC Handbook of Thermoelectrics*; Monteith & Unsworth, *Principles of Environmental Physics* 4th ed.; Kozai, Niu & Takagaki (eds.), *Plant Factory*.
+- ~~`O-115`~~ — ~~No governing ADR for cabinet climate conditioning.~~ — closed 2026-09-08 by ADR-0032.
 
 ## 13. Maturity
 
