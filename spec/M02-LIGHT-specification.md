@@ -113,18 +113,14 @@ A population without U4 has no function and is not a defined configuration.
 
 Both parts are named by ADR-0014 d4 as revised in rev 6. Neither address is selectable, and they
 are the same address: **U3 and U4 collide, and are separated onto two channels of U1** (§5.2).
-This is the reason a bus switch is on the module at all.
 
 Neither device occupies the `0x50`–`0x57` block ADR-0014 rev 4 d6 reserves for the module-ID
 EEPROM; U1 sits at `0x70` (§4.2). M02 identifies by strap (§5) and carries no EEPROM.
 
-U3 requires no external reference component. The AS7331 named in ADR-0014 rev 5 required a
-precision REXT pair; that part and both resistors are withdrawn with it (§12, O-63).
+U3 requires no external reference component. O-63.
 
 U4 is the primary photic source. U3 measures UV only and contributes nothing to the PPFD
-computation (§6.2), whose band is 400…700 nm. U3's photopic and IR channels are not published
-(§10.1): they exist on the die to support the vendor's UV-index algorithm, and U4 already
-measures the visible spectrum with eleven bands.
+computation (§6.2). U3's photopic and IR channels are not published (§10.1).
 
 ### 4.1 Packages
 
@@ -141,13 +137,8 @@ aperture does not appear in the schematic.
 
 | # | Part | LCSC | Function |
 |---|------|------|----------|
-| U1 | `TCA9543APWR` | C2653307 | Two-channel bidirectional translating I²C switch (§5.2). Separates U3 and U4, which share `0x39`, and performs the 3.3 V ↔ 1.8 V translation the PCA9306 previously performed for U4 alone. TSSOP-14, address `0x70` with A0 and A1 to GND |
+| U1 | `TCA9543APWR` | C2653307 | Two-channel bidirectional translating I²C switch (§5.2). Separates U3 and U4, which share `0x39`, and performs the 3.3 V ↔ 1.8 V translation. TSSOP-14, address `0x70` with A0 and A1 to GND |
 | U2 | `TLV70018DCKR` | C133796 | 1.8 V rail for U4 VDD (§7.3). Same part as M01's U4 |
-
-Sensor ordering codes: U3 `TSL25853PM` is LCSC `C17428292`; U4 `AS7343-DLGM` is `C19085986`,
-31 in stock at 2026-08-23 and the module's dominant BOM line. Passives: the 4.7 kΩ 0805
-pull-ups are `C17673` and the 0 Ω 0805 strap links `C17477`, both JLCPCB **Basic** library, so
-neither draws an extended-part loading fee.
 
 ## 5. Interfaces
 
@@ -218,7 +209,7 @@ at 6 mA sink, input capacitance 10 pF, leakage ±5 µA, digital I/O absolute max
 | INT0, INT1 | Tied to V_CC. Both are inputs, neither sensor's interrupt is routed (§5), and a floating input is not permitted |
 | INT | Output, unconnected |
 | Channels | Channel 0 — SC0, SD0 — carries U4. Channel 1 — SC1, SD1 — carries U3 |
-| R_ON | 10 Ω min / 25 Ω typ / **70 Ω max** at V_CC 1.65…1.95 V — two decades above the PCA9306's 3.5 Ω. At the 1.08 mA a channel and the master segment sink together it adds 76 mV worst case to the low level a sensor presents to the carrier, against a 0.99 V V_IL at the MCU. Both sensors state V_OL at a 6 mA sink; actual sink is 1.08 mA, so the device contribution is far below 0.4 V |
+| R_ON | 10 Ω min / 25 Ω typ / **70 Ω max** at V_CC 1.65…1.95 V. At the 1.08 mA a channel and the master segment sink together it adds 76 mV worst case to the low level a sensor presents to the carrier, against a 0.99 V V_IL at the MCU. Both sensors state V_OL at a 6 mA sink; actual sink is 1.08 mA, so the device contribution is far below 0.4 V |
 | Capacitance | C_io(OFF) 19 pF max on SCL/SDA, 8 pF max on the channel pins; inside the ≈ 250 pF per-segment budget of §5.1 |
 | Pull-ups | Required on the master side and on each channel; sized in §5.1 |
 | Decoupling | 100 nF at V_CC (C4) |
@@ -307,8 +298,7 @@ Against the profile's flowering/fruiting spectrum (ADR-0003 d11):
 | 730 nm far-red | **F8 (715…775 nm)** | Covered |
 | 365–385 nm UV-A | none of U4's bands — F1's half-maximum starts at 390 nm | U3's function, §6.4 |
 
-Every channel of ADR-0003 d11 is observable by the populated module. This is the condition
-ADR-0014 rev 5 changed the complement to obtain.
+Every channel of ADR-0003 d11 is observable by the populated module.
 
 ### 6.4 UV
 
@@ -319,7 +309,7 @@ ADR-0014 rev 5 changed the complement to obtain.
 | Responsivity | 82.8 counts/(µW·cm⁻²) at 365 nm, ALS gain 1024×. **Typical only — the datasheet states neither minimum nor maximum**, so this is a nominal scale factor, not a guaranteed accuracy |
 | Visible rejection | UV-to-photopic channel ratio 0.0 % under a 2700 K white source; UV-to-IR ratio 0.2 % under a 940 nm source. The luminaire's visible and far-red output does not enter the UV reading |
 | Published | UV-A as one subject (§10.1), scaled by the nominal responsivity above |
-| UV-B, UV-C | **Not measured.** ADR-0014 rev 6 withdraws both with the AS7331, and ADR-0003 d11 commands a UV-A trace only. The out-of-band emission check the AS7331's UV-B and UV-C channels supported no longer exists on this module |
+| UV-B, UV-C | **Not measured** (ADR-0014 rev 6). ADR-0003 d11 commands a UV-A trace only. M02 carries no out-of-band emission check |
 
 ## 7. Power
 
@@ -328,8 +318,8 @@ ADR-0014 rev 5 changed the complement to obtain.
 | | Value |
 |---|---|
 | Node draw on `+12 V` | Not measured. O-59 |
-| Reference figure | M05 node, 0.25 W (254 mW at 12.12 V, 2026-08-02) |
-| Module contribution | 572 µA maximum with both sensors active and U1 switching (§7.2), all on the 1.8 V rail — ≈ 1.03 mW, drawn from 3.3 V through U2 as ≈ 1.89 mW. **No device dominates**: the AS7331 that did, at 2 mA and 3.3 V, is withdrawn by ADR-0014 rev 6. Node draw is still mostly the carrier and MCU |
+| Reference figure | M05 node, `M05-SAFETY-specification.md` §6.1 |
+| Module contribution | 572 µA maximum with both sensors active and U1 switching (§7.2), all on the 1.8 V rail — ≈ 1.03 mW, drawn from 3.3 V through U2 as ≈ 1.89 mW. **No device dominates.** Node draw is still mostly the carrier and MCU |
 | Burst reflected to `+12 V` | None. No device on this module has a burst load of the SCD41 class |
 
 ### 7.2 Device currents
@@ -382,7 +372,7 @@ layout allows, with the output capacitor's ground returned directly to U2's GND 
 |------|-------------|
 | Supply pin | V_DD (pin 1), decoupled 100 nF at the pin (C5) |
 | Range | 1.7…1.8…1.98 V, the same window as U4 and from the same rail (§7.3). 1.98 V is also the **absolute maximum** |
-| Ground | V_SS (pin 3). **One ground net.** The AS7331's split V_SSA / V_SSD, its ±0.3 V rail-to-rail absolute maximum and the 0 Ω joining link are withdrawn with the part; the module has no analog ground |
+| Ground | V_SS (pin 3). **One ground net.** The module has no analog ground |
 | External reference | **None.** The device needs no REXT and no precision component of any kind |
 | I/O supply | The digital pins take 1.62…3.3 V independently of V_DD. This module holds them at 1.8 V (§5.2) |
 | VSYNC / GPIO (pin 2) | Unconnected, and safe so. At reset `VSYNC_GPIO_INT` (`0xF8`) = `0x02`: `VSYNC_GPIO_IN_EN` = 0, so the pin is not an input, and `VSYNC_GPIO_OUT` = 1 leaves the open-drain output released HIGH — the datasheet's stated default, chosen to draw nothing through a pull-up. Firmware shall not set `VSYNC_GPIO_IN_EN` while the net is unconnected |
@@ -577,15 +567,14 @@ outline, so the modules and cases interchange.
 | DRC | **0 violations, 0 unconnected pads** |
 | Schematic parity | **0 issues** |
 
-`E0003-000001.kicad_dru` is empty. The two 0.13 mm waivers it carried existed for the PCA9306's
-and the AS7331's 0.5 mm pitch; TSSOP-14 at 0.65 mm and the OLGA-6 land pattern at 0.25 mm
-between pads both clear the 0.2 mm board default, so the rules are removed rather than re-scoped.
+`E0003-000001.kicad_dru` is empty: TSSOP-14 at 0.65 mm and the OLGA-6 land pattern at 0.25 mm
+between pads both clear the 0.2 mm board default.
 
-U2's ground leaves eastward and turns south: routed west it crossed the only corridor an IN-to-EN
-strap can use, and left the pad one thermal spoke short of the board minimum.
+U2's ground leaves eastward and turns south; the westward route crosses the only corridor the
+IN-to-EN strap can use.
 
-R5 and C6 are re-used for U4's supply filter (§7.3); R11 stays a deliberate gap. Those three served the AS7331 and were withdrawn
-with it. R1 and R4 are re-used as channel 1's pull-up pair rather than left as gaps.
+R5 and C6 are re-used for U4's supply filter (§7.3); R11 stays a deliberate gap. R1 and R4 are
+re-used as channel 1's pull-up pair rather than left as gaps.
 
 | Rung | Content | Reached when |
 |------|---------|--------------|
