@@ -208,6 +208,8 @@ move with refresh rate, so the second 300 ms of main loop buys time resolution o
 
 ## 6. Measurement requirements
 
+![Acquisition chain: the imager is read one subpage at a time under a status handshake, a missed read is overwritten rather than stalling; each complete frame passes the compensation chain fed once at boot by the device EEPROM, the U2 flat-field trim bound to this device, and the deployment constants for emissivity and reflected temperature; the compensated field then feeds three consumers — the per-second mean reduced to the frame statistics of the published record, the per-interval Welford accumulation into a float32 mean plane and a uint8 sigma plane served as the interval frame, and the event branch serving the last complete frame alone; the gateway subscribes to the record and reads a served frame when frame_available changes](./figures/m04-plant-acquisition-chain.svg)
+
 ### 6.1 Acquisition
 
 | Item | Requirement |

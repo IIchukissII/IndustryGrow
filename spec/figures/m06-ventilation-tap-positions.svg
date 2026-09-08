@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="480" viewBox="0 0 760 480" role="img" aria-label="M06-VENTILATION instrument positions in the flow path">
+  <title>M06-VENTILATION — tap positions</title>
+  <desc>A section through the air path. Outside air enters the duct, crosses the filter and leaves the fan into the enclosure. The differential-pressure sensor U2 has one tap upstream and one downstream of the filter, so its reading is the filter's own pressure drop and nothing else. The anemometer U1 sits in the flow at the fan discharge or in the duct, oriented as its datasheet requires, and gives the point velocity from which volumetric flow follows through the duct cross-section and a commissioned velocity-profile coefficient. The temperature and humidity sensor U4 sits in the same stream, shielded from direct impingement, and supplies the density that converts volumetric to mass flow with an absolute pressure taken from the boundary module. The second differential-pressure sensor U3 references the enclosure interior against ambient outside the envelope, not against another point in the duct, and its routing must not pick up duct dynamic pressure. Filter resistance follows from U2 and the derived flow; the envelope leakage characteristic follows from U3 across several fan operating points.</desc>
+
+  <defs>
+    <marker id="a" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#5F5E5A"/></marker>
+    <marker id="ab" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#7A8DA6"/></marker>
+  </defs>
+
+  <rect x="0.5" y="0.5" width="759" height="479" rx="10" fill="#FFFFFF" stroke="#E5E3DC"/>
+  <text x="380" y="28" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12.5" fill="#2C2C2A">M06-VENTILATION — tap positions</text>
+
+  <!-- ambient -->
+  <text x="30" y="120" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">AMBIENT</text>
+  <text x="30" y="134" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">outside the envelope</text>
+
+  <!-- duct -->
+  <rect x="120" y="150" width="470" height="76" fill="#FBFBF9" stroke="#C9C6BC"/>
+  <text x="132" y="168" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">duct, cross-section A</text>
+  <path d="M30 188 L118 188" fill="none" stroke="#7A8DA6" stroke-width="1.6" marker-end="url(#ab)"/>
+  <path d="M138 188 L214 188" fill="none" stroke="#7A8DA6" stroke-width="1.6" marker-end="url(#ab)"/>
+  <path d="M262 188 L404 188" fill="none" stroke="#7A8DA6" stroke-width="1.6" marker-end="url(#ab)"/>
+  <path d="M452 188 L588 188" fill="none" stroke="#7A8DA6" stroke-width="1.6" marker-end="url(#ab)"/>
+
+  <!-- filter -->
+  <rect x="218" y="152" width="42" height="72" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <line x1="228" y1="152" x2="228" y2="224" stroke="#C9C6BC" stroke-width="1"/>
+  <line x1="239" y1="152" x2="239" y2="224" stroke="#C9C6BC" stroke-width="1"/>
+  <line x1="250" y1="152" x2="250" y2="224" stroke="#C9C6BC" stroke-width="1"/>
+  <text x="239" y="142" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#2C2C2A">filter</text>
+
+  <!-- fan -->
+  <rect x="406" y="152" width="44" height="72" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="428" y="142" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#2C2C2A">fan</text>
+  <path d="M414 172 L442 204 M442 172 L414 204" stroke="#C9C6BC" stroke-width="1.2"/>
+
+  <!-- enclosure -->
+  <rect x="590" y="96" width="146" height="248" rx="6" fill="#FBFBF9" stroke="#C9C6BC"/>
+  <text x="604" y="116" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">ENCLOSURE</text>
+
+  <!-- U2 across the filter -->
+  <circle cx="200" cy="152" r="3.5" fill="#5F5E5A"/>
+  <circle cx="278" cy="152" r="3.5" fill="#5F5E5A"/>
+  <path d="M200 152 L200 96 L278 96 L278 152" fill="none" stroke="#5F5E5A" stroke-width="1.2"/>
+  <rect x="176" y="56" width="126" height="34" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="239" y="77" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">U2 — filter Δp (M3)</text>
+
+  <!-- U1 in the stream -->
+  <path d="M470 300 L470 226" fill="none" stroke="#5F5E5A" stroke-width="1.2" marker-end="url(#a)"/>
+  <rect x="398" y="300" width="146" height="46" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="471" y="320" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">U1 FS3000 (M1, M2)</text>
+  <text x="471" y="335" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">point velocity, oriented to flow</text>
+
+  <!-- U4 in the stream -->
+  <path d="M330 300 L330 226" fill="none" stroke="#5F5E5A" stroke-width="1.2" marker-end="url(#a)"/>
+  <rect x="252" y="300" width="132" height="46" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="318" y="320" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">U4 SHT45 (M5)</text>
+  <text x="318" y="335" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">in-stream, shielded</text>
+
+  <!-- U3 enclosure to ambient -->
+  <rect x="596" y="188" width="134" height="46" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="663" y="208" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">U3 — envelope Δp</text>
+  <text x="663" y="223" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">interior ↔ ambient (M4)</text>
+  <circle cx="663" cy="260" r="3.5" fill="#5F5E5A"/>
+  <path d="M663 234 L663 260" fill="none" stroke="#5F5E5A" stroke-width="1.2"/>
+  <text x="672" y="264" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">interior port</text>
+  <path d="M596 211 L120 211 L120 268 L64 268" fill="none" stroke="#5F5E5A" stroke-width="1.2" stroke-dasharray="4 3"/>
+  <text x="30" y="272" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">ambient port,</text>
+  <text x="30" y="284" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">outside the envelope,</text>
+  <text x="30" y="296" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">clear of duct dynamic</text>
+  <text x="30" y="308" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">pressure (M4)</text>
+
+  <!-- derived quantities -->
+  <rect x="120" y="378" width="470" height="62" rx="4" fill="#FBFBF9" stroke="#C9C6BC"/>
+  <text x="134" y="396" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#5F5E5A">derived on the node and at the gateway</text>
+  <text x="134" y="414" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#2C2C2A">U1 with A and the commissioned profile coefficient → volumetric flow · with U4 density and M07 pressure → mass flow (§6.1)</text>
+  <text x="134" y="430" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#2C2C2A">U2 with that flow → filter resistance (§6.2) · U3 across several fan operating points → envelope leakage characteristic (§6.3)</text>
+
+  <!-- footnote -->
+  <text x="24" y="464" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">U2 and U3 are different parts of the same class, ranged apart (§4) · no sealed enclosure is assumed, required or specified in any phase (ADR-0014 d4)</text>
+</svg>

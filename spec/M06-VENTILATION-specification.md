@@ -146,6 +146,8 @@ U2 and U3. Node draw on `+12 V` not measured; the reference figure is M05's 0.25
 
 ## 8. Mechanical and enclosure
 
+![Section through the air path: outside air enters the duct, crosses the filter and leaves the fan into the enclosure; U2 takes one tap upstream and one downstream of the filter so it reads that filter's drop alone; U1 sits in the stream at the fan discharge or in the duct, oriented to the flow direction; U4 sits in the same stream shielded from direct impingement; and U3 references the enclosure interior against ambient outside the envelope, its ambient port routed clear of duct dynamic pressure](./figures/m06-ventilation-tap-positions.svg)
+
 | ID | Requirement | Reference |
 |----|-------------|-----------|
 | M1 | U1 in the flow path at fan discharge or duct | ADR-0014 d4 |

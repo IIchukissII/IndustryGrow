@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="520" viewBox="0 0 760 520" role="img" aria-label="M05-SAFETY distribution and monitoring board, one-line arrangement">
+  <title>M05-SAFETY — distribution one-line</title>
+  <desc>The SELV supply enters at J1, passes the input fuse F1 and the shunt R1, and fans out at J2 to the cabinet nodes together with the field bus. The local power indicator is tapped ahead of F1, so its own draw never crosses R1 and is absent from the reported bus current. U2 measures bus voltage and the current across R1; U1 measures the electrical-bay air on the board. Three field leads arrive separately: the energy meter's pulse output at J3 into a timer in counter mode, the leak strip at J4 into an ADC channel with its excitation gated by a general-purpose output, and the door reed at J5 into another input. The board switches nothing: it carries no trip element, no comparator and no relay enable, and it measures no per-load or per-actuator current.</desc>
+
+  <defs>
+    <marker id="a" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#5F5E5A"/></marker>
+  </defs>
+
+  <rect x="0.5" y="0.5" width="759" height="519" rx="10" fill="#FFFFFF" stroke="#E5E3DC"/>
+  <text x="380" y="28" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12.5" fill="#2C2C2A">M05-SAFETY — distribution one-line</text>
+
+  <!-- board boundary -->
+  <rect x="120" y="52" width="500" height="266" rx="6" fill="#FBFBF9" stroke="#C9C6BC"/>
+  <text x="134" y="70" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#5F5E5A">E0006 distribution and monitoring board</text>
+
+  <!-- supply path -->
+  <text x="30" y="118" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">SELV supply</text>
+  <path d="M30 128 L120 128" fill="none" stroke="#5F5E5A" stroke-width="1.6"/>
+  <rect x="120" y="112" width="34" height="32" rx="3" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="137" y="133" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#2C2C2A">J1</text>
+
+  <path d="M154 128 L196 128" fill="none" stroke="#5F5E5A" stroke-width="1.6"/>
+  <rect x="196" y="112" width="46" height="32" rx="3" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="219" y="133" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#2C2C2A">F1</text>
+
+  <path d="M242 128 L292 128" fill="none" stroke="#5F5E5A" stroke-width="1.6"/>
+  <rect x="292" y="112" width="46" height="32" rx="3" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="315" y="133" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#2C2C2A">R1</text>
+
+  <path d="M338 128 L512 128" fill="none" stroke="#5F5E5A" stroke-width="1.6"/>
+  <rect x="512" y="112" width="34" height="32" rx="3" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="529" y="133" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#2C2C2A">J2</text>
+  <path d="M546 128 L700 128" fill="none" stroke="#5F5E5A" stroke-width="1.6" marker-end="url(#a)"/>
+  <text x="640" y="118" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">fan-out to the nodes,</text>
+  <text x="640" y="150" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">with the field bus</text>
+
+  <!-- indicator tapped ahead of the fuse -->
+  <path d="M176 128 L176 176" fill="none" stroke="#D85A30" stroke-width="1.2"/>
+  <circle cx="176" cy="128" r="3" fill="#D85A30"/>
+  <rect x="132" y="176" width="88" height="34" rx="3" fill="#FDF4F0" stroke="#D85A30"/>
+  <text x="176" y="197" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#2C2C2A">R11 + D6</text>
+  <text x="132" y="226" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#D85A30">tapped ahead of F1, so never</text>
+  <text x="132" y="238" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#D85A30">across R1 — O-25</text>
+
+  <!-- INA226 sensing -->
+  <rect x="272" y="240" width="120" height="46" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="332" y="260" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">U2 INA226</text>
+  <text x="332" y="275" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">bus V and I</text>
+  <path d="M302 240 L302 144" fill="none" stroke="#5F5E5A" stroke-width="1" stroke-dasharray="3 3"/>
+  <path d="M362 240 L362 144" fill="none" stroke="#5F5E5A" stroke-width="1" stroke-dasharray="3 3"/>
+
+  <rect x="420" y="240" width="150" height="46" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="495" y="260" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">U1 TMP117</text>
+  <text x="495" y="275" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">electrical-bay air, reported only</text>
+
+  <text x="332" y="303" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">both on I²C1</text>
+
+  <!-- field leads -->
+  <rect x="120" y="348" width="500" height="106" rx="6" fill="#FBFBF9" stroke="#C9C6BC"/>
+  <text x="134" y="366" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#5F5E5A">field leads, each on its own entry</text>
+
+  <rect x="134" y="378" width="150" height="60" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="209" y="398" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">J3 — SP0001 meter</text>
+  <text x="209" y="413" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">S0 pulse output</text>
+  <text x="209" y="428" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">timer, external counter</text>
+
+  <rect x="296" y="378" width="150" height="60" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="371" y="398" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">J4 — leak strip</text>
+  <text x="371" y="413" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">ADC sense</text>
+  <text x="371" y="428" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">excitation gated on GPIO_1</text>
+
+  <rect x="458" y="378" width="150" height="60" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="533" y="398" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">J5 — door reed</text>
+  <text x="533" y="413" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">GPIO input</text>
+  <text x="533" y="428" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">report only, no cutoff</text>
+
+  <!-- absences -->
+  <rect x="640" y="240" width="104" height="98" rx="4" fill="#FDF4F0" stroke="#D85A30"/>
+  <text x="692" y="260" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#D85A30">not on this</text>
+  <text x="692" y="272" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#D85A30">board</text>
+  <text x="652" y="292" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">trip element,</text>
+  <text x="652" y="304" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">comparator,</text>
+  <text x="652" y="316" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">relay enable</text>
+  <text x="652" y="330" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">per-load current</text>
+
+  <!-- footnote -->
+  <text x="24" y="486" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">the board is sense-only (ADR-0018 d9, d10) · the grow-volume over-temperature trip lives at the heating actuator, and all actuator energy is captured by the meter at J3 (ADR-0018 d5)</text>
+</svg>
