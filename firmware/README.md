@@ -299,6 +299,6 @@ on a released change. `firmware/build*/` stays git-ignored.
 - ADR-0018 — M05 sense-only; door/leak report-only; S0 energy.
 - ADR-0027 — node identity model: the Node-ID store, its survival and `127`.
 - ADR-0028 — commissioning sequence and trim custody.
-- `spec/M01-CLIMATE-specification.md` — M01 sensor complement, VPD, CO₂ handling, §10.
-- `spec/M05-SAFETY-specification.md` — the as-built form of that document class.
+- `spec/E0002-R-specification.md` — M01 sensor complement, VPD, CO₂ handling, §10.
+- `spec/E0006-R-specification.md` — the as-built form of that document class.
 - `store/E0001-000003-D-pinmap.md` — carrier pin map, the BSP source of truth.

@@ -118,10 +118,10 @@ Never use "slot" for a generic depth vertex — that is a *position*.
 Origin: ADR-0001 (decision 7), ADR-IF-0001 (planned).
 
 **Document layer** `[F]` — the document-type letter `S / D / L / P / M / I`,
-plus `F` for firmware, selecting one artifact about an identity. Always written
-**"document layer"**, never bare "layer" (overloaded — Part 2). A classifier;
-not an axis and not a nesting tier. Origin: ADR-0017 (decision 9; `F` added by
-decision 16).
+plus `F` for firmware and `R` for a specification, selecting one artifact about
+an identity. Always written **"document layer"**, never bare "layer" (overloaded
+— Part 2). A classifier; not an axis and not a nesting tier. Origin: ADR-0017
+(decision 9; `F` added by decision 16, `R` by decision 20).
 
 **Lifecycle suffix** `[F]` — the per-instance record classifier
 `QP / QR / CP / CC / PR` appended to an instance identifier; the instance-level
@@ -143,7 +143,7 @@ senses across the project. Never use the bare word where an adjacent qualifier
 does not fix the sense.
 
 **layer** —
-- *document layer* (`S/D/L/P/M/I`, plus `F`) — the identifier sense; always
+- *document layer* (`S/D/L/P/M/I`, plus `F` and `R`) — the identifier sense; always
   written "document layer" (Part 1).
 - *PCB layer* — copper-layer count ("2-layer PCB"). Fabrication.
 - *physical / application layer* — OSI / protocol stack (ADR-0002).

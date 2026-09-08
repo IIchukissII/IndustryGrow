@@ -9,7 +9,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Date:** 2026-09-05
 - **E-number:** `E0005` · module-ID strap `0b100`
 - **Governing ADRs:** ADR-0014 (rev 6), ADR-0002 (rev 3), ADR-0003, ADR-0005 (rev 1, d11 and d12), ADR-0006, ADR-0016, ADR-0017 (rev 2), ADR-0020, ADR-0027, ADR-0028 (d10)
-- **Companions:** `M01-CLIMATE-specification.md`, `M02-LIGHT-specification.md`, `M05-SAFETY-specification.md`, `M06-VENTILATION-specification.md`, `M07-AMBIENT-specification.md`
+- **Companions:** `E0002-R-specification.md`, `E0003-R-specification.md`, `E0006-R-specification.md`, `E0008-R-specification.md`, `E0009-R-specification.md`
 
 Rationale for the decisions applied here is in the governing ADRs and is not restated.
 Values marked `verify` are not confirmed against the manufacturer datasheet.

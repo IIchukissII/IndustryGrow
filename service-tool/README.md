@@ -5,7 +5,7 @@
 
 Reads the cabinet CAN bus and shows it, executes a carried `-M-` protocol step by
 step, and emits the record it does not keep. Requirements, interfaces and
-verification are in [`spec/SERVICE-TOOL-specification.md`](../spec/SERVICE-TOOL-specification.md);
+verification are in [`spec/E0010-R-specification.md`](../spec/E0010-R-specification.md);
 the role and its bounds are in `ADR/ADR-0030`. Neither is restated here.
 
 Hardware bring-up order, the traps, and what has been measured on each board are

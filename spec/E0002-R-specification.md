@@ -8,8 +8,8 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Date:** 2026-08-24
 - **E-number:** `E0002` · module-ID strap `0b001`
 - **Governing ADRs:** ADR-0014 (rev 3), ADR-0002 (rev 3), ADR-0003, ADR-0016, ADR-0017 (rev 2), ADR-0018
-- **Companions:** `M02-LIGHT-specification.md`, `M04-PLANT-specification.md`, `M05-SAFETY-specification.md`, `M06-VENTILATION-specification.md`, `M07-AMBIENT-specification.md`
-- **Supersedes:** the M01 sections of `M01-M06-air-nodes-specification.md` (2026-08-03), split into this document and `M06-VENTILATION-specification.md` on 2026-08-04
+- **Companions:** `E0003-R-specification.md`, `E0005-R-specification.md`, `E0006-R-specification.md`, `E0008-R-specification.md`, `E0009-R-specification.md`
+- **Supersedes:** the M01 sections of `M01-M06-air-nodes-specification.md` (2026-08-03), split into this document and `E0008-R-specification.md` on 2026-08-04
 
 Rationale for the decisions applied here is in the governing ADRs and is not restated.
 Values marked `verify` are not confirmed against the manufacturer datasheet.
@@ -299,7 +299,7 @@ residue is O-48.
 | | Value |
 |---|---|
 | Node draw on `+12 V` | **311 mW** — 25.68 mA at 12.121 V. Quiescent 263 mW; the sensors add 48 mW. V3 |
-| Reference figure | M05 node, 264 mW on the same bus in the same run (`M05-SAFETY-specification.md` §6.1). M01 exceeds it by a factor of 1.18 |
+| Reference figure | M05 node, 264 mW on the same bus in the same run (`E0006-R-specification.md` §6.1). M01 exceeds it by a factor of 1.18 |
 | Burst reflected to `+12 V` | **+28.5 mA** held for ≈ 565 ms of each 5 s U3 cycle, **+34.3 mA at its peak**, **+4.3 mA averaged over the cycle**. The ≈ 60–70 mA that 205 mA × 3.3 V / 12 V ÷ η at η = 0.85 predicts does not reach the bus: that arithmetic carries U3's peak through to the input, and neither the 2.8 V rail's decoupling nor the carrier converter passes it. V3 |
 
 ### 7.2 Device currents
@@ -568,7 +568,7 @@ O-52 to O-62 are M02's.
 | O-39 | Neither ADR-0003 d7 nor the profile instance states a VPD uncertainty limit; §6.1 gives ±1.3…±2.9 % in band, ±6.7 % on humid excursion | Profile validity, U1 part grade |
 | O-40 | ADR-0003 d7 does not state air VPD or leaf VPD | Profile interpretation |
 | ~~O-41~~ | ~~SCD41's specified range starts at 400 ppm~~ — closed 2026-08-05 by §6.3: depletion is reported outside the specified accuracy band, no part change required | — |
-| ~~O-42~~ | ~~Pull-up ownership~~ — **renumbered to O-51** on 2026-08-13. `O-42` was already M06's (module-ID bit 1 unrouted, `M06-VENTILATION-specification.md`, 2026-08-04) and this file duplicated it on 2026-08-06. The number stays M06's; the item moves | — |
+| ~~O-42~~ | ~~Pull-up ownership~~ — **renumbered to O-51** on 2026-08-13. `O-42` was already M06's (module-ID bit 1 unrouted, `E0008-R-specification.md`, 2026-08-04) and this file duplicated it on 2026-08-06. The number stays M06's; the item moves | — |
 | O-51 | Pull-up ownership and value are not in the header contract (ADR-0014 d5). The rule exists in three boards and no document | Next module designed against the contract |
 | O-73 | Passive attributes that §7.5 makes acceptance criteria — dielectric, voltage rating, manufacturer part — are not recorded in the design data for C8; the BOM carries a distributor code alone. The same gap applies to every passive whose specification is more than a value and a case | V8, `L` release, and any BOM re-sourcing |
 | O-43 | Module-local rails are outside ADR-0002 d3 and the header contract. One instance is not a pattern; revisit at the second | ADR-0014 / ADR-0002 revision |
@@ -594,5 +594,5 @@ first article.
 | **Schematic-frozen** | Remaining `verify` resolved, footprints checked against physical parts. `L` releases here | O-32, O-50 closed ✔; O-33 closed ✔; O-38 fixed as a requirement ✔; **V6 not executed**; **V8 not executed** |
 | **As-built** | Estimates replaced by measured values; verification §11 executed | `E0002` fabricated ✔; O-35 closed by V3 ✔; V7 executed on the first article, O-45 closed ✔; V3's rail voltages and V1, V2, V4, V5 not executed |
 
-`M05-SAFETY-specification.md` is the as-built form of this document class. The transition is an
+`E0006-R-specification.md` is the as-built form of this document class. The transition is an
 edit of this file; no second E-number is issued for the module having been built.

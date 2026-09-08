@@ -25,7 +25,7 @@ commands they accept, the safe output per class), ADR-0018 decision 8 (switch ty
 command semantics), and an unnumbered environmental-actuator draft (switching, monitoring,
 protection, isolation).
 
-The first actuator specification (`spec/A01-CLIMATE-specification.md`, `E0011`) is written and
+The first actuator specification (`spec/E0011-R-specification.md`, `E0011`) is written and
 carries `O-101` against every requirement that has no governing decision.
 
 What is already fixed elsewhere and is not restated here:
@@ -61,7 +61,7 @@ CO₂ accumulation in an occupied room — moves to `A01-CLIMATE`'s unpopulated 
 
 - **The class-ID range is assigned but the namespace has no form.** ADR-0014 d6 fixes `0x80`–`0xFE`; nothing states how a class is named or numbered within it.
 - **ADR-0015 d18 defers the safe output per class to this record.** A node cannot implement its fail-safe without it.
-- **ADR-0018 d10 protects the process, not the actuator.** A thermoelectric module reaches its solder limit while the grow volume is still cold (`spec/A01-CLIMATE-specification.md` `T2`); the existing trip does not fire.
+- **ADR-0018 d10 protects the process, not the actuator.** A thermoelectric module reaches its solder limit while the grow volume is still cold (`spec/E0011-R-specification.md` `T2`); the existing trip does not fire.
 - **A demand's sign is per class.** A heater is unipolar; a thermoelectric module and a reversible pump are not. ADR-0015 d18 fixes the demand's form, not its range.
 - **Sense and switch are separated for M05 (ADR-0018 d9); the mirror rule for actuators is unwritten.** Nothing states what an actuator node may publish.
 
@@ -78,7 +78,7 @@ CO₂ accumulation in an occupied room — moves to `A01-CLIMATE`'s unpopulated 
 
    | Class | Medium | Regulated variables | ID | Specification |
    |---|---|---|---|---|
-   | `A01-CLIMATE` | Grow-volume air | Air temperature, humidity, CO₂ (ADR-0003 d8, non-baseline) | `0x80` | `spec/A01-CLIMATE-specification.md` |
+   | `A01-CLIMATE` | Grow-volume air | Air temperature, humidity, CO₂ (ADR-0003 d8, non-baseline) | `0x80` | `spec/E0011-R-specification.md` |
    | `A02-LIGHT` | Radiation at the canopy | PPFD, spectrum, photoperiod | on commit | none |
    | `A03-ROOTZONE` | Nutrient solution | EC, pH, root-zone delivery | on commit | none |
 
@@ -191,7 +191,7 @@ CO₂ accumulation in an occupied room — moves to `A01-CLIMATE`'s unpopulated 
 
 ### Positive
 
-- `O-101` closes; `spec/A01-CLIMATE-specification.md` has a governing record for its class name, demand range, safe outputs and both interlocks.
+- `O-101` closes; `spec/E0011-R-specification.md` has a governing record for its class name, demand range, safe outputs and both interlocks.
 - The safe-output table gives every future actuator element its fail-safe without a per-class decision.
 - Separating process- from self-protective interlocks makes the requirement derivable from the element rather than negotiated per design.
 - Decision 8 keeps one source per quantity, and decision 2 pairs each actuator class with the sensor class observing the same medium, so the pairing states where a quantity comes from.

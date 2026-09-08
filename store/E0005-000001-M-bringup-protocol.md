@@ -241,7 +241,7 @@ Carry these into the instance `-QP` rather than re-deriving them. None blocks a 
 
 Executing §4 discharges spec **V4**, **V6**, **V7**, **V8** and **V12**, the continuity half of
 **V3**, the published half of **V9**, and the saturation half of **V15**; §2 discharges **V5**.
-See `spec/M04-PLANT-specification.md` §11.
+See `spec/E0005-R-specification.md` §11.
 
 ---
 
@@ -249,7 +249,7 @@ See `spec/M04-PLANT-specification.md` §11.
 
 | Document | Carries |
 |---|---|
-| `spec/M04-PLANT-specification.md` | Package §4.1, addresses §4 and §5.1, EEPROM and ID §10, flat field §6.7, verification §11 |
+| `spec/E0005-R-specification.md` | Package §4.1, addresses §4 and §5.1, EEPROM and ID §10, flat field §6.7, verification §11 |
 | `store/E0005-000001-D-src.zip` | Layout, and the footprint plotted for §2 |
 | `store/E0001-000003-D-pinmap.md` | Carrier side of the header contract |
 | `store/SP0004-M-gateway-bringup.md` | Gateway and bus, for §4 |

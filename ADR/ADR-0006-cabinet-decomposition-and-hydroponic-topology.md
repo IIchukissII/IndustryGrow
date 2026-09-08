@@ -18,7 +18,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 ADR-0001 reserved ADR-0006 for cabinet form factor, materials and mechanical decomposition.
 ADR-0003 decision 14 committed to hydroponic delivery and deferred the topology — NFT,
 Dutch-bucket, hybrid — to this record. Two dependent items have been waiting on it:
-`spec/M03-ANALYTICS-specification.md`, which cannot state a sensor complement until the topology
+`spec/E0004-R-specification.md`, which cannot state a sensor complement until the topology
 is fixed, and ADR-0014 decision 4's M03 entry, which reserves space for dissolved oxygen without
 a requirement that would justify it.
 

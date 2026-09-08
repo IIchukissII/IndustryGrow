@@ -75,7 +75,7 @@ SPDX-FileCopyrightText = "2026 The IndustryGrow contributors"
 SPDX-License-Identifier = "AGPL-3.0-or-later"
 
 
-# E0010 service tool firmware (ADR-0030, spec/SERVICE-TOOL-specification.md).
+# E0010 service tool firmware (ADR-0030, spec/E0010-R-specification.md).
 # Our own source carries an inline SPDX header; precedence = "closest" lets
 # those win and header-less files fall back to this AGPL default, matching the
 # reference-firmware licence the F layer already uses (ADR-0002 d5).
