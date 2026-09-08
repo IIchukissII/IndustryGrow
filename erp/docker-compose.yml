@@ -109,10 +109,11 @@ services:
       ERP_WAREHOUSE_REGION: ${ERP_WAREHOUSE_REGION:-us-east-1}
       ERP_OPERATOR_NAME: ${ERP_OPERATOR_NAME:-}
       ERP_OPERATOR_UUID: ${ERP_OPERATOR_UUID:-}
-      # Both read out of the one repo mount below: store/ so
-      # `python -m app.store_sync` can upload it, and the type registry
-      # (ADR-0023), which the image also carries as a fallback.
+      # All three read out of the one repo mount below: the two document
+      # directories so `python -m app.store_sync` can upload them, and the type
+      # registry (ADR-0023), which the image also carries as a fallback.
       ERP_STORE_DIR: /srv/repo/store
+      ERP_SPEC_DIR: /srv/repo/spec
       ERP_REGISTRY_PATH: /srv/repo/REGISTRY.md
     volumes:
       # ONE read-only mount of the repository — deliberately not per-file mounts

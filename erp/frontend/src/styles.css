@@ -293,6 +293,42 @@ main { display: flex; flex-direction: column; min-width: 0; }
 .note { margin: 14px 18px 16px; padding: 11px 13px; background: rgba(234, 162, 60, 0.07); border: 1px solid rgba(234, 162, 60, 0.3); border-radius: 8px; font-size: 12px; color: #eec489; line-height: 1.45; }
 .note b { color: #f3d8a8; font-weight: 600; }
 
+/* ---------- specifications ----------
+   One row per E-number on the .slot-row grid, so a specification reads in the
+   same rhythm as an integration slot: mark, body, and what the row is worth on
+   the right. The leads are the row's whole point and sit on their own line —
+   they are destinations, not metadata about the document above them. */
+.specs { display: flex; flex-direction: column; }
+.spec { display: grid; grid-template-columns: 24px 1fr auto; gap: 14px; align-items: start;
+  padding: 14px 18px; border-bottom: 1px solid var(--line-2); }
+.spec:last-child { border-bottom: 0; }
+.spec:hover { background: rgba(103, 232, 249, 0.05); }
+.spec-mark { display: flex; justify-content: center; padding-top: 5px; }
+.spec-body { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.spec-head { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+.spec-head b { font-size: 13.5px; font-weight: 600; }
+.spec-rung { display: flex; align-items: center; gap: 9px; font-size: 11.5px; color: var(--ink-2); }
+.spec-open { padding-top: 5px; }
+.spec-open .oi { font-family: var(--mono); font-size: 11px; color: var(--ink-3);
+  font-variant-numeric: tabular-nums; }
+
+/* Four segments, because four things can be true of a design in order: it is
+   specified, drawn, laid out, released for fabrication, built. The bar is read
+   from what is filed under the root — never from the document's own prose. */
+.rungbar { display: flex; gap: 3px; align-items: center; }
+.rungbar i { width: 22px; height: 3px; border-radius: 2px; background: var(--line-2); display: block; }
+.rungbar i.on { background: var(--cyan); box-shadow: 0 0 7px rgba(103, 232, 249, 0.5); }
+
+.leads { display: flex; gap: 6px; flex-wrap: wrap; padding-top: 2px; }
+.lead { font-family: var(--mono); font-size: 11.5px; color: var(--ink-2); cursor: pointer;
+  background: rgba(11, 20, 40, 0.55); border: 1px solid var(--line);
+  border-radius: 6px; padding: 4px 9px; display: flex; align-items: center; gap: 6px;
+  text-align: left; }
+.lead:hover { color: var(--ink); border-color: rgba(103, 232, 249, 0.3); }
+.lead .n { color: var(--ink-3); font-size: 10.5px; }
+/* An empty answer is information, so it holds its place rather than disappearing. */
+.lead.none { color: var(--ink-3); opacity: 0.5; border-style: dashed; cursor: default; }
+
 /* ---------- SP stock ---------- */
 .stock .trow { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center; padding: 11px 18px; border-bottom: 1px solid var(--line-2); }
 .stock .trow:last-child { border-bottom: 0; }

@@ -39,20 +39,38 @@ def _iter_files(root: Path) -> Iterator[Path]:
 
 
 def _collect(store_dir: str) -> tuple[Path, list[Path]]:
-    """Resolve the store dir and list its files (blocking IO kept out of async)."""
+    """Resolve one document dir and list its files (blocking IO kept out of async)."""
     root = Path(store_dir).resolve()
     if not root.is_dir():
-        raise SystemExit(f"store dir not found: {root}")
+        raise SystemExit(f"document dir not found: {root}")
     return root, list(_iter_files(root))
 
 
 async def sync(store_dir: str | None = None, prune: bool = False) -> int:
-    root, files = _collect(store_dir or settings.store_dir)
+    """Mirror the repository's document directories into the warehouse.
+
+    Two roots, `store/` and `spec/`, into one flat keyspace — a key is a file's
+    path relative to its own root, so which directory holds it is not part of its
+    identity (ADR-0017 d15, d20). Both are collected before anything is pruned:
+    pruning against one root's listing would delete the other's objects.
+    """
+    dirs = [store_dir] if store_dir else [settings.store_dir, settings.spec_dir]
+
+    local_keys: dict[str, Path] = {}
+    roots: list[Path] = []
+    for d in dirs:
+        root, files = _collect(d)
+        roots.append(root)
+        for path in files:
+            key = path.relative_to(root).as_posix()
+            # First root wins, and store/ is first: a name in both directories is
+            # one key, and silently uploading whichever came last would make the
+            # served document depend on iteration order.
+            local_keys.setdefault(key, path)
 
     warehouse = Warehouse()
     await warehouse.ensure_bucket()
 
-    local_keys = {path.relative_to(root).as_posix(): path for path in files}
     for key, path in local_keys.items():
         content_type = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
         await warehouse.put_file(key, str(path), content_type)
@@ -63,21 +81,26 @@ async def sync(store_dir: str | None = None, prune: bool = False) -> int:
         for key in await warehouse.list_prefix(""):
             if key not in local_keys:
                 await warehouse.delete(key)
-                print(f"  ✗ {key}  (pruned — no longer in store/)")
+                print(f"  ✗ {key}  (pruned — in no document directory)")
                 pruned += 1
 
     tail = f", pruned {pruned} stale" if prune else ""
+    where = " + ".join(str(r) for r in roots)
     print(
-        f"Synced {len(local_keys)} objects from {root} → bucket {settings.warehouse_bucket}{tail}"
+        f"Synced {len(local_keys)} objects from {where} → bucket {settings.warehouse_bucket}{tail}"
     )
     return len(local_keys)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Mirror the repo store/ into the warehouse.")
-    parser.add_argument(
-        "--prune", action="store_true", help="delete warehouse objects not in store/"
+    parser = argparse.ArgumentParser(
+        description="Mirror the repo's document directories (store/, spec/) into the warehouse."
     )
-    parser.add_argument("--store-dir", default=None, help="override store/ path")
+    parser.add_argument(
+        "--prune", action="store_true", help="delete warehouse objects in no document directory"
+    )
+    parser.add_argument(
+        "--store-dir", default=None, help="mirror only this directory instead of both"
+    )
     args = parser.parse_args()
     asyncio.run(sync(args.store_dir, prune=args.prune))

@@ -29,6 +29,7 @@ type View =
   | "overview"
   | "instances"
   | "instance"
+  | "specs"
   | "integration"
   | "profiles"
   | "firmware"
@@ -40,6 +41,7 @@ const TITLES: Record<View, string> = {
   overview: "Overview",
   instances: "Instances",
   instance: "Instance",
+  specs: "Specifications",
   integration: "Integration",
   profiles: "Deployment profile",
   firmware: "Firmware",
@@ -57,7 +59,7 @@ const state: {
   machine: string | null;
   instance: string | null;
   meta: Meta | null;
-  counts: { instances: number | null; stock: number | null };
+  counts: { instances: number | null; stock: number | null; specs: number | null };
   /** The document scope, held as what it actually is: a key prefix (ADR-0017 d15). */
   prefix: string;
   /** The same idea on the instance axis. Kept apart from the document scope:
@@ -70,7 +72,7 @@ const state: {
   machine: null,
   instance: null,
   meta: null,
-  counts: { instances: null, stock: null },
+  counts: { instances: null, stock: null, specs: null },
   prefix: "",
   instancePrefix: "",
 };
@@ -1026,7 +1028,14 @@ const size = (n: number) =>
 
 // The layer letter says what a document is ABOUT; the extension says whether the
 // reader can render it. A design-layer pinmap is still markdown.
-const READABLE_KINDS = new Set(["manual", "document", "procedure", "instruction", "table"]);
+const READABLE_KINDS = new Set([
+  "manual",
+  "document",
+  "procedure",
+  "instruction",
+  "specification",
+  "table",
+]);
 const readable = (d: StoreDoc) =>
   READABLE_KINDS.has(d.kind) || /\.(md|markdown|txt|csv)$/i.test(d.object_key);
 
@@ -1223,6 +1232,113 @@ async function library(): Promise<string> {
     </section>`;
 }
 
+/**
+ * What each design must do.
+ *
+ * A specification is the one document that says what a design has to achieve and
+ * how each requirement is verified. It carries an object key like everything else
+ * (ADR-0017 d20) and no version, because it tracks the class and is edited in
+ * place from project stage to as-built — so this view is one row per E-number,
+ * not per board revision.
+ *
+ * The row ends in the places its subject leads: the protocol a bench operator
+ * carries, everything else filed under the same root, and the serials built to
+ * it. Each is a real link into a view that already exists rather than a summary
+ * restated here.
+ */
+async function specs(): Promise<string> {
+  const [all, insts] = await Promise.all([api.storeDocuments(), api.listInstances()]);
+  const sheets = all
+    .filter((d) => d.layer === "R" && d.root)
+    .sort((a, b) => a.object_key.localeCompare(b.object_key));
+  state.counts.specs = sheets.length;
+
+  if (!sheets.length)
+    return `<div class="empty">No specification is mirrored yet. Run
+      <code>python -m app.store_sync</code> to publish the repository's <code>spec/</code>.</div>`;
+
+  const rows = sheets
+    .map((s) => {
+      const root = s.root!;
+      const filed = all.filter((d) => d.root === root && d.object_key !== s.object_key);
+      const protocols = filed.filter((d) => d.layer === "M");
+      const built = insts.filter((i) => i.e_number === root);
+
+      // How far the design has come, read from what is filed rather than from the
+      // prose: the ERP indexes objects, and a rung claimed in a sentence it cannot
+      // see would be a second, drifting copy of the maturity table in the document.
+      const has = (fn: (d: StoreDoc) => boolean) => filed.some(fn);
+      const stage = built.length
+        ? { n: 4, label: "built" }
+        : has((d) => d.layer === "D" && d.slug === "fab")
+          ? { n: 3, label: "fabrication released" }
+          : has((d) => d.layer === "D")
+            ? { n: 2, label: "laid out" }
+            : has((d) => d.layer === "S")
+              ? { n: 1, label: "schematic captured" }
+              : { n: 0, label: "specified" };
+
+      const lead = (attr: string, label: string, n?: number): string =>
+        `<button class="lead" ${attr}>${esc(label)}${
+          n === undefined ? "" : `<span class="n">${n}</span>`
+        }</button>`;
+      const dead = (label: string): string =>
+        `<span class="lead none">${esc(label)}</span>`;
+
+      const leads = [
+        ...protocols.map((d) =>
+          lead(`data-doc="${esc(d.object_key)}"`, d.slug?.replace(/-/g, " ") ?? "protocol"),
+        ),
+        protocols.length ? "" : dead("no protocol filed"),
+        filed.length
+          ? lead(`data-goto-prefix="${esc(root)}"`, "filed under this root", filed.length)
+          : dead("nothing else filed"),
+        built.length === 1
+          ? lead(`data-instance="${esc(built[0].instance_id)}"`, built[0].instance_id)
+          : built.length
+            ? lead(`data-goto-instances="${esc(root)}"`, "instances", built.length)
+            : dead("none built"),
+      ]
+        .filter(Boolean)
+        .join("");
+
+      return `<div class="spec">
+        <div class="spec-mark"><span class="leaf" style="background:${moduleHue(root)}"></span></div>
+        <div class="spec-body">
+          <div class="spec-head">
+            <b>${esc(moduleDesignation(root))}</b>
+            <button class="seg id key chip" data-doc="${esc(s.object_key)}">${esc(s.object_key)}</button>
+          </div>
+          <div class="spec-rung">
+            <span class="rungbar" aria-hidden="true">${[1, 2, 3, 4]
+              .map((i) => `<i class="${i <= stage.n ? "on" : ""}"></i>`)
+              .join("")}</span>
+            <span>${esc(stage.label)}</span>
+          </div>
+          <div class="leads">${leads}</div>
+        </div>
+        <div class="spec-open"><span class="oi">${size(s.size_bytes)}</span></div>
+      </div>`;
+    })
+    .join("");
+
+  return `
+    <section class="panel"><div class="ph"><h2>What each design must do</h2>
+      <span class="desc">${sheets.length} specification${sheets.length === 1 ? "" : "s"} ·
+      one per E-number, unversioned — a specification tracks the class, not a build
+      (ADR-0017 d20)</span></div>
+      <div class="legendline">Open one to read it. The chips are where it leads: the protocol
+        that brings a board up, the objects filed under the same root, and the serials built
+        to it.</div>
+      <div class="specs">${rows}</div>
+      <div class="note">These belong to the repository, not to the ERP. It indexes none of them
+        and owns none of them — it reads through to the copy <code>store_sync</code> published,
+        so the requirements you read here are the ones in <code>spec/</code>. How far a design
+        has come is read from what is filed under its root, never from the document's own prose.
+      </div>
+    </section>`;
+}
+
 async function stock(): Promise<string> {
   const list = await api.listStock();
   state.counts.stock = list.length;
@@ -1260,6 +1376,7 @@ const VIEWS: Record<View, () => Promise<string>> = {
   overview,
   instances,
   instance: instanceDetail,
+  specs,
   integration,
   profiles,
   firmware,
@@ -1294,6 +1411,24 @@ function wire(): void {
     row.addEventListener("click", () => {
       state.instance = row.dataset.instance!;
       state.view = "instance";
+      render();
+    }),
+  );
+  // A specification's leads land in views that already answer the question, with
+  // the scope each of those views filters by already set.
+  document.querySelectorAll<HTMLElement>("[data-goto-prefix]").forEach((el) =>
+    el.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      state.prefix = el.dataset.gotoPrefix!;
+      state.view = "library";
+      render();
+    }),
+  );
+  document.querySelectorAll<HTMLElement>("[data-goto-instances]").forEach((el) =>
+    el.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      state.instancePrefix = el.dataset.gotoInstances!;
+      state.view = "instances";
       render();
     }),
   );
@@ -1523,6 +1658,8 @@ function render(): void {
         ${nav("overview", "Overview")}
         ${nav("integration", "Integration", count(state.machines.length))}
         ${nav("instances", "Instances", count(state.counts.instances))}
+        <span class="grp">Design</span>
+        ${nav("specs", "Specifications", count(state.counts.specs))}
         <span class="grp">Traceability</span>
         ${nav("profiles", "Deployment profile")}
         ${nav("firmware", "Firmware")}

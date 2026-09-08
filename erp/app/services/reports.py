@@ -269,7 +269,17 @@ def _css_string(text: str) -> str:
     return '"' + text.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
 
-def _document(*, doc_class: str, subject: str, footer: str, body: str) -> bytes:
+# What the masthead claims about a page's circulation. An instance record and the
+# lifecycle documents filed against it are the operator's own; a type-layer
+# document comes out of a public repository, and stamping it operator-private
+# would make the mark meaningless on the pages where it is true.
+SCOPE_PRIVATE = "Operator-private"
+SCOPE_PUBLIC = "Repository · public"
+
+
+def _document(
+    *, doc_class: str, subject: str, footer: str, body: str, scope: str = SCOPE_PRIVATE
+) -> bytes:
     """One report: the page frame, the masthead, and a body already in HTML."""
     mark = _mark_html()
     doc = f"""<!DOCTYPE html>
@@ -284,7 +294,7 @@ def _document(*, doc_class: str, subject: str, footer: str, body: str) -> bytes:
     </div>
     <div class="masthead-org">
       <div class="doc-operator">{escape(settings.operator_name)}</div>
-      <div class="doc-scope">Operator-private</div>
+      <div class="doc-scope">{escape(scope)}</div>
     </div>
   </div>
   <div class="masthead-rule"></div>
@@ -478,8 +488,13 @@ def markdown_document(
     body = md_lib.markdown(text, extensions=_MD_EXTENSIONS)
     subject = subject or object_key
     footer = f"Generated {_stamp()} from {origin}."
+    # The origin already says which home the bytes came from; the mark follows it
+    # rather than being asserted a second time by the caller.
+    scope = SCOPE_PUBLIC if origin == STORE_ORIGIN else SCOPE_PRIVATE
     try:
-        return _document(doc_class="Document", subject=subject, footer=footer, body=body)
+        return _document(
+            doc_class="Document", subject=subject, footer=footer, body=body, scope=scope
+        )
     except Exception as exc:
         # A layout engine that raises still has to produce the document: an
         # operator holding a plain page is better served than one holding a 500.
@@ -490,6 +505,7 @@ def markdown_document(
             doc_class="Document",
             subject=subject,
             footer=footer,
+            scope=scope,
             body=(
                 f'<p class="note">Rendered as plain text — the layout engine refused '
                 f"the markup: {escape(str(exc))}</p><pre>{escape(text)}</pre>"

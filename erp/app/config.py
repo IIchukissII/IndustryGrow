@@ -44,6 +44,13 @@ class Settings(BaseSettings):
     # (ADR-0017 d15: identifiers are object keys). See `python -m app.store_sync`.
     store_dir: str = Field(default="../store")
 
+    # Repo spec/ — the second directory of type-level documents. A specification
+    # carries an object key like everything else (ADR-0017 d20, `Exxxx-R-...`) and
+    # is mirrored and served identically; it lives in its own directory because it
+    # is edited continuously while store/ holds released artifacts. The keyspace is
+    # flat and shared, so a key names one document wherever its file sits.
+    spec_dir: str = Field(default="../spec")
+
     # The mark printed on PDF reports (app/services/reports.py). The SVG is
     # inlined into the page and stays vector; a PNG is accepted and embedded.
     # Relative paths resolve against erp/; the container sets an absolute one
