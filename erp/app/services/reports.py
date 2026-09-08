@@ -26,6 +26,7 @@ from __future__ import annotations
 import base64
 import logging
 import re
+from collections.abc import Callable
 from datetime import UTC, datetime
 from functools import lru_cache
 from html import escape
@@ -471,12 +472,62 @@ STORE_ORIGIN = "the repository store (ADR-0017 d15)"
 LIFECYCLE_ORIGIN = "the lifecycle-document index (ADR-0021 d7)"
 
 
+_FIGURE_RE = re.compile(r"!\[[^\]]*\]\(\s*(?P<src>[^)\s]+)")
+
+
+def figure_keys(markdown_text: str) -> list[str]:
+    """The object keys a markdown document points at for its own figures.
+
+    Read off the source rather than the rendered HTML so the caller can resolve
+    and authorize them before anything is rendered. Absolute and protocol-relative
+    references are not keys and are left out.
+    """
+    keys = []
+    for m in _FIGURE_RE.finditer(markdown_text):
+        src = m.group("src")
+        if re.match(r"^(?:[a-z][a-z0-9+.-]*:|//)", src, re.I):
+            continue
+        key = src.lstrip("./")
+        if key and key not in keys:
+            keys.append(key)
+    return keys
+
+
+def inline_figures(html: str, fetch: Callable[[str], tuple[bytes, str] | None]) -> str:
+    """Turn a document's own figure references into inlined data URIs.
+
+    The renderer refuses every external resource (`_no_remote_resources`), so a
+    figure has to arrive already inside the document or not at all. `fetch` is the
+    caller's key-validated reader over the object store — the same guard the read-
+    through route applies — so this resolves the reference without giving the
+    layout engine a way to fetch anything itself.
+
+    A reference that does not resolve is left alone rather than removed: the
+    renderer drops it and logs it, which is one broken figure instead of a page
+    that quietly pretends the figure was never there.
+    """
+
+    def _one(m: re.Match[str]) -> str:
+        raw = m.group("src")
+        if re.match(r"^(?:[a-z][a-z0-9+.-]*:|//)", raw, re.I):
+            return m.group(0)
+        got = fetch(raw.lstrip("./"))
+        if got is None:
+            return m.group(0)
+        blob, content_type = got
+        encoded = base64.b64encode(blob).decode("ascii")
+        return m.group(0).replace(raw, f"data:{content_type};base64,{encoded}", 1)
+
+    return re.sub(r'<img\b[^>]*?\bsrc="(?P<src>[^"]*)"', _one, html)
+
+
 def markdown_document(
     *,
     object_key: str,
     text: str,
     subject: str | None = None,
     origin: str = STORE_ORIGIN,
+    fetch_figure: Callable[[str], tuple[bytes, str] | None] | None = None,
 ) -> bytes:
     """One markdown document as a printable PDF.
 
@@ -486,6 +537,8 @@ def markdown_document(
     file together.
     """
     body = md_lib.markdown(text, extensions=_MD_EXTENSIONS)
+    if fetch_figure is not None:
+        body = inline_figures(body, fetch_figure)
     subject = subject or object_key
     footer = f"Generated {_stamp()} from {origin}."
     # The origin already says which home the bytes came from; the mark follows it

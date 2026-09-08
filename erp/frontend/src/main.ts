@@ -885,6 +885,48 @@ async function looksTextual(blob: Blob): Promise<boolean> {
  *   form of this the browser can spend on its own. If the deployment cannot mint
  *   one, the link is absent rather than present and broken.
  */
+/**
+ * Resolve a document's own figure references against the object store.
+ *
+ * A specification points at its figures the way the repository holds them —
+ * `![...](./figures/a01-climate-principle.svg)` — and that relative path resolves
+ * against the console's origin, where nothing answers. The keyspace is flat and
+ * the reference already IS the key (ADR-0017 d15), so the fix is to fetch each
+ * one through the same read-through the document itself came through, and hang
+ * the bytes on the element. The close handler revokes every `blob:` it finds.
+ *
+ * Only same-document references are followed: anything absolute, protocol-
+ * relative or `data:` is left exactly as the author wrote it.
+ */
+async function resolveFigures(root: ParentNode): Promise<void> {
+  const imgs = [...root.querySelectorAll<HTMLImageElement>("img[src]")].filter((el) => {
+    const raw = el.getAttribute("src") ?? "";
+    return raw !== "" && !/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(raw);
+  });
+  await Promise.all(
+    imgs.map(async (el) => {
+      const key = (el.getAttribute("src") ?? "").replace(/^\.\//, "");
+      try {
+        const res = await fetch(api.documentContentPath(null, key), {
+          headers: { Authorization: `Bearer ${getToken()}` },
+        });
+        if (!res.ok) throw new Error(String(res.status));
+        el.src = URL.createObjectURL(await res.blob());
+      } catch {
+        // The figure is missing from the store, or not mirrored yet. Say which
+        // one: a broken-image glyph names nothing, and the answer is a
+        // store_sync away.
+        el.replaceWith(
+          Object.assign(document.createElement("p"), {
+            className: "rd-nofig",
+            textContent: `Figure not in the store: ${key}`,
+          }),
+        );
+      }
+    }),
+  );
+}
+
 async function openDocument(instanceId: string | null, objectKey: string): Promise<void> {
   const reader = readerDialog();
   reader.innerHTML = `<div class="rd-sheet"><div class="rd-head">
@@ -981,6 +1023,9 @@ async function openDocument(instanceId: string | null, objectKey: string): Promi
   }
 
   reader.innerHTML = `<div class="rd-sheet">${head()}${body}</div>`;
+  // After the markup is in the document, so the images exist to be resolved. Not
+  // awaited: the document is readable while its figures arrive.
+  if (asProse) void resolveFigures(reader);
   $("rd-close")?.addEventListener("click", () => reader.close());
   $("rd-pdf")?.addEventListener("click", async () => {
     const btn = $<HTMLButtonElement>("rd-pdf");

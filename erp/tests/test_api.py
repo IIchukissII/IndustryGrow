@@ -323,6 +323,55 @@ def test_a_key_cannot_walk_out_of_the_store(client, warehouse):
         assert r.status_code in (404, 307), escape
 
 
+def test_a_document_reaches_its_own_figures(client, warehouse):
+    # A specification points at its figures by key — `figures/…svg` — and
+    # store_sync mirrors them under exactly that key. The read-through has to
+    # follow the reference or every figure is broken in the reader, so a key
+    # below a repository directory resolves as well as one directly in it.
+    warehouse.objects["figures/a01-climate-principle.svg"] = b"<svg/>"
+    warehouse.content_types["figures/a01-climate-principle.svg"] = "image/svg+xml"
+    r = client.get(
+        "/api/v1/store-documents/figures%2Fa01-climate-principle.svg/content", headers=AUTH
+    )
+    assert r.status_code == 200
+    assert r.content == b"<svg/>"
+
+
+def test_a_key_still_cannot_walk_out_of_a_document_directory(client, warehouse):
+    # Following a reference downward must not weaken the guard that made the
+    # route safe: `..` is resolved before the check, so it lands outside the root
+    # and is refused whatever depth it claims.
+    for escape_key in ("..%2Fpyproject.toml", "figures%2F..%2F..%2Fpyproject.toml"):
+        r = client.get(f"/api/v1/store-documents/{escape_key}/content", headers=AUTH)
+        assert r.status_code in (404, 307), escape_key
+
+
+def test_figure_keys_are_read_off_the_source():
+    from app.services import reports
+
+    md = (
+        "![a](./figures/one.svg)\n"
+        "![b](figures/two.png)\n"
+        "![c](https://example.invalid/three.png)\n"
+        "![d](./figures/one.svg)\n"
+    )
+    # Relative only, in order, deduplicated: the absolute one is not a key.
+    assert reports.figure_keys(md) == ["figures/one.svg", "figures/two.png"]
+
+
+def test_a_figure_is_inlined_into_the_pdf_not_fetched_by_the_renderer():
+    from app.services import reports
+
+    html = '<p><img alt="x" src="./figures/one.svg"></p>'
+    out = reports.inline_figures(html, lambda key: (b"<svg/>", "image/svg+xml"))
+    assert "data:image/svg+xml;base64," in out
+    assert "./figures/one.svg" not in out
+    # One that does not resolve is left as it was: the renderer drops it and logs
+    # it, which beats a page that pretends the figure never existed.
+    kept = reports.inline_figures(html, lambda key: None)
+    assert kept == html
+
+
 def test_a_specification_is_a_store_document(client, warehouse):
     # spec/ is the second document directory (ADR-0017 d20). A specification
     # carries an object key like everything else, so it lists, resolves and reads

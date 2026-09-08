@@ -10,6 +10,7 @@ document ingestion is allowlisted to the instance-lifecycle suffixes.
 from __future__ import annotations
 
 import asyncio
+import mimetypes
 from datetime import UTC, date, datetime
 from pathlib import Path
 
@@ -867,16 +868,22 @@ def _document_roots() -> tuple[Path, ...]:
 
 
 def _is_store_file(object_key: str) -> bool:
-    """True when the key names a file directly in one of those directories.
+    """True when the key names a file inside one of those directories.
 
     Resolved against each root rather than joined onto it, so a key holding `..`
-    or a separator cannot walk out of the mirror. Directly in it, not below: the
-    warehouse keyspace is flat (ADR-0017 d15), and the nested KiCad footprint
-    directories are not documents anyone reads through the console.
+    cannot walk out of the mirror — that is what the guard is for, and it holds
+    at any depth.
+
+    Below the root as well as directly in it, because a document reaches its own
+    figures by key: a specification points at `figures/…svg`, `store_sync` mirrors
+    it under exactly that key, and refusing the nested read would leave every
+    figure broken in the reader. The *listing* stays top-level (`_is_listable`) —
+    a figure is part of a document, not a document — but what a reader may fetch
+    is the whole public directory it was already mirroring.
     """
     for root in _document_roots():
         candidate = (root / object_key).resolve()
-        if candidate.parent == root and candidate.is_file():
+        if candidate.is_file() and candidate.is_relative_to(root):
             return True
     return False
 
@@ -1196,11 +1203,28 @@ async def _markdown_pdf(warehouse: Warehouse, object_key: str, origin: str) -> R
             status.HTTP_422_UNPROCESSABLE_ENTITY,
             f"{object_key} is not a text document; only text renders to PDF",
         )
+    # A document's own figures, resolved through the same guard the document came
+    # through: a key that names no file in a repository directory is not fetched,
+    # so the renderer cannot be pointed at anything else (it refuses every
+    # external resource itself — `reports._no_remote_resources`).
+    figures: dict[str, tuple[bytes, str] | None] = {}
+    for key in reports.figure_keys(text):
+        if not await asyncio.to_thread(_is_store_file, key):
+            figures[key] = None
+            continue
+        blob_bytes = await warehouse.get_bytes(key)
+        figures[key] = (
+            None
+            if blob_bytes is None
+            else (blob_bytes, mimetypes.guess_type(key)[0] or "application/octet-stream")
+        )
+
     blob = await asyncio.to_thread(
         reports.markdown_document,
         object_key=object_key,
         text=text,
         origin=origin,
+        fetch_figure=figures.get,
     )
     stem = object_key.rsplit(".", 1)[0] if "." in object_key.rsplit("/", 1)[-1] else object_key
     return Response(
