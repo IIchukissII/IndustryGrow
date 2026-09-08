@@ -698,3 +698,8 @@ button.seg.key.chip.serial.live::before { content: ""; display: inline-block; wi
 .modh { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .modh b { font-size: 13px; font-weight: 600; }
 .modh .ref { font-size: 11px; color: var(--ink-3); }
+
+/* A figure the store does not hold. Named rather than left as a broken-image
+   glyph: the key is the whole answer, and the fix is a store_sync away. */
+.rd-nofig { font-size: 11.5px; color: var(--ink-3); font-style: italic;
+  border: 1px dashed var(--line-2); border-radius: 8px; padding: 10px 12px; margin: 12px 0; }
