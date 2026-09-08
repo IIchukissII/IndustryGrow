@@ -23,10 +23,16 @@ firmware requirements, and their verification. The module acts on the grow-volum
 carries every regulated variable of that medium — air temperature, humidity, and CO₂ when
 populated (ADR-0031 rev 1 d2).
 
-Not specified here: carrier design (`store/E0001-VVVVVV-D-pinmap.md`), the outdoor deployment
-variant, the cultivation setpoints themselves (`profiles/strawberry-day-neutral-v1.json`),
-control-loop structure and gains (ADR-0015 d8/d18, `gateway/control_model.py`), the luminaire
-and its window, the rejection loop as a purchased assembly, the enclosure.
+Not specified here:
+
+| Subject | Owner |
+|---|---|
+| Carrier design and header allocation | `store/E0001-VVVVVV-D-pinmap.md` |
+| Cultivation setpoints | `profiles/strawberry-day-neutral-v1.json` |
+| Control-loop structure and gains | ADR-0015 d8/d18, `gateway/control_model.py` |
+| Outdoor deployment variant | Not specified — `O-106` |
+| Luminaire, its window, and the enclosure | A02-LIGHT and the enclosure design — `O-114` |
+| Rejection loop as a purchased assembly | ADR-0032, deferred |
 
 ## 2. Identification
 
@@ -41,8 +47,6 @@ and its window, the rejection loop as a purchased assembly, the enclosure.
 
 ### 2.1 Deployment variant — indoor
 
-This document specifies the indoor variant. The outdoor variant is not specified (`O-106`).
-
 | | Indoor |
 |---|---|
 | Deployment envelope | Canopy ≤ 1 m², enclosed volume ≤ 3 m³, day cooling load ≤ 150 W (ADR-0032 d1) |
@@ -51,7 +55,7 @@ This document specifies the indoor variant. The outdoor variant is not specified
 | Ambient air temperature | 15…30 °C (`M07-AMBIENT-specification.md`, indoor variant); 22 °C is the design value |
 | Ambient relative humidity | 25…65 %RH (same) |
 | Rejection sink | The same room air, through the liquid loop |
-| Rejection load into the room | 65 W continuous (`T6`), bounded by `T8` |
+| Rejection load into the room | Per `T6`, bounded by `T8` |
 | Field bus leaves the enclosure | No |
 | Environmental qualification | Indoor, as M01–M05 |
 
@@ -79,14 +83,16 @@ edge of the VPD band; that case is outside this variant (`O-114`).
 
 ## 3. Function
 
-A01 conditions and executes gateway demands against the grow-volume air through two air tracts
-in parallel: a main tract that moves 56 m³/h and sets air temperature, and a humidity tract that
-moves 1.7 m³/h and sets humidity ratio by subcooling to a commanded coil temperature and
-reheating at constant humidity ratio. Each element takes its own demand and validity deadline
-(ADR-0031 d4); the node conditions and limits every demand on its own state (`D9`, `D10`, `D11`)
-and executes it (ADR-0015 d18).
+A01 acts on the grow-volume air through two air tracts in parallel. Each element takes its own
+demand and validity deadline (ADR-0031 d4); the node conditions and limits every demand on its
+own state (`D9`, `D10`, `D11`) and executes it (ADR-0015 d18).
 
-![Gateway demands into a conditioned node; a main tract with a two-module thermoelectric stack on a finned exchanger rejecting into a water block, and a humidity tract with a subcooler, a thermal break with a condensate siphon, and a reheater; five hardware interlocks gate the driver enables](./figures/a01-climate-principle.svg)
+| Tract | Flow | Sets | Method |
+|---|---|---|---|
+| Main | 56 m³/h | Air temperature | `E1` on HX1, floored above the grow-volume dew point (`D10`) |
+| Humidity | 1.7 m³/h | Humidity ratio | `E3` subcools to a commanded coil temperature (`D11`), `E4` reheats at constant humidity ratio (`D12`) |
+
+![Gateway demands into a conditioned node; a main tract with a two-module thermoelectric stack on a finned exchanger rejecting into a water block, and a humidity tract with a subcooler, a thermal break with a condensate siphon, and a reheater; four hardware interlocks gate the driver enables](./figures/a01-climate-principle.svg)
 
 ### 3.1 Commanded elements
 
@@ -147,7 +153,7 @@ unpopulated branch publishes and commands (ADR-0014 d1, d2).
 | RT2 | NTC 10 kΩ, on a lead in the grow volume | `T3` trip element, both thresholds (ADR-0018 d10) | — | — |
 | TEC1, TEC2 | 40 × 40 mm, 127 couple, `Imax` 6.4 A, `Qmax` 57 W, `ΔTmax` 66 K at `Th` 25 °C, α 0.0608 V/K, R 2.78 Ω, K 0.864 W/K (all `verify`) | `E1`, series pair | Series string | `+24 V` actuator |
 | TEC3 | Same part | `E3`, single | — | `+24 V` actuator |
-| HX1 | Fischer LA 6 150 12, 62 × 74 mm, 56 m³/h, `Rth` 0.17 K/W (`verify`, `O-112`) | Grow-volume exchanger of the main tract, and the cabinet's circulation | — | — |
+| HX1 | Fischer LA 6 150 12, 62 × 74 mm, `Rth` 0.17 K/W (`verify`, `O-112`) | Grow-volume exchanger of the main tract, and the cabinet's circulation | — | — |
 | HX2 | Fischer LAM 5, 100 mm, `h·A` 1.64 W/K (`verify`) | Cold section of the humidity tract | — | — |
 | HX3 | Fischer LAM 5 50 5, `h·A` 0.82 W/K (`verify`) | Hot section of the humidity tract, carrying `E4` | — | — |
 | WB1 | Water block, 40 × 120 mm | Rejection side of `E1`, and its clamping plate | — | — |
@@ -163,12 +169,14 @@ unpopulated branch publishes and commands (ADR-0014 d1, d2).
 | FA1 | Alarm output of the `E5` fan (`T5`) | Humidity-tract airflow interlock | — | — |
 | TB1 | Thermal-break insert between HX2 and HX3, with the low point and condensate outlet | `T9`, `M7` | — | — |
 
-No trip element is a digital part: `T2`–`T5` act without the MCU (ADR-0031 d7), so U1–U4 report
-and derate but trip nothing. U5 and U6 integrate the high-side current sense, so no shunt is
-fitted; the interlocks act on the drivers' enable, not through them.
+Deliberately absent:
 
-Addresses `0x50`–`0x57` are reserved project-wide for the ID EEPROM (ADR-0014 d6); neither U9
-nor any other device on this module occupies them.
+| Not fitted | Reference |
+|---|---|
+| Digital trip element. `T2`–`T5` act without the MCU; U1–U4 report and derate, and trip nothing | ADR-0031 d7, `T10` |
+| Current-sense shunt. U5 and U6 integrate high-side sense | `D2` |
+| Interlock path through a driver input. `T2`–`T5` act on the driver enable | `T10` |
+| Any device at `0x50`–`0x57` other than U10. The block is reserved project-wide for the ID EEPROM | ADR-0014 d6 |
 
 ## 5. Interfaces
 
@@ -202,9 +210,8 @@ Module-local expansion on U9 (ADR-0031 rev 1 d11):
 | 4 | U5 PH — `E1` direction (`D3`) |
 | 5, 6 | U5, U6 nSLEEP — driver enable from firmware |
 
-Module-ID straps are not used for identification by this module (ADR-0031 d10). §5 requires the
-`E0001-000100` pin map to reallocate `STRAP_0` as a general input and to carry the 1-Wire line
-(`O-100`).
+Module-ID straps are not used for identification by this module (ADR-0031 d10); the table above
+reallocates all three. The pin-map changes this requires are `O-100`.
 
 ## 6. Drive requirements
 
@@ -330,9 +337,9 @@ Module-ID straps are not used for identification by this module (ADR-0031 d10). 
 - `O-107` — Wall penetrations, thermal breaks and the condensate drain are mechanical design. Blocks `M3`, `M6`, `T7`.
 - `O-108` — The dry edge of the night VPD band is not reachable: 1.2 kPa at 14 °C requires a coil at −6 °C, and `D11`'s floor yields 0.94 kPa. Resolved by the profile — narrow the night band, add a defrost cycle, or raise the night setpoint — not by this module.
 - `O-109` — The condensate collector, its count transducer and its lead are mechanical design of this module's humidity tract; the counter itself is M05's (ADR-0014 rev 7 d4) and `E0006-000001` has no free pulse input (`O-116`). Volume per count is a commissioning constant of the collector and is unset. Blocks the `O-111` measurement.
-- `O-110` — CO₂ branch unspecified: source, regulator, valve, minimum dose against a 0.43 m³ volume, and CO₂ accumulation in an occupied room. Blocks `D14` and the §3.4 CO₂ population.
+- `O-110` — CO₂ branch unspecified: source, regulator, valve, minimum dose against the §2.2 grow volume, and CO₂ accumulation in an occupied room. Blocks `D14` and the §3.4 CO₂ population.
 - `O-111` — Transpiration is assumed at 140 ml/day and is unmeasured; it sets the humidity-tract mass flow. Closed by the first `O-109` measurement.
-- `O-112` — HX1 `Rth` 0.17 K/W is a catalogue figure that excludes spreading from two point-source modules on the base. It sets `D10` directly. Bench measurement required: a resistor of known power, thermocouples on the base and in the stream.
+- `O-112` — HX1's `Rth` is a catalogue figure that excludes spreading from two point-source modules on the base. It sets `D10` directly. Bench measurement required: a resistor of known power, thermocouples on the base and in the stream.
 - `O-113` — U9 part not selected; `F11`'s fail-to-safe wiring follows from its output behaviour when its outputs are de-asserted. Blocks `F11`.
 - `O-114` — The luminaire's position relative to the grow volume sets 19 W or 32 W of §2.2 day load and decides whether `D10` binds at the wet edge of the band. Owned by A02-LIGHT and the enclosure, consumed here.
 - ~~`O-115`~~ — ~~No governing ADR for cabinet climate conditioning.~~ — closed 2026-09-08 by ADR-0032.
