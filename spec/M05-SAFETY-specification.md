@@ -53,6 +53,8 @@ Not specified here:
 Reporting only: the bay temperature is not a trip element, and the door and leak channels
 raise no hardware interlock (ADR-0018 d10, d11).
 
+![Distribution one-line: the SELV supply enters at J1, passes F1 and the shunt R1 and fans out at J2 to the nodes with the field bus; the R11 and D6 indicator is tapped ahead of F1 so its draw never crosses R1; U2 senses bus voltage and the current across R1 and U1 the electrical-bay air, both on I2C1; the meter, leak strip and door reed arrive on separate leads at J3, J4 and J5; and the board carries no trip element, comparator, relay enable or per-load current measurement](./figures/m05-safety-distribution.svg)
+
 ### 3.1 Exclusions
 
 | Quantity | Owning class |

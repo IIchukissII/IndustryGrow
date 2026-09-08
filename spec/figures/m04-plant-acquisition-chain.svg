@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="600" viewBox="0 0 760 600" role="img" aria-label="M04-PLANT acquisition chain from device subpage to served interval frame">
+  <title>M04-PLANT — acquisition chain</title>
+  <desc>The imager U1 is read one subpage at a time under a status-register handshake, and a missed read is overwritten rather than stalling acquisition. Each complete frame passes the compensation chain, which is fed once at boot by three constant sources: the device EEPROM, the flat-field trim held in U2 and bound to this device, and the deployment constants for emissivity and reflected temperature. The compensated field then feeds three consumers. Once per second the frames of that second are averaged and reduced to the frame statistics published as the plant record. Over the interval every valid frame is accumulated by Welford's method into a mean plane in single precision and a per-pixel standard-deviation plane in eight bits, which are served as the interval frame over the file-read service. An event serves the last complete frame alone, with a zero standard-deviation plane. The gateway reads a served frame when the record's frame-available flag changes, and never by polling.</desc>
+
+  <defs>
+    <marker id="a" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#5F5E5A"/></marker>
+    <marker id="ab" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#7A8DA6"/></marker>
+  </defs>
+
+  <rect x="0.5" y="0.5" width="759" height="599" rx="10" fill="#FFFFFF" stroke="#E5E3DC"/>
+  <text x="380" y="28" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12.5" fill="#2C2C2A">M04-PLANT — acquisition chain</text>
+
+  <!-- device -->
+  <rect x="250" y="48" width="260" height="44" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="380" y="68" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">U1 MLX90640 — device RAM</text>
+  <text x="380" y="83" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">chess pattern · both subpages · alternating</text>
+
+  <path d="M380 92 L380 112" fill="none" stroke="#7A8DA6" stroke-width="1.4" marker-end="url(#ab)"/>
+
+  <rect x="250" y="112" width="260" height="44" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="380" y="132" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">subpage read, status handshake</text>
+  <text x="380" y="147" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">a missed read is overwritten, not stalled</text>
+
+  <path d="M380 156 L380 176" fill="none" stroke="#7A8DA6" stroke-width="1.4" marker-end="url(#ab)"/>
+
+  <!-- constants -->
+  <rect x="24" y="152" width="200" height="106" rx="4" fill="#FBFBF9" stroke="#C9C6BC"/>
+  <text x="124" y="172" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">constants, read once</text>
+  <text x="38" y="192" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">device EEPROM, at boot (§6.2)</text>
+  <text x="38" y="212" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">U2 flat-field trim, bound to</text>
+  <text x="38" y="224" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">this device ID (§6.7)</text>
+  <text x="38" y="244" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">ε, Tr — deployment (§6.2)</text>
+  <path d="M224 205 L246 205" fill="none" stroke="#5F5E5A" stroke-width="1.2" marker-end="url(#a)"/>
+
+  <!-- compensation -->
+  <rect x="250" y="176" width="260" height="60" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="380" y="196" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">compensation chain (§6.2)</text>
+  <text x="380" y="211" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">DS12 §11.2 in full · TGC fixed at zero</text>
+  <text x="380" y="226" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">defective pixels excluded, then interpolated</text>
+
+  <path d="M380 236 L380 256" fill="none" stroke="#7A8DA6" stroke-width="1.4" marker-end="url(#ab)"/>
+
+  <rect x="250" y="256" width="260" height="40" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="380" y="281" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">compensated field, per complete frame</text>
+
+  <!-- fan-out to three consumers -->
+  <path d="M380 296 L380 316" fill="none" stroke="#7A8DA6" stroke-width="1.4"/>
+  <path d="M150 316 L610 316" fill="none" stroke="#7A8DA6" stroke-width="1.4"/>
+  <path d="M150 316 L150 336" fill="none" stroke="#7A8DA6" stroke-width="1.4" marker-end="url(#ab)"/>
+  <path d="M380 316 L380 336" fill="none" stroke="#7A8DA6" stroke-width="1.4" marker-end="url(#ab)"/>
+  <path d="M610 316 L610 336" fill="none" stroke="#7A8DA6" stroke-width="1.4" marker-end="url(#ab)"/>
+
+  <!-- per second -->
+  <rect x="60" y="336" width="180" height="46" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="150" y="356" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">per second</text>
+  <text x="150" y="371" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">mean of that second's frames</text>
+  <path d="M150 382 L150 400" fill="none" stroke="#7A8DA6" stroke-width="1.4" marker-end="url(#ab)"/>
+
+  <rect x="60" y="400" width="180" height="40" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="150" y="425" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">frame statistics (§6.4)</text>
+  <path d="M150 440 L150 458" fill="none" stroke="#7A8DA6" stroke-width="1.4" marker-end="url(#ab)"/>
+
+  <rect x="60" y="458" width="180" height="46" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="150" y="478" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">published record (§10.1)</text>
+  <text x="150" y="493" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">carries ε, Tr and frame_available</text>
+
+  <!-- per interval -->
+  <rect x="280" y="336" width="200" height="46" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="380" y="356" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">per interval (§6.5)</text>
+  <text x="380" y="371" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">Welford over every valid frame</text>
+  <path d="M380 382 L380 400" fill="none" stroke="#7A8DA6" stroke-width="1.4" marker-end="url(#ab)"/>
+
+  <rect x="280" y="400" width="200" height="40" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="380" y="425" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">mean plane float32 · σ plane uint8</text>
+  <path d="M380 440 L380 458" fill="none" stroke="#7A8DA6" stroke-width="1.4" marker-end="url(#ab)"/>
+
+  <rect x="280" y="458" width="200" height="46" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="380" y="478" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">served frame (§10.2)</text>
+  <text x="380" y="493" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">uavcan.file.Read · header repeats the constants</text>
+
+  <!-- event -->
+  <rect x="520" y="336" width="180" height="46" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="610" y="356" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">event</text>
+  <text x="610" y="371" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">last complete frame · σ plane zero</text>
+  <path d="M610 382 L610 481 L486 481" fill="none" stroke="#7A8DA6" stroke-width="1.4" marker-end="url(#ab)"/>
+
+  <!-- gateway -->
+  <rect x="280" y="534" width="200" height="36" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="380" y="557" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">gateway</text>
+  <path d="M380 504 L380 534" fill="none" stroke="#7A8DA6" stroke-width="1.4" marker-end="url(#ab)"/>
+  <path d="M150 504 L150 552 L276 552" fill="none" stroke="#7A8DA6" stroke-width="1.4" marker-end="url(#ab)"/>
+  <text x="164" y="526" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">subscribes</text>
+  <text x="388" y="526" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">reads on frame_available, never by polling</text>
+
+  <!-- footnote -->
+  <text x="24" y="588" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">the interval accumulator and the per-second statistics run on the same compensated frames and are independent of each other (§6.5)</text>
+</svg>
