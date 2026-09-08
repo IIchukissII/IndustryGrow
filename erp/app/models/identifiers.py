@@ -33,8 +33,10 @@ INTEGRATION_RE = re.compile(
 MACHINE_RE = re.compile(rf"^{MACHINE}$")
 DEPTH_RE = re.compile(rf"^{DEPTH}$")
 
-# Document layers (ADR-0017 d9/d16) and lifecycle suffixes (d10-14).
-DOCUMENT_LAYERS = frozenset("SDLPMIF")
+# Document layers (ADR-0017 d9/d16/d20) and lifecycle suffixes (d10-14). `R` is
+# the only one that never carries a version: a specification tracks the class and
+# not a build (d20), which the parser already allows for an E root.
+DOCUMENT_LAYERS = frozenset("SDLPMIFR")
 LIFECYCLE_SUFFIXES = frozenset({"QP", "QR", "CP", "CC", "PR"})
 
 # Withdrawal status tokens (ADR-0017 d17). Full uppercase words, deliberately

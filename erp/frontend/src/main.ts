@@ -1028,7 +1028,14 @@ const size = (n: number) =>
 
 // The layer letter says what a document is ABOUT; the extension says whether the
 // reader can render it. A design-layer pinmap is still markdown.
-const READABLE_KINDS = new Set(["manual", "document", "procedure", "instruction", "table"]);
+const READABLE_KINDS = new Set([
+  "manual",
+  "document",
+  "procedure",
+  "instruction",
+  "specification",
+  "table",
+]);
 const readable = (d: StoreDoc) =>
   READABLE_KINDS.has(d.kind) || /\.(md|markdown|txt|csv)$/i.test(d.object_key);
 

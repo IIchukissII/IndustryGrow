@@ -245,6 +245,7 @@ _DOC_LAYERS = {
     "P": "procedure",
     "M": "manual",
     "I": "instruction",
+    "R": "specification",
 }
 
 
