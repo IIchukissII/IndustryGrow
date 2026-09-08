@@ -5,8 +5,8 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 # M02-LIGHT — module specification
 
-- **Status:** Working specification. `E0003-000001` schematic carries the ADR-0014 rev 6 complement; the layout does not
-- **Date:** 2026-08-23
+- **Status:** Fabricated, partially verified. `E0003-000001` exists and runs; §11 is mostly unexecuted and the schematic-frozen gate is still open (§13)
+- **Date:** 2026-09-08
 - **E-number:** `E0003` · module-ID strap `0b010`
 - **Governing ADRs:** ADR-0014 (rev 6), ADR-0002 (rev 3), ADR-0003, ADR-0005 (rev 1), ADR-0016, ADR-0017 (rev 2)
 - **Companions:** `E0002-R-specification.md`, `E0005-R-specification.md`, `E0006-R-specification.md`, `E0008-R-specification.md`, `E0009-R-specification.md`
@@ -553,14 +553,17 @@ collision with M06's O-42.
 
 ## 13. Maturity
 
-**Schematic and layout captured.** Both sensors are fixed by ADR-0014 rev 6 and both are stated
-from their datasheets. `store/E0003-000001-S-src.zip` carries U4, U3, U1, the 1.8 V rail, all
-three I²C pull-up pairs and the module-ID straps; `E0003-000001-D-src.zip` carries the two-layer
-board, which meets M10, M11 and M12.
+**Fabricated, partially verified.** `store/E0003-000001-S-src.zip` carries U4, U3, U1, the
+1.8 V rail, all three I²C pull-up pairs and the module-ID straps; `E0003-000001-D-src.zip`
+carries the two-layer board, which meets M10, M11 and M12. A board exists and runs: all three
+devices answer and subjects 4128–4131 publish.
+
+**The board was fabricated with the schematic-frozen gate still open** — O-70 and V6 below are
+what that rung asks for, and neither is discharged.
 
 | Rung | Content | Reached when |
 |------|---------|--------------|
 | **Pre-schematic** | Complement and requirements fixed; values estimated or `verify` | ADR-0014 rev 6 fixes both parts ✔ |
-| **Schematic and layout captured** ← here | Parts fixed to ordering part numbers; schematic and board exist; component values determined | U3 ordering part resolved ✔ (`TSL25853PM`); U1 resolved ✔ (`TCA9543APWR`); `E0003-000001-S-src.zip` ✔; `E0003-000001-D-src.zip` ✔ |
-| **Schematic-frozen** | Remaining `verify` resolved, footprints checked against physical parts. `L` releases here | O-60, O-61, O-62, O-64, O-66, O-71 and O-72 closed ✔; O-70 open; V6 not executed |
-| **As-built** | Estimates replaced by measured values; verification §11 executed | `E0003` fabricated and bench-verified; O-59 measured |
+| **Schematic and layout captured** | Parts fixed to ordering part numbers; schematic and board exist; component values determined | U3 ordering part resolved ✔ (`TSL25853PM`); U1 resolved ✔ (`TCA9543APWR`); `E0003-000001-S-src.zip` ✔; `E0003-000001-D-src.zip` ✔ |
+| **Schematic-frozen** | Remaining `verify` resolved, footprints checked against physical parts. `L` releases here | O-60, O-61, O-62, O-64, O-66, O-71 and O-72 closed ✔; **O-70 open; V6 not executed** |
+| **As-built** ← here, incompletely | Estimates replaced by measured values; verification §11 executed | `E0003` fabricated ✔; three devices answer and all four subjects publish ✔; V4's UV-A channel measured ✔; **O-59 not measured; V1, V2, V3, V5, V7–V12 not executed** |
