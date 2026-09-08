@@ -262,6 +262,8 @@ reallocates all three. The pin-map changes this requires are `O-100`.
 
 ## 9. Mechanical requirements
 
+![Vertical section through the cabinet: both tracts sit outside the grow volume and reach it through four sealed, thermally broken penetrations; the main tract draws from a floor intake, passes HX1 with its fan E2 in an outer shaft and returns through a horizontal ceiling slot aimed at the far wall, so the air crosses the ceiling, falls down the far wall and returns along the floor; the humidity tract draws high on the opposite wall, passes E5, the condensing exchanger HX2 with E3, the thermal break TB1 carrying the low point and liquid seal, and the reheat exchanger HX3 with E4, returning low; condensate leaves TB1 by a drain clear of the volume, the luminaire radiates through a ceiling window, and RT2 reaches the volume on a lead through the floor](./figures/a01-climate-air-path.svg)
+
 | ID | Requirement | Reference |
 |---|---|---|
 | `M1` | Each thermoelectric module is clamped between its exchanger and its water block at the datasheet clamping force, through a metal plate with disc springs. No printed part carries clamping load | `O-103` |

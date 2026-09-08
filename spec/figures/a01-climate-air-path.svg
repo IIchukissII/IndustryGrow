@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="700" viewBox="0 0 760 700" role="img" aria-label="A01-CLIMATE air path through the grow volume, in section">
+  <title>A01-CLIMATE — air path in section</title>
+  <desc>A vertical section through the cabinet. The grow volume is enclosed; both air tracts sit outside it and reach it through four wall penetrations, each sealed and thermally broken. The main tract takes air from a penetration at the floor, carries it up an outer shaft through the exchanger HX1 with its integral fan E2, and returns it through a horizontal slot at the ceiling directed at the far wall, so the air crosses the ceiling, falls down the far wall and returns along the floor to the intake. The thermoelectric stack E1 is clamped behind HX1 and rejects outward to the water block. The humidity tract takes air from a penetration high on the opposite wall, at a different height from the main tract's intake, and passes it through the fan E5, the condensing exchanger HX2 with its subcooler E3, the thermal break TB1 that carries the low point and the liquid seal, and the reheat exchanger HX3 with E4, before returning it low into the volume. Condensate forms only on HX2 and leaves TB1 by a drain routed clear of the volume. The luminaire sits outside the volume and radiates through a window in the ceiling. The grow-volume trip sensor RT2 reaches the volume on a lead through the floor.</desc>
+
+  <defs>
+    <marker id="a" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#5F5E5A"/></marker>
+    <marker id="ab" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#7A8DA6"/></marker>
+    <marker id="ao" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#D85A30"/></marker>
+  </defs>
+
+  <rect x="0.5" y="0.5" width="759" height="699" rx="10" fill="#FFFFFF" stroke="#E5E3DC"/>
+  <text x="380" y="28" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12.5" fill="#2C2C2A">A01-CLIMATE — air path in section</text>
+
+  <!-- ============ luminaire outside the volume ============ -->
+  <rect x="330" y="40" width="150" height="26" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="405" y="57" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#2C2C2A">luminaire, outside the volume (O-114)</text>
+
+  <!-- ============ cabinet ============ -->
+  <rect x="262" y="80" width="224" height="548" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <rect x="274" y="92" width="200" height="524" fill="#FBFBF9" stroke="#C9C6BC"/>
+  <text x="288" y="112" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">GROW VOLUME</text>
+
+  <!-- window in the ceiling -->
+  <rect x="352" y="80" width="108" height="12" fill="#FDF4F0" stroke="#D85A30"/>
+  <text x="406" y="76" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#D85A30">window</text>
+  <path d="M372 170 L372 220" fill="none" stroke="#D85A30" stroke-width="1" stroke-dasharray="3 3" marker-end="url(#ao)"/>
+  <path d="M406 170 L406 220" fill="none" stroke="#D85A30" stroke-width="1" stroke-dasharray="3 3" marker-end="url(#ao)"/>
+  <path d="M440 170 L440 220" fill="none" stroke="#D85A30" stroke-width="1" stroke-dasharray="3 3" marker-end="url(#ao)"/>
+
+  <!-- wall penetrations, M3 -->
+  <rect x="262" y="120" width="12" height="16" fill="#FDF4F0" stroke="#D85A30"/>
+  <rect x="262" y="592" width="12" height="16" fill="#FDF4F0" stroke="#D85A30"/>
+  <rect x="474" y="183" width="12" height="16" fill="#FDF4F0" stroke="#D85A30"/>
+  <rect x="474" y="432" width="12" height="16" fill="#FDF4F0" stroke="#D85A30"/>
+
+  <!-- canopy -->
+  <line x1="292" y1="500" x2="444" y2="500" stroke="#C9C6BC" stroke-width="1" stroke-dasharray="4 4"/>
+  <text x="444" y="514" text-anchor="end" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">canopy</text>
+
+  <!-- ============ air ring inside the volume ============ -->
+  <path d="M274 128 L438 128" fill="none" stroke="#7A8DA6" stroke-width="1.4" marker-end="url(#ab)"/>
+  <text x="290" y="146" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#7A8DA6">horizontal ceiling slot, at the far wall (M4)</text>
+  <path d="M452 132 L452 576" fill="none" stroke="#7A8DA6" stroke-width="1.4" marker-end="url(#ab)"/>
+  <path d="M448 588 L288 588" fill="none" stroke="#7A8DA6" stroke-width="1.4" marker-end="url(#ab)"/>
+  <text x="292" y="578" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#7A8DA6">intake at the floor (M4)</text>
+
+  <!-- ============ main tract, outside the volume ============ -->
+  <rect x="52" y="80" width="198" height="548" rx="4" fill="#FBFBF9" stroke="#C9C6BC"/>
+  <text x="66" y="100" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#7A8DA6">main tract — outside the volume</text>
+
+  <rect x="84" y="286" width="142" height="64" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="155" y="306" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">HX1 + E2 fan</text>
+  <text x="155" y="321" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">grow-volume exchanger</text>
+  <text x="155" y="336" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#7A8DA6">above dew point — no condensate</text>
+
+  <rect x="150" y="358" width="76" height="32" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="188" y="378" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">E1 stack</text>
+  <line x1="188" y1="350" x2="188" y2="358" stroke="#5F5E5A" stroke-width="1.2"/>
+  <path d="M188 390 L188 416" fill="none" stroke="#5F5E5A" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#a)"/>
+  <text x="196" y="412" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">to WB1 and the</text>
+  <text x="196" y="424" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">rejection loop</text>
+
+  <path d="M262 600 L125 600 L125 354" fill="none" stroke="#7A8DA6" stroke-width="1.4" marker-end="url(#ab)"/>
+  <path d="M125 286 L125 128 L258 128" fill="none" stroke="#7A8DA6" stroke-width="1.4" marker-end="url(#ab)"/>
+
+  <!-- ============ humidity tract, outside the volume ============ -->
+  <rect x="498" y="150" width="240" height="400" rx="4" fill="#FBFBF9" stroke="#C9C6BC"/>
+  <text x="512" y="168" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#7A8DA6">humidity tract — outside the volume</text>
+
+  <rect x="512" y="176" width="212" height="30" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="618" y="195" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">E5 fan</text>
+
+  <rect x="512" y="224" width="212" height="46" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="618" y="242" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">HX2 + E3 subcooler</text>
+  <text x="618" y="257" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#7A8DA6">the only condensing surface (T7)</text>
+
+  <rect x="512" y="288" width="212" height="46" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="618" y="306" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">TB1 thermal break</text>
+  <text x="618" y="321" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">low point · liquid seal (M7)</text>
+
+  <rect x="512" y="352" width="212" height="46" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="618" y="370" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">HX3 + E4 reheat</text>
+  <text x="618" y="385" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">last element of the tract</text>
+
+  <path d="M474 191 L508 191" fill="none" stroke="#7A8DA6" stroke-width="1.4" marker-end="url(#ab)"/>
+  <path d="M618 206 L618 220" fill="none" stroke="#7A8DA6" stroke-width="1.4" marker-end="url(#ab)"/>
+  <path d="M618 270 L618 284" fill="none" stroke="#7A8DA6" stroke-width="1.4" marker-end="url(#ab)"/>
+  <path d="M618 334 L618 348" fill="none" stroke="#7A8DA6" stroke-width="1.4" marker-end="url(#ab)"/>
+  <path d="M618 398 L618 440 L470 440" fill="none" stroke="#7A8DA6" stroke-width="1.4" marker-end="url(#ab)"/>
+  <text x="512" y="460" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#7A8DA6">intake, separated in height from</text>
+  <text x="512" y="472" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#7A8DA6">the main tract's (M4) · return low</text>
+
+  <path d="M724 311 L742 311 L742 566" fill="none" stroke="#5F5E5A" stroke-width="1.4" marker-end="url(#a)"/>
+  <text x="736" y="584" text-anchor="end" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">condensate drain, cleared of the volume (T7)</text>
+
+  <!-- ============ RT2 on a lead ============ -->
+  <circle cx="330" cy="540" r="6" fill="#FDF4F0" stroke="#D85A30"/>
+  <path d="M330 546 L330 648" fill="none" stroke="#D85A30" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="340" y="652" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#D85A30">RT2 on a lead to the node — no I²C crosses it (M5)</text>
+
+  <!-- ============ footnote ============ -->
+  <text x="24" y="678" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">the four marked wall crossings are sealed and thermally broken, and carry no metal through the insulation (M3) · the luminaire is outside the volume in this variant (O-114)</text>
+</svg>
