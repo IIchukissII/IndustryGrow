@@ -855,17 +855,30 @@ async def set_sp_stock(
 # ============================ calibration ==================================
 
 
-def _is_store_file(object_key: str) -> bool:
-    """True when the key names a file directly in the repository's `store/`.
+def _document_roots() -> tuple[Path, ...]:
+    """The repository directories whose files carry object keys.
 
-    Resolved against the directory rather than joined onto it, so a key holding
-    `..` or a separator cannot walk out of the mirror. Directly in it, not below:
-    the warehouse keyspace is flat (ADR-0017 d15), and the nested KiCad footprint
+    Two, and they are peers: `store/` holds released artifacts, `spec/` holds the
+    specifications (ADR-0017 d20). The keyspace is flat and shared across both —
+    a key names one document, and which directory its file sits in is not part of
+    its identity (d15).
+    """
+    return (Path(settings.store_dir).resolve(), Path(settings.spec_dir).resolve())
+
+
+def _is_store_file(object_key: str) -> bool:
+    """True when the key names a file directly in one of those directories.
+
+    Resolved against each root rather than joined onto it, so a key holding `..`
+    or a separator cannot walk out of the mirror. Directly in it, not below: the
+    warehouse keyspace is flat (ADR-0017 d15), and the nested KiCad footprint
     directories are not documents anyone reads through the console.
     """
-    root = Path(settings.store_dir).resolve()
-    candidate = (root / object_key).resolve()
-    return candidate.parent == root and candidate.is_file()
+    for root in _document_roots():
+        candidate = (root / object_key).resolve()
+        if candidate.parent == root and candidate.is_file():
+            return True
+    return False
 
 
 def _is_listable(path: Path) -> bool:
@@ -946,6 +959,8 @@ async def _read_through(warehouse: Warehouse, object_key: str) -> StreamingRespo
 async def list_store_documents(_role: str = Depends(require_read)):
     """The type-layer documents the repository owns and `store_sync` mirrors.
 
+    Both roots: `store/` and `spec/`.
+
     Read-only, storing nothing — the same shape ADR-0023 established for
     `REGISTRY.md` and the reasoning decision 1's 2026-07-26 clarification extends
     to these. The ERP owns none of this: the listing is taken from the mounted
@@ -954,10 +969,16 @@ async def list_store_documents(_role: str = Depends(require_read)):
     """
 
     def _scan() -> list[schemas.StoreDocOut]:
-        return sorted(
-            (_store_doc(p) for p in Path(settings.store_dir).iterdir() if _is_listable(p)),
-            key=lambda d: d.object_key,
-        )
+        # One list across both roots, keyed by name: the keyspace is flat, so a
+        # reader sees the documents, not the directories they happen to sit in.
+        seen: dict[str, schemas.StoreDocOut] = {}
+        for root in _document_roots():
+            if not root.is_dir():
+                continue
+            for p in root.iterdir():
+                if _is_listable(p) and p.name not in seen:
+                    seen[p.name] = _store_doc(p)
+        return sorted(seen.values(), key=lambda d: d.object_key)
 
     # Off-thread: this handler serves requests, so a directory walk on a slow or
     # network-mounted store/ would stall the loop for everyone else.

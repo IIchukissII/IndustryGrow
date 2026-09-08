@@ -323,6 +323,35 @@ def test_a_key_cannot_walk_out_of_the_store(client, warehouse):
         assert r.status_code in (404, 307), escape
 
 
+def test_a_specification_is_a_store_document(client, warehouse):
+    # spec/ is the second document directory (ADR-0017 d20). A specification
+    # carries an object key like everything else, so it lists, resolves and reads
+    # through the same routes — the keyspace is flat and the directory a file
+    # sits in is not part of its identity (d15).
+    docs = {d["object_key"]: d for d in client.get("/api/v1/store-documents", headers=AUTH).json()}
+    spec = docs.get("E0006-R-specification.md")
+    assert spec is not None, "spec/ is not being listed"
+    assert spec["root"] == "E0006"
+    assert spec["layer"] == "R"
+    assert spec["version"] is None, "a specification tracks the class, not a build"
+
+    warehouse.objects["E0006-R-specification.md"] = b"# M05-SAFETY\n"
+    warehouse.content_types["E0006-R-specification.md"] = "text/markdown"
+    r = client.get("/api/v1/store-documents/E0006-R-specification.md/content", headers=AUTH)
+    assert r.status_code == 200
+    assert r.text == "# M05-SAFETY\n"
+
+
+def test_a_repository_document_does_not_print_as_operator_private(client, warehouse):
+    # The mark is a claim about circulation. store/ and spec/ are public
+    # (ADR-0017 d15), and stamping them operator-private would empty the mark of
+    # meaning on the instance records where it is true.
+    warehouse.objects["SP0004-M-gateway-bringup.md"] = b"# Gateway bring-up\n"
+    r = client.get("/api/v1/store-documents/SP0004-M-gateway-bringup.md/pdf", headers=AUTH)
+    assert r.status_code == 200
+    assert r.content.startswith(b"%PDF")
+
+
 def test_a_store_file_not_yet_mirrored_says_so(client, warehouse):
     # In store/ but never synced. The fix is store_sync, and saying which command
     # beats a bare 404 that reads as "this document does not exist".
