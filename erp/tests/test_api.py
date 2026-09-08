@@ -370,15 +370,25 @@ def test_a_document_with_a_figure_still_lays_out(client, warehouse):
     """
     from app.services import reports
 
-    svg = b'<svg xmlns="http://www.w3.org/2000/svg" width="80" height="40"></svg>'
-    pdf = reports.markdown_document(
+    svg = (
+        b'<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300">'
+        b'<rect width="400" height="300" fill="#67e8f9"/></svg>'
+    )
+    text = "# A01\n\n![principle](./figures/a01-climate-principle.svg)\n"
+    with_figure = reports.markdown_document(
         object_key="E0011-R-specification.md",
-        text="# A01\n\n![principle](./figures/a01-climate-principle.svg)\n",
+        text=text,
         fetch_figure=lambda key: (svg, "image/svg+xml"),
     )
-    assert pdf.startswith(b"%PDF")
+    without = reports.markdown_document(object_key="E0011-R-specification.md", text=text)
+
+    assert with_figure.startswith(b"%PDF")
     # The fallback writes its reason onto the page; a laid-out document does not.
-    assert b"layout engine refused" not in pdf
+    assert b"layout engine refused" not in with_figure
+    # And the figure is actually DRAWN. Asserting only that nothing raised is what
+    # let a broken fetcher through: every fetch was failing, WeasyPrint dropped the
+    # image and rendered the alt text, and the document looked fine.
+    assert len(with_figure) > len(without) + 500
 
 
 def test_a_figure_is_inlined_into_the_pdf_not_fetched_by_the_renderer():

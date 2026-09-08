@@ -34,6 +34,7 @@ from pathlib import Path
 
 import markdown as md_lib
 import weasyprint
+from weasyprint.urls import URLFetcher
 
 from app.config import settings
 
@@ -86,27 +87,21 @@ def _mark_html() -> str:
     return f'<div class="mark"><img src="data:image/png;base64,{data}" alt=""></div>'
 
 
-def _no_remote_resources(url: str, timeout: int = 10, ssl_context: object = None) -> dict:
-    """The only resources a document may load are the ones inlined into it.
-
-    The markdown comes out of the warehouse, and an image or stylesheet reference
-    in it would otherwise be fetched by the ERP — from the network, or from the
-    container's filesystem via `file:`. Refusing the fetch drops that one element
-    and renders the rest; WeasyPrint logs it and carries on.
-    """
-    if url.startswith("data:"):
-        return weasyprint.default_url_fetcher(url, timeout, ssl_context)
-    raise ValueError(f"refused external resource: {url}")
-
-
-# WeasyPrint 70 reads this off the fetcher when it renders an SVG, and a plain
-# function does not have it: without the attribute an inlined `data:image/svg+xml`
-# figure raises `'function' object has no attribute '_fail_on_errors'`, the whole
-# document falls back to plain text, and a specification prints as a wall of
-# source. False keeps this fetcher's own behaviour — refuse, log, carry on — which
-# is what the docstring above promises. Tested end to end below the API, so a
-# WeasyPrint upgrade that renames it fails a test rather than a print job.
-_no_remote_resources._fail_on_errors = False
+# The only resources a document may load are the ones inlined into it.
+#
+# The markdown comes out of the warehouse, and an image or stylesheet reference in
+# it would otherwise be fetched by the ERP — from the network, or from the
+# container's filesystem via `file:`. `data:` is the one protocol left open, which
+# is how a figure reaches the renderer (`inline_figures`). Anything else raises
+# inside the fetcher, WeasyPrint drops that one element, logs it, and renders the
+# rest.
+#
+# WeasyPrint's own fetcher, not a function of ours: from 70 the fetcher is called
+# with one argument and must return a `URLFetcherResponse`, so the plain function
+# this replaced failed EVERY fetch — silently, because a failed fetch is a dropped
+# element rather than an error. The allow-list is the whole restriction, and it is
+# the supported way to express it.
+_URL_FETCHER = URLFetcher(allowed_protocols={"data"})
 
 
 # The page frame. A4, a masthead on the first page and a one-line running header
@@ -318,7 +313,7 @@ def _document(
 {body}
 </body></html>"""
     provenance = f"@page {{ @bottom-left {{ content: {_css_string(footer)}; }} }}"
-    rendered = weasyprint.HTML(string=doc, url_fetcher=_no_remote_resources)
+    rendered = weasyprint.HTML(string=doc, url_fetcher=_URL_FETCHER)
     return rendered.write_pdf(
         stylesheets=[weasyprint.CSS(string=_CSS), weasyprint.CSS(string=provenance)]
     )
@@ -506,7 +501,7 @@ def figure_keys(markdown_text: str) -> list[str]:
 def inline_figures(html: str, fetch: Callable[[str], tuple[bytes, str] | None]) -> str:
     """Turn a document's own figure references into inlined data URIs.
 
-    The renderer refuses every external resource (`_no_remote_resources`), so a
+    The renderer allows only `data:` (`_URL_FETCHER`), so a
     figure has to arrive already inside the document or not at all. `fetch` is the
     caller's key-validated reader over the object store — the same guard the read-
     through route applies — so this resolves the reference without giving the
