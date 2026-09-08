@@ -10,7 +10,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **E-number:** `E0008` · module-ID strap `0b110`
 - **Governing ADRs:** ADR-0014 (rev 3), ADR-0002 (rev 3), ADR-0003, ADR-0016, ADR-0017 (rev 2), ADR-0018
 - **Companions:** `M01-CLIMATE-specification.md`, `M02-LIGHT-specification.md`, `M04-PLANT-specification.md`, `M05-SAFETY-specification.md`, `M07-AMBIENT-specification.md`
-- **History:** Split out of `M01-M06-air-nodes-specification.md` (2026-08-03) on 2026-08-04; M01's half became `M01-CLIMATE-specification.md`
+- **Supersedes:** the M06 sections of `M01-M06-air-nodes-specification.md` (2026-08-03), split into this document
 
 Rationale for the decisions applied here is in the governing ADRs and is not restated.
 Values marked `verify` are not confirmed against the manufacturer datasheet.

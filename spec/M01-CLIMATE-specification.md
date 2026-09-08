@@ -29,7 +29,7 @@ Not specified here: carrier design (`store/E0001-000003-D-pinmap.md`), cultivati
 | Module class | M01-CLIMATE |
 | Module-ID strap | `0b001` |
 | E-number | `E0002` — fully-populated Phase-1 assembly |
-| Design version | `E0002-000001` — schematic captured 2026-08-05 |
+| Design version | `E0002-000001` |
 | Bare design | One layout; each standard populated configuration takes its own assembly E-number (ADR-0017 rev 2 d4) |
 | Carrier | `E0001`, sensor-module header pair 2×12 + 2×8 (ADR-0014 d5) |
 
@@ -299,7 +299,7 @@ residue is O-48.
 | | Value |
 |---|---|
 | Node draw on `+12 V` | **311 mW** — 25.68 mA at 12.121 V. Quiescent 263 mW; the sensors add 48 mW. V3 |
-| Reference figure | M05 node, 264 mW on the same bus in the same run (0.25 W, 254 mW at 12.12 V, 2026-08-02, measured otherwise). M01 exceeds it by a factor of 1.18 |
+| Reference figure | M05 node, 264 mW on the same bus in the same run (`M05-SAFETY-specification.md` §6.1). M01 exceeds it by a factor of 1.18 |
 | Burst reflected to `+12 V` | **+28.5 mA** held for ≈ 565 ms of each 5 s U3 cycle, **+34.3 mA at its peak**, **+4.3 mA averaged over the cycle**. The ≈ 60–70 mA that 205 mA × 3.3 V / 12 V ÷ η at η = 0.85 predicts does not reach the bus: that arithmetic carries U3's peak through to the input, and neither the 2.8 V rail's decoupling nor the carrier converter passes it. V3 |
 
 ### 7.2 Device currents
