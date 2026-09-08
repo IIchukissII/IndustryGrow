@@ -3,17 +3,19 @@ SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
-# ADR-0014 (rev 6): Sensor node taxonomy and module decomposition
+# ADR-0014 (rev 7): Sensor node taxonomy and module decomposition
 
-- **ID:** ADR-0014 (rev 6)
+- **ID:** ADR-0014 (rev 7)
 - **Status:** Accepted
-- **Date:** 2026-05-16 (rev 1: 2026-06-14; rev 2: 2026-08-03; rev 3: 2026-08-04; rev 4: 2026-08-07; rev 5: 2026-08-13; rev 6: 2026-08-23)
+- **Date:** 2026-05-16 (rev 1: 2026-06-14; rev 2: 2026-08-03; rev 3: 2026-08-04; rev 4: 2026-08-07; rev 5: 2026-08-13; rev 6: 2026-08-23; rev 7: 2026-09-08)
 - **Project:** IndustryGrow
 - **Parent:** ADR-0001
-- **Companions:** ADR-0002 (rev 3), ADR-0003, ADR-0005 (rev 1), ADR-0016, ADR-0017 (rev 2), ADR-0019
-- **Supersedes:** ADR-0014 (initial draft, 2026-05-16), ADR-0014 (rev 1, 2026-06-14), ADR-0014 (rev 2, 2026-08-03), ADR-0014 (rev 3, 2026-08-04), ADR-0014 (rev 4, 2026-08-07), ADR-0014 (rev 5, 2026-08-13)
+- **Companions:** ADR-0002 (rev 3), ADR-0003, ADR-0005 (rev 1), ADR-0016, ADR-0017 (rev 2), ADR-0019, ADR-0031 (rev 1)
+- **Supersedes:** ADR-0014 (initial draft, 2026-05-16), ADR-0014 (rev 1, 2026-06-14), ADR-0014 (rev 2, 2026-08-03), ADR-0014 (rev 3, 2026-08-04), ADR-0014 (rev 4, 2026-08-07), ADR-0014 (rev 5, 2026-08-13), ADR-0014 (rev 6, 2026-08-23)
 
 ## Revision history
+
+- **rev 7 (2026-09-08)** — Bounded to **decision 4's M05-SAFETY entry only**. Assigns the **condensate accumulation rate** to M05 as a counted pulse input on the ADR-0018 decision 5 pattern, closing `O-109`'s assignment question. The quantity is a count in the apparatus subspace; the transpiration derived from it is a gateway soft sensor under ADR-0016 decision 20, published by no node. Records alternatives Y, Z and AA. No other decision changes; no other module class is affected; `E0006-000001` carries no such input and fitting one is a board revision.
 
 - **rev 6 (2026-08-23)** — Bounded to **decision 4's M02-LIGHT entry only**. The **AS7331** becomes the ams OSRAM **TSL2585**, and a TI **TCA9543A** two-channel I²C switch joins the entry. The AS7331 is not procurable: ams lists both ordering codes as pre-production, Digi-Key lists it Active at zero stock behind a 16-week factory lead, Farnell lists it as no longer manufactured, and all seven JLCPCB listings hold zero stock. The TSL2585's UV-A channel spans 315–400 nm and is characterised at 365 nm. Its address is fixed at `0x39` — the AS7343's — so the two parts take separate switch channels. **M02 loses UV-B and UV-C**, and the UV-A quantity changes from calibrated irradiance to a typical-value responsivity. Records alternatives T to X. No other decision changes; the module class, its strap `0b010`, its E-number `E0003` and the header contract are untouched, and no other module class is affected.
 
@@ -135,6 +137,7 @@ Zone count is not an architectural decision — it is a deployment-time choice m
      - *Refined by ADR-0018 decision 10:* M05 is **sense-only**. The TMP117 sits on the board and provides the *reported* cabinet/enclosure temperature only — it is not a cutoff and not the trip element. The MCU/bus-independent over-temperature **trip** (analog thermistor/PT1000 + comparator → relay-enable, sensor on a lead in the grow volume) is **not on M05** — it lives at the heating actuator, co-located with the element it cuts. M05 hosts no trip, no comparator, and no relay-enable.
    - Reed switch on cabinet door — GPIO, on a wire from the door to the module. *(Refined by ADR-0018: report/alert only — no automatic cutoff.)*
    - Leak-detection strip(s) — ADC channel, on a wire from the strip location to the module. *(Refined by ADR-0018: report/alert only; response is software-mediated — the gateway commands the pump off over Cyphal. Not a hardware interlock.)*
+   - **Condensate accumulation rate** *(rev 7)* — a counter at the climate apparatus's condensate collector, on a lead, read by a timer in external-counter mode as the S0 meter input already is (ADR-0018 decision 5). Volume per count is a property of the collector and is a commissioning constant. The quantity is apparatus-subspace (ADR-0016): it is measured and bounded, carries no setpoint, and the actuator that produces the condensate cannot publish it (ADR-0031 decision 8). What M05 publishes is the count. The transpiration rate it implies is a gateway soft sensor (ADR-0016 decision 20), never a node quantity, and a dry collector does not mean zero transpiration. `E0006-000001` carries no second pulse input; fitting one is a board revision (`O-116`).
    - Apartment scale: one instance with the on-board TMP117 (cabinet air), a reed wire to the door, and a leak wire under the reservoir; the grow-volume over-temperature trip sensor is on a lead but belongs to the heating actuator, not M05 (ADR-0018 decision 10). Larger deployments: one instance per safety-critical zone or load cluster.
 
    **M06-VENTILATION — air transport sensing.** *(Introduced in rev 2. Not yet laid out or fabricated.)*
@@ -292,6 +295,12 @@ An order placed against a listed stock position was refunded rather than fulfill
 **W. Move the AS7343 off `0x39`.** *(rev 6)* *Rejected:* the AS7343's address is fixed rather than strapped, and it is the only spectral part satisfying ADR-0003 decision 11 that holds distributor stock.
 
 **X. Isolate one device with the PCA9306 enable input instead of adding a switch.** *(rev 6)* *Rejected:* the PCA9306 is a transparent pass-FET pair. Disabling it removes the AS7343 from the bus but leaves the TSL2585 answering `0x39` whenever it is enabled, so one translator cannot separate two devices sharing one address in both directions. A second translator with its own enable spends header GPIO to do what one addressable switch does over the bus already present.
+
+**Y. Assign the condensate rate to M04-PLANT as a transpiration measurement.** *(rev 7) Rejected:* the transducer sits in the climate apparatus's drain, not at the canopy, and the quantity it produces is a property of the apparatus (ADR-0016 apparatus subspace). Transpiration follows from it only through a conversion with a loss term the collector does not observe, which is a soft sensor and not a module quantity.
+
+**Z. Publish the condensate rate from A01-CLIMATE, which owns the collector.** *(rev 7) Rejected:* ADR-0031 decision 8 — an actuator publishes no process variable, least of all one produced by the element it would be reporting on.
+
+**AA. A level sensor in the collection vessel instead of a counter.** *(rev 7) Rejected:* a level gives accumulated volume, not rate, and it stops being observable as soon as the vessel is emptied or overflows. In a small vessel it is dominated by meniscus and by how level the cabinet stands. A count is monotonic, survives a reset as a stored total, and shares the timer path M05 already has for the S0 meter.
 
 ## Consequences
 

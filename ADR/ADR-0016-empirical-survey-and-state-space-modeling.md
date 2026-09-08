@@ -15,6 +15,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 ## Revision history
 
+- **Amendments** — decision 20 (2026-09-08): condensate is an apparatus-subspace measurement, the transpiration derived from it is a gateway soft sensor under decision 5, and the residual against modelled transpiration is a one-sided envelope-moisture diagnostic. Bounds the subspace partition; reverses nothing.
 - **rev 1 (2026-06-14)** — Folded a directional note into the biological-subspace partition: leaf VPD depends on leaf temperature, reachable by two independent paths (radiometric per ADR-0014, and energy-balance estimation within this ADR's state-estimation mandate), whose divergence is diagnostic of transpiration state — marked "(direction, not yet specified)". Paired with ADR-0014 rev 1, which scopes the radiometric path as deferred. No decision changed.
 
 ## Context and problem
@@ -124,6 +125,16 @@ Every IndustryGrow deployment proceeds through three operational phases. Phases 
 18. **No specification of which state-space identification algorithm to use.** Subspace identification (N4SID, MOESP), prediction-error methods, grey-box methods — all are valid and the choice depends on data characteristics. This is an implementation concern, not an architectural one.
 
 19. **No on-gateway model identification in Phase 1.** Identification is off-line. The gateway hardware (Pi 3B+) is sized for inference only. On-gateway online identification may become relevant in future commercial gateway tiers but is out of scope here.
+
+## Amendment
+
+20. **Condensate is measured as an apparatus quantity; the transpiration derived from it is a soft sensor, and its residual against the modelled transpiration is an envelope-moisture diagnostic.** *(amendment, 2026-09-08)*
+
+    The condensate accumulation rate at the climate apparatus (ADR-0014 rev 7 decision 4) is an apparatus-subspace measurement: a count, with volume per count a commissioning constant of the collector. Transpiration follows by conversion — count → volume → mass rate → latent power at `L` ≈ 2450 kJ/kg — and is published by the gateway as a derived state estimate under decision 5. No node publishes it.
+
+    This bounds the subspace partition of the Decision section rather than moving it: the measurement stays in the apparatus subspace, the estimate is a biological-subspace quantity, and they are separate subjects with separate sources. It gives no setpoint to either.
+
+    The residual between measured condensate and the transpiration the model expects at the known VPD is a moisture-balance diagnostic in the sense of decision 7, and it is one-sided. A surplus of condensate over the modelled transpiration is evidence of moisture entering across the envelope. A dry collector is not evidence of anything: droplets carried past the humidity tract's thermal break re-evaporate downstream and read as zero.
 
 ## Alternatives considered
 

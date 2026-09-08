@@ -6,9 +6,9 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # M05-SAFETY — module specification
 
 - **Status:** As-built. `E0006-000001` fabricated and bench-verified 2026-08-02
-- **Date:** 2026-08-24 · measurements 2026-08-02
+- **Date:** 2026-09-08 · measurements 2026-08-02
 - **E-number:** `E0006` · module-ID strap `0b101`
-- **Governing ADRs:** ADR-0018, ADR-0014 (rev 3), ADR-0002 (rev 3), ADR-0017 (rev 2)
+- **Governing ADRs:** ADR-0018, ADR-0014 (rev 7), ADR-0002 (rev 3), ADR-0017 (rev 2)
 - **Companions:** `M01-CLIMATE-specification.md`, `M02-LIGHT-specification.md`, `M04-PLANT-specification.md`, `M06-VENTILATION-specification.md`, `M07-AMBIENT-specification.md`
 
 Rationale for the decisions applied here is in the governing ADRs and is not restated.
@@ -243,6 +243,7 @@ O-6, O-8, O-10, O-11, O-42 are M06's; O-12 to O-24 are M07's; O-52 to O-62 are M
 | ~~O-30~~ | ~~Per-device power figures for U1 and U2 unconfirmed against datasheets~~ — closed 2026-08-24 by §6.1 from the device datasheets: 330 µA and 16 µA typ | — |
 | O-74 | `LEAK_WET_THRESHOLD` cannot be fixed by the stimulus available. Measured 2026-08-24: dry 4068…4095 (spread 0.7 %), wet paper 2101…2370 on one application and 3589…3630 on another. The threshold is now 3219, which catches the first and standing water but not the second; raising it past the second leaves 9 % to the dry minimum, and dry is characterized only in bench air, not at the 90 %RH the board lives in. Needs real water and the reservoir lead. An absolute count may be the wrong form — dry is stable where wet is not, so a threshold relative to a per-installation dry baseline would be more robust | Leak-channel accuracy, threshold release |
 | O-31 | One distribution board meters ≈ 39 nodes and conducts ≈ 48 against ADR-0014 d1's "50+ instances"; whether ADR-0018 d2's "one central board per machine" means per cabinet or per deployment is unstated | Scaling, ADR-0018 d2 reading |
+| O-116 | ADR-0014 rev 7 d4 assigns the condensate accumulation rate to this class as a second counted pulse input. `E0006-000001` has one S0 input, and M3 allocates all five cable entries; a second lead and its timer channel are unallocated. Volume per count is a commissioning constant of the collector, which is A01's mechanical design (`O-109`) | Condensate quantity, next `E0006` revision |
 
 Recorded elsewhere and not duplicated: the `STRAP_0`/`STRAP_1` schematic naming defect, carried
 by pin map note 1 for correction at the next `E0006` revision.

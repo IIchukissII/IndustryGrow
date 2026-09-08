@@ -124,7 +124,8 @@ Full scale of `E1` and `E3` corresponds to the string current limit of `D2`, not
 | Canopy PPFD and spectrum | M02-LIGHT |
 | Cabinet `+12 V` bus current, door, leak | M05-SAFETY |
 | Actuator energy consumption | DIN kWh meter over S0, read by M05 (ADR-0018 d5) |
-| Condensate accumulation rate, and the transpiration derived from it | Not this module — `O-109` |
+| Condensate accumulation rate | M05-SAFETY, counted pulse input (ADR-0014 rev 7 d4) |
+| Transpiration rate derived from condensate | Gateway soft sensor (ADR-0016 d20) |
 | Luminaire drive | A02-LIGHT — not specified (ADR-0031 rev 1 d2) |
 
 ### 3.4 Partial populations
@@ -328,7 +329,7 @@ Module-ID straps are not used for identification by this module (ADR-0031 d10). 
 - `O-106` — Outdoor deployment variant not specified.
 - `O-107` — Wall penetrations, thermal breaks and the condensate drain are mechanical design. Blocks `M3`, `M6`, `T7`.
 - `O-108` — The dry edge of the night VPD band is not reachable: 1.2 kPa at 14 °C requires a coil at −6 °C, and `D11`'s floor yields 0.94 kPa. Resolved by the profile — narrow the night band, add a defrost cycle, or raise the night setpoint — not by this module.
-- `O-109` — Condensate accumulation rate is a process variable and is barred from this module by ADR-0031 d8. Proposed to M05 as a pulse input on the ADR-0018 d5 S0 pattern. Three consequences are unrecorded: ADR-0016 places condensation in the apparatus subspace, and reading it as transpiration crosses that partition; the conversion — count → volume → g/h → latent W at L ≈ 2450 kJ/kg — is a soft sensor under ADR-0016 d5, not a direct measurement; and measured condensate against calculated transpiration at a known VPD is an envelope-moisture-leak diagnostic. A dry collector is ambiguous — droplets carried past `TB1` re-evaporate on HX3 and read as zero transpiration. Blocks the `O-111` measurement and the ADR-0014 d4 assignment of the quantity.
+- `O-109` — The condensate collector, its count transducer and its lead are mechanical design of this module's humidity tract; the counter itself is M05's (ADR-0014 rev 7 d4) and `E0006-000001` has no free pulse input (`O-116`). Volume per count is a commissioning constant of the collector and is unset. Blocks the `O-111` measurement.
 - `O-110` — CO₂ branch unspecified: source, regulator, valve, minimum dose against a 0.43 m³ volume, and CO₂ accumulation in an occupied room. Blocks `D14` and the §3.4 CO₂ population.
 - `O-111` — Transpiration is assumed at 140 ml/day and is unmeasured; it sets the humidity-tract mass flow. Closed by the first `O-109` measurement.
 - `O-112` — HX1 `Rth` 0.17 K/W is a catalogue figure that excludes spreading from two point-source modules on the base. It sets `D10` directly. Bench measurement required: a resistor of known power, thermocouples on the base and in the stream.
