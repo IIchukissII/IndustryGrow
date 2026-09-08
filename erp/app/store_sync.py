@@ -86,7 +86,9 @@ async def sync(store_dir: str | None = None, prune: bool = False) -> int:
 
     tail = f", pruned {pruned} stale" if prune else ""
     where = " + ".join(str(r) for r in roots)
-    print(f"Synced {len(local_keys)} objects from {where} → bucket {settings.warehouse_bucket}{tail}")
+    print(
+        f"Synced {len(local_keys)} objects from {where} → bucket {settings.warehouse_bucket}{tail}"
+    )
     return len(local_keys)
 
 
