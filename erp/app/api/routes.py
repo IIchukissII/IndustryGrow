@@ -993,7 +993,9 @@ async def list_store_documents(_role: str = Depends(require_read)):
 
 
 @router.get(
-    "/store-documents/{object_key}/url", response_model=schemas.DocumentUrlOut, tags=["documents"]
+    "/store-documents/{object_key:path}/url",
+    response_model=schemas.DocumentUrlOut,
+    tags=["documents"],
 )
 async def store_document_url(
     object_key: str,
@@ -1001,6 +1003,11 @@ async def store_document_url(
     _role: str = Depends(require_read),
 ):
     """A read grant for one type-layer document (decision 1, 2026-07-26 clarification).
+
+    The key is a path parameter because it can carry one: a document reaches its
+    own figures at , and a single-segment parameter would not match the
+    encoded separator. What may be read is decided by the guard below, never by
+    the shape of the route.
 
     Guarded twice, and both guards matter. The key must name a file in the
     repository's `store/` directory — so this reads the *mirror*, not the bucket,
@@ -1030,7 +1037,7 @@ async def store_document_url(
     )
 
 
-@router.get("/store-documents/{object_key}/content", tags=["documents"])
+@router.get("/store-documents/{object_key:path}/content", tags=["documents"])
 async def store_document_content(
     object_key: str,
     warehouse: Warehouse = Depends(get_warehouse),
@@ -1234,7 +1241,7 @@ async def _markdown_pdf(warehouse: Warehouse, object_key: str, origin: str) -> R
     )
 
 
-@router.get("/store-documents/{object_key}/pdf", tags=["documents"])
+@router.get("/store-documents/{object_key:path}/pdf", tags=["documents"])
 async def store_document_pdf(
     object_key: str,
     warehouse: Warehouse = Depends(get_warehouse),
