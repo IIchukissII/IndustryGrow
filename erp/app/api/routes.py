@@ -1018,6 +1018,12 @@ async def store_document_content(
             status.HTTP_404_NOT_FOUND,
             f"{object_key} is not a document in the repository's store/",
         )
+    if not await warehouse.exists(object_key):
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            f"{object_key} is in store/ but not in the warehouse — run "
+            "`python -m app.store_sync` to mirror it",
+        )
     return await _read_through(warehouse, object_key)
 
 
@@ -1198,6 +1204,12 @@ async def store_document_pdf(
     if not await asyncio.to_thread(_is_store_file, object_key):
         raise HTTPException(
             status.HTTP_404_NOT_FOUND, f"{object_key} is not a document in the repository's store/"
+        )
+    if not await warehouse.exists(object_key):
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            f"{object_key} is in store/ but not in the warehouse — run "
+            "`python -m app.store_sync` to mirror it",
         )
     return await _markdown_pdf(warehouse, object_key, reports.STORE_ORIGIN)
 

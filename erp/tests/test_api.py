@@ -326,9 +326,15 @@ def test_a_key_cannot_walk_out_of_the_store(client, warehouse):
 def test_a_store_file_not_yet_mirrored_says_so(client, warehouse):
     # In store/ but never synced. The fix is store_sync, and saying which command
     # beats a bare 404 that reads as "this document does not exist".
-    r = client.get("/api/v1/store-documents/SP0004-M-atecc-provisioning.md/url", headers=AUTH)
-    assert r.status_code == 404
-    assert "store_sync" in r.json()["detail"]
+    #
+    # All three routes answer alike. Reaching the warehouse first and reporting
+    # the absence as a 502 names the wrong party — the bucket is fine, the object
+    # was never put in it — and buries the one command that fixes it.
+    key = "SP0004-M-atecc-provisioning.md"
+    for route in ("url", "content", "pdf"):
+        r = client.get(f"/api/v1/store-documents/{key}/{route}", headers=AUTH)
+        assert r.status_code == 404, route
+        assert "store_sync" in r.json()["detail"], route
 
 
 def test_a_document_can_be_read_through(client, warehouse):
