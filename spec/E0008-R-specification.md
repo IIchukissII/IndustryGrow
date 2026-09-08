@@ -9,7 +9,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Date:** 2026-08-04
 - **E-number:** `E0008` · module-ID strap `0b110`
 - **Governing ADRs:** ADR-0014 (rev 3), ADR-0002 (rev 3), ADR-0003, ADR-0016, ADR-0017 (rev 2), ADR-0018
-- **Companions:** `M01-CLIMATE-specification.md`, `M02-LIGHT-specification.md`, `M04-PLANT-specification.md`, `M05-SAFETY-specification.md`, `M07-AMBIENT-specification.md`
+- **Companions:** `E0002-R-specification.md`, `E0003-R-specification.md`, `E0005-R-specification.md`, `E0006-R-specification.md`, `E0009-R-specification.md`
 - **Supersedes:** the M06 sections of `M01-M06-air-nodes-specification.md` (2026-08-03), split into this document
 
 Rationale for the decisions applied here is in the governing ADRs and is not restated.
@@ -142,7 +142,7 @@ recovered from `Δp` and `Q`.
 
 No burst load of the SCD41 class; no bulk-capacitor requirement identified, pending `verify` on
 U2 and U3. Node draw on `+12 V` not measured; the reference figure is M05's 0.25 W per node
-(`M05-SAFETY-specification.md`).
+(`E0006-R-specification.md`).
 
 ## 8. Mechanical and enclosure
 

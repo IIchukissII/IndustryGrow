@@ -191,6 +191,6 @@ stops travelling with the module.
 - ADR-0027: Node identity model — decisions 3, 4, 5, 6 and 7, and the deferred items this ADR
   realizes.
 - `store/E0002-000001-M-calibration-protocol.md`: the M01 U3 offset procedure and its records.
-- `spec/M01-CLIMATE-specification.md`: §10 and O-45.
-- `spec/M04-PLANT-specification.md`: the flat-field trim of decision 10, its store, and its open
+- `spec/E0002-R-specification.md`: §10 and O-45.
+- `spec/E0005-R-specification.md`: the flat-field trim of decision 10, its store, and its open
   determination protocol (O-99).

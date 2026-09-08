@@ -26,7 +26,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 | Firmware | The bootloader and one application image; the application holds every personality and the module-ID strap selects M02 at runtime | ADR-0017 d16, ADR-0029 d1 |
 | Diffuser | Kimoto OptSaver L-57 over U4's aperture, fitted or not — **record which** | spec §9 M1, M2 |
 | Optical stimuli | Darkness, a broadband lamp, a red LED (630–660 nm), a blue LED (450–470 nm), a mains-driven lamp and a 365 nm UV-A source | §6 |
-| Addresses | `spec/M02-LIGHT-specification.md` §4, §5.1. `E0003` has no pin map of its own | — |
+| Addresses | `spec/E0003-R-specification.md` §4, §5.1. `E0003` has no pin map of its own | — |
 
 **The released `E0001-000001-F-*` artifacts carry the M02 personality and are UNSIGNED.** They
 flash over SWD and **no node will accept them over the bus** — that asymmetry is deliberate
@@ -157,7 +157,7 @@ otherwise a mystery.
 
 ## 6. Functional run against optical stimuli
 
-Four published subjects at 1 Hz. Expected ranges are in `spec/M02-LIGHT-specification.md` §3; a
+Four published subjects at 1 Hz. Expected ranges are in `spec/E0003-R-specification.md` §3; a
 reading is a pass when it falls in the expected range for the stimulus applied.
 
 | # | Subject | ID | Stimulus | Pass criterion | Result |
@@ -228,7 +228,7 @@ Carry these into the instance `-QP` rather than re-deriving them. None blocks a 
 
 Verification items **V6**, **V7**, **V11**, **V12** and the second half of **V5** are discharged
 by executing this protocol; **V1**, **V2**, **V3**, **V4**, **V8**, **V9** and **V10** are not.
-See `spec/M02-LIGHT-specification.md` §11.
+See `spec/E0003-R-specification.md` §11.
 
 ---
 
@@ -255,7 +255,7 @@ See `spec/M02-LIGHT-specification.md` §11.
 | ADR-0021 d4, d7 | ERP as serial authority; lifecycle-document index over the warehouse |
 | ADR-0014 rev 6 | Sensor-node taxonomy, module-ID strap, sensor complement, presence probing |
 | ADR-0029 d1, d6 | Bootloader and application in separate sectors; image signing |
-| `spec/M02-LIGHT-specification.md` | Module specification — expected ranges (§3), acquisition (§6.1), PPFD (§6.2), optical requirements (§9), firmware (§10), verification (§11) |
+| `spec/E0003-R-specification.md` | Module specification — expected ranges (§3), acquisition (§6.1), PPFD (§6.2), optical requirements (§9), firmware (§10), verification (§11) |
 | `store/E0001-000003-D-pinmap.md` | Carrier side of the header contract, and `STRAP_1` |
 | `store/E0002-000001-M-bringup-protocol.md` | The same protocol for M01 |
 | `store/E0006-000001-M-bringup-protocol.md` | The same protocol for M05 |

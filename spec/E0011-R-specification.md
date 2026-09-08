@@ -9,7 +9,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Date:** 2026-09-08
 - **E-number:** `E0011` · module class ID `0x80`
 - **Governing ADRs:** ADR-0031 (rev 1), ADR-0032, ADR-0014 (rev 4), ADR-0015, ADR-0016, ADR-0017 (rev 2), ADR-0018, ADR-0003
-- **Companions:** `M01-CLIMATE-specification.md`, `M05-SAFETY-specification.md`, `M06-VENTILATION-specification.md`, `M07-AMBIENT-specification.md`
+- **Companions:** `E0002-R-specification.md`, `E0006-R-specification.md`, `E0008-R-specification.md`, `E0009-R-specification.md`
 - **Supersedes:** `spec/A01-THERMAL-specification.md` (2026-09-07)
 
 Rationale for the decisions applied here is in the governing ADRs and is not restated.
@@ -52,7 +52,7 @@ Not specified here:
 | Deployment envelope | Canopy ≤ 1 m², enclosed volume ≤ 3 m³, day cooling load ≤ 150 W (ADR-0032 d1) |
 | Thermal boundary | A cabinet standing inside a building |
 | Ambient | The room enclosing the cabinet, one step out (ADR-0014 d4) |
-| Ambient air temperature | 15…30 °C (`M07-AMBIENT-specification.md`, indoor variant); 22 °C is the design value |
+| Ambient air temperature | 15…30 °C (`E0009-R-specification.md`, indoor variant); 22 °C is the design value |
 | Ambient relative humidity | 25…65 %RH (same) |
 | Rejection sink | The same room air, through the liquid loop |
 | Rejection load into the room | Per `T6`, bounded by `T8` |

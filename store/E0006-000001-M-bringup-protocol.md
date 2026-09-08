@@ -84,7 +84,7 @@ part's address or wiring. Probe U1 first.
 ## 5. Functional run against bench stimuli
 
 Eight published subjects. Expected operating ranges are in
-`spec/M05-SAFETY-specification.md` §3 and §6.1; a reading is a pass when it falls in the
+`spec/E0006-R-specification.md` §3 and §6.1; a reading is a pass when it falls in the
 expected range for the stimulus applied.
 
 | # | Subject | ID | Stimulus | Pass criterion | Result |
@@ -129,7 +129,7 @@ Carry these into the instance `-QP` rather than re-deriving them. None blocks a 
 | Per-device power unmeasured | U1 and U2 individual draw, microamp-class on 3.3 V. Spec O-30 |
 
 Verification items V2, V3 and V4 of the specification are **not** part of this protocol —
-V1 is. See `spec/M05-SAFETY-specification.md` §10 and open items O-25, O-27, O-28.
+V1 is. See `spec/E0006-R-specification.md` §10 and open items O-25, O-27, O-28.
 
 ---
 
@@ -154,6 +154,6 @@ V1 is. See `spec/M05-SAFETY-specification.md` §10 and open items O-25, O-27, O-
 | ADR-0017, *Registry and store location* | The instance layer lives platform-side, off this repo |
 | ADR-0021 d4, d7 | ERP as serial authority; lifecycle-document index over the warehouse |
 | ADR-0018 d10, d11, d83 | Sense-only function class; gated leak excitation; door report/alert only |
-| `spec/M05-SAFETY-specification.md` | Module specification — expected ranges (§3, §6.1), verification (§10) |
+| `spec/E0006-R-specification.md` | Module specification — expected ranges (§3, §6.1), verification (§10) |
 | `store/E0006-000001-D-pinmap.md` | Addresses and conditioning values |
 | `store/SP0004-M-gateway-bringup.md` | The gateway side of the bench setup |

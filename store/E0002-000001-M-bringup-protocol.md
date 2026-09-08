@@ -24,7 +24,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 | Supply | `+12 V` SELV | ADR-0018 |
 | Programmer | ST-Link V3 over SWD | — |
 | Firmware | `store/E0001-000001-F-boot.hex` and `-F-slot-a.hex` — the bootloader and one application image; the application holds every personality and the module-ID strap selects M01 at runtime | ADR-0017 d16, ADR-0029 d1 |
-| Addresses | `spec/M01-CLIMATE-specification.md` §4. All three devices sit at their part-default addresses; `E0002` has no pin map of its own | — |
+| Addresses | `spec/E0002-R-specification.md` §4. All three devices sit at their part-default addresses; `E0002` has no pin map of its own | — |
 
 **Bench gotchas.** Four, each of which has cost time before:
 
@@ -99,7 +99,7 @@ handles both, the BOM does not.
 ## 5. Functional run against bench stimuli
 
 Ten published subjects, nine of them at 1 Hz or the U3 interval; 4117 arrives at the gas-scan
-interval of spec §6.4. Expected operating ranges are in `spec/M01-CLIMATE-specification.md` §3;
+interval of spec §6.4. Expected operating ranges are in `spec/E0002-R-specification.md` §3;
 a reading is a pass when it falls in the expected range for the stimulus applied.
 
 | # | Subject | ID | Stimulus | Pass criterion | Result |
@@ -164,7 +164,7 @@ Carry these into the instance `-QP` rather than re-deriving them. None blocks a 
 | C8 effective capacitance not read from the DC-bias curve | V8, never executed |
 
 Verification items V1 to V8 of the specification are **not** part of this protocol; none of them
-is discharged by executing it. See `spec/M01-CLIMATE-specification.md` §11.
+is discharged by executing it. See `spec/E0002-R-specification.md` §11.
 
 ---
 
@@ -190,7 +190,7 @@ is discharged by executing it. See `spec/M01-CLIMATE-specification.md` §11.
 | ADR-0017, *Registry and store location* | The instance layer lives platform-side, off this repo |
 | ADR-0021 d4, d7 | ERP as serial authority; lifecycle-document index over the warehouse |
 | ADR-0014 | Sensor-node taxonomy, module-ID strap, presence probing |
-| `spec/M01-CLIMATE-specification.md` | Module specification — expected ranges (§3), published subjects (§10.1), verification (§11), bring-up record (§11.2) |
+| `spec/E0002-R-specification.md` | Module specification — expected ranges (§3), published subjects (§10.1), verification (§11), bring-up record (§11.2) |
 | `store/E0001-000003-D-pinmap.md` | Carrier side of the header contract |
 | `store/E0006-000001-M-bringup-protocol.md` | The same protocol for M05 |
 | `store/SP0004-M-gateway-bringup.md` | The gateway side of the bench setup |

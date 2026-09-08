@@ -15,6 +15,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 ## Revision history
 
+- **Amendments** — decision 20 (2026-09-08): the specification document layer `R`, rooted on the E-number and carrying no version. Extends decision 9's layer set as decision 16 did for `F`; reverses nothing.
 - **rev 3 (2026-08-30)** — Editorial. **No decision changes and none is renumbered**;
   the record is cited by decision number across the corpus.
 
@@ -99,8 +100,9 @@ whenever an instance is moved, removed, or replaced. A serial never encodes
 position; a position never encodes identity.
 
 A third notion — the **document layer** (`S/D/L/P/M/I`, plus `F` for firmware,
-decision 16) — is not an axis but a classifier on the identity axis (which
-artifact about a given identity); it never denotes nesting.
+decision 16, and `R` for a specification, decision 20) — is not an axis but a
+classifier on the identity axis (which artifact about a given identity); it never
+denotes nesting.
 
 Every numbered decision below is a consequence of this invariant. The rejected
 alternatives (flat hierarchical serial; position baked into serial) are exactly
@@ -181,6 +183,7 @@ The single key to every code that can occupy the trailing slot of an identifier:
 | `M`   | Manual | document layer | decision 9 |
 | `I`   | Interface | document layer | decision 9 |
 | `F`   | Firmware (built image + source snapshot) | document layer | decision 16 |
+| `R`   | Requirements (specification) | document layer | decision 20 |
 | `-QP` | Quality Protocol | lifecycle suffix | decision 10 |
 | `-QR` | Quality Report | lifecycle suffix | decision 10 |
 | `-CP` | Calibration Protocol | lifecycle suffix | decision 11 |
@@ -280,6 +283,18 @@ The single key to every code that can occupy the trailing slot of an identifier:
     - **Members keep the bare identifier stem**, as decision 18 requires of gerber members, and here also because the CAD tool resolves a project by shared file stem: a member renamed to carry the infix would not open.
 
     - **The loose per-file objects are removed** — keeping both would put identical content under two keys with nothing holding them equal. Applied retroactively to `E0001-000003`, `E0002-000001`, `E0003-000001` and `E0006-000001`, as decision 18 was applied to `E0001-000002`.
+
+20. **The specification document layer `R` roots on the E-number and carries no version.** *(amendment, 2026-09-08)*
+
+    A specification is a document layer alongside decision 9's set: `R` for Requirements — the numbered-requirement document stating what a design must do and how each requirement is verified. Its key is `Exxxx-R-<slug>`: an E root, a layer letter, a slug, and **no version field**.
+
+    - **No version, because a specification tracks the class and not a build.** It is edited in place from project stage to as-built — one file, one E-number, no second identifier for having been built — while `-S-`, `-D-` and `-L-` are the artifacts of one board version and move with it. A version field on a specification would name a board revision the document does not belong to.
+
+    - **The grammar already admits the form.** An SP document has carried root-layer-slug with no version since ADR-0019 decision 2, because the supplier owns an SP part's versioning; a specification reaches the same shape from the other direction, by describing a class rather than a build.
+
+    - **`R` is a new letter, not decision 9's `P`.** `P` is Protocol, and the documents that are actually protocols — bring-up, calibration — are filed under `M`. Giving `P` a second meaning would leave that misfiling in place and make the letter ambiguous.
+
+    - **Decision 15 applies unchanged**: the key is the object key, and the document is mirrored into the object store and served from it like every other type-level document. The file stays in `spec/` rather than `store/`, which changes nothing here — a directory is not an identifier, and decision 15 binds the key.
 
 ## Alternatives considered
 

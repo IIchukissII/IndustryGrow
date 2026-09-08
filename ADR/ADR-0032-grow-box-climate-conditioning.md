@@ -14,7 +14,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 ## Context and problem
 
-`spec/A01-CLIMATE-specification.md` fixes which machine moves heat, which way the humidity
+`spec/E0011-R-specification.md` fixes which machine moves heat, which way the humidity
 actuator acts, and where condensation forms. No record holds the rationale (`O-115`). ADR-0031
 owns the actuator classes and the command form, ADR-0018 the rails, ADR-0015 the loop. The
 conditioning method has no owner. The specification was written before this record, inverting
@@ -29,7 +29,7 @@ Fixed elsewhere, not restated here:
 | Interlocks in hardware, independent of the MCU | ADR-0015 d11, ADR-0031 d7 |
 | Actuator publishes no process variable | ADR-0031 d8 |
 | Setpoints, VPD band, photoperiod, CO₂ as a variant | ADR-0003, `profiles/` |
-| Loads, exchangers, parts, thresholds | `spec/A01-CLIMATE-specification.md` |
+| Loads, exchangers, parts, thresholds | `spec/E0011-R-specification.md` |
 
 ## Decision drivers
 
@@ -59,7 +59,7 @@ Fixed elsewhere, not restated here:
    | 10 m² | 17 m³ | 41.5 m² | 25.5 W/K | 1350 W | 1400 W | chiller and air-handling unit |
 
    Common assumptions across the rows: DLI 18, luminaire inside the volume, 1.7 m height, 30 mm
-   PIR. The reference cabinet's own loads are in `spec/A01-CLIMATE-specification.md` §2.2, which
+   PIR. The reference cabinet's own loads are in `spec/E0011-R-specification.md` §2.2, which
    places the luminaire outside the volume.
 
    Outside the envelope the following change, each invalidating a decision below:

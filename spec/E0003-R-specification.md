@@ -9,7 +9,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Date:** 2026-08-23
 - **E-number:** `E0003` · module-ID strap `0b010`
 - **Governing ADRs:** ADR-0014 (rev 6), ADR-0002 (rev 3), ADR-0003, ADR-0005 (rev 1), ADR-0016, ADR-0017 (rev 2)
-- **Companions:** `M01-CLIMATE-specification.md`, `M04-PLANT-specification.md`, `M05-SAFETY-specification.md`, `M06-VENTILATION-specification.md`, `M07-AMBIENT-specification.md`
+- **Companions:** `E0002-R-specification.md`, `E0005-R-specification.md`, `E0006-R-specification.md`, `E0008-R-specification.md`, `E0009-R-specification.md`
 
 Rationale for the decisions applied here is in the governing ADRs and is not restated.
 Values marked `verify` are not confirmed against the manufacturer datasheet.
@@ -318,7 +318,7 @@ Every channel of ADR-0003 d11 is observable by the populated module.
 | | Value |
 |---|---|
 | Node draw on `+12 V` | Not measured. O-59 |
-| Reference figure | M05 node, `M05-SAFETY-specification.md` §6.1 |
+| Reference figure | M05 node, `E0006-R-specification.md` §6.1 |
 | Module contribution | 572 µA maximum with both sensors active and U1 switching (§7.2), all on the 1.8 V rail — ≈ 1.03 mW, drawn from 3.3 V through U2 as ≈ 1.89 mW. **No device dominates.** Node draw is still mostly the carrier and MCU |
 | Burst reflected to `+12 V` | None. No device on this module has a burst load of the SCD41 class |
 
