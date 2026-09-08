@@ -359,36 +359,51 @@ def test_figure_keys_are_read_off_the_source():
     assert reports.figure_keys(md) == ["figures/one.svg", "figures/two.png"]
 
 
-def test_a_document_with_a_figure_still_lays_out(client, warehouse):
-    """The inlined figure must actually render, not just be in the markup.
+def test_the_renderer_can_fetch_a_data_uri_and_nothing_else():
+    """The renderer's fetcher, tested at its contract rather than through a page.
 
-    The string transform below is not enough: WeasyPrint reads an attribute off
-    the url_fetcher when it rasterizes an SVG, and without it the whole document
-    falls back to plain text — a specification printing as a wall of source, with
-    the reason only on the page. So this renders one end to end and reads the
-    result back.
+    This is the regression worth catching. WeasyPrint changed the url_fetcher
+    contract — one argument, returning a `URLFetcherResponse` — and the function
+    that predated it failed every fetch *silently*, because a failed fetch drops
+    one element and renders on. Nothing looked broken until a document finally
+    carried a resource. Asserting on a rendered page cannot see that; asserting on
+    the fetcher can.
     """
+    from weasyprint.urls import URLFetchingError
+
+    from app.services import reports
+
+    svg = b'<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"></svg>'
+    uri = "data:image/svg+xml;base64," + base64.b64encode(svg).decode("ascii")
+    response = reports._URL_FETCHER.fetch(uri)
+    try:
+        assert "svg" in response.headers.get_content_type()
+    finally:
+        response.close()
+
+    # Everything else stays refused: the renderer must not reach the network, and
+    # must not reach the container's filesystem either.
+    for refused in ("https://example.invalid/x.png", "file:///etc/hostname"):
+        with pytest.raises((ValueError, URLFetchingError, OSError)):
+            reports._URL_FETCHER.fetch(refused)
+
+
+def test_a_document_with_a_figure_still_lays_out():
+    """And the whole path holds together, end to end, below the API."""
     from app.services import reports
 
     svg = (
         b'<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300">'
         b'<rect width="400" height="300" fill="#67e8f9"/></svg>'
     )
-    text = "# A01\n\n![principle](./figures/a01-climate-principle.svg)\n"
-    with_figure = reports.markdown_document(
+    pdf = reports.markdown_document(
         object_key="E0011-R-specification.md",
-        text=text,
+        text="# A01\n\n![principle](./figures/a01-climate-principle.svg)\n",
         fetch_figure=lambda key: (svg, "image/svg+xml"),
     )
-    without = reports.markdown_document(object_key="E0011-R-specification.md", text=text)
-
-    assert with_figure.startswith(b"%PDF")
+    assert pdf.startswith(b"%PDF")
     # The fallback writes its reason onto the page; a laid-out document does not.
-    assert b"layout engine refused" not in with_figure
-    # And the figure is actually DRAWN. Asserting only that nothing raised is what
-    # let a broken fetcher through: every fetch was failing, WeasyPrint dropped the
-    # image and rendered the alt text, and the document looked fine.
-    assert len(with_figure) > len(without) + 500
+    assert b"layout engine refused" not in pdf
 
 
 def test_a_figure_is_inlined_into_the_pdf_not_fetched_by_the_renderer():
