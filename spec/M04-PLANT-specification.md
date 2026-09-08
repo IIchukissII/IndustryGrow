@@ -245,25 +245,33 @@ gaps and background make mixed pixels the normal case (§6.6, O-88).
 | −40…0 °C and 50…85 °C | 0…100 °C | ±2 °C | zone 1 ±1 °C · zone 2 ±2 °C · zone 3 ±3 °C, each plus 2 % · \|To−Ta\| | Not specified (TBD in DS12) |
 | 0…50 °C | −40…0 °C | ±5 °C | 2 % · \|To−Ta\| | Not specified |
 
-- **Pixel absolute accuracy = frame accuracy + non-uniformity** (DS12 §12.1.1). In zone 1 at the
-  operating point of §3 that is **±1.5 °C** for `BAA` and ±2 °C for `BAB`.
-- **The zones are defined graphically** (DS12 Figure 18): a central zone 1, a surrounding zone 2,
-  and corner patches of zone 3 on `BAA` only. DS12 gives no pixel-index boundaries. O-92.
-- **Noise is integration-time limited.** Per-frame RMS noise scales as √(refresh rate), from
-  DS12 Figure 19 (`BAA`): 0.09 K at 0.5 Hz, **0.14 K at 1 Hz**, 0.19 at 2 Hz, 0.26 at 4 Hz,
-  **0.36 at 8 Hz**, 0.52 at 16 Hz, 1.05 at 64 Hz. Table 14's 0.14 K average (0.1 K minimum,
-  σ 0.05 K) and the `BAB` figure of 0.25 K are the **1 Hz** values. Corner pixels are noisier than
-  central ones, and noise rises at lower object temperature (DS12 §12.3).
-- **The noise of a fixed-length average does not move with refresh rate.** Doubling the rate halves
-  the integration per frame and doubles the frame count, and the two cancel: over 60 s the floor is
-  0.14 K/√30 = **0.025 K** at 2 Hz, at 8 Hz and at 16 Hz alike (§6.5). Refresh rate buys time
-  resolution, not noise.
-- **Non-uniformity is the dominant error and it does not average away.** ±0.5 K in zone 1 is
-  fixed-pattern — 20 × the temporal floor above. The flat-field trim of §6.7 corrects its offset
-  component; its determination protocol is open, O-99.
-- **Long-term drift: an additional ±3 °C for objects around room temperature over years**
-  (DS12 §12.1.1 note 2) — the operating point of §3, and the largest term in this budget. O-89.
-- Ta channel: ±0.5 °C.
+Error budget at the §3 operating point, `BAA` unless stated:
+
+| Term | Magnitude | Basis |
+|---|---|---|
+| Pixel absolute accuracy, zone 1 | **±1.5 °C**; ±2 °C for `BAB` | Frame accuracy plus non-uniformity, DS12 §12.1.1 |
+| Non-uniformity, zone 1 | **±0.5 K**, fixed-pattern, and it does not average away | 20 × the interval floor below. The §6.7 trim corrects its offset component; determination protocol open, O-99 |
+| Long-term drift | **±3 °C** for objects near room temperature, over years | DS12 §12.1.1 note 2. Largest term in this budget at the §3 operating point, O-89 |
+| Per-frame RMS noise at 8 Hz | 0.36 K | DS12 Figure 19 |
+| Interval floor over 60 s | **0.025 K** = 0.14 K / √30 | §6.5, at 2 Hz, 8 Hz and 16 Hz alike |
+| Ta channel | ±0.5 °C | DS12 |
+
+Per-frame RMS noise against refresh rate, `BAA`, DS12 Figure 19. Noise scales as √(refresh rate),
+so a fixed-length average carries the same noise at any rate: doubling the rate halves the
+integration per frame and doubles the frame count.
+
+| Refresh rate | 0.5 Hz | 1 Hz | 2 Hz | 4 Hz | 8 Hz | 16 Hz | 64 Hz |
+|---|---|---|---|---|---|---|---|
+| Per-frame RMS | 0.09 K | **0.14 K** | 0.19 K | 0.26 K | **0.36 K** | 0.52 K | 1.05 K |
+
+Qualifiers on the two tables above:
+
+| Qualifier | Source |
+|---|---|
+| The zones are defined graphically — a central zone 1, a surrounding zone 2, and corner patches of zone 3 on `BAA` only. No pixel-index boundaries are given | DS12 Figure 18, O-92 |
+| Table 14's 0.14 K average (0.1 K minimum, σ 0.05 K) and the `BAB` figure of 0.25 K are the 1 Hz values | DS12 Table 14 |
+| Corner pixels are noisier than central ones, and noise rises at lower object temperature | DS12 §12.3 |
+| Refresh rate buys time resolution, not noise | §6.5, §5.2 |
 
 ### 6.4 Frame statistics
 
