@@ -252,22 +252,20 @@ This transfer function sets the thermal requirements of §8.
 
 #### 6.3.1 Field calibration
 
-ASC is disabled (§6.3), which makes FRC mandatory.
-
 FRC procedure, per the device datasheet:
 
-1. Operate in the mode used in normal operation, at the supply voltage used in the application,
-   for at least 3 minutes in air of homogeneous and constant CO₂ concentration.
-2. Send `stop_periodic_measurement`; wait 500 ms.
-3. Send `perform_forced_recalibration` with the reference concentration; after 400 ms read the
-   correction magnitude. A return of `0xffff` means the FRC failed.
+| Step | Action | Wait | Result |
+|---|---|---|---|
+| 1 | Run in the normal operating mode at the application supply voltage, in air of homogeneous and constant CO₂ concentration | ≥ 3 min | — |
+| 2 | `stop_periodic_measurement` | 500 ms | — |
+| 3 | `perform_forced_recalibration` with the reference concentration | 400 ms | Read the correction magnitude. `0xffff` means the FRC failed |
 
-Two constraints on when it may be performed:
+Conditions on when it may be performed:
 
-- **Not earlier than five days after the sensor is soldered.** Assembly temporarily displaces
-  accuracy; it is restored by FRC or ASC only after that interval.
-- **At 2.8 V**, the rail of §7.4, not at bench 3.3 V. The datasheet requires the application
-  voltage. Calibrating at the wrong rail injects an error that is invisible afterwards.
+| Condition | Value | Reference |
+|---|---|---|
+| Not earlier than, after the sensor is soldered | 5 days. Assembly displaces accuracy until then, and only FRC or ASC restores it | Device datasheet |
+| Supply voltage during the procedure | 2.8 V, the application rail — not bench 3.3 V. The resulting error is not visible afterwards | §7.4 |
 
 #### 6.3.2 Pressure source when U2 is not fitted
 
