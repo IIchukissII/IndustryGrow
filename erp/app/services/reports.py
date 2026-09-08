@@ -99,6 +99,16 @@ def _no_remote_resources(url: str, timeout: int = 10, ssl_context: object = None
     raise ValueError(f"refused external resource: {url}")
 
 
+# WeasyPrint 70 reads this off the fetcher when it renders an SVG, and a plain
+# function does not have it: without the attribute an inlined `data:image/svg+xml`
+# figure raises `'function' object has no attribute '_fail_on_errors'`, the whole
+# document falls back to plain text, and a specification prints as a wall of
+# source. False keeps this fetcher's own behaviour — refuse, log, carry on — which
+# is what the docstring above promises. Tested end to end below the API, so a
+# WeasyPrint upgrade that renames it fails a test rather than a print job.
+_no_remote_resources._fail_on_errors = False
+
+
 # The page frame. A4, a masthead on the first page and a one-line running header
 # after it, and a footer that carries provenance — a printed page outlives the
 # screen it came from and is read without one.

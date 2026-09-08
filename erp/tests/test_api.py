@@ -359,6 +359,28 @@ def test_figure_keys_are_read_off_the_source():
     assert reports.figure_keys(md) == ["figures/one.svg", "figures/two.png"]
 
 
+def test_a_document_with_a_figure_still_lays_out(client, warehouse):
+    """The inlined figure must actually render, not just be in the markup.
+
+    The string transform below is not enough: WeasyPrint reads an attribute off
+    the url_fetcher when it rasterizes an SVG, and without it the whole document
+    falls back to plain text — a specification printing as a wall of source, with
+    the reason only on the page. So this renders one end to end and reads the
+    result back.
+    """
+    from app.services import reports
+
+    svg = b'<svg xmlns="http://www.w3.org/2000/svg" width="80" height="40"></svg>'
+    pdf = reports.markdown_document(
+        object_key="E0011-R-specification.md",
+        text="# A01\n\n![principle](./figures/a01-climate-principle.svg)\n",
+        fetch_figure=lambda key: (svg, "image/svg+xml"),
+    )
+    assert pdf.startswith(b"%PDF")
+    # The fallback writes its reason onto the page; a laid-out document does not.
+    assert b"layout engine refused" not in pdf
+
+
 def test_a_figure_is_inlined_into_the_pdf_not_fetched_by_the_renderer():
     from app.services import reports
 
