@@ -408,6 +408,8 @@ the installation.
 | M8 | Seats on the carrier header pair 2×12 + 2×8, supported at both ends; no standoffs required | Pin map, header section |
 | M9 | U3's normalized angular response falls to half maximum at **≈ ±45°** on both axes, near-symmetric (DS001043 v5-00 Figures 13, 14). No window or aperture above U3 shall clip inside that cone. Both figures characterise the **photopic** channel against a white LED; the UV channel is not separately characterised, so the photopic curve is the bound window design shall use | §4.1 |
 | M10 | **The sensing face carries U3 and U4 and no other part.** Every other component, the header pair included, sits on the opposite face. Nothing but the two apertures may stand in the canopy's line of sight | §7.4, M6 |
+| M11 | The board outline and the J1/J2 positions relative to it are those of `E0002-000001`, so modules and cases interchange | Pin map, M8 |
+| M12 | U3 and U4 sit within **8.3 mm** of each other on one axis, so both sample the same point in the canopy plane | M6, M10 |
 
 **M10 makes the board double-sided SMT.** The `-D-fab` package therefore carries a paste layer
 and a position file for each side (ADR-0017 d18), and assembly takes two placement passes where
@@ -516,6 +518,7 @@ gateway's concern.
 | V8 | §9 M1, M2 | Band counts with and without the fitted diffuser under the same fixture setting; the ratio per band is the diffuser's transmission term for §6.2 |
 | V9 | §7.3 | U4's V_DD measured at the pin under load and during U2's start-up transient, against the 1.98 V absolute maximum |
 | V10 | §7.3, §7.4 | U3's V_DD measured at the pin under load and during U2's start-up transient, against the 1.98 V absolute maximum — the same measurement V9 makes at U4, on the shared rail |
+| V13 | §9 M11, M12 | Board outline and the J1/J2 positions measured against `E0002-000001`; U3-to-U4 separation measured on the fabricated board |
 | V12 | §10 | U3 identified by reading `ID` at `0x92` and matching `0x5C`, with `REV_ID` `0x91` = `0x11`, not by address ACK alone. At `0x39` an ACK could equally be U4 reached through the wrong channel |
 
 ## 12. Open items
@@ -550,35 +553,14 @@ collision with M06's O-42.
 
 ## 13. Maturity
 
-**Schematic captured.** Both sensors are fixed by ADR-0014 rev 6 and both are stated from their
-datasheets. `store/E0003-000001.kicad_sch` carries U4, U3, U1, the 1.8 V rail, all three I²C
-pull-up pairs and the module-ID straps.
-
-**Layout drawn and clean.** `E0003-000001-D-src.zip` holds a two-layer board on the same
-104.902 × 46.990 mm envelope as `E0002-000001`, with J1/J2 at the same positions relative to the
-outline, so the modules and cases interchange.
-
-| Item | Value |
-|---|---|
-| `B.Cu` | U3 and U4 only. U3 at (152.87, 80.79), U4 at (161.13, 80.88) — 8.3 mm apart on one axis, so both sample the same point in the canopy plane |
-| `F.Cu` | Every other part, plus J1/J2 |
-| `GND` pour | `F.Cu` only. O-69 |
-| Tracks | 0.2 mm throughout; 13 vias |
-| DRC | **0 violations, 0 unconnected pads** |
-| Schematic parity | **0 issues** |
-
-`E0003-000001.kicad_dru` is empty: TSSOP-14 at 0.65 mm and the OLGA-6 land pattern at 0.25 mm
-between pads both clear the 0.2 mm board default.
-
-U2's ground leaves eastward and turns south; the westward route crosses the only corridor the
-IN-to-EN strap can use.
-
-R5 and C6 are re-used for U4's supply filter (§7.3); R11 stays a deliberate gap. R1 and R4 are
-re-used as channel 1's pull-up pair rather than left as gaps.
+**Schematic and layout captured.** Both sensors are fixed by ADR-0014 rev 6 and both are stated
+from their datasheets. `store/E0003-000001-S-src.zip` carries U4, U3, U1, the 1.8 V rail, all
+three I²C pull-up pairs and the module-ID straps; `E0003-000001-D-src.zip` carries the two-layer
+board, which meets M10, M11 and M12.
 
 | Rung | Content | Reached when |
 |------|---------|--------------|
 | **Pre-schematic** | Complement and requirements fixed; values estimated or `verify` | ADR-0014 rev 6 fixes both parts ✔ |
-| **Schematic captured** ← here | Parts fixed to ordering part numbers; schematic exists; component values determined | U3 ordering part resolved ✔ (`TSL25853PM`); U1 resolved ✔ (`TCA9543APWR`); schematic exists ✔ |
+| **Schematic and layout captured** ← here | Parts fixed to ordering part numbers; schematic and board exist; component values determined | U3 ordering part resolved ✔ (`TSL25853PM`); U1 resolved ✔ (`TCA9543APWR`); `E0003-000001-S-src.zip` ✔; `E0003-000001-D-src.zip` ✔ |
 | **Schematic-frozen** | Remaining `verify` resolved, footprints checked against physical parts. `L` releases here | O-60, O-61, O-62, O-64, O-66, O-71 and O-72 closed ✔; O-70 open; V6 not executed |
 | **As-built** | Estimates replaced by measured values; verification §11 executed | `E0003` fabricated and bench-verified; O-59 measured |
