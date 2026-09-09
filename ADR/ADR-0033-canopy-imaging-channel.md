@@ -457,8 +457,7 @@ it is a design.
   observable most, so the bound is not a corner case. A second visible instrument on a known
   baseline would yield height and volume, which do not saturate, and would make decision 11's
   parallax bound measurable at every event rather than once at R5. That is the shape of a
-  possible answer and not a decision. The number follows `O-123`: `O-124` was allocated in this
-  record and retired when decision 19 answered it, and is not reused.
+  possible answer and not a decision.
 
 ## References
 

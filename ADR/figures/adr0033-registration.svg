@@ -27,8 +27,22 @@
   <g transform="rotate(-7 500 163)"><rect x="410" y="105" width="180" height="116" rx="5" fill="none" stroke="#C9C6BC" stroke-dasharray="4 3"/></g>
   <g transform="rotate(7 500 163)"><rect x="410" y="105" width="180" height="116" rx="5" fill="none" stroke="#C9C6BC" stroke-dasharray="4 3"/></g>
 
-  <rect x="400" y="105" width="180" height="116" rx="5" fill="#F7F6F2" stroke="#C9C6BC"/>
-  <g fill="#FFFFFF" stroke="#5F5E5A" stroke-width="1.1">
+  <rect x="400" y="105" width="180" height="116" rx="5" fill="#FFFFFF" stroke="#C9C6BC"/>
+  <g fill="#E4E2DA">
+    <rect x="400" y="134" width="30" height="29"/>
+    <rect x="400" y="192" width="30" height="29"/>
+    <rect x="430" y="105" width="30" height="29"/>
+    <rect x="430" y="163" width="30" height="29"/>
+    <rect x="460" y="134" width="30" height="29"/>
+    <rect x="460" y="192" width="30" height="29"/>
+    <rect x="490" y="105" width="30" height="29"/>
+    <rect x="490" y="163" width="30" height="29"/>
+    <rect x="520" y="134" width="30" height="29"/>
+    <rect x="520" y="192" width="30" height="29"/>
+    <rect x="550" y="105" width="30" height="29"/>
+    <rect x="550" y="163" width="30" height="29"/>
+  </g>
+  <g fill="#FBF1EE" stroke="#5F5E5A" stroke-width="1.2">
     <circle cx="432" cy="134" r="9"/><circle cx="490" cy="134" r="9"/><circle cx="548" cy="134" r="9"/>
     <circle cx="432" cy="166" r="9"/><circle cx="490" cy="166" r="9"/><circle cx="548" cy="166" r="9"/>
     <circle cx="432" cy="198" r="9"/><circle cx="490" cy="198" r="9"/><circle cx="548" cy="198" r="9"/>
