@@ -86,6 +86,12 @@ Fixed elsewhere, not restated here:
    `spec/E0005` T3's settling requirement is met against the conditions the previous event left,
    not against the switching the present event is about to perform.
 
+   Step 1 is the one step decision 3 does not reach, and deliberately. Canopy temperature under a
+   synthetic illuminant would characterise the apparatus rather than the plant, so the thermal
+   frame is taken under the light the crop is actually living under. What follows is that frames
+   within one event do not share an illumination provenance, so provenance is recorded per frame
+   and not per event — the rule this decision already applies to exposure and gain.
+
 3. **The luminaire is driven to a fixed capture state, independent of the active recipe.** This,
    not darkness, is what keeps the illuminant out of the experimental factor: under ADR-0003 d11
    the spectrum is phase-dependent by design, so a capture taken under the recipe in force would
@@ -137,21 +143,21 @@ Fixed elsewhere, not restated here:
     implementation detail.
 
 11. **The camera and the M04 imager share a housing, on separate boards.** At the 0.3…0.6 m
-    working distance of `spec/E0005` §6.6 one thermal pixel subtends 27 × 19 mm of scene at
-    0.3 m and more further out, so a mounting tolerance of half a millimetre is a small fraction
-    of a pixel and board-level co-location buys no registration accuracy that can be observed.
+    working distance of `spec/E0005` §6.6 one `BAA` thermal pixel subtends 27 × 19 mm of scene
+    at 0.3 m and more further out, and a `BAB` pixel about a third of that. Under either, a
+    mounting tolerance of half a millimetre is a small fraction of a pixel, and board-level
+    co-location buys no registration accuracy that can be observed.
     What bounds overlay accuracy is parallax between two apertures against canopy depth
     variation, which the housing controls by keeping the baseline short and known.
 
     The housing shall provide a short, known and fixed baseline between the two apertures; a
     thermal break between camera and imager; two separate optical windows, since the imager needs
     a long-wave-infrared-transmissive path (`spec/E0005` M2, `O-96`) and the camera one passing
-    decision 18's whole band set;
-    and no encroachment on the obstacle-free cone of `spec/E0005` §9 M1. It is a designed
-    assembly, so it takes an E-number at design commit and not here (ADR-0017 d5). It is the
-    project's first assembly whose discipline is mechanical: every `REGISTRY.md` E-number entry
-    is electrical today, and the enclosures that exist are `-D-case` document layers on an
-    electrical E-number rather than assemblies of their own.
+    decision 18's whole band set; and no encroachment on the obstacle-free cone of `spec/E0005`
+    §9 M1. It is a designed assembly, so it takes an E-number at design commit and not here
+    (ADR-0017 d5). It is the project's first assembly whose discipline is mechanical: every
+    `REGISTRY.md` E-number entry is electrical today, and the enclosures that exist are `-D-case`
+    document layers on an electrical E-number rather than assemblies of their own.
 
 12. **The mask registers onto the M04 thermal frame.** The fixed baseline of decision 11 makes
     registration a property of the assembly rather than of an installation; the homography is
@@ -206,7 +212,9 @@ Fixed elsewhere, not restated here:
     the volume premise changes. The store stays best-effort (ADR-0020 d3) — imagery does not
     become a durability guarantee. The retention bound is by campaign, not by capacity; the bound
     and the export path are implementation values (ADR-0000 d2). `spec/E0005` `O-97` already
-    raises the same premise for M04's own frame archive against ADR-0020 d2.
+    raises the same premise for M04's own frame archive against ADR-0020 d2. ADR-0020 d12 names
+    fuller capture during a campaign as a forward direction and explicitly not as a decision;
+    this decision is that direction taken for imagery.
 
 16. **Everything derived from imagery is published as estimated, never as measured** (ADR-0016
     d5). A quantity fitted against a sensor's readings is not an independent measurement of that
@@ -294,9 +302,10 @@ Fixed elsewhere, not restated here:
 **A. The camera as a Cyphal node.** *Rejected:* ADR-0014 d9 already places it outside the
 taxonomy, and the payload is incommensurate with classic CAN at 500 kbit/s (ADR-0002 rev 3).
 
-**B. The camera on the `E0005` PCB.** *Rejected:* one thermal pixel subtends 27 × 19 mm at 0.3 m
-(`spec/E0005` §6.6), so board-level placement improves registration by a fraction of a pixel that
-cannot be observed, while parallax against canopy depth — which the housing baseline already
+**B. The camera on the `E0005` PCB.** *Rejected:* one `BAA` thermal pixel subtends 27 × 19 mm at
+0.3 m and a `BAB` pixel about a third of that (`spec/E0005` §6.6), so under either variant
+board-level placement improves registration by a fraction of a pixel that cannot be observed,
+while parallax against canopy depth — which the housing baseline already
 controls — is what bounds overlay accuracy. Against that non-benefit: `spec/E0005` T2 forbids a
 further heat source on the module and T3 calibrates the device for settled conditions, while a
 capture event is periodic and synchronous with the measurement; the ADR-0014 d5 header contract
@@ -400,6 +409,7 @@ assembly and a commissioning step. That is more than a direction.
 
 - ADR-0000 (rev 2): Decision records and the single-source-of-truth discipline — d2, d3.
 - ADR-0001 (rev 1): IndustryGrow — open-core cultivation platform built on IndustryFlow.
+- ADR-0002 (rev 3): Field bus architecture — classic CAN at 500 kbit/s (alternative A).
 - ADR-0003: Strawberry day-neutral profile — d11 (phase-dependent spectrum), d12 (DLI target).
 - ADR-0014 (rev 7): Sensor node taxonomy and module decomposition — d1, d4, d5, d8, d9.
 - ADR-0015: Gateway profile caching and local control loops — d1, d18.
