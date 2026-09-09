@@ -118,6 +118,14 @@ Fixed elsewhere, not restated here:
    luminaire and of the optical path across a cultivation cycle, which a calibration performed
    once at installation cannot observe.
 
+   **The surface carries several patches of known reflectance, not one neutral patch.** A single
+   neutral patch fixes per-channel gains and nothing more, which is a white balance. Decision 19
+   justifies a colour detector by recognition of disease and disorder, and chlorosis and necrosis
+   separate by hue in the region a warm white illuminant biases hardest, so the render has to be
+   colorimetric exactly where that justification is strongest. A correction matrix needs several
+   known chromaticities. How many, at what reflectances, and whether they hold across a
+   cultivation cycle are the reference surface's form, deferred with the rest of it to `O-119`.
+
 7. **M02-LIGHT's reading at the capture instant is recorded with the event.** The reference
    surface returns the total gain of the illumination-and-optical path; M02 returns the spectral
    composition at the canopy (ADR-0014 d4). These are different quantities and neither
@@ -146,18 +154,21 @@ Fixed elsewhere, not restated here:
     working distance of `spec/E0005` §6.6 one `BAA` thermal pixel subtends 27 × 19 mm of scene
     at 0.3 m and more further out, and a `BAB` pixel about a third of that. Under either, a
     mounting tolerance of half a millimetre is a small fraction of a pixel, and board-level
-    co-location buys no registration accuracy that can be observed.
-    What bounds overlay accuracy is parallax between two apertures against canopy depth
-    variation, which the housing controls by keeping the baseline short and known.
+    co-location buys no registration accuracy that can be observed. What bounds overlay accuracy
+    is parallax between the apertures against canopy depth variation, which the housing controls
+    by keeping the baseline short and known.
 
-    The housing shall provide a short, known and fixed baseline between the two apertures; a
-    thermal break between camera and imager; two separate optical windows, since the imager needs
-    a long-wave-infrared-transmissive path (`spec/E0005` M2, `O-96`) and the camera one passing
-    decision 18's whole band set; and no encroachment on the obstacle-free cone of `spec/E0005`
+    The housing shall provide a short, known and fixed baseline between every pair of apertures
+    it holds; a thermal break between camera and imager; one optical window per path, since the
+    imager needs a long-wave-infrared-transmissive one (`spec/E0005` M2, `O-96`) and the camera
+    one passing decision 18's band set; and no encroachment on the obstacle-free cone of
+    `spec/E0005`
     §9 M1. It is a designed assembly, so it takes an E-number at design commit and not here
     (ADR-0017 d5). It is the project's first assembly whose discipline is mechanical: every
     `REGISTRY.md` E-number entry is electrical today, and the enclosures that exist are `-D-case`
-    document layers on an electrical E-number rather than assemblies of their own.
+    document layers on an electrical E-number rather than assemblies of their own. Two
+    instruments is what this record needs, not a property of the housing; `O-125` records what
+    would put a third in it.
 
 12. **The mask registers onto the M04 thermal frame.** The fixed baseline of decision 11 makes
     registration a property of the assembly rather than of an installation; the homography is
@@ -175,11 +186,21 @@ Fixed elsewhere, not restated here:
     so their spacings come from that part's own drawing rather than from a measurement in the
     cabinet, and their height makes the parallax of decision 11 measurable instead of asserted.
 
-    ![A one-off session in which both instruments view a nine-cylinder target at many poses, solving the thermal lens model and the relative pose together, followed by a continuing check against the small in-frame fiducial](./figures/adr0033-registration.svg)
+    **The same baseplate carries a ChArUco pattern** — a chessboard with a marker in each white
+    cell — so every corner is identified on its own and a view that is partly occluded or runs
+    off the frame edge still contributes, which a plain chessboard cannot do across the pose
+    range R2 demands. The camera takes its lens model from the print, the imager takes its
+    correspondences from the cylinders, and the relation between the two comes from the same
+    drawing. This removes a second physical target and a separate session. It gives the imager
+    nothing extra, because the print stays as invisible to it as this decision already says. The
+    pattern must be on the part rather than adhered to it: a sheet glued to a baseplate
+    reintroduces the measurement this argument exists to avoid.
+
+    ![A one-off session in which both instruments view one baseplate carrying nine cylinders and a ChArUco pattern at many poses, solving the thermal lens model and the relative pose together, followed by a continuing check against the small in-frame fiducial](./figures/adr0033-registration.svg)
 
     | ID | Step | Yields |
     |---|---|---|
-    | R1 | Lock focus and fix the capture mode, then take the visible lens model from a chessboard target | Camera intrinsics and distortion |
+    | R1 | Lock focus and fix the capture mode, then take the visible lens model from the baseplate's ChArUco pattern | Camera intrinsics and distortion |
     | R2 | Capture pairs of the cylinder target at many poses across the working volume, luminaire on and settled | Correspondences visible in both instruments |
     | R3 | Solve the imager's lens model and the camera-to-imager pose together | Both models, from one session |
     | R4 | Project onto the canopy plane | The homography this decision uses |
@@ -189,7 +210,8 @@ Fixed elsewhere, not restated here:
     R3 is the step that earns the session. `spec/E0005` `O-92` records that the imager has no
     per-pixel angular map and no distortion figure at all, so the imager is the binding term in
     this error budget; the same captures that fix the pose also estimate the model that item is
-    missing. R1 is a precondition and not part of the session: intrinsics move with focus
+    missing. R1 is the session's first step rather than a separate exercise, because the pattern
+    and the cylinders are on one part. It stays first because intrinsics move with focus
     position, so a lens that refocuses voids every step below it.
 
     The session is run once per optical configuration and per assembly. It is not run again on a
@@ -224,15 +246,22 @@ Fixed elsewhere, not restated here:
 17. **Lifecycle placement is not decided here.** The channel is survey-phase instrumentation today
     (ADR-0016 d1). Whether it belongs in the operating-phase minimum set is an output of the
     identification phase (ADR-0016 d2), not an authorial choice. The shared housing of decision 11
-    does not bind the two instruments to one lifecycle, which is part of why they are separate
+    does not bind its instruments to one lifecycle, which is part of why they are separate
     boards.
 
-18. **The optical path passes the luminaire's whole band set, and carries no infrared-cut
-    filter.** The band set runs from the 365 to 385 nm ultraviolet-A channel to the 730 nm
-    far-red one. A standard infrared-cut filter passes roughly 400 to 650 nm: it removes the
-    far-red channel outright and clips the ultraviolet one. Silicon responds across the whole
-    span, so the filter is the only thing in the way and removing it costs nothing but the
-    filter.
+18. **The optical path passes white, red and far-red and carries no infrared-cut filter. It is
+    not required to pass ultraviolet.** A standard infrared-cut filter passes roughly 400 to
+    650 nm and removes the 730 nm far-red channel outright. Silicon responds well past it, so at
+    that end the filter is the only obstruction and removing it costs nothing but the filter.
+
+    The 365 to 385 nm ultraviolet-A channel is excluded, and the obstruction there is not a
+    filter anyone fitted. Colour filter array dyes absorb below roughly 400 nm, ordinary cover
+    glass is not ultraviolet-grade, and multi-element lenses are cemented with
+    ultraviolet-absorbing adhesive, so the lens cuts below roughly 380 nm whatever its glass.
+    Reaching the band means ultraviolet-grade optics, a part class built for monochrome
+    instruments, against decision 19's colour detector. No decision here consumes the band, so
+    requiring it would buy a procurement problem and nothing else. Alternative L holds the one
+    use that would justify reopening it.
 
     The requirement is on the **path**, not on the detector. Sensor cover glass, lens coatings
     and the housing window of decision 11 each carry a cut of their own, and a part that
@@ -240,8 +269,8 @@ Fixed elsewhere, not restated here:
     the path it will actually sit in.
 
     This is what makes decision 3's sequencing load-bearing rather than merely preferable. With
-    no cut filter, far-red and ultraviolet reach the detector during every exposure, so the only
-    thing separating one band from another is that exactly one luminaire channel is energised.
+    no cut filter, far-red reaches the detector during every exposure, so the only thing
+    separating one band from another is that exactly one luminaire channel is energised.
     Alternative J records the rejection; this decision records the requirement that rejection
     implies, so that a part can be qualified against a decision rather than against the absence
     of an alternative.
@@ -263,7 +292,7 @@ Fixed elsewhere, not restated here:
     It costs nothing in the capture event. Decision 2's sequence already takes a white-only
     exposure, and that frame is the ordinary photograph. The viewable image is a **derived
     product** of it and not a second capture: demosaiced, and colour-rendered by a fixed
-    transform computed once against the reference surface of decision 6. Decision 5 forbids
+    transform computed once against the patch set of decision 6. Decision 5 forbids
     scene-dependent correction in the *measurement* path; a constant transform under a fixed
     illuminant is neither scene-dependent nor in that path, and the raw planes stay the
     measurement. The viewable image carries no quantity, so decision 16 governs values derived
@@ -281,10 +310,13 @@ Fixed elsewhere, not restated here:
   measuring it is surplus. Such a claim also requires the sensor present and trusted throughout
   the validation, so it cannot pay for itself before at least one full identification cycle.
 - **No dedicated imaging illuminator.** The cultivation luminaire is the only source and the band
-  set is bounded by `A02-LIGHT`. Against the profile instance's warm white, 660 nm red, 730 nm
-  far-red and 365–385 nm UV-A, that yields a far-red channel on the rising limb of the red edge
-  and no true near-infrared band; vegetation indices that require one are out of reach without
-  reopening this non-goal.
+  set is bounded by `A02-LIGHT`. Against the profile instance's warm white, 660 nm red and
+  730 nm far-red, that yields a far-red channel on the rising limb of the red edge and no true
+  near-infrared band; vegetation indices that require one are out of reach without reopening this
+  non-goal.
+- **Ultraviolet is an excitation band, not an imaging band.** The profile's 365–385 nm channel is
+  dosed for the crop and not for the camera, and decision 18 excludes it from the optical path.
+  Alternative L holds the one use that would reopen it.
 - **No analysis method is chosen** — colour indices, spectral transforms, learned encoders. The
   contract exists so that the choice stays open.
 - **No phenotypic or physiological claim** is made or implied.
@@ -339,15 +371,29 @@ permanently, since a superseded method cannot be re-run on data that no longer e
 **I. Defer the channel until an analysis method is chosen.** *Rejected:* the method cannot be
 chosen without data, and the contract is what produces data worth choosing a method from.
 
-**J. A sensor with an infrared-cut filter.** *Rejected:* the far-red and UV-A channels of ADR-0003
-d11 are the bands with the most contrast against foliage, and a cut filter removes the far-red
-one. The rejection depends on decision 3's single-channel sequencing: without it every colour
+**J. A sensor with an infrared-cut filter.** *Rejected:* the 730 nm far-red channel of ADR-0003
+d11 sits on the rising limb of the red edge, the strongest feature foliage has, and a cut filter
+removes it. The rejection depends on decision 3's single-channel sequencing: without it every colour
 plane takes a common far-red offset, and the cut filter becomes the better option. Decision 18
-states the requirement this rejection implies.
+states the requirement this rejection implies. The ultraviolet half of this argument is
+withdrawn: foliage reflectance there is low and largely featureless, and decision 18 no longer
+asks for the band.
 
 **K. A directional note inside ADR-0016, in the manner of its decision 16.** *Rejected:* this
 introduces a storage class, a requirement on an unwritten actuator specification, a mechanical
 assembly and a commissioning step. That is more than a direction.
+
+**L. Ultraviolet-A as an imaging or fluorescence band.** *Not adopted:* the attraction is real.
+ADR-0003 d11 doses the ultraviolet trace for flavonoid pathways, sugar and aroma, and
+`project/RESEARCH.md` L5 measures those traits destructively, so a fluorescence measure would be
+a non-destructive proxy for exactly them, which is decision 19's argument in another band. Three
+things stand in the way. The excitation is a trace by design while fluorescence emission runs
+orders of magnitude below reflected signal, so measurability is unestablished. Driving the
+channel hard enough to fix that is a dose well above the cultivation trace, repeated every event,
+which is a photobiological intervention needing decision 4's kind of accounting. And a leak
+invisible to an inspector swamps a fluorescence measurement, which makes `O-118` a precondition
+rather than a consequence. This is the reopening path, and it needs a measurability result before
+it is a design.
 
 ## Consequences
 
@@ -355,7 +401,7 @@ assembly and a commissioning step. That is more than a direction.
 
 - `O-88` acquires a path: a segmentation source exists and registers onto the thermal frame.
 - Leaf area becomes observable, moving a known drift term out of the ADR-0016 d7 residuals and
-  into the state.
+  into the state, within the bound `O-125` records.
 - Whole-canopy visual failure modes gain coverage no scalar sensor provides, complementing the
   residual monitoring of ADR-0016 d7 rather than duplicating it.
 - The crop-response line of `project/RESEARCH.md` gains a non-destructive observation channel
@@ -391,10 +437,11 @@ assembly and a commissioning step. That is more than a direction.
   interaction is unexamined.
 - **Stray-light expectation on the growing enclosure** (`O-118`) — absent from ADR-0032 and from
   `spec/E0011-R-specification.md`, while a capture event assumes the luminaire is the only source.
-- **The shared housing** (`O-119`) — window materials for the two optical paths, the thermal
-  break, condensation handling in a volume that may condense (`spec/E0005` `O-90`), clearance of
-  the `spec/E0005` §9 M1 cone, and whether the reference surface of decision 6 is part of the
-  assembly or separate.
+- **The shared housing** (`O-119`) — window materials per optical path, the thermal break,
+  condensation handling in a volume that may condense (`spec/E0005` `O-90`), clearance of the
+  `spec/E0005` §9 M1 cone, and the reference surface of decision 6: whether it belongs to the
+  assembly or stands separate, how many patches it carries, at what reflectances, and whether
+  those hold across a cultivation cycle.
 - **Registration tolerance** (`O-120`) — decision 12 fixes the procedure; what residual over
   R6's nine features is acceptable, and what an operator does when the fiducial exceeds it, are
   a commissioning step under ADR-0028 and are unset.
@@ -404,6 +451,14 @@ assembly and a commissioning step. That is more than a direction.
   channel is sufficient, which decides whether alternative F reopens.
 - **Retention bound and export path for raw frames** (`O-123`) — under the amended ADR-0020 d4,
   bounded by campaign rather than by capacity.
+- **Projected area saturates** (`O-125`) — decision 10's mask yields projected area, which
+  conflates vertical growth with lateral and stops rising once the canopy closes, while biomass
+  does not. Closure falls in the fruiting phase, which is when the Consequences credit the
+  observable most, so the bound is not a corner case. A second visible instrument on a known
+  baseline would yield height and volume, which do not saturate, and would make decision 11's
+  parallax bound measurable at every event rather than once at R5. That is the shape of a
+  possible answer and not a decision. The number follows `O-123`: `O-124` was allocated in this
+  record and retired when decision 19 answered it, and is not reused.
 
 ## References
 
@@ -417,7 +472,8 @@ assembly and a commissioning step. That is more than a direction.
   d2, d5, d7.
 - ADR-0017 (rev 3): Component, document, and instance identification scheme — d4, d5.
 - ADR-0019: Purchased-part (SP) identification — d6.
-- ADR-0020: Gateway persistence model — d2, d3, d4, d12.
+- ADR-0020: Gateway persistence model — d2, d3, d4, and d12 as a forward direction rather
+  than a decision.
 - ADR-0028: Commissioning sequence and calibration-trim custody.
 - ADR-0031 (rev 1): Actuator node taxonomy — d2, d4, d5, d8.
 - ADR-0032: Grow-box climate conditioning — d1 (enclosure envelope).
