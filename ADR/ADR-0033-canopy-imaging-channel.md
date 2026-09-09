@@ -161,6 +161,35 @@ Fixed elsewhere, not restated here:
     therefore what the statistic means. Leaf VPD stays deferred — this record supplies one
     missing input, not the pipeline ADR-0014 d4 defers.
 
+    **Registration is established against a target both instruments can see.** A printed pattern
+    is invisible to the imager, since black and white ink differ in emissivity by almost nothing.
+    A target carrying raised cylinders solves it: they absorb the luminaire's light and rise
+    above air temperature, so they read as warm blobs to the imager and as discs to the camera,
+    and the same nine features carry both correspondences. The cylinders stand on one baseplate,
+    so their spacings come from that part's own drawing rather than from a measurement in the
+    cabinet, and their height makes the parallax of decision 11 measurable instead of asserted.
+
+    ![A one-off session in which both instruments view a nine-cylinder target at many poses, solving the thermal lens model and the relative pose together, followed by a continuing check against the small in-frame fiducial](./figures/adr0033-registration.svg)
+
+    | ID | Step | Yields |
+    |---|---|---|
+    | R1 | Lock focus and fix the capture mode, then take the visible lens model from a chessboard target | Camera intrinsics and distortion |
+    | R2 | Capture pairs of the cylinder target at many poses across the working volume, luminaire on and settled | Correspondences visible in both instruments |
+    | R3 | Solve the imager's lens model and the camera-to-imager pose together | Both models, from one session |
+    | R4 | Project onto the canopy plane | The homography this decision uses |
+    | R5 | Sweep the target through the depth range | The parallax bound of decision 11 |
+    | R6 | Take residuals over the nine features | The registration tolerance (`O-120`) |
+
+    R3 is the step that earns the session. `spec/E0005` `O-92` records that the imager has no
+    per-pixel angular map and no distortion figure at all, so the imager is the binding term in
+    this error budget; the same captures that fix the pose also estimate the model that item is
+    missing. R1 is a precondition and not part of the session: intrinsics move with focus
+    position, so a lens that refocuses voids every step below it.
+
+    The session is run once per optical configuration and per assembly. It is not run again on a
+    schedule, because decision 9's in-frame fiducial reports drift continuously and a residual
+    past R6's tolerance is what calls for a repeat.
+
 13. **The capture schedule is a profile field.** A capture event changes luminaire state for a
     measurement purpose. Carrying the schedule in the signed profile keeps ADR-0015 d1 intact
     rather than opening a second channel that changes deployment behaviour.
@@ -357,8 +386,9 @@ assembly and a commissioning step. That is more than a direction.
   break, condensation handling in a volume that may condense (`spec/E0005` `O-90`), clearance of
   the `spec/E0005` §9 M1 cone, and whether the reference surface of decision 6 is part of the
   assembly or separate.
-- **Registration procedure and tolerance** (`O-120`) — as a commissioning step under ADR-0028,
-  with no tolerance established.
+- **Registration tolerance** (`O-120`) — decision 12 fixes the procedure; what residual over
+  R6's nine features is acceptable, and what an operator does when the fiducial exceeds it, are
+  a commissioning step under ADR-0028 and are unset.
 - **Characterisation of scene illumination non-uniformity** (`O-121`) — decision 8 requires it
   once per installation and fixes neither method nor interval.
 - **Red-edge contrast without a true near-infrared band** (`O-122`) — whether the 730 nm far-red
