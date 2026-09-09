@@ -145,7 +145,8 @@ Fixed elsewhere, not restated here:
 
     The housing shall provide a short, known and fixed baseline between the two apertures; a
     thermal break between camera and imager; two separate optical windows, since the imager needs
-    a long-wave-infrared-transmissive path (`spec/E0005` M2, `O-96`) and the camera a visible one;
+    a long-wave-infrared-transmissive path (`spec/E0005` M2, `O-96`) and the camera one passing
+    decision 18's whole band set;
     and no encroachment on the obstacle-free cone of `spec/E0005` §9 M1. It is a designed
     assembly, so it takes an E-number at design commit and not here (ADR-0017 d5). It is the
     project's first assembly whose discipline is mechanical: every `REGISTRY.md` E-number entry
@@ -188,6 +189,25 @@ Fixed elsewhere, not restated here:
     identification phase (ADR-0016 d2), not an authorial choice. The shared housing of decision 11
     does not bind the two instruments to one lifecycle, which is part of why they are separate
     boards.
+
+18. **The optical path passes the luminaire's whole band set, and carries no infrared-cut
+    filter.** The band set runs from the 365 to 385 nm ultraviolet-A channel to the 730 nm
+    far-red one. A standard infrared-cut filter passes roughly 400 to 650 nm: it removes the
+    far-red channel outright and clips the ultraviolet one. Silicon responds across the whole
+    span, so the filter is the only thing in the way and removing it costs nothing but the
+    filter.
+
+    The requirement is on the **path**, not on the detector. Sensor cover glass, lens coatings
+    and the housing window of decision 11 each carry a cut of their own, and a part that
+    satisfies this at the sensor can still fail it at the lens. A candidate is qualified against
+    the path it will actually sit in.
+
+    This is what makes decision 3's sequencing load-bearing rather than merely preferable. With
+    no cut filter, far-red and ultraviolet reach the detector during every exposure, so the only
+    thing separating one band from another is that exactly one luminaire channel is energised.
+    Alternative J records the rejection; this decision records the requirement that rejection
+    implies, so that a part can be qualified against a decision rather than against the absence
+    of an alternative.
 
 ## Non-goals
 
@@ -257,7 +277,8 @@ chosen without data, and the contract is what produces data worth choosing a met
 **J. A sensor with an infrared-cut filter.** *Rejected:* the far-red and UV-A channels of ADR-0003
 d11 are the bands with the most contrast against foliage, and a cut filter removes the far-red
 one. The rejection depends on decision 3's single-channel sequencing: without it every colour
-plane takes a common far-red offset, and the cut filter becomes the better option.
+plane takes a common far-red offset, and the cut filter becomes the better option. Decision 18
+states the requirement this rejection implies.
 
 **K. A directional note inside ADR-0016, in the manner of its decision 16.** *Rejected:* this
 introduces a storage class, a requirement on an unwritten actuator specification, a mechanical
@@ -282,7 +303,8 @@ assembly and a commissioning step. That is more than a direction.
 ### Negative
 
 - The growing enclosure acquires a stray-light expectation the ADR-0032 envelope does not carry
-  and `spec/E0011-R-specification.md` does not specify (`O-118`).
+  and `spec/E0011-R-specification.md` does not specify (`O-118`). Decision 18 widens it past what
+  the eye can check: a leak invisible to an inspector still lands in the far-red measurement.
 - ADR-0020's storage-volume premise no longer covers every purpose, so the store's sizing argument
   holds per purpose rather than globally.
 - Statistics derived from M04 acquire a versioned dependency on a mask produced outside M04. An
@@ -314,6 +336,12 @@ assembly and a commissioning step. That is more than a direction.
   once per installation and fixes neither method nor interval.
 - **Red-edge contrast without a true near-infrared band** (`O-122`) — whether the 730 nm far-red
   channel is sufficient, which decides whether alternative F reopens.
+- **Detector architecture: monochrome or colour** (`O-124`) — decision 3 puts the spectral
+  selectivity in the illuminant, so a colour filter array supplies no band separation the
+  sequencing has not already supplied, and costs resolution, sensitivity and a demosaic step
+  decision 5 forbids. Against that, colour-filter dyes lose selectivity above roughly 700 nm, so
+  a colour part's three planes converge in the far-red band and its response there is
+  uncharacterised by the vendor. The lean is monochrome; the choice belongs with part selection.
 - **Retention bound and export path for raw frames** (`O-123`) — under the amended ADR-0020 d4,
   bounded by campaign rather than by capacity.
 
