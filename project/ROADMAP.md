@@ -6,10 +6,10 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # IndustryGrow — implementation roadmap
 
 - **Status:** Living document
-- **Date:** 2026-08-03
+- **Date:** 2026-09-09
 - **Project:** IndustryGrow
 - **Parent:** ADR-0001
-- **Companions:** ADR-0002, ADR-0004, ADR-0014, ADR-0015, ADR-0016, ADR-0018, ADR-0020
+- **Companions:** ADR-0002, ADR-0004, ADR-0014, ADR-0015, ADR-0016, ADR-0018, ADR-0020, ADR-0033
 
 ## Scope
 
@@ -134,6 +134,39 @@ straddles stages 6 and 11.
   listed. If Gateway MVP is intended to be on the critical path before the survey,
   both the map and the table above change.
 
+## Canopy imaging rollout
+
+ADR-0033 fixes the capture contract for the visible-light imaging channel. It does not fix the
+order that contract is built in, and the contract can be staged: the useful half arrives well
+before the quantitative half. Non-normative, like the rest of this document.
+
+![Four sequential phases from a camera on a bracket to a chosen analysis method, with three capability bands underneath showing that the ordinary colour image is available from the first phase, a comparable series from the second, and the narrowband stack with its registered thermal mask from the third](figures/imaging-rollout-phases.svg)
+
+| # | Phase | Depends on | Governing decisions | Outcome |
+|---|-------|------------|---------------------|---------|
+| P1 | Learn | 4 (sensor platform) | ADR-0033 d19 | Cadence, resolution and storage volume known from a real cycle |
+| P2 | Contract | P1 | ADR-0033 d2, d6, d9, d13, d15 | Frames comparable across the cycle — the series begins |
+| P3 | Sequence and housing | P2, 5 (actuator layer) | ADR-0033 d2, d3, d11, d12, d14 | Narrowband stack and a mask registered onto the M04 frame; `O-88` gains its path |
+| P4 | Analysis | P3, 8 (modeling) | ADR-0033 d10, d16 | Leaf area in the state; segmentation method chosen and versioned |
+
+**P1 exists to be thrown away.** Its frames carry no reference surface and no fixed pose, so they
+are not comparable and are not the record. What P1 produces is the answer to what the channel
+actually needs, which is cheaper to learn from one cycle of ordinary photographs than to argue
+about. Any raw-capable camera on a bracket will do, and the ordinary colour image it yields is
+already the part an operator acts on. The camera itself needs only a gateway with a store and a
+luminaire; the dependency on stage 4 is for the environmental telemetry to correlate the images
+against, without which a cycle of photographs answers much less.
+
+**P3 needs an actuator.** Driving the luminaire to a fixed capture state independent of the
+recipe (ADR-0033 d3) is an `A02-LIGHT` command, so the narrowband sequence cannot precede the
+actuator layer. P1 and P2 need only that the light be repeatable, not that it be commanded.
+
+**Part selection sits between P1 and P2.** P2's requirements are raw output, no infrared-cut
+filter anywhere in the optical path (ADR-0033 d18), and exposure and gain that stay where they
+are set. Measure the run from the gateway to the canopy before choosing: the camera-interface
+ribbon is short, and that one measurement decides between a camera-interface module and an
+industrial camera over USB 3.
+
 ## Exit criteria for v1.0 (stage 14)
 
 A release is v1.0 when all of the following hold simultaneously: all five **Phase-1**
@@ -162,4 +195,6 @@ the gate is passed.
 - ADR-0017 — component / document / instance identification.
 - ADR-0018 — power distribution and rail monitoring (M05, the over-temperature interlock).
 - ADR-0020 — gateway persistence model (local store as lifecycle-dependent data sink).
+- ADR-0033 — canopy imaging channel (the capture contract the P1–P4 phases build out).
 - `industrygrow-roadmap-map.svg` / `gen_roadmap.py` — the figure and its generator.
+- `imaging-rollout-phases.svg` — the imaging phase figure; hand-written, not generated.
