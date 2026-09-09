@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="780" height="612" viewBox="0 0 780 612" role="img" aria-label="A01-CLIMATE working principle">
   <title>A01-CLIMATE — working principle</title>
-  <desc>The gateway issues one demand with a validity deadline per commanded element. The node conditions each demand and drives two DRV8262 stages from the +24 V section, with the remaining elements driven by an I2C PWM expander on the module. Four hardware interlocks gate both driver enables directly and cannot be overridden by firmware. Two air tracts run in parallel from the grow volume: a main tract whose two-module thermoelectric stack sets air temperature and is held above the grow-volume dew point, and a humidity tract whose subcooler sets humidity ratio at a commanded coil temperature, drains its condensate at a thermal break, and reheats at constant humidity ratio. Both stacks reject into one water loop that dissipates into the room.</desc>
+  <desc>The gateway issues one demand with a validity deadline per commanded element. The node conditions each demand and drives two DRV8262 stages from the +24 V section, with the remaining elements driven by an I2C PWM expander on the module. Four hardware interlocks gate both driver enables directly and cannot be overridden by firmware. Two air tracts run in parallel from the grow volume: a main tract whose two-module thermoelectric stack sets air temperature and is held above the grow-volume dew point, and a humidity tract whose subcooler sets humidity ratio at a commanded coil temperature, drains its condensate at a thermal break, and reheats at constant humidity ratio. The reheater is itself a thermoelectric link that pumps its heat out of the subcooler's own rejection plate rather than generating it, so unpowered it still conducts. Both stacks reject into one water loop that dissipates into the room.</desc>
 
   <defs>
     <marker id="ar" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#5F5E5A"/></marker>
@@ -37,7 +37,7 @@
 
   <rect x="336" y="100" width="188" height="44" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
   <text x="430" y="118" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">U6 DRV8262 — dual half-bridge</text>
-  <text x="430" y="132" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">E3 subcooler · E4 reheat · unsigned</text>
+  <text x="430" y="132" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">E3 subcooler · E4 reheat pump · unsigned</text>
 
   <rect x="532" y="100" width="216" height="44" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
   <text x="640" y="118" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">U9 PWM expander — I²C</text>
@@ -93,9 +93,13 @@
   <text x="562" y="421" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">drain, cleared</text>
   <text x="562" y="433" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">of the volume</text>
 
-  <rect x="288" y="460" width="230" height="44" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
-  <text x="403" y="478" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">HX3 LAM 5 50 + E4 reheat — last</text>
-  <text x="403" y="493" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">base temperature reported by U4</text>
+  <rect x="288" y="460" width="230" height="56" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="403" y="477" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">HX3 LAM 5 50 + E4 — TEC × 1</text>
+  <text x="403" y="491" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">base temperature reported by U4</text>
+  <text x="403" y="505" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#7A8DA6">zero drive still conducts (T11)</text>
+
+  <path d="M566 300 L543 300 L543 488 L524 488" fill="none" stroke="#7A8DA6" stroke-width="1.2" stroke-dasharray="5 3" marker-end="url(#arb)"/>
+  <text x="518" y="455" text-anchor="end" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#7A8DA6">reheat pumped from WB2</text>
 
   <!-- ============ rejection loop and room ============ -->
   <rect x="552" y="232" width="196" height="300" rx="6" fill="#FBFBF9" stroke="#C9C6BC"/>
@@ -106,7 +110,7 @@
 
   <rect x="566" y="284" width="168" height="46" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
   <text x="650" y="302" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">WB1, WB2 water blocks</text>
-  <text x="650" y="317" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">also the clamping plates</text>
+  <text x="650" y="317" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">also the clamping plates · WB2 feeds E4</text>
 
   <rect x="566" y="396" width="168" height="60" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
   <text x="650" y="414" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">rejection loop</text>

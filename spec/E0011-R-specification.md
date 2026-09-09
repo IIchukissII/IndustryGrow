@@ -90,9 +90,9 @@ own state (`D9`, `D10`, `D11`) and executes it (ADR-0015 d18).
 | Tract | Flow | Sets | Method |
 |---|---|---|---|
 | Main | 56 m³/h | Air temperature | `E1` on HX1, floored above the grow-volume dew point (`D10`) |
-| Humidity | 1.7 m³/h | Humidity ratio | `E3` subcools to a commanded coil temperature (`D11`), `E4` reheats at constant humidity ratio (`D12`) |
+| Humidity | 1.7 m³/h | Humidity ratio | `E3` subcools to a commanded coil temperature (`D11`), `E4` pumps reheat from WB2 at constant humidity ratio (`D12`, ADR-0032 d7) |
 
-![Gateway demands into a conditioned node; a main tract with a two-module thermoelectric stack on a finned exchanger rejecting into a water block, and a humidity tract with a subcooler, a thermal break with a condensate siphon, and a reheater; four hardware interlocks gate the driver enables](./figures/a01-climate-principle.svg)
+![Gateway demands into a conditioned node; a main tract with a two-module thermoelectric stack on a finned exchanger rejecting into a water block, and a humidity tract with a subcooler, a thermal break with a condensate siphon, and a reheater that pumps its heat back out of the subcooler's rejection plate; four hardware interlocks gate the driver enables](./figures/a01-climate-principle.svg)
 
 ### 3.1 Commanded elements
 
@@ -101,11 +101,11 @@ own state (`D9`, `D10`, `D11`) and executes it (ADR-0015 d18).
 | `E1` | Main thermoelectric stack | 2 × 40 × 40 mm module, series | −1.000 … +1.000, signed; positive heats the grow volume | −0.30 … 0 | 0.001 (`verify` against DSDL type, `O-102`) |
 | `E2` | Main-tract fan | ebm-papst 612/614 NHH, integral to the exchanger | 0.000 … 1.000 | 0.4 … 1.0 continuous, 1.0 in the `D15` pulse | 0.001 |
 | `E3` | Subcooler thermoelectric module | 1 × 40 × 40 mm module | 0.000 … 1.000, unsigned; cooling only | 0 … 0.30 | 0.001 |
-| `E4` | Reheater | Resistive element on the hot section | 0.000 … 1.000 | 0 … 0.70 | 0.001 |
+| `E4` | Reheater | Thermoelectric module bridging WB2 and HX3, cold face on WB2 | 0.000 … 1.000, unsigned; heating only | 0 … 0.35 | 0.001 |
 | `E5` | Humidity-tract fan | Sepa MFB 50 E 05 A | 0.000 … 1.000 | 0.17 … 0.40 | 0.001 |
 | `E6` | CO₂ metering valve | Solenoid, pulse-dosed — **not populated in the baseline** | 0.000 … 1.000 | — | 0.001 |
 
-Full scale of `E1` and `E3` corresponds to the string current limit of `D2`, not to the module's
+Full scale of `E1`, `E3` and `E4` corresponds to the string current limit of `D2`, not to the module's
 `Imax`. `E6` is unpopulated under ADR-0003 d8 and §3.4.
 
 ### 3.2 Published quantities
@@ -153,11 +153,12 @@ unpopulated branch publishes and commands (ADR-0014 d1, d2).
 | RT2 | NTC 10 kΩ, on a lead in the grow volume | `T3` trip element, both thresholds (ADR-0018 d10) | — | — |
 | TEC1, TEC2 | 40 × 40 mm, 127 couple, `Imax` 6.4 A, `Qmax` 57 W, `ΔTmax` 66 K at `Th` 25 °C, α 0.0608 V/K, R 2.78 Ω, K 0.864 W/K (all `verify`) | `E1`, series pair | Series string | `+24 V` actuator |
 | TEC3 | Same part | `E3`, single | — | `+24 V` actuator |
+| TEC4 | Module for `E4`, not the TEC1–TEC3 part; sized by `D16` and `T11` (`O-103`) | `E4`, single | — | `+24 V` actuator |
 | HX1 | Fischer LA 6 150 12, 62 × 74 mm, `Rth` 0.17 K/W (`verify`, `O-112`) | Grow-volume exchanger of the main tract, and the cabinet's circulation | — | — |
 | HX2 | Fischer LAM 5, 100 mm, `h·A` 1.64 W/K (`verify`) | Cold section of the humidity tract | — | — |
-| HX3 | Fischer LAM 5 50 5, `h·A` 0.82 W/K (`verify`) | Hot section of the humidity tract, carrying `E4` | — | — |
+| HX3 | Fischer LAM 5 50 5, `h·A` 0.82 W/K (`verify`) | Hot section of the humidity tract, carrying TEC4's hot face | — | — |
 | WB1 | Water block, 40 × 120 mm | Rejection side of `E1`, and its clamping plate | — | — |
-| WB2 | Water block or cold plate | Rejection side of `E3` | — | — |
+| WB2 | Water block or cold plate, two working faces | Rejection side of `E3` and cold-side source for `E4` | — | — |
 | U5 | TI DRV8262, HTSSOP-44, **single-H-bridge mode**. 4.5…60 V; 50 mΩ HS+LS; integrated charge pump for 100 % duty; integrated high-side current sense, IPROPI ±4 %; UVLO, CPUV, OCP, OTSD, `nFAULT` | `E1` direction and current regulation (`D2`, `D3`) | 3.3 V logic, `+24 V` power | `+24 V` |
 | U6 | TI DRV8262, **dual-half-bridge mode** | `E3` current regulation and `E4` duty, unidirectional (`D11`, `D12`) | 3.3 V logic, `+24 V` power | `+24 V` |
 | L1, L2 | Series inductors, string side (`verify` — values from `D4`) | Ripple filters for the drivers' off-time chopping | — | — |
@@ -228,10 +229,11 @@ reallocates all three. The pin-map changes this requires are `O-100`.
 | `D9` | Water-block temperature from U1 derates every thermoelectric demand: full scale below 35 °C, linear to zero at **45 °C**, re-enable below 32 °C (`verify`). Runs on the node and applies to any commanded value | ADR-0031 d4 |
 | `D10` | Main exchanger base temperature from U2 is floored so the surface stays above the grow-volume dew point. The operative floor arrives with the demand — 13.4 °C day, 3.7 °C night at the wet edge of the band (`verify`). The node holds a commissioned absolute minimum of 3.0 °C (`verify`) that no command lowers. `E1` cooling demand is derated to hold whichever floor is higher | ADR-0032 d5, ADR-0015 d18, `O-102` |
 | `D11` | `E3` is unidirectional. Its demand is conditioned against a coil-temperature setpoint measured at U3, with a hard floor of **+1 °C** (`verify`) below which cooling demand is driven to zero | ADR-0032 d4, ADR-0003 d7 |
-| `D12` | `E4` is the last element of the humidity tract, downstream of HX2. `E4` is inhibited whenever `T5` is tripped or `E5` demand is below `D13`'s minimum | `T5` |
+| `D12` | `E4` is the last element of the humidity tract, downstream of HX2, and pumps from WB2 rather than dissipating. `E4` is inhibited whenever `T5` is tripped or `E5` demand is below `D13`'s minimum | `T5`, ADR-0032 d7 |
 | `D13` | `E5` starts with a full-scale pulse of 250 ms (`verify`) before settling to its commanded duty; commanded duty below 0.15 is driven as zero | `E5` |
 | `D14` | `E6` is commanded as a pulse train against a commissioned minimum open time; it is inhibited whenever `E5` demand is zero. Verified at the CO₂ population only | `O-110` |
 | `D15` | `E2` also carries the pollination pulse: a full-scale excursion over the flowering zone at the profile's duration and interval, issued by the gateway as an ordinary demand. No pulse timing is node-local | ADR-0003 d13, ADR-0031 rev 1 d2 |
+| `D16` | `E4` is unidirectional. At the design point it delivers 6.6 W to HX3 at 0.51 A and 1.61 V, drawing **0.82 W**; at the largest lift, WB2 at 22 °C against a 30 °C HX3, it draws **1.69 W** (both `verify`, computed on the TEC1–TEC3 parameters pending `O-103`). Demand is conditioned against U4 | ADR-0032 d7, `O-103` |
 
 ## 7. Power
 
@@ -239,11 +241,11 @@ reallocates all three. The pin-map changes this requires are `O-100`.
 |---|---|---|
 | `P1` | Node logic is powered from the `+12 V` SELV sensor bus and derives 3.3 V on the carrier. No actuator element is on that rail | ADR-0018 d3 |
 | `P2` | Elements are fed from the `+24 V` actuator section: TDK-Lambda Vega 650 (`K60050B`), C5 module, 24 V 10 A. Chassis total 650 W is shared across fitted modules (`verify`) | ADR-0018 d3, `O-104` |
-| `P3` | Draw at the worst simultaneous point: `E1` 18.7 W, `E3` 9.5 W, `E4` 6.6 W, `E2` 2.9 W, `E5` 0.5 W — 38 W, 1.6 A from `+24 V` (`verify`). One C5 module carries the module with the balance available to other branches | `D1` |
+| `P3` | Draw at the worst simultaneous point: `E1` 18.7 W, `E3` 9.5 W, `E4` 1.7 W, `E2` 2.9 W, `E5` 0.5 W — 33.3 W, 1.4 A from `+24 V` (`verify`). One C5 module carries the module with the balance available to other branches | `D1` |
 | `P4` | Per-branch overcurrent protection is the supply module's own current limit plus the drivers' OCP; no central per-load fuse | ADR-0018 d8 |
 | `P5` | The switched return is not shared with the logic or analog ground at the module. Isolation of the command path lives at this actuator | ADR-0018 d7, d8 |
 | `P6` | U5 dissipates 0.20 W and U6 0.14 W at the `D2` and `D11` limits (50 mΩ HS+LS × I²). Each thermal pad is bonded to a copper pour sized for it (`verify`) | U5, U6 |
-| `P7` | Module energy at the design profile is 0.83 kWh/day: `E1` 0.37, `E3` 0.15, `E4` 0.11, `E2` 0.07, `E5` 0.01, rejection-loop pump 0.12 (`verify`). Divergence from the M05 S0 meter beyond 15 % invalidates the §2.2 basis | ADR-0018 d5 |
+| `P7` | Module energy at the design profile is 0.73 kWh/day: `E1` 0.37, `E3` 0.15, `E4` 0.01, `E2` 0.07, `E5` 0.01, rejection-loop pump 0.12 (`verify`). Divergence from the M05 S0 meter beyond 15 % invalidates the §2.2 basis | ADR-0018 d5 |
 
 ## 8. Thermal requirements and interlocks
 
@@ -259,6 +261,7 @@ reallocates all three. The pin-map changes this requires are `O-100`.
 | `T8` | The room absorbs the `T6` rejection load with an ambient rise ≤ 2 K (`verify`). Ambient outside 15…30 °C is outside this variant | §2.1 |
 | `T9` | Conduction between HX2 and HX3 through `TB1` is ≤ 1 W at a section-to-section ΔT of 18 K (`verify`) | `M7` |
 | `T10` | `T2`–`T5` act on the driver enables directly. Firmware reads their state but cannot override or re-arm any of them | ADR-0015 d11, ADR-0018 d10 |
+| `T11` | **Zero drive on `E4` is not zero heat transfer.** TEC4 conducts WB2's heat into HX3 whenever WB2 is the warmer plate, including at the `D8` safe output and at every interlock trip. TEC4 is sized so that this uncommanded reheat stays ≤ **3 W** (`verify`) at the largest reverse lift, WB2 at the `D9` ceiling against a 25.4 °C HX3. The TEC1–TEC3 part fails that bound at 0.864 W/K and is therefore not TEC4 | ADR-0032 d7, ADR-0031 d6, `D8`, `O-103` |
 
 ## 9. Mechanical requirements
 
@@ -326,13 +329,14 @@ reallocates all three. The pin-map changes this requires are `O-100`.
 | `V28` | `F2`, `F10`, `F12` | Remove one 1-Wire device; confirm its quantity is not published. Offer the node a humidity, VPD or CO₂ setpoint; confirm it is refused |
 | `V29` | `F3`, `F5`, `F7` | Record the node loop rate; confirm a trip is published and latched until reset; confirm every `F7` constant is read from node-local storage and none from the profile |
 | `V30` | `P2`, `P4` | Short one element at its connector with the string at its limit; confirm the supply module's current limit and the driver OCP act, that no other branch on the C5 module drops out, and that the supply recovers on removal |
+| `V31` | `D16`, `T11`, ADR-0032 d7 | Reheat delivered to HX3 measured against `E4`'s electrical input at the design point and at the largest lift; the coefficient of performance shall exceed 1 at both. With `E4` at zero drive and WB2 held at the `D9` ceiling, the heat crossing into HX3 measured against `T11`'s 3 W bound |
 
 ## 12. Open items
 
 - `O-100` — Actuator class IDs require the EEPROM transport, so A01 cannot run on carrier `E0001-000003` (ADR-0031 d10). The `E0001-000100` pin map must also carry the 1-Wire line and reallocate `STRAP_0` as a general input (§5). Blocks fabrication.
 - ~~`O-101`~~ — ~~No actuator-taxonomy ADR (ADR-0014 d9).~~ — closed 2026-09-07 by ADR-0031.
 - `O-102` — No DSDL type for a signed or unsigned actuator demand with a validity deadline. Blocks `F3`.
-- `O-103` — Thermoelectric module not selected; α, R, K, clamping force and TIM are unconfirmed, and `L1`, `L2` follow from them. Driver continuous RMS current by package is unread. Blocks `D1`, `D4`, `M1`, `M2`.
+- `O-103` — Thermoelectric module not selected; α, R, K, clamping force and TIM are unconfirmed, and `L1`, `L2` follow from them. Driver continuous RMS current by package is unread. TEC4 is a separate selection under this item and is not the TEC1–TEC3 part: bounded below by `D16`'s largest lift, above by `T11`'s conductance ceiling. Blocks `D1`, `D4`, `D16`, `M1`, `M2`, `T11`.
 - `O-104` — Vega 650 startup, inhibit and output-isolation behaviour unconfirmed against the manual. Blocks `P2`.
 - `O-105` — Envelope conductance is computed, not identified (ADR-0016 survey). Blocks sufficiency of `T1` and the `D10` floor.
 - `O-106` — Outdoor deployment variant not specified.
