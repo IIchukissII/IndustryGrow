@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # IndustryGrow — Research Trajectory
 
 - **Status:** Living document (forward research view; non-normative)
-- **Date:** 2026-06-20
+- **Date:** 2026-09-08
 - **Project:** IndustryGrow
 - **Parent:** ADR-0001
 - **Companions:** ADR-0014, ADR-0015, ADR-0016; `MOTIVATION.md`; `project/ROADMAP.md`
@@ -196,6 +196,18 @@ effective sample rate of the cycle-bound learning loop improves up to `m`× over
 single-slot experiment — the formal basis for "cadence-as-DoE." The `m`× ceiling
 assumes slot independence (no shared confounder, low common-mode variance); that
 independence is itself a hypothesis L5 (and L7) must test, not assume.
+
+Quality proxies are destructive and end the plant they measure. The canopy imaging
+channel (ADR-0033) is the non-destructive counterpart: repeated observation of the
+same plant across its cycle, at the cadence the capture schedule sets. Observed leaf
+area also moves a term that ADR-0016 names as a cause of drift out of the estimator
+residuals and into the state, where L1 can identify it rather than absorb it.
+
+Imaging-derived features are many and cheap, and environment against features is a
+wide exploratory grid: the multiple-comparison hazard is real and grows with every
+feature added. Repeated exploratory analysis on a longer record is not replication.
+The set of hypotheses under test is fixed before the confirming series opens, and the
+staggered-slot design above is what makes a confirming series affordable at all.
 
 **L6 — two-level integration.** Validity of the two-level (biological / climate)
 split rests on singular-perturbation theory: with slow states `x_s` and fast

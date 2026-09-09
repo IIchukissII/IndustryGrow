@@ -56,6 +56,8 @@ This ADR carries **decisions and rationale only**. On-disk formats, exact storag
 
 4. **Survey-capture mode.** A distinct, **time-boxed**, higher-rate local capture for an ADR-0016 identification campaign (survey phase, ADR-0016 decision 1), exported off-device for off-line identification (ADR-0016 decisions 2, 13). Because features rather than raw frames traverse the bus, survey-storage volume is modest. This mode is active only during a campaign; it is not a steady-state behaviour.
 
+   > **Amended by ADR-0033:** the *survey-storage volume is modest* premise does not hold for the canopy imaging channel, whose purpose is retained raw frames. Only that premise is amended — the mode stays time-boxed to a campaign, and the store stays best-effort (decision 3).
+
 5. **Configuration and identity state are unaffected.** `active-profile.json` (ADR-0015 decision 4), the monotonic batch sequence number (ADR-0004 rev 1 decision 10), firmware artifacts (ADR-0004 rev 1 decision 13), and the ATECC-bound identity (ADR-0004 / ADR-0007) are already-permitted persistent state and are unchanged by this ADR.
 
    > **Amended by ADR-0024 (decision 4):** the **operator CA trust anchor** joins this enumeration. It was absent because the PKI that needs one had not been stood up; ADR-0024 stands it up, and the anchor is configuration state of a kind with the identity certificate already listed here. The rest of this decision is unchanged.
