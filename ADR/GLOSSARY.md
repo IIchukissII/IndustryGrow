@@ -134,6 +134,16 @@ removed, or replaced; no suffix slot by design. Origin: ADR-0017 (decision 1 for
 the integration format; decision 13 for the mutable-cross-reference role),
 ADR-0016.
 
+**`O-NNN` (open item)** `[F]` — an unresolved question recorded against the
+document that surfaced it, in **one namespace shared across every specification**
+and the records that allocate from it. The number is opaque and permanent: items
+are **never renumbered**, and a retired number is **not reissued**, so a gap in
+the sequence carries no meaning. A new item continues from the highest number in
+use across the tree. In a specification a closed item is struck through in place,
+keeping its number visible. The register is distributed — each specification's
+open-items section names the stretches it owns. Origin: the open-items sections
+of the module specifications, which are also where the register is kept.
+
 ---
 
 ## Part 2 — Disambiguated words (multiple legitimate senses)
@@ -159,6 +169,15 @@ Rule: bare "layer" is never the document sense; the document sense is always
   names are `main` and `sub-position` (Part 1); prefer those in normative text.
 Never use "level" to mean a document layer.
 
+**mask** — two per-pixel selections over the *same* thermal frame, one feeding
+the other, so the bare word is never sufficient:
+- *hotspot mask* — M04's own on-node selection, part of its frame statistics
+  (ADR-0014 decision 4; `spec/E0005-R-specification.md` §6.4).
+- *canopy mask* — which pixels are plant, derived from a visible frame and
+  registered onto the thermal frame (ADR-0033 decisions 10 and 12).
+Rule: always qualify. A canopy mask changes what an M04 statistic means; a
+hotspot mask is one of those statistics.
+
 **module** — four senses; the most overloaded word in the project. Always
 qualify:
 - *IndustryFlow `module`* — a data-model entity = a functional subsystem (a
@@ -173,6 +192,17 @@ qualify:
 - *circuit node* — an electrical net / junction ("input node", ADR-0014). EE;
   always written "circuit node" / "input node".
 Never use "node" for a tree vertex — that is a *vertex* (Part 1).
+
+**reference / target** — three flat calibration objects with near-identical
+names, all discussed around the same housing:
+- *reference target* — a thermal reference of known **emissivity**, used at
+  commissioning and in verification (`spec/E0005-R-specification.md` V1, V10).
+- *reference surface* — the diffuse patch set of known **reflectance** carried
+  in **every** visible frame (ADR-0033 decision 6).
+- *registration target* — the cylinder-and-pattern baseplate, used **once** per
+  optical configuration and assembly (ADR-0033 decision 12).
+Rule: never write bare "reference" or bare "target". The qualifier carries the
+quantity (emissivity or reflectance) and the cadence (every frame or once).
 
 ---
 
