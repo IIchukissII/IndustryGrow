@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="452" viewBox="0 0 980 452" role="img" aria-label="Canopy imaging rollout in four phases">
+  <title>Canopy imaging channel — rollout phases</title>
+  <desc>Four sequential phases, P1 to P4, each depending on the one before it. P1 puts any raw-capable camera on a bracket for one cultivation cycle to learn what the channel needs; its data is deliberately disposable and is not part of the record. P2 adds the capture contract — fixed pose, the in-frame reference surface, fixed exposure per band, raw retention and the schedule carried in the profile — and the comparable series begins here. P3 adds the per-channel narrowband sequence, the housing shared with the M04 thermal imager, and registration of the mask onto the thermal frame, which is what gives open item O-88 a path. P4 chooses the analysis method and runs it on frames that already exist. Three capability bands run underneath in a staircase: the ordinary colour image is available from P1 onward, the comparable series from P2 onward, and the narrowband stack with the registered thermal mask from P3 onward.</desc>
+
+  <defs>
+    <marker id="seq" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto"><path d="M0 0 L7 3.2 L0 6.4 Z" fill="#2E6B4F"/></marker>
+  </defs>
+
+  <rect x="0.5" y="0.5" width="979" height="451" rx="10" fill="#F4F6F5" stroke="#D8DED9"/>
+  <text x="490" y="30" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#16201B">Canopy imaging channel — rollout phases</text>
+  <text x="490" y="48" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#5B6B63">ADR-0033 fixes the capture contract; this is the order it is built in</text>
+
+  <!-- ============ phase cards ============ -->
+  <rect x="28" y="66" width="216" height="152" rx="5" fill="#FFFFFF" stroke="#C2871F"/>
+  <text x="42" y="88" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#16201B">P1 — Learn</text>
+  <text x="42" y="108" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5B6B63">any raw-capable camera</text>
+  <text x="42" y="123" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5B6B63">on a bracket</text>
+  <text x="42" y="141" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5B6B63">one frame a day, one cycle</text>
+  <text x="42" y="159" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5B6B63">no housing, no reference</text>
+  <text x="42" y="174" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5B6B63">surface, no registration</text>
+  <text x="42" y="199" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#C2871F">data disposable by design</text>
+
+  <line x1="244" y1="142" x2="266" y2="142" stroke="#2E6B4F" stroke-width="1.4" marker-end="url(#seq)"/>
+
+  <rect x="268" y="66" width="216" height="152" rx="5" fill="#FFFFFF" stroke="#C9CFC9"/>
+  <text x="282" y="88" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#16201B">P2 — Contract</text>
+  <text x="282" y="108" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5B6B63">fixed pose and fiducials</text>
+  <text x="282" y="123" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5B6B63">reference surface in frame</text>
+  <text x="282" y="138" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5B6B63">fixed exposure per band</text>
+  <text x="282" y="153" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5B6B63">raw frames retained</text>
+  <text x="282" y="168" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5B6B63">schedule carried in the profile</text>
+  <text x="282" y="199" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#2E6B4F">the record starts here</text>
+
+  <line x1="484" y1="142" x2="506" y2="142" stroke="#2E6B4F" stroke-width="1.4" marker-end="url(#seq)"/>
+
+  <rect x="508" y="66" width="216" height="152" rx="5" fill="#FFFFFF" stroke="#C9CFC9"/>
+  <text x="522" y="88" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#16201B">P3 — Sequence and housing</text>
+  <text x="522" y="108" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5B6B63">one exposure per channel</text>
+  <text x="522" y="123" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5B6B63">housing shared with M04</text>
+  <text x="522" y="138" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5B6B63">mask registered onto the</text>
+  <text x="522" y="153" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5B6B63">thermal frame</text>
+  <text x="522" y="168" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5B6B63">commissioning step added</text>
+  <text x="522" y="199" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#2E6B4F">O-88 gains its path</text>
+
+  <line x1="724" y1="142" x2="746" y2="142" stroke="#2E6B4F" stroke-width="1.4" marker-end="url(#seq)"/>
+
+  <rect x="748" y="66" width="216" height="152" rx="5" fill="#FFFFFF" stroke="#C9CFC9"/>
+  <text x="762" y="88" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#16201B">P4 — Analysis</text>
+  <text x="762" y="108" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5B6B63">segmentation method chosen</text>
+  <text x="762" y="123" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5B6B63">and versioned</text>
+  <text x="762" y="141" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5B6B63">leaf area into the state</text>
+  <text x="762" y="159" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5B6B63">indices, classifiers</text>
+  <text x="762" y="199" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#2E6B4F">runs on frames already held</text>
+
+  <!-- ============ capability staircase ============ -->
+  <text x="28" y="252" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#16201B">WHAT IS AVAILABLE FROM EACH PHASE ONWARD</text>
+
+  <rect x="28" y="262" width="936" height="36" rx="4" fill="#E6EFE8" stroke="#B9CDC0"/>
+  <text x="42" y="285" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#16201B">ordinary colour image — disease and disorder, human review of a flagged residual, documentation</text>
+
+  <rect x="268" y="306" width="696" height="36" rx="4" fill="#EFEDE6" stroke="#D3CDBC"/>
+  <text x="282" y="329" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#16201B">comparable series — one frame is measurable against another across the cycle</text>
+
+  <rect x="508" y="350" width="456" height="36" rx="4" fill="#EAEDF0" stroke="#BFCBD6"/>
+  <text x="522" y="373" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#16201B">narrowband stack and the registered thermal mask</text>
+
+  <!-- ============ footnotes ============ -->
+  <text x="28" y="412" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5B6B63">The ordinary colour image arrives first and stays available throughout — it is the white-channel frame of the capture sequence, rendered for viewing (ADR-0033 d19).</text>
+  <text x="28" y="428" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5B6B63">P1 answers what resolution, cadence and storage the channel actually needs. Its frames carry no reference surface and no fixed pose, so they are not comparable and are not the series.</text>
+  <text x="28" y="444" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5B6B63">Part selection happens between P1 and P2: the P2 requirements are raw output, no infrared-cut filter in the path (d18), and exposure and gain that stay where they are set.</text>
+</svg>
