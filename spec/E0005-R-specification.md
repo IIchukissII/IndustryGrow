@@ -91,7 +91,7 @@ layer named.
 | **Canopy-to-air temperature differential** — needs M01's air temperature from a second node | **Gateway** (ADR-0016 d5, soft sensor) |
 | **Leaf VPD, per-leaf temperature** | **Deferred** (ADR-0014 rev 1 and d4): requires a canopy-segmentation pipeline that does not exist |
 | **Canopy segmentation** — which pixels are leaf and which are structure, medium or luminaire | **Not implemented.** §6.4's statistics are frame-wide, not canopy-only. O-88 |
-| Visible-light camera | Gateway; not a Cyphal node (ADR-0014 d9) |
+| Visible-light camera | **Gateway** (ADR-0014 d9); the channel is owned by ADR-0033, which houses it with this module (d11) |
 
 M04 carries no air, gas, pressure, humidity or light sensor. Ta is the imager's die temperature
 and is **not** air temperature (§8 T1).
@@ -578,7 +578,7 @@ are M02's; O-74 is M05's; O-76 to O-85 are the service tool's.
 |----|------|--------|
 | O-86 | Mounting height and the canopy area one instance covers are not fixed: ADR-0006 defers cabinet dimensions to a mechanical specification, so the selection rule of §6.6 has no input | FOV variant confirmation, M5, M7, V2 |
 | O-87 | Leaf emissivity, reflected apparent temperature and the canopy-to-air differential band of §3 are not established. ε = 1 and Tr = Ta − 8 K are placeholders, not values | Absolute canopy temperature, expected range, V10 |
-| O-88 | No canopy segmentation exists, so §6.4's statistics are frame-wide and include structure, medium and luminaire pixels. ADR-0014 d4 defers the pipeline | Meaning of every statistic, leaf VPD, hotspot interpretation |
+| O-88 | No canopy segmentation exists, so §6.4's statistics are frame-wide and include structure, medium and luminaire pixels. ADR-0014 d4 defers the pipeline. ADR-0033 d10 and d12 define the intended mask source and its registration onto the thermal frame; no pipeline exists and the item stays open | Meaning of every statistic, leaf VPD, hotspot interpretation |
 | O-89 | DS12 states an additional ±3 °C over years for objects around room temperature — the operating point of §3 — with no re-referencing scheme. Whether the module is periodically referenced against a known target, against M01's air temperature at a settled night point, or replaced on an interval | Absolute accuracy over service life, calibration protocol |
 | O-90 | The device carries no humidity rating in DS12 and its optical surface is exposed in a volume that may condense. Post-condensation validity, recovery and M4's inspection interval are undefined | Excursion handling, data validity, maintenance procedure |
 | O-91 | One subpage read blocks the I²C driver for 37.5 ms and the module reads eight times a second (§5.2). §10's chunking requirement is implemented at 128 words per pass, ≈ 5.8 ms, and is unverified against heartbeat continuity and file-service responsiveness on hardware | V3 |
@@ -590,6 +590,7 @@ are M02's; O-74 is M05's; O-76 to O-85 are the service tool's.
 | O-97 | The frame archive is 5.62 MB per day per instance (§10.2), against an ADR-0020 d2 buffer whose bound is set in time and sized for scalar telemetry. Pre-cloud the gateway is the primary durable sink, so retention, downsampling and export of the archive are unowned | Gateway storage sizing, ADR-0020 d2 |
 | O-98 | The event-trigger constants `n_event` and `delta_event` (§10) have defaults but no basis: no record establishes what canopy excursion is worth a frame | Event path, V8 |
 | O-99 | The flat-field trim of §6.7 has a store (ADR-0028 d10) and no **determination protocol**: the project owns no uniform reference target, and whether a one-point field suffices across the 8…32 °C band or a two-point field is required is unsettled. Until it is determined, ±0.5 K of fixed-pattern non-uniformity stands (§6.3) | Spatial accuracy, the `-CP` / `-CC` records, V16 |
+| O-119 | ADR-0033 d11 houses this module with a visible-light camera in one assembly. The thermal break that keeps the camera off T3's settled-conditions premise, the two-window arrangement against M2 and O-96, condensation handling against O-90, and clearance of the §9 M1 cone are unspecified, and the assembly has no E-number | Enclosure design, M1, M2, T3, ADR-0033 d11 |
 
 ## 13. Maturity
 
