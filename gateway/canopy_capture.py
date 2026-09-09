@@ -26,7 +26,7 @@ is PEP 668 isolated and has no access to it.
 
 Daily capture, mid-photoperiod so the luminaire is in a repeatable state:
 
-    5 13 * * *  /usr/bin/python3 /home/igrow/canopy_capture.py >> /home/igrow/canopy/capture.log 2>&1
+    5 13 * * * /usr/bin/python3 /home/igrow/canopy_capture.py >> /home/igrow/cap.log 2>&1
 """
 
 from __future__ import annotations
@@ -38,7 +38,7 @@ import os
 import subprocess
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 VERSION = "1"
@@ -83,7 +83,9 @@ def clock_is_synced() -> bool | None:
     try:
         out = subprocess.run(
             ["timedatectl", "show", "-p", "NTPSynchronized", "--value"],
-            capture_output=True, text=True, timeout=5,
+            capture_output=True,
+            text=True,
+            timeout=5,
         )
         return out.stdout.strip() == "yes"
     except (OSError, subprocess.SubprocessError):
@@ -112,8 +114,12 @@ def pinned_controls(cfg: dict, cam) -> dict:
         "AnalogueGain": float(cfg["analogue_gain"]),
         "ColourGains": tuple(float(g) for g in cfg["colour_gains"]),
     }
-    for name, value in (("Brightness", 0.0), ("Contrast", 1.0),
-                        ("Saturation", 1.0), ("Sharpness", 1.0)):
+    for name, value in (
+        ("Brightness", 0.0),
+        ("Contrast", 1.0),
+        ("Saturation", 1.0),
+        ("Sharpness", 1.0),
+    ):
         if name in cam.camera_controls:
             ctrls[name] = value
     if "NoiseReductionMode" in cam.camera_controls:
@@ -142,8 +148,12 @@ def light_state(cfg: dict) -> dict | None:
         return None
     try:
         out = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=30)
-        return {"command": cmd, "returncode": out.returncode,
-                "stdout": out.stdout.strip()[:4000], "stderr": out.stderr.strip()[:1000]}
+        return {
+            "command": cmd,
+            "returncode": out.returncode,
+            "stdout": out.stdout.strip()[:4000],
+            "stderr": out.stderr.strip()[:1000],
+        }
     except (OSError, subprocess.SubprocessError) as exc:
         return {"command": cmd, "error": str(exc)}
 
@@ -166,7 +176,7 @@ def capture(cfg: dict) -> int:
     cam.start()
     time.sleep(cfg["settle_seconds"])
 
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     dng, jpg, side = out / f"{stamp}.dng", out / f"{stamp}.jpg", out / f"{stamp}.json"
 
     request = cam.capture_request()
@@ -185,22 +195,25 @@ def capture(cfg: dict) -> int:
         "captured_utc": stamp,
         "clock_ntp_synced": clock_is_synced(),
         "phase": "P1",
-        "requested_controls": {k: list(v) if isinstance(v, tuple) else v
-                               for k, v in ctrls.items()},
-        "applied_metadata": {k: (list(v) if isinstance(v, (tuple, list)) else v)
-                             for k, v in applied.items()
-                             if isinstance(v, (int, float, str, tuple, list, bool))},
+        "requested_controls": {k: list(v) if isinstance(v, tuple) else v for k, v in ctrls.items()},
+        "applied_metadata": {
+            k: (list(v) if isinstance(v, (tuple, list)) else v)
+            for k, v in applied.items()
+            if isinstance(v, (int, float, str, tuple, list, bool))
+        },
         "light_state": light_state(cfg),
-        "files": {f.name: {"bytes": f.stat().st_size, "sha256": sha256(f)}
-                  for f in (dng, jpg)},
+        "files": {f.name: {"bytes": f.stat().st_size, "sha256": sha256(f)} for f in (dng, jpg)},
     }
     side.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n")
 
     exp = applied.get("ExposureTime")
     gain = applied.get("AnalogueGain")
-    print(f"{stamp}  dng {dng.stat().st_size / 1e6:.1f} MB  "
-          f"exposure {exp} us  gain {gain}  synced {record['clock_ntp_synced']}")
-    if exp is not None and abs(exp - int(cfg["exposure_us"])) > max(50, int(cfg["exposure_us"]) * 0.02):
+    print(
+        f"{stamp}  dng {dng.stat().st_size / 1e6:.1f} MB  "
+        f"exposure {exp} us  gain {gain}  synced {record['clock_ntp_synced']}"
+    )
+    pinned_us = int(cfg["exposure_us"])
+    if exp is not None and abs(exp - pinned_us) > max(50, pinned_us * 0.02):
         print("  WARNING: applied exposure differs from the pinned value", file=sys.stderr)
     return 0
 
@@ -215,8 +228,11 @@ def probe(cfg: dict) -> int:
 
     if cfg.get("exposure_us") is None or cfg.get("analogue_gain") is None:
         sys.exit("set exposure_us and analogue_gain to the values you want to test first")
-    cfg = dict(cfg, colour_gains=cfg.get("colour_gains") or [2.0, 2.0],
-               lens_position=cfg.get("lens_position") or 0.0)
+    cfg = dict(
+        cfg,
+        colour_gains=cfg.get("colour_gains") or [2.0, 2.0],
+        lens_position=cfg.get("lens_position") or 0.0,
+    )
 
     cam = open_camera(cfg, want_raw=False)
     cam.set_controls(pinned_controls(cfg, cam))
@@ -230,8 +246,10 @@ def probe(cfg: dict) -> int:
     for i, name in enumerate(("red", "green", "blue")[: arr.shape[-1]]):
         plane = arr[..., i]
         clipped = float((plane >= 254).mean()) * 100.0
-        print(f"  {name:<6} p99.9 {np.percentile(plane, 99.9):6.1f}   "
-              f"max {plane.max():4d}   clipped {clipped:6.3f} %")
+        print(
+            f"  {name:<6} p99.9 {np.percentile(plane, 99.9):6.1f}   "
+            f"max {plane.max():4d}   clipped {clipped:6.3f} %"
+        )
     print("Aim for no plane above about 0.01 % clipped with headroom as the canopy fills in.")
     return 0
 
@@ -249,9 +267,12 @@ def focus_sweep(cfg: dict, lo: float, hi: float, steps: int) -> int:
 
     out = cfg["output_dir"] / "focus-sweep"
     out.mkdir(parents=True, exist_ok=True)
-    base = dict(cfg, colour_gains=cfg.get("colour_gains") or [2.0, 2.0],
-                exposure_us=cfg.get("exposure_us") or 20000,
-                analogue_gain=cfg.get("analogue_gain") or 1.0)
+    base = dict(
+        cfg,
+        colour_gains=cfg.get("colour_gains") or [2.0, 2.0],
+        exposure_us=cfg.get("exposure_us") or 20000,
+        analogue_gain=cfg.get("analogue_gain") or 1.0,
+    )
     cam.start()
 
     best = None
