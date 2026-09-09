@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="720" height="504" viewBox="0 0 720 504" role="img" aria-label="Registration session for the canopy imaging channel, per ADR-0033 decision 12">
   <title>ADR-0033 — establishing registration between the camera and the thermal imager</title>
-  <desc>A one-off session and a continuing check. In the session, the instrument housing holds the visible camera and the MLX90640 thermal imager on a short fixed baseline, and both view a registration target carrying nine printed cylinders on one baseplate whose spacings come from its own drawing. The target is captured at many poses spanning the working volume with the luminaire on and settled. Each pose yields a visible frame showing nine discs and a thermal frame showing nine warm blobs, because the cylinders absorb light and rise above air temperature. Solving those correspondences jointly yields the thermal camera's missing lens model, the pose of the camera relative to the imager, the homography at the canopy plane, a parallax bound across the depth range, and residuals over the nine points from which the tolerance is set. Afterwards the small permanent in-frame fiducial is checked at every capture event, so pose drift is detected rather than presumed absent, and a residual past tolerance sends the operator back through the session.</desc>
+  <desc>A one-off session and a continuing check. In the session, the instrument housing holds the visible camera and the MLX90640 thermal imager on a short fixed baseline, and both view a registration target carrying nine printed cylinders and a ChArUco pattern on one baseplate, whose geometry comes from its own drawing. The target is captured at many poses spanning the working volume with the luminaire on and settled. Each pose yields a visible frame showing the identified pattern corners and nine discs, and a thermal frame showing nine warm blobs, because the cylinders absorb light and rise above air temperature. The pattern stays invisible to the imager; carrying it on the same baseplate removes a second target rather than adding correspondences. Solving those correspondences jointly yields the thermal camera's missing lens model, the pose of the camera relative to the imager, the homography at the canopy plane, a parallax bound across the depth range, and residuals over the nine points from which the tolerance is set. Afterwards the small permanent in-frame fiducial is checked at every capture event, so pose drift is detected rather than presumed absent, and a residual past tolerance sends the operator back through the session.</desc>
 
   <defs>
     <marker id="a33" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#5F5E5A"/></marker>
@@ -33,8 +33,8 @@
     <circle cx="432" cy="166" r="9"/><circle cx="490" cy="166" r="9"/><circle cx="548" cy="166" r="9"/>
     <circle cx="432" cy="198" r="9"/><circle cx="490" cy="198" r="9"/><circle cx="548" cy="198" r="9"/>
   </g>
-  <text x="490" y="238" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#2C2C2A">registration target &#8212; nine cylinders, one baseplate</text>
-  <text x="490" y="251" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">captured at many poses across the working volume (R2)</text>
+  <text x="490" y="238" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#2C2C2A">registration target &#8212; nine cylinders and a ChArUco print</text>
+  <text x="490" y="251" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">one baseplate, captured at many poses across the working volume (R2)</text>
 
   <!-- ================= band B: solve ================= -->
   <rect x="30" y="272" width="190" height="40" rx="4" fill="#F2F4F7" stroke="#C3CBD6"/>
@@ -68,5 +68,5 @@
   <text x="494" y="432" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#2C2C2A">drift detected, not presumed absent</text>
   <text x="494" y="447" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">a residual past tolerance sends the session back through R2 to R6</text>
 
-  <text x="30" y="482" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">R1 precedes the session: focus locked and capture mode fixed, then the visible lens model taken from a chessboard target. Moving focus voids everything downstream.</text>
+  <text x="30" y="482" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">R1 opens the session: focus locked and capture mode fixed, then the visible lens model taken from the ChArUco pattern on the same baseplate. Moving focus voids everything downstream.</text>
 </svg>
