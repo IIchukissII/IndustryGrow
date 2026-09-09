@@ -209,6 +209,33 @@ Fixed elsewhere, not restated here:
     implies, so that a part can be qualified against a decision rather than against the absence
     of an alternative.
 
+19. **The detector is a colour sensor, and the ordinary colour image is a derived product of the
+    white-channel frame.** Decision 3 puts the spectral selectivity in the illuminant, which on
+    its own favours a monochrome detector: a colour filter array separates bands the sequencing
+    has already separated, and spends resolution and sensitivity doing it. The luminaire settles
+    it the other way. Its channels are warm white, red, far-red and ultraviolet-A, with no green
+    and no blue, so a monochrome detector under this luminaire cannot reconstruct colour by any
+    sequence. A colour detector yields it from the white channel directly.
+
+    Colour is required and not merely convenient. Recognition of disease and disorder, human
+    review of a flagged residual (ADR-0016 d7), and the body of pretrained vision models all
+    work on ordinary colour images. The narrowband bands serve the pre-symptomatic ambition; the
+    ordinary image serves what is already visible, which is the larger part of what an operator
+    acts on.
+
+    It costs nothing in the capture event. Decision 2's sequence already takes a white-only
+    exposure, and that frame is the ordinary photograph. The viewable image is a **derived
+    product** of it and not a second capture: demosaiced, and colour-rendered by a fixed
+    transform computed once against the reference surface of decision 6. Decision 5 forbids
+    scene-dependent correction in the *measurement* path; a constant transform under a fixed
+    illuminant is neither scene-dependent nor in that path, and the raw planes stay the
+    measurement. The viewable image carries no quantity, so decision 16 governs values derived
+    from the frames rather than the rendering itself.
+
+    Capturing at the fixed state of decision 3 rather than under the active recipe also makes
+    the canopy look the same on day 5 and on day 60, which photography under a phase-dependent
+    horticultural spectrum does not.
+
 ## Non-goals
 
 - **No environmental sensor is replaced or made redundant.** Not claimed and not tested here. The
@@ -336,12 +363,6 @@ assembly and a commissioning step. That is more than a direction.
   once per installation and fixes neither method nor interval.
 - **Red-edge contrast without a true near-infrared band** (`O-122`) — whether the 730 nm far-red
   channel is sufficient, which decides whether alternative F reopens.
-- **Detector architecture: monochrome or colour** (`O-124`) — decision 3 puts the spectral
-  selectivity in the illuminant, so a colour filter array supplies no band separation the
-  sequencing has not already supplied, and costs resolution, sensitivity and a demosaic step
-  decision 5 forbids. Against that, colour-filter dyes lose selectivity above roughly 700 nm, so
-  a colour part's three planes converge in the far-red band and its response there is
-  uncharacterised by the vendor. The lean is monochrome; the choice belongs with part selection.
 - **Retention bound and export path for raw frames** (`O-123`) — under the amended ADR-0020 d4,
   bounded by campaign rather than by capacity.
 
