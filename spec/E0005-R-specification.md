@@ -576,7 +576,7 @@ are M02's; O-74 is M05's; O-76 to O-85 are the service tool's.
 
 | ID | Item | Blocks |
 |----|------|--------|
-| O-86 | Mounting height and the canopy area one instance covers are not fixed: ADR-0006 defers cabinet dimensions to a mechanical specification, so the selection rule of §6.6 has no input | FOV variant confirmation, M5, M7, V2 |
+| O-86 | Mounting height and the canopy area one instance covers are not fixed: ADR-0006 defers cabinet dimensions to a mechanical specification, so the selection rule of §6.6 has no input. The FOV variant is no longer among the consequences: §2 names the `BAA` build and its parts are ordered | M5, M7, V2 |
 | O-87 | Leaf emissivity, reflected apparent temperature and the canopy-to-air differential band of §3 are not established. ε = 1 and Tr = Ta − 8 K are placeholders, not values | Absolute canopy temperature, expected range, V10 |
 | O-88 | No canopy segmentation exists, so §6.4's statistics are frame-wide and include structure, medium and luminaire pixels. ADR-0014 d4 defers the pipeline. ADR-0033 d10 and d12 define the intended mask source and its registration onto the thermal frame; no pipeline exists and the item stays open | Meaning of every statistic, leaf VPD, hotspot interpretation |
 | O-89 | DS12 states an additional ±3 °C over years for objects around room temperature — the operating point of §3 — with no re-referencing scheme. Whether the module is periodically referenced against a known target, against M01's air temperature at a settled night point, or replaced on an interval | Absolute accuracy over service life, calibration protocol |
