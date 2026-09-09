@@ -12,6 +12,13 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Parent:** ADR-0001
 - **Companions:** ADR-0003, ADR-0015, ADR-0016 (rev 1), ADR-0018, ADR-0031 (rev 1)
 
+## Revision history
+
+- **Amendments** — decision 7 (2026-09-09): the humidity tract's reheat is pumped from the
+  rejection plate rather than generated resistively, with alternatives I and J. Decision 4 is
+  qualified and not changed — subcool-and-reheat, the coil-temperature setpoint and the
+  independence of the two commands all stand; only the reheat's heat source is fixed.
+
 ## Context and problem
 
 `spec/E0011-R-specification.md` fixes which machine moves heat, which way the humidity
@@ -115,6 +122,35 @@ Fixed elsewhere, not restated here:
    count and competes with the lift at large ΔT: there the element takes fewer modules. Counts,
    currents and limits are specification values.
 
+7. **The humidity tract's reheat is pumped from the rejection plate, not generated
+   resistively** *(amendment, 2026-09-09)*. Decision 4's reheat stage draws its heat from the
+   subcooler's own rejection plate through a commandable thermoelectric link. Decision 4 is
+   qualified, not changed: the side stream is still subcooled to a commanded coil temperature
+   and reheated at constant humidity ratio, and the setpoint on the bus is still a coil
+   temperature. What this decision fixes is only where the reheat's energy comes from.
+
+   The subcooler rejects several times the reheat duty, and it rejects it a few kelvin from the
+   temperature the reheat wants. That is the regime where a thermoelectric element is most
+   efficient and a resistor least defensible: the apparatus was generating heat it already held
+   one plate away. Decision 2 pumps heat rather than making it, and the reheater was the last
+   element not following that rule.
+
+   The link is bidirectional in behaviour without being bidirectional in command. Unpowered it
+   conducts, so reheat is free whenever the plate sits above the reheat target. Powered it lifts
+   the remainder. Two bounds follow, and both are element sizing, so both are specification
+   values (ADR-0000 d2):
+
+   | Bound | Set by |
+   |---|---|
+   | Pumping capacity at the largest plate-to-coil lift | Coldest plate against the highest reheat target |
+   | Off-state conductance times the largest reverse lift | Hottest plate against the lowest reheat target |
+
+   The second bound is the one a resistor did not have. Zero drive is no longer zero heat: an
+   unpowered link still passes the plate's heat into the tract, so the element is sized such that
+   this uncommanded reheat stays inside the band the tract would command anyway. The safe output
+   of ADR-0031 d6 is unchanged as a *drive* value and no longer implies zero *transfer*, which
+   the specification declaring the element must state.
+
 ## Alternatives considered
 
 **A. Vapour-compression cycle inside the cabinet.** *Rejected:* minimum capacity above the load,
@@ -146,6 +182,17 @@ whole volume.
 
 **H. Thermoelectric elements near `Imax` to minimize module count.** *Rejected:* the Joule term
 dominates at the ΔT the apparatus operates at (decision 6).
+
+**I. A resistive reheater** *(amendment, 2026-09-09)*. *Rejected:* it makes heat that the
+rejection plate already holds a few kelvin away, at a coefficient of performance of one where
+the same duty pumps at well above one, and it charges its full draw twice — once to the supply,
+and again to the rejection duty that must carry it back out.
+
+**J. A coolant branch through the reheat exchanger** *(amendment, 2026-09-09)*. *Not adopted:*
+thermodynamically it is the cheapest reheat available, taking no electrical input at all, and
+the loop already sits near the reheat temperature. It puts a second wet branch and a second leak
+path inside the enclosure, which is the per-unit plumbing and leak-test obligation this record's
+first decision driver rejects, and its reheat follows the loop rather than a command.
 
 ## Consequences
 
