@@ -64,6 +64,10 @@ Conventions:
 | `SP0003` | DIN-rail SELV power supply, `+12 V` output, OVP/OCP | no | Output power/current per deployment in the BOM. Phase 1 is `+12 V` only; a `+24 V` supply for the power section is a separate later SP entry (ADR-0018). |
 | `SP0004` | Gateway SBC — Raspberry Pi 3B+ / 4 / 5 class | yes (vendor serial / gateway identity) | The one SP part with per-instance identity: its vendor serial and the ATECC-bound gateway certificate are the instance key (ADR-0019 decision 2; ADR-0004 / ADR-0007). Specific model in the BOM. |
 | `SP0005` | STM32F405RGT6 core board (WeAct-class) | no | Hosted on every carrier (E0001). Resolves ADR-0017's WeAct deferred item (ADR-0019 decision 7). Vendor snapshot: `SP0005-D-coreboard-snapshot.zip`. |
+| `SP0006` | Thermoelectric module, 40 × 40 mm, 127 couples, `Imax` 6.4 A, `Qmax` 57 W, `ΔTmax` 66 K at `Th` 25 °C | no | The `E1` pair of `E0012` and `E3` of `E0011`. α, R and K are the design parameters and stay `verify` under `O-103`; this number names the spec, the SKU stays in the BOM (ADR-0019 d3). `E4`'s module is **not** this part — `T11` disqualifies it on off-state conductance — and takes its own SP when specified. |
+| `SP0007` | Fan-cooled extruded heatsink, 62 × 74 mm section, 150 mm length, `Rth` 0.17 K/W with `SP0008` fitted | no | HX1 of `E0012`. A catalogue item shipping the fan pre-fitted satisfies this line and `SP0008` together; a bare extrusion plus a separately bought fan satisfies them separately. Spreading resistance is unmeasured (`O-112`). |
+| `SP0008` | Axial fan, 60 × 60 × 25 mm, 12 V DC, externally commandable duty | no | The `E2` element of `E0012`, mounted on `SP0007`. An actuator device under ADR-0019 d6, and the unit's one wear part, so it carries its own line rather than disappearing into the heatsink's. |
+| `SP0009` | Liquid cold plate, 40 × 120 mm working face, threaded coolant ports | no | WB1 of `E0012`: rejection face of `E1`, clamping plate of the column, and the mounting face of U1 and RT1. The unit's only wet joints. |
 
 ### Document layers on the SP axis (naming convention)
 
@@ -104,7 +108,7 @@ the slug (a version-less `SP` root, ADR-0019 d2): `<parent-root>-D-<slug>[-src].
 | `E0006-000001-D-case-src.zip` | `E0006-000001` M05-SAFETY board | Enclosure design source (Inventor `.ipt` + STEP `.stp`); slug-revisioned (`-case`). Licensing inherits the `store/**` default. |
 | `E0002-000001-D-case-src.zip` | `E0002-000001` M01-CLIMATE board | Enclosure design source (Inventor `.ipt` + STEP `.stp`, bottom and top halves; assembly render). Slug-revisioned (`-case`). Licensing inherits the `store/**` default. |
 | `E0003-000001-D-case-src.zip` | `E0003-000001` M02-LIGHT board | Enclosure design source (Inventor `.ipt` + STEP `.stp`, bottom half only). The body is the E0002 bottom; the two parts differ in the case text alone. Slug-revisioned (`-case`). Licensing inherits the `store/**` default. |
-| `E0012-000001-D-case-src.zip` | `E0012-000001` tempering unit | Housing design source (Inventor `.ipt` + STEP `.stp`, bottom half only). Slug-revisioned (`-case`). Licensing inherits the `store/**` default. |
+| `E0012-000001-D-case-bottom.stp` | `E0012-000001` tempering unit | Housing, bottom half, as STEP. One file, so one object rather than a package. Slug-revisioned (`-case-bottom`). Licensing inherits the `store/**` default. |
 
 ### Vendor reference documents (SP parts)
 

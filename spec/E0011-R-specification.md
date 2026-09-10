@@ -153,8 +153,8 @@ unpopulated branch publishes and commands (ADR-0014 d1, d2).
 | RT1 | NTC 10 kΩ B25/85 3435, at WB1 in `E0012` | `T2` trip element; the comparator U7 is on this board | — | — |
 | RT2 | NTC 10 kΩ, on a lead in the grow volume | `T3` trip element, both thresholds (ADR-0018 d10) | — | — |
 | TEC1, TEC2 | In `E0012`; parameters in `E0012-R-specification.md` §4 | `E1`, series pair | Series string | `+24 V` actuator |
-| TEC3 | Same part as TEC1 and TEC2 (`E0012-R-specification.md` §4) | `E3`, single | — | `+24 V` actuator |
-| TEC4 | Module for `E4`, not the TEC1–TEC3 part; sized by `D16` and `T11` (`O-103`) | `E4`, single | — | `+24 V` actuator |
+| TEC3 | `SP0006`, the same part as TEC1 and TEC2 (`E0012-R-specification.md` §4) | `E3`, single | — | `+24 V` actuator |
+| TEC4 | Module for `E4`, **not** `SP0006`; sized by `D16` and `T11`, and takes its own SP when specified (`O-103`) | `E4`, single | — | `+24 V` actuator |
 | HX1 | In `E0012` | Grow-volume exchanger of the main tract, and the cabinet's circulation | — | — |
 | HX2 | Fischer LAM 5, 100 mm, `h·A` 1.64 W/K (`verify`) | Cold section of the humidity tract | — | — |
 | HX3 | Fischer LAM 5 50 5, `h·A` 0.82 W/K (`verify`) | Hot section of the humidity tract, carrying TEC4's hot face | — | — |
