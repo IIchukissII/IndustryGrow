@@ -9,7 +9,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Date:** 2026-09-08
 - **E-number:** `E0011` · module class ID `0x80`
 - **Governing ADRs:** ADR-0031 (rev 1), ADR-0032, ADR-0014 (rev 4), ADR-0015, ADR-0016, ADR-0017 (rev 2), ADR-0018, ADR-0003
-- **Companions:** `E0002-R-specification.md`, `E0006-R-specification.md`, `E0008-R-specification.md`, `E0009-R-specification.md`
+- **Companions:** `E0012-R-specification.md`, `E0002-R-specification.md`, `E0006-R-specification.md`, `E0008-R-specification.md`, `E0009-R-specification.md`
 - **Supersedes:** `spec/A01-THERMAL-specification.md` (2026-09-07)
 
 Rationale for the decisions applied here is in the governing ADRs and is not restated.
@@ -32,6 +32,7 @@ Not specified here:
 | Control-loop structure and gains | ADR-0015 d8/d18, `gateway/control_model.py` |
 | Outdoor deployment variant | Not specified — `O-106` |
 | Luminaire, its window, and the enclosure | A02-LIGHT and the enclosure design — `O-114` |
+| Main-tract tempering unit — HX1, the `E1` pair, WB1, the `E2` fan and their sensing elements | `E0012-R-specification.md` |
 | Rejection loop as a purchased assembly | ADR-0032, deferred |
 
 ## 2. Identification
@@ -89,7 +90,7 @@ own state (`D9`, `D10`, `D11`) and executes it (ADR-0015 d18).
 
 | Tract | Flow | Sets | Method |
 |---|---|---|---|
-| Main | 56 m³/h | Air temperature | `E1` on HX1, floored above the grow-volume dew point (`D10`) |
+| Main, assembly `E0012` | 56 m³/h | Air temperature | `E1` on HX1, floored above the grow-volume dew point (`D10`) |
 | Humidity | 1.7 m³/h | Humidity ratio | `E3` subcools to a commanded coil temperature (`D11`), `E4` pumps reheat from WB2 at constant humidity ratio (`D12`, ADR-0032 d7) |
 
 ![Gateway demands into a conditioned node; a main tract with a two-module thermoelectric stack on a finned exchanger rejecting into a water block, and a humidity tract with a subcooler, a thermal break with a condensate siphon, and a reheater that pumps its heat back out of the subcooler's rejection plate; four hardware interlocks gate the driver enables](./figures/a01-climate-principle.svg)
@@ -98,8 +99,8 @@ own state (`D9`, `D10`, `D11`) and executes it (ADR-0015 d18).
 
 | ID | Element | Device | Command range | Expected operating range | Resolution |
 |---|---|---|---|---|---|
-| `E1` | Main thermoelectric stack | 2 × 40 × 40 mm module, series | −1.000 … +1.000, signed; positive heats the grow volume | −0.30 … 0 | 0.001 (`verify` against DSDL type, `O-102`) |
-| `E2` | Main-tract fan | ebm-papst 612/614 NHH, integral to the exchanger | 0.000 … 1.000 | 0.4 … 1.0 continuous, 1.0 in the `D15` pulse | 0.001 |
+| `E1` | Main thermoelectric stack | TEC1, TEC2 in `E0012`, series pair | −1.000 … +1.000, signed; positive heats the grow volume | −0.30 … 0 | 0.001 (`verify` against DSDL type, `O-102`) |
+| `E2` | Main-tract fan | `E2` in `E0012`, integral to HX1 | 0.000 … 1.000 | 0.4 … 1.0 continuous, 1.0 in the `D15` pulse | 0.001 |
 | `E3` | Subcooler thermoelectric module | 1 × 40 × 40 mm module | 0.000 … 1.000, unsigned; cooling only | 0 … 0.30 | 0.001 |
 | `E4` | Reheater | Thermoelectric module bridging WB2 and HX3, cold face on WB2 | 0.000 … 1.000, unsigned; heating only | 0 … 0.35 | 0.001 |
 | `E5` | Humidity-tract fan | Sepa MFB 50 E 05 A | 0.000 … 1.000 | 0.17 … 0.40 | 0.001 |
@@ -112,8 +113,8 @@ Full scale of `E1`, `E3` and `E4` corresponds to the string current limit of `D2
 
 | Published quantity | Sensor | Sensor range | Expected operating range | Accuracy |
 |---|---|---|---|---|
-| Rejection-side (water block) temperature | U1 DS18B20, 1-Wire | −55…+125 °C (`verify`) | 22…30 °C, ceiling 45 °C (`D9`) | ±0.5 K over −10…+85 °C (`verify`) |
-| Main exchanger base temperature | U2 DS18B20, same bus | −55…+125 °C (`verify`) | 9…17 °C; 15.8 °C day, 9.6 °C night | ±0.5 K over −10…+85 °C (`verify`) |
+| WB1 block temperature | U1 DS18B20 in `E0012`, 1-Wire | −55…+125 °C (`verify`) | 22…30 °C, ceiling 45 °C (`D9`) | ±0.5 K over −10…+85 °C (`verify`) |
+| Main exchanger base temperature | U2 DS18B20 in `E0012`, same bus | −55…+125 °C (`verify`) | 9…17 °C; 15.8 °C day, 9.6 °C night | ±0.5 K over −10…+85 °C (`verify`) |
 | Subcooler coil base temperature | U3 DS18B20, same bus | −55…+125 °C (`verify`) | 5…12 °C; 7.6 °C day, 5.5 °C night, floor +1 °C (`D11`) | ±0.5 K over −10…+85 °C (`verify`) |
 | Reheater base temperature | U4 DS18B20, same bus | −55…+125 °C (`verify`) | 8…30 °C; 25.4 °C at the `D12` design point | ±0.5 K over −10…+85 °C (`verify`) |
 | Applied demand echo, per element | — (firmware state) | per §3.1 | per §3.1 | exact |
@@ -148,16 +149,16 @@ unpopulated branch publishes and commands (ADR-0014 d1, d2).
 
 | Ref | Device | Function | Supply | Rail |
 |---|---|---|---|---|
-| U1–U4 | DS18B20, 1-Wire, 12-bit, 750 ms conversion (`verify`) | Reported temperatures per §3.2 | 3.3 V | 3V3 |
-| RT1 | NTC 10 kΩ B25/85 3435, at the water block | `T2` trip element | — | — |
+| U1–U4 | DS18B20, 1-Wire, 12-bit, 750 ms conversion (`verify`) | Reported temperatures per §3.2. U1 and U2 are mounted in `E0012` | 3.3 V | 3V3 |
+| RT1 | NTC 10 kΩ B25/85 3435, at WB1 in `E0012` | `T2` trip element; the comparator U7 is on this board | — | — |
 | RT2 | NTC 10 kΩ, on a lead in the grow volume | `T3` trip element, both thresholds (ADR-0018 d10) | — | — |
-| TEC1, TEC2 | 40 × 40 mm, 127 couple, `Imax` 6.4 A, `Qmax` 57 W, `ΔTmax` 66 K at `Th` 25 °C, α 0.0608 V/K, R 2.78 Ω, K 0.864 W/K (all `verify`) | `E1`, series pair | Series string | `+24 V` actuator |
-| TEC3 | Same part | `E3`, single | — | `+24 V` actuator |
+| TEC1, TEC2 | In `E0012`; parameters in `E0012-R-specification.md` §4 | `E1`, series pair | Series string | `+24 V` actuator |
+| TEC3 | Same part as TEC1 and TEC2 (`E0012-R-specification.md` §4) | `E3`, single | — | `+24 V` actuator |
 | TEC4 | Module for `E4`, not the TEC1–TEC3 part; sized by `D16` and `T11` (`O-103`) | `E4`, single | — | `+24 V` actuator |
-| HX1 | Fischer LA 6 150 12, 62 × 74 mm, `Rth` 0.17 K/W (`verify`, `O-112`) | Grow-volume exchanger of the main tract, and the cabinet's circulation | — | — |
+| HX1 | In `E0012` | Grow-volume exchanger of the main tract, and the cabinet's circulation | — | — |
 | HX2 | Fischer LAM 5, 100 mm, `h·A` 1.64 W/K (`verify`) | Cold section of the humidity tract | — | — |
 | HX3 | Fischer LAM 5 50 5, `h·A` 0.82 W/K (`verify`) | Hot section of the humidity tract, carrying TEC4's hot face | — | — |
-| WB1 | Water block, 40 × 120 mm | Rejection side of `E1`, and its clamping plate | — | — |
+| WB1 | In `E0012` | Rejection side of `E1`, and its clamping plate | — | — |
 | WB2 | Water block or cold plate, two working faces | Rejection side of `E3` and cold-side source for `E4` | — | — |
 | U5 | TI DRV8262, HTSSOP-44, **single-H-bridge mode**. 4.5…60 V; 50 mΩ HS+LS; integrated charge pump for 100 % duty; integrated high-side current sense, IPROPI ±4 %; UVLO, CPUV, OCP, OTSD, `nFAULT` | `E1` direction and current regulation (`D2`, `D3`) | 3.3 V logic, `+24 V` power | `+24 V` |
 | U6 | TI DRV8262, **dual-half-bridge mode** | `E3` current regulation and `E4` duty, unidirectional (`D11`, `D12`) | 3.3 V logic, `+24 V` power | `+24 V` |
@@ -251,13 +252,13 @@ reallocates all three. The pin-map changes this requires are `O-100`.
 
 | ID | Requirement | Reference |
 |---|---|---|
-| `T1` | `E1` removes ≥ 26 W from the grow volume at a module ΔT of 15 K with the string at `i` ≤ 0.30 of `Imax` (`verify`) | ADR-0032 d6, §2.2, `O-105` |
+| `T1` | The main tract's heat-removal duty is specified by `E0012` (`T1`) | `E0012-R-specification.md` |
 | `T2` | **Rejection over-temperature trip** (self-protective), independent of the MCU, gateway and cloud: `RT1` → U7 → driver enable on U5 and U6. Trip at 60 °C (`verify`), 15 K above the `D9` ceiling | ADR-0031 d7 |
 | `T3` | **Grow-volume temperature window trip** (process-protective), independent of the MCU, gateway and cloud: `RT2` → U8 → driver enable on U5 and U6. High trip 35 °C, low trip 5 °C (both `verify`) | ADR-0018 d10, ADR-0031 d7 |
 | `T4` | **Coolant-flow interlock** (self-protective): loss of flow in the rejection loop removes driver enable on U5 and U6 in hardware | ADR-0031 d7 |
 | `T5` | **Humidity-tract airflow interlock** (self-protective): loss of the `FA1` alarm output removes drive from **both** `E3` and `E4` in hardware | ADR-0031 d7 |
 | `T6` | The rejection loop dissipates ≥ 65 W continuous with supply water at ≤ 25 °C in a 22 °C room (`verify`) | ADR-0032 d3, `P3`, `T1` |
-| `T7` | Condensate forms only on HX2, is collected at the `TB1` low point through a liquid seal, and is drained clear of the grow volume. HX1 runs above the grow-volume dew point under `D10` and forms none | ADR-0032 d5, `O-107` |
+| `T7` | Condensate forms only on HX2, is collected at the `TB1` low point through a liquid seal, and is drained clear of the grow volume. HX1 forms none under `D10` (`E0012` `T2`) | ADR-0032 d5, `O-107` |
 | `T8` | The room absorbs the `T6` rejection load with an ambient rise ≤ 2 K (`verify`). Ambient outside 15…30 °C is outside this variant | §2.1 |
 | `T9` | Conduction between HX2 and HX3 through `TB1` is ≤ 1 W at a section-to-section ΔT of 18 K (`verify`) | `M7` |
 | `T10` | `T2`–`T5` act on the driver enables directly. Firmware reads their state but cannot override or re-arm any of them | ADR-0015 d11, ADR-0018 d10 |
@@ -269,14 +270,14 @@ reallocates all three. The pin-map changes this requires are `O-100`.
 
 | ID | Requirement | Reference |
 |---|---|---|
-| `M1` | Each thermoelectric module is clamped between its exchanger and its water block at the datasheet clamping force, through a metal plate with disc springs. No printed part carries clamping load | `O-103` |
-| `M2` | Both faces of every module carry a thermal interface material rated for continuous 100 °C (`verify`) | `O-103` |
+| `M1` | TEC3 and TEC4 are each clamped between their exchanger and their plate at the datasheet clamping force, through a metal plate with disc springs. No printed part carries clamping load. The `E1` pair is clamped by `E0012` (`M1`) | `O-103` |
+| `M2` | Both faces of TEC3 and TEC4 carry a thermal interface material rated for continuous 100 °C (`verify`) | `O-103` |
 | `M3` | Each tract penetrates the cabinet wall; every penetration is sealed and thermally broken, and no metal is carried through the insulation | `O-107` |
-| `M4` | The main-tract discharge is a horizontal slot at the ceiling, gap ≤ 20 mm, directed at the far wall. Its intake is at the floor. The two tracts' intakes are separated in height | ADR-0003 air movement |
+| `M4` | The main tract's intake and discharge terminations are specified by `E0012` (`M5`) | `E0012-R-specification.md` |
 | `M5` | `RT2` reaches the grow volume on a lead; no I²C crosses that lead | ADR-0014 d3, ADR-0018 d10 |
 | `M6` | Printed parts are PETG. No printed part is in direct thermal contact with a module hot face, a water block or HX3, and no printed surface exceeds **60 °C** continuous (`verify` — PETG HDT ≈ 70 °C at 0.45 MPa) | `O-107` |
 | `M7` | `TB1` is a printed insert of 15–20 mm with thin walls and an internal air passage, carrying the tract's low point and its liquid seal | `T9`, `T7` |
-| `M8` | HX1, HX2 and HX3 are degreased before assembly | `T7` |
+| `M8` | HX2 and HX3 are degreased before assembly; HX1 is `E0012`'s (`M3`) | `T7` |
 
 ## 10. Firmware requirements
 
@@ -303,14 +304,14 @@ reallocates all three. The pin-map changes this requires are `O-100`.
 | `V2` | `D2`, `D4` | Measure each string's current and ripple at 25 %, 50 % and 100 % of its limit with a current probe; cross-check against IPROPI |
 | `V3` | `D3`, `D5` | Command an `E1` sign reversal; confirm zero drive is held for the dwell and that no reversal occurs inside it |
 | `V4` | `D7`, `D8`, `F4` | Step each element to full scale and confirm slew. Stop publishing each demand; confirm `E1`, `E3`, `E4` reach zero and `E2`, `E5` reach full within the deadline |
-| `V5` | `T1`, `T6` | Step `E1` to the limit into a cabinet at a known start temperature; record the pull-down curve, the water-block rise and the loop supply temperature |
+| `V5` | `T6` | Executed on `E0012` (`V1`), whose pull-down run also records the loop supply temperature |
 | `V6` | `T2` | Heat `RT1` past the trip with the MCU held in reset; confirm both driver enables are removed |
 | `V7` | `T3` | Drive `RT2` past each threshold in turn with the MCU held in reset; confirm both driver enables are removed at each |
 | `V8` | `T4` | Stop coolant flow with `E1` at the limit; confirm both driver enables are removed |
 | `V9` | `T5` | Stall the `E5` fan with `E3` and `E4` running; confirm both lose drive in hardware |
 | `V10` | `T10` | Attempt to re-arm each trip from firmware; confirm it cannot |
 | `V11` | `D9`, `F8` | Raise the water block past 35 °C with `E1` at full scale; record the derate curve and the 45 °C clamp. Disconnect U1; confirm the clamp |
-| `V12` | `D10`, `T7` | Run `E1` at the night load with the grow volume at the wet edge of the band for 4 h; record U2 against the M01 dew point and confirm no free water on HX1. Command a floor below 3.0 °C; confirm the node holds 3.0 °C |
+| `V12` | `D10` | Command a floor below 3.0 °C; confirm the node holds 3.0 °C. The wet-edge run that confirms no free water on HX1 is `E0012`'s (`V3`) |
 | `V13` | `D11` | Command a coil setpoint below +1 °C; confirm cooling demand is driven to zero at the floor and that HX2 does not frost over 8 h |
 | `V14` | `D12`, `T9` | Run the humidity tract at its design point; measure the humidity ratio and temperature at tract inlet and outlet, and the HX2-to-HX3 conduction by substituting a known electrical load for `E3` |
 | `V15` | `D13` | Command `E5` from zero to 0.17; confirm the start pulse and that the rotor starts on ten of ten attempts |
@@ -320,11 +321,11 @@ reallocates all three. The pin-map changes this requires are `O-100`.
 | `V19` | `F1`, `F6`, `F12` | Read the published class ID; confirm `0x80`. Enumerate every published subject; confirm no energy or consumption quantity is among them, and that the unpopulated CO₂ branch publishes and accepts nothing |
 | `V20` | `P6` | Measure U5 and U6 case temperatures at their limits for 1 h |
 | `V21` | `P7` | Log the M05 S0 meter over a full 24 h profile; compare against the `P7` figure |
-| `V22` | `M6` | Thermograph the printed parts at the `T6` rejection load; confirm no surface exceeds 60 °C |
-| `V23` | `M4` | Trace the main-tract jet with the cabinet loaded; confirm it reaches the far wall and that intake air is not drawn directly from the discharge |
+| `V22` | `M6` | Thermograph the humidity tract's printed parts at the `T6` rejection load; confirm no surface exceeds 60 °C |
+| `V23` | `M4` | Executed on `E0012` (`V7`) |
 | `V24` | `T8` | Run at the `T6` rejection load for 4 h in the installed room; record the ambient rise |
 | `V25` | `P1`, `P5` | Measure isolation between the switched return and both logic and analog ground; confirm no element current returns on the `+12 V` bus |
-| `V26` | `M1`, `M2`, `M8` | Record clamping force at assembly against the module datasheet, the TIM temperature rating, and that each exchanger was degreased |
+| `V26` | `M1`, `M2`, `M8` | Record clamping force on TEC3 and TEC4 against the module datasheet, the TIM temperature rating, and that HX2 and HX3 were degreased |
 | `V27` | `M3`, `M5`, `M7` | Inspect every penetration for seal and thermal break, confirm no metal crosses the insulation, confirm no I²C runs on the `RT2` lead, and confirm `TB1` drains at its low point |
 | `V28` | `F2`, `F10`, `F12` | Remove one 1-Wire device; confirm its quantity is not published. Offer the node a humidity, VPD or CO₂ setpoint; confirm it is refused |
 | `V29` | `F3`, `F5`, `F7` | Record the node loop rate; confirm a trip is published and latched until reset; confirm every `F7` constant is read from node-local storage and none from the profile |
@@ -345,7 +346,6 @@ reallocates all three. The pin-map changes this requires are `O-100`.
 - `O-109` — The condensate collector, its count transducer and its lead are mechanical design of this module's humidity tract; the counter itself is M05's (ADR-0014 rev 7 d4) and `E0006-000001` has no free pulse input (`O-116`). Volume per count is a commissioning constant of the collector and is unset. Blocks the `O-111` measurement.
 - `O-110` — CO₂ branch unspecified: source, regulator, valve, minimum dose against the §2.2 grow volume, and CO₂ accumulation in an occupied room. Blocks `D14` and the §3.4 CO₂ population.
 - `O-111` — Transpiration is assumed at 140 ml/day and is unmeasured; it sets the humidity-tract mass flow. Closed by the first `O-109` measurement.
-- `O-112` — HX1's `Rth` is a catalogue figure that excludes spreading from two point-source modules on the base. It sets `D10` directly. Bench measurement required: a resistor of known power, thermocouples on the base and in the stream.
 - `O-113` — U9 part not selected; `F11`'s fail-to-safe wiring follows from its output behaviour when its outputs are de-asserted. Blocks `F11`.
 - `O-114` — The luminaire's position relative to the grow volume sets 19 W or 32 W of §2.2 day load and decides whether `D10` binds at the wet edge of the band. Owned by A02-LIGHT and the enclosure, consumed here.
 - ~~`O-115`~~ — ~~No governing ADR for cabinet climate conditioning.~~ — closed 2026-09-08 by ADR-0032.
