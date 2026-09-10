@@ -100,7 +100,7 @@ own state (`D9`, `D10`, `D11`) and executes it (ADR-0015 d18).
 | ID | Element | Device | Command range | Expected operating range | Resolution |
 |---|---|---|---|---|---|
 | `E1` | Main thermoelectric stack | TEC1, TEC2 in `E0012`, series pair | −1.000 … +1.000, signed; positive heats the grow volume | −0.30 … 0 | 0.001 (`verify` against DSDL type, `O-102`) |
-| `E2` | Main-tract fan | `E2` in `E0012`, integral to HX1 | 0.000 … 1.000 | 0.4 … 1.0 continuous, 1.0 in the `D15` pulse | 0.001 |
+| `E2` | Main-tract fan | `SP0008` in `E0012`, integral to HX1 | 0.000 … 1.000 | 0.4 … 1.0 continuous, 1.0 in the `D15` pulse | 0.001 |
 | `E3` | Subcooler thermoelectric module | 1 × 40 × 40 mm module | 0.000 … 1.000, unsigned; cooling only | 0 … 0.30 | 0.001 |
 | `E4` | Reheater | Thermoelectric module bridging WB2 and HX3, cold face on WB2 | 0.000 … 1.000, unsigned; heating only | 0 … 0.35 | 0.001 |
 | `E5` | Humidity-tract fan | Sepa MFB 50 E 05 A | 0.000 … 1.000 | 0.17 … 0.40 | 0.001 |
@@ -241,7 +241,7 @@ reallocates all three. The pin-map changes this requires are `O-100`.
 | ID | Requirement | Reference |
 |---|---|---|
 | `P1` | Node logic is powered from the `+12 V` SELV sensor bus and derives 3.3 V on the carrier. No actuator element is on that rail | ADR-0018 d3 |
-| `P2` | Elements are fed from the `+24 V` actuator section: TDK-Lambda Vega 650 (`K60050B`), C5 module, 24 V 10 A. Chassis total 650 W is shared across fitted modules (`verify`) | ADR-0018 d3, `O-104` |
+| `P2` | Elements are fed from the `+24 V` actuator section, `SP0010`: TDK-Lambda Vega 650 (`K60050B`), C5 module, 24 V 10 A. Chassis total 650 W is shared across fitted modules (`verify`) | ADR-0018 d3, `O-104` |
 | `P3` | Draw at the worst simultaneous point: `E1` 18.7 W, `E3` 9.5 W, `E4` 1.7 W, `E2` 2.9 W, `E5` 0.5 W — 33.3 W, 1.4 A from `+24 V` (`verify`). One C5 module carries the module with the balance available to other branches | `D1` |
 | `P4` | Per-branch overcurrent protection is the supply module's own current limit plus the drivers' OCP; no central per-load fuse | ADR-0018 d8 |
 | `P5` | The switched return is not shared with the logic or analog ground at the module. Isolation of the command path lives at this actuator | ADR-0018 d7, d8 |
@@ -346,6 +346,7 @@ reallocates all three. The pin-map changes this requires are `O-100`.
 - `O-109` — The condensate collector, its count transducer and its lead are mechanical design of this module's humidity tract; the counter itself is M05's (ADR-0014 rev 7 d4) and `E0006-000001` has no free pulse input (`O-116`). Volume per count is a commissioning constant of the collector and is unset. Blocks the `O-111` measurement.
 - `O-110` — CO₂ branch unspecified: source, regulator, valve, minimum dose against the §2.2 grow volume, and CO₂ accumulation in an occupied room. Blocks `D14` and the §3.4 CO₂ population.
 - `O-111` — Transpiration is assumed at 140 ml/day and is unmeasured; it sets the humidity-tract mass flow. Closed by the first `O-109` measurement.
+- `O-127` — The main tract's 56 m³/h is the fan's free-air figure, not its operating point; owned by `E0012-R-specification.md`, consumed here. Blocks the air-side terms of §2.2 and the flow in §3.
 - `O-113` — U9 part not selected; `F11`'s fail-to-safe wiring follows from its output behaviour when its outputs are de-asserted. Blocks `F11`.
 - `O-114` — The luminaire's position relative to the grow volume sets 19 W or 32 W of §2.2 day load and decides whether `D10` binds at the wet edge of the band. Owned by A02-LIGHT and the enclosure, consumed here.
 - ~~`O-115`~~ — ~~No governing ADR for cabinet climate conditioning.~~ — closed 2026-09-08 by ADR-0032.
