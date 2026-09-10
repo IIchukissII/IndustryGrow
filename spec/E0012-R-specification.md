@@ -42,7 +42,7 @@ Not specified here:
 | Commanded by | `E0011` over the §5 harness. The unit accepts no command of its own |
 | Serialized | Yes. `-QP` carries dimensional and clamping-force inspection (ADR-0017 d10) |
 | Position | Assigned at integration, never present in the identifier (ADR-0017 d7) |
-| Design source | `store/E0012-000001-D-case-src.zip` (ADR-0019 d9) |
+| Design source | `store/E0012-000001-D-case-bottom.stp` — STEP, one file, one object (ADR-0019 d9) |
 
 ## 3. Function
 
@@ -60,10 +60,10 @@ The unit publishes nothing. Every quantity its sensing elements carry is publish
 
 | Ref | Device | Function | Notes |
 |---|---|---|---|
-| TEC1, TEC2 | 40 × 40 mm, 127 couple, `Imax` 6.4 A, `Qmax` 57 W, `ΔTmax` 66 K at `Th` 25 °C, α 0.0608 V/K, R 2.78 Ω, K 0.864 W/K (all `verify`) | `E1`, series pair | Selection is `O-103`; the values drive `E0011`'s `D1` and `D4` |
-| HX1 | Fischer LA 6 150 12, 62 × 74 mm, `Rth` 0.17 K/W (`verify`) | Grow-volume exchanger of the main tract, and the cabinet's circulation | `T3`, `O-112` |
-| E2 | ebm-papst 612/614 NHH, integral to HX1 | Main-tract air mover | Driven from `E0011` U9 channel 0 |
-| WB1 | Water block, 40 × 120 mm | Rejection face of `E1`, and the clamping plate of the column | Two wet joints, `M6` |
+| TEC1, TEC2 | `SP0006` — 40 × 40 mm, 127 couple, `Imax` 6.4 A, `Qmax` 57 W, `ΔTmax` 66 K at `Th` 25 °C, α 0.0608 V/K, R 2.78 Ω, K 0.864 W/K (all `verify`) | `E1`, series pair | SKU is `O-103`; the values drive `E0011`'s `D1` and `D4` |
+| HX1 | `SP0007` — 62 × 74 mm section, 150 mm, `Rth` 0.17 K/W with `SP0008` fitted (`verify`) | Grow-volume exchanger of the main tract, and the cabinet's circulation | `T3`, `O-112`. Fischer LA 6 150 12 satisfies this line and `SP0008` together |
+| E2 | `SP0008` — 60 × 60 × 25 mm axial, 12 V, commandable duty | Main-tract air mover, mounted on HX1 | Driven from `E0011` U9 channel 0. The unit's one wear part |
+| WB1 | `SP0009` — liquid cold plate, 40 × 120 mm working face | Rejection face of `E1`, clamping plate of the column, mounting face of U1 and RT1 | Two wet joints, `M6` |
 | U1 | DS18B20, 1-Wire, 12-bit, 750 ms conversion (`verify`) | WB1 block temperature | On `E0011`'s 1-Wire bus; derates both tracts through `D9` |
 | U2 | DS18B20, same bus | HX1 base temperature | Floors `E1` cooling through `D10` |
 | RT1 | NTC 10 kΩ B25/85 3435, at WB1 | Trip element of `E0011`'s `T2` | The comparator is on the node, not in this unit |
@@ -71,6 +71,10 @@ The unit publishes nothing. Every quantity its sensing elements carry is publish
 | TIM1 | Thermal interface material, both faces of each module | Module-to-plate conduction | `M2` |
 | HS1 | Printed housing, PETG | Duct, mounting and column location | `M4`; design source per §2 |
 | WH1 | Harness and connector | The four §5 circuits | Unspecified — `O-126` |
+
+U1, U2 and RT1 are ordinary purchased components and stay MPN lines in the `L` document, on the
+same footing as the TMP117 counter-example of ADR-0019 d4. Every other part above is a unit of
+procurement, and `SP0008` is additionally an actuator device (d6).
 
 Deliberately absent:
 
