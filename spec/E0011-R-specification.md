@@ -76,7 +76,7 @@ requirements on it.
 | Photoperiod | 16 h on, 8 h off | same |
 | Luminaire | Outside the grow volume, radiating through a window; 19.2 W enters the volume | `O-114` |
 | Transpiration | 140 ml/day, 5.8 g/h during the photoperiod | assumed; `O-111` |
-| Main-tract load, day | 25 W | `U·A`·ΔT 5.9 W + luminaire 19.2 W + fans 3.9 W − humidity tract 4.1 W |
+| Main-tract load, day | 25 W | `U·A`·ΔT 5.9 W + luminaire 19.2 W + fans 3.9 W − humidity tract 4.1 W; the fan term follows the `E5` duty `O-128` settles |
 | Main-tract load, night | 26 W | `U·A`·ΔT 23.6 W + fans 3.9 W − humidity tract 1.5 W |
 
 With the luminaire inside the grow volume the day load is 38 W and `D10` is reached at the wet
@@ -103,7 +103,7 @@ own state (`D9`, `D10`, `D11`) and executes it (ADR-0015 d18).
 | `E2` | Main-tract fan | `SP0008` in `E0012`, integral to HX1 | 0.000 … 1.000 | 0.4 … 1.0 continuous, 1.0 in the `D15` pulse | 0.001 |
 | `E3` | Subcooler thermoelectric module | 1 × 40 × 40 mm module | 0.000 … 1.000, unsigned; cooling only | 0 … 0.30 | 0.001 |
 | `E4` | Reheater | Thermoelectric module bridging WB2 and HX3, cold face on WB2 | 0.000 … 1.000, unsigned; heating only | 0 … 0.35 | 0.001 |
-| `E5` | Humidity-tract fan | `SP0008`, the same part as `E2` (`E0012-R-specification.md` §4) | 0.000 … 1.000 | Unset — the 0.17…0.40 band was the superseded 50 mm part's (`O-128`) | 0.001 |
+| `E5` | Humidity-tract fan | `SP0008`, the same part as `E2` (`E0012-R-specification.md` §4) | 0.000 … 1.000 | 0.03 … 0.07 by fan law against the §3 tract flow, which is below any stable duty for `SP0008` (`O-128`); set at commissioning (`F7`) | 0.001 |
 | `E6` | CO₂ metering valve | Solenoid, pulse-dosed — **not populated in the baseline** | 0.000 … 1.000 | — | 0.001 |
 
 Full scale of `E1`, `E3` and `E4` corresponds to the string current limit of `D2`, not to the module's
@@ -231,7 +231,7 @@ reallocates all three. The pin-map changes this requires are `O-100`.
 | `D10` | Main exchanger base temperature from U2 is floored so the surface stays above the grow-volume dew point. The operative floor arrives with the demand — 13.4 °C day, 3.7 °C night at the wet edge of the band (`verify`). The node holds a commissioned absolute minimum of 3.0 °C (`verify`) that no command lowers. `E1` cooling demand is derated to hold whichever floor is higher | ADR-0032 d5, ADR-0015 d18, `O-102` |
 | `D11` | `E3` is unidirectional. Its demand is conditioned against a coil-temperature setpoint measured at U3, with a hard floor of **+1 °C** (`verify`) below which cooling demand is driven to zero | ADR-0032 d4, ADR-0003 d7 |
 | `D12` | `E4` is the last element of the humidity tract, downstream of HX2, and pumps from WB2 rather than dissipating. `E4` is inhibited whenever `T5` is tripped or `E5` demand is below `D13`'s minimum | `T5`, ADR-0032 d7 |
-| `D13` | `E5` starts with a full-scale pulse of 250 ms (`verify`) before settling to its commanded duty; commanded duty below 0.15 is driven as zero. Both figures were the superseded 50 mm part's and are re-derived against `SP0008` | `E5`, `O-128` |
+| `D13` | `E5` starts with a full-scale pulse before settling to its commanded duty, and commanded duty below the fan's stable minimum is driven as zero. Pulse duration and that minimum are `SP0008`'s and are unset; the superseded part's 250 ms and 0.15 do not carry over | `E5`, `O-128` |
 | `D14` | `E6` is commanded as a pulse train against a commissioned minimum open time; it is inhibited whenever `E5` demand is zero. Verified at the CO₂ population only | `O-110` |
 | `D15` | `E2` also carries the pollination pulse: a full-scale excursion over the flowering zone at the profile's duration and interval, issued by the gateway as an ordinary demand. No pulse timing is node-local | ADR-0003 d13, ADR-0031 rev 1 d2 |
 | `D16` | `E4` is unidirectional. At the design point it delivers 6.6 W to HX3 at 0.51 A and 1.61 V, drawing **0.82 W**; at the largest lift, WB2 at 22 °C against a 30 °C HX3, it draws **1.69 W** (both `verify`, computed on the TEC1–TEC3 parameters pending `O-103`). Demand is conditioned against U4 | ADR-0032 d7, `O-103` |
@@ -242,11 +242,11 @@ reallocates all three. The pin-map changes this requires are `O-100`.
 |---|---|---|
 | `P1` | Node logic is powered from the `+12 V` SELV sensor bus and derives 3.3 V on the carrier. No actuator element is on that rail | ADR-0018 d3 |
 | `P2` | Elements are fed from the `+24 V` actuator section, `SP0010`: TDK-Lambda Vega 650 (`K60050B`), C5 module, 24 V 10 A. Chassis total 650 W is shared across fitted modules (`verify`) | ADR-0018 d3, `O-104` |
-| `P3` | Draw at the worst simultaneous point: `E1` 18.7 W, `E3` 9.5 W, `E4` 1.7 W, `E2` 2.9 W, `E5` 0.5 W — 33.3 W, 1.4 A from `+24 V` (`verify`). The `E5` figure is the superseded 50 mm part's and rises with `SP0008` (`O-128`). One C5 module carries the module with the balance available to other branches | `D1` |
+| `P3` | Draw at the worst simultaneous point: `E1` 18.7 W, `E3` 9.5 W, `E4` 1.7 W, `E2` 2.9 W, `E5` 2.9 W — 35.7 W, 1.5 A from `+24 V` (`verify`). `E2` and `E5` are the same part, so each is bounded at its full-duty draw. One C5 module carries the module with the balance available to other branches | `D1`, `SP0008` |
 | `P4` | Per-branch overcurrent protection is the supply module's own current limit plus the drivers' OCP; no central per-load fuse | ADR-0018 d8 |
 | `P5` | The switched return is not shared with the logic or analog ground at the module. Isolation of the command path lives at this actuator | ADR-0018 d7, d8 |
 | `P6` | U5 dissipates 0.20 W and U6 0.14 W at the `D2` and `D11` limits (50 mΩ HS+LS × I²). Each thermal pad is bonded to a copper pour sized for it (`verify`) | U5, U6 |
-| `P7` | Module energy at the design profile is 0.73 kWh/day: `E1` 0.37, `E3` 0.15, `E4` 0.01, `E2` 0.07, `E5` 0.01, rejection-loop pump 0.12 (`verify`). Divergence from the M05 S0 meter beyond 15 % invalidates the §2.2 basis | ADR-0018 d5 |
+| `P7` | Module energy at the design profile is 0.73 kWh/day: `E1` 0.37, `E3` 0.15, `E4` 0.01, `E2` 0.07, `E5` 0.01, rejection-loop pump 0.12 (`verify`). The `E5` term follows the duty `O-128` settles. Divergence from the M05 S0 meter beyond 15 % invalidates the §2.2 basis | ADR-0018 d5 |
 
 ## 8. Thermal requirements and interlocks
 
@@ -347,7 +347,7 @@ reallocates all three. The pin-map changes this requires are `O-100`.
 - `O-110` — CO₂ branch unspecified: source, regulator, valve, minimum dose against the §2.2 grow volume, and CO₂ accumulation in an occupied room. Blocks `D14` and the §3.4 CO₂ population.
 - `O-111` — Transpiration is assumed at 140 ml/day and is unmeasured; it sets the humidity-tract mass flow. Closed by the first `O-109` measurement.
 - `O-127` — The main tract's 56 m³/h is the fan's free-air figure, not its operating point; owned by `E0012-R-specification.md`, consumed here. Blocks the air-side terms of §2.2 and the flow in §3.
-- `O-128` — `E5` now mounts `SP0008`, the same fan as `E2`. Three figures came from the superseded 50 mm part and do not carry over: the `§3.1` duty band, `D13`'s start pulse and minimum duty, and `P3`'s 0.5 W. The catalogue part also has neither a duty input nor an alarm output — both are custom variants — so `T5`'s trip element and both fans' drive depend on which variant is ordered. Blocks `T5`, `D13`, `P3` and the `§3.1` range.
+- `O-128` — `E5` mounts `SP0008`, the same fan as `E2`, and the tract flow cannot be reached by duty alone. `SP0008` delivers 56 m³/h free air against the superseded part's 10.1 m³/h, so holding the §3 tract flow puts the duty near 0.05, an order below where a ball-bearing DC fan turns stably. One of three closes it: a fixed restriction sized so the fan's minimum stable duty yields the §3 flow, intermittent operation at that minimum, or a smaller fan for this tract. The variant question is the same item: `SP0008` carries a duty input and an alarm output only as custom variants, and `T5`'s trip element is that alarm, which the superseded part had as standard. Blocks `T5`, `D13`, `P3`, `P7`'s `E5` term and the `§3.1` range.
 - `O-113` — U9 part not selected; `F11`'s fail-to-safe wiring follows from its output behaviour when its outputs are de-asserted. Blocks `F11`.
 - `O-114` — The luminaire's position relative to the grow volume sets 19 W or 32 W of §2.2 day load and decides whether `D10` binds at the wet edge of the band. Owned by A02-LIGHT and the enclosure, consumed here.
 - ~~`O-115`~~ — ~~No governing ADR for cabinet climate conditioning.~~ — closed 2026-09-08 by ADR-0032.
