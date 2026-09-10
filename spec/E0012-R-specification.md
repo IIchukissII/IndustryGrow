@@ -61,8 +61,8 @@ The unit publishes nothing. Every quantity its sensing elements carry is publish
 | Ref | Device | Function | Notes |
 |---|---|---|---|
 | TEC1, TEC2 | `SP0006` — 40 × 40 mm, 127 couple, `Imax` 6.4 A, `Qmax` 57 W, `ΔTmax` 66 K at `Th` 25 °C, α 0.0608 V/K, R 2.78 Ω, K 0.864 W/K (all `verify`) | `E1`, series pair | SKU is `O-103`; the values drive `E0011`'s `D1` and `D4` |
-| HX1 | `SP0007` — 62 × 74 mm section, 150 mm, `Rth` 0.17 K/W with `SP0008` fitted (`verify`) | Grow-volume exchanger of the main tract, and the cabinet's circulation | `T3`, `O-112`. Fischer LA 6 150 12 satisfies this line and `SP0008` together |
-| E2 | `SP0008` — 60 × 60 × 25 mm axial, 12 V, commandable duty | Main-tract air mover, mounted on HX1 | Driven from `E0011` U9 channel 0. The unit's one wear part |
+| HX1 | `SP0007` — 62 × 74 mm section, 150 mm, `Rth` 0.17 K/W with `SP0008` fitted (`verify`) | Grow-volume exchanger of the main tract, and the cabinet's circulation | `T3`, `O-112`. Fischer LA 6 150 24 satisfies this line and `SP0008` together |
+| E2 | `SP0008` — ebm-papst **614 NHH**: 24 V over 18–26 V, 6850 min⁻¹, 2.9 W, 56 m³/h **free air**, 41 dB(A), ball bearing, L10 60 000 h at 40 °C, ambient −20…+70 °C, locked-rotor and overload protection, 0.066 kg | Main-tract air mover, mounted on HX1 | Fed from `SP0010`; duty from `E0011` U9 channel 0. Shutoff pressure ≈ 100 Pa (`verify` — read from the curve, not a stated figure). Speed signal and go/no-go alarm are custom variants, not taken. The 612 NHH is the 12 V member of the pair and is **not** this part |
 | WB1 | `SP0009` — liquid cold plate, 40 × 120 mm working face | Rejection face of `E1`, clamping plate of the column, mounting face of U1 and RT1 | Two wet joints, `M6` |
 | U1 | DS18B20, 1-Wire, 12-bit, 750 ms conversion (`verify`) | WB1 block temperature | On `E0011`'s 1-Wire bus; derates both tracts through `D9` |
 | U2 | DS18B20, same bus | HX1 base temperature | Floors `E1` cooling through `D10` |
@@ -92,7 +92,7 @@ Circuits crossing to the node:
 | Circuit | Node side | Note |
 |---|---|---|
 | `E1` string, two conductors | U5 output | The series pair is made up inside the unit; string limit 2.0 A per `D2` |
-| `E2` fan drive | U9 channel 0 | Runs full when the expander's outputs are de-asserted (`F11`) |
+| `E2` fan drive | U9 channel 0 | Duty only. The fan is fed from the `+24 V` actuator section (`SP0010`), never the `+12 V` sensor bus (`P1`), and runs full when the expander's outputs are de-asserted (`F11`) |
 | 1-Wire data and supply | `OW_DATA` | U1 and U2 share the node's bus with U3 and U4 |
 | RT1 pair | U7 input | Carries the `T2` trip; no MCU sits between the element and the comparator (`T10`) |
 
@@ -114,6 +114,7 @@ both driver enables, so the humidity tract's protection depends on two elements 
 | `T1` | The unit removes ≥ 26 W from the grow-volume air at a module ΔT of 15 K with the string at `i` ≤ 0.30 of `Imax` (`verify`) | ADR-0032 d6, `E0011` §2.2, `O-105` |
 | `T2` | No condensate forms on HX1 or inside the duct. The floor that holds HX1 above the grow-volume dew point is commanded by the node (`D10`) | ADR-0032 d5 |
 | `T3` | Effective thermal resistance from the two-module footprint on the HX1 base to the air stream is ≤ 0.17 K/W (`verify`), spreading included | `O-112`, `D10` |
+| `T6` | The tract's volume flow is the value at the fan's operating point with the fin stack, the duct and both terminations fitted, and that value is what `T1` and `T3` are evaluated against. `SP0008`'s free-air figure is not it | `O-127`, `E0011` §3 |
 | `T4` | U1 and RT1 each read WB1 plate temperature within 2 K (`verify`) at the `T1` duty | `D9`, `T2` of `E0011` |
 | `T5` | Conduction from WB1 into the housing does not raise any printed surface past `M4`'s ceiling at the `T1` duty | `M4` |
 
@@ -140,6 +141,7 @@ both driver enables, so the humidity tract's protection depends on two elements 
 | `V6` | `M4`, `T5` | Thermograph the printed parts at the `T1` duty; confirm no surface exceeds 60 °C |
 | `V7` | `M5` | Trace the discharge jet with the cabinet loaded; confirm it reaches the far wall and that intake air is not drawn directly from the discharge |
 | `V8` | `M6` | Pressure-test both joints at the loop's working pressure with the column assembled; confirm no wetted part is inside the housing |
+| `V9` | `T6` | Measure tract volume flow with the unit assembled and both terminations fitted, at full `E2` duty and at the `E0011` §3.1 minimum |
 
 ## 9. Open items
 
@@ -149,6 +151,7 @@ both driver enables, so the humidity tract's protection depends on two elements 
 | `O-107` | Wall penetration, seal and thermal break are enclosure design; the unit's terminations meet them at an undrawn boundary. Owned by `E0011-R-specification.md`, consumed here | `M5` |
 | `O-112` | HX1's `Rth` is a catalogue figure that excludes spreading from two point-source modules on the base. Bench measurement required | `T3`, and through it `D10` |
 | `O-126` | Harness and connector unspecified: whether the string, the fan drive, the 1-Wire line and the RT1 pair share one shell, and which family carries the string current | §5, `WH1` |
+| `O-127` | The main tract's 56 m³/h is `SP0008`'s **free-air** figure. The operating point against the fin stack, the duct and both terminations is unestablished and is necessarily lower, which moves the air-side film coefficient and with it `T1` and `T3`. The fan curve reaches roughly 100 Pa at shutoff, so the working point turns on a pressure drop nobody has computed or measured | `T6`, `T1`, and `E0011` §2.2's air-side terms |
 
 ## 10. Maturity
 
@@ -161,5 +164,5 @@ both driver enables, so the humidity tract's protection depends on two elements 
 Current rung: **Requirements-fixed**.
 
 Reaching *Parts-committed* requires `O-103` and `O-126`. Reaching *As-built* additionally
-requires `O-112`, whose measurement `V2` is, and `O-107`, without which `V7` has no boundary to
-run against.
+requires `O-112` and `O-127`, whose measurements `V2` and `V9` are, and `O-107`, without which
+`V7` has no boundary to run against.
