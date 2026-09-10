@@ -109,7 +109,7 @@ the slug (a version-less `SP` root, ADR-0019 d2): `<parent-root>-D-<slug>[-src].
 | `E0006-000001-D-case-src.zip` | `E0006-000001` M05-SAFETY board | Enclosure design source (Inventor `.ipt` + STEP `.stp`); slug-revisioned (`-case`). Licensing inherits the `store/**` default. |
 | `E0002-000001-D-case-src.zip` | `E0002-000001` M01-CLIMATE board | Enclosure design source (Inventor `.ipt` + STEP `.stp`, bottom and top halves; assembly render). Slug-revisioned (`-case`). Licensing inherits the `store/**` default. |
 | `E0003-000001-D-case-src.zip` | `E0003-000001` M02-LIGHT board | Enclosure design source (Inventor `.ipt` + STEP `.stp`, bottom half only). The body is the E0002 bottom; the two parts differ in the case text alone. Slug-revisioned (`-case`). Licensing inherits the `store/**` default. |
-| `E0012-000001-D-case-bottom.stp` | `E0012-000001` tempering unit | Housing, bottom half, as STEP. One file, so one object rather than a package. Slug-revisioned (`-case-bottom`). Licensing inherits the `store/**` default. |
+| `E0012-000001-D-case-src.zip` | `E0012-000001` tempering unit | Housing design source (STEP `.stp` only, bottom half). Slug-revisioned (`-case`). Licensing inherits the `store/**` default. |
 
 ### Vendor reference documents (SP parts)
 

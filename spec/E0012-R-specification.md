@@ -42,7 +42,7 @@ Not specified here:
 | Commanded by | `E0011` over the §5 harness. The unit accepts no command of its own |
 | Serialized | Yes. `-QP` carries dimensional and clamping-force inspection (ADR-0017 d10) |
 | Position | Assigned at integration, never present in the identifier (ADR-0017 d7) |
-| Design source | `store/E0012-000001-D-case-bottom.stp` — STEP, one file, one object (ADR-0019 d9) |
+| Design source | `store/E0012-000001-D-case-src.zip`, STEP only (ADR-0019 d9) |
 
 ## 3. Function
 
