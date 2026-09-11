@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # A01-CLIMATE — module specification
 
 - **Status:** Working specification, pre-schematic capture. `E0011` not laid out, not fabricated
-- **Date:** 2026-09-08
+- **Date:** 2026-09-11
 - **E-number:** `E0011` · module class ID `0x80`
 - **Governing ADRs:** ADR-0031 (rev 1), ADR-0032, ADR-0014 (rev 4), ADR-0015, ADR-0016, ADR-0017 (rev 2), ADR-0018, ADR-0003
 - **Companions:** `E0012-R-specification.md`, `E0002-R-specification.md`, `E0006-R-specification.md`, `E0008-R-specification.md`, `E0009-R-specification.md`
@@ -278,6 +278,7 @@ reallocates all three. The pin-map changes this requires are `O-100`.
 | `M6` | Printed parts are PETG. No printed part is in direct thermal contact with a module hot face, a water block or HX3, and no printed surface exceeds **60 °C** continuous (`verify` — PETG HDT ≈ 70 °C at 0.45 MPa) | `O-107` |
 | `M7` | `TB1` is a printed insert of 15–20 mm with thin walls and an internal air passage, carrying the tract's low point and its liquid seal | `T9`, `T7` |
 | `M8` | HX2 and HX3 are degreased before assembly; HX1 is `E0012`'s (`M3`) | `T7` |
+| `M9` | The humidity tract's duct carries the same bore and the same flange as the main tract's (`E0012`'s §5), so sections, collars, flanges and terminations interchange between the tracts. A flow restriction `O-128` may call for is an element in the tract, not a reduction of the bore | ADR-0032 d8, `O-128` |
 
 ## 10. Firmware requirements
 
@@ -322,7 +323,7 @@ reallocates all three. The pin-map changes this requires are `O-100`.
 | `V20` | `P6` | Measure U5 and U6 case temperatures at their limits for 1 h |
 | `V21` | `P7` | Log the M05 S0 meter over a full 24 h profile; compare against the `P7` figure |
 | `V22` | `M6` | Thermograph the humidity tract's printed parts at the `T6` rejection load; confirm no surface exceeds 60 °C |
-| `V23` | `M4` | Executed on `E0012` (`V7`) |
+| `V23` | `M4`, `M9` | Executed on `E0012` (`V7`, `V11`) |
 | `V24` | `T8` | Run at the `T6` rejection load for 4 h in the installed room; record the ambient rise |
 | `V25` | `P1`, `P5` | Measure isolation between the switched return and both logic and analog ground; confirm no element current returns on the `+12 V` bus |
 | `V26` | `M1`, `M2`, `M8` | Record clamping force on TEC3 and TEC4 against the module datasheet, the TIM temperature rating, and that HX2 and HX3 were degreased |
