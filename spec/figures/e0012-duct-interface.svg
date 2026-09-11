@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="440" viewBox="0 0 760 440" role="img" aria-label="E0012 main-tract duct as a chain of flanged parts between the grow volume and the exchanger">
+  <title>E0012 — main-tract duct interface</title>
+  <desc>The main tract drawn as a chain of parts joined on one interface bore and one bolted face flange. Air leaves the grow volume through a floor wall penetration into the intake termination IT1, runs along the floor through tube sections and bends DT1 whose ends are taken by flange collars FC1, reaches the fan flange DA1 which carries the fan E2 on the fan's own hole pitch, and passes up through the exchanger HX1, whose fin stack the fan blows into. Above HX1 a second DT1 run carries the air back over the volume into the discharge plenum PL1, which converts the tract bore into the horizontal ceiling slot of requirement M5 and returns the air to the volume through the upper wall penetration. The bore is the same in every part of the chain; the only narrower point is the fan's own opening, inside E2. Every joint between two parts is a bolted face flange, marked as a small square, sealed by a printed TPU gasket SL1 and separated by removing four screws. The two wall penetrations belong to the enclosure, not to this unit.</desc>
+
+  <defs>
+    <marker id="ab" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#7A8DA6"/></marker>
+  </defs>
+
+  <rect x="0.5" y="0.5" width="759" height="439" rx="10" fill="#FFFFFF" stroke="#E5E3DC"/>
+  <text x="380" y="28" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12.5" fill="#2C2C2A">E0012 — main-tract duct interface</text>
+
+  <!-- grow volume -->
+  <rect x="40" y="64" width="192" height="312" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <rect x="52" y="76" width="168" height="288" fill="#FBFBF9" stroke="#C9C6BC"/>
+  <text x="66" y="96" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">GROW VOLUME</text>
+
+  <!-- wall penetrations -->
+  <rect x="232" y="134" width="10" height="20" fill="#FDF4F0" stroke="#D85A30"/>
+  <rect x="232" y="341" width="10" height="20" fill="#FDF4F0" stroke="#D85A30"/>
+  <text x="248" y="392" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#D85A30">wall penetrations are the enclosure's (O-107)</text>
+
+  <!-- bottom run -->
+  <rect x="262" y="334" width="80" height="34" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="302" y="355" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">IT1</text>
+  <text x="302" y="384" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">floor intake</text>
+
+  <rect x="374" y="334" width="110" height="34" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="429" y="350" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">DT1</text>
+  <text x="429" y="363" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">FC1 at each end</text>
+  <text x="429" y="384" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">sections and bends</text>
+
+  <rect x="516" y="334" width="62" height="34" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="547" y="355" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">DA1</text>
+  <text x="547" y="384" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">fan flange</text>
+
+  <!-- fan and exchanger -->
+  <rect x="614" y="330" width="86" height="42" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="657" y="350" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">E2</text>
+  <text x="657" y="364" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#7A8DA6">narrowest point</text>
+
+  <rect x="614" y="196" width="86" height="116" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="657" y="248" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">HX1</text>
+  <text x="657" y="264" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">fin stack</text>
+
+  <!-- top run -->
+  <rect x="446" y="128" width="110" height="34" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="501" y="149" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">DT1</text>
+  <text x="501" y="118" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">sections and bends</text>
+
+  <rect x="300" y="128" width="108" height="34" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="354" y="149" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">PL1</text>
+  <text x="354" y="118" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">plenum to the M5 slot</text>
+
+  <!-- air path -->
+  <path d="M232 351 L258 351" fill="none" stroke="#7A8DA6" stroke-width="1.4" marker-end="url(#ab)"/>
+  <path d="M342 351 L370 351" fill="none" stroke="#7A8DA6" stroke-width="1.4" marker-end="url(#ab)"/>
+  <path d="M484 351 L512 351" fill="none" stroke="#7A8DA6" stroke-width="1.4" marker-end="url(#ab)"/>
+  <path d="M578 351 L610 351" fill="none" stroke="#7A8DA6" stroke-width="1.4" marker-end="url(#ab)"/>
+  <path d="M657 330 L657 316" fill="none" stroke="#7A8DA6" stroke-width="1.4" marker-end="url(#ab)"/>
+  <path d="M657 196 L657 145 L560 145" fill="none" stroke="#7A8DA6" stroke-width="1.4" marker-end="url(#ab)"/>
+  <path d="M446 145 L412 145" fill="none" stroke="#7A8DA6" stroke-width="1.4" marker-end="url(#ab)"/>
+  <path d="M300 145 L246 145" fill="none" stroke="#7A8DA6" stroke-width="1.4" marker-end="url(#ab)"/>
+  <text x="268" y="170" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#7A8DA6">M5 slot</text>
+
+  <!-- flanged joints -->
+  <rect x="352" y="345" width="8" height="12" fill="#FDF4F0" stroke="#D85A30"/>
+  <rect x="494" y="345" width="8" height="12" fill="#FDF4F0" stroke="#D85A30"/>
+  <rect x="590" y="345" width="8" height="12" fill="#FDF4F0" stroke="#D85A30"/>
+  <rect x="651" y="172" width="12" height="8" fill="#FDF4F0" stroke="#D85A30"/>
+  <rect x="424" y="139" width="8" height="12" fill="#FDF4F0" stroke="#D85A30"/>
+
+  <!-- legend -->
+  <rect x="50" y="404" width="8" height="12" fill="#FDF4F0" stroke="#D85A30"/>
+  <text x="66" y="413" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">bolted face flange, four screws and an SL1 gasket, separable without cutting or bonding (M7) · one bore throughout (T7)</text>
+</svg>

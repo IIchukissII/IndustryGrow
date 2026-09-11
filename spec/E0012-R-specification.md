@@ -5,8 +5,8 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 # A01-CLIMATE tempering unit — assembly specification
 
-- **Status:** Working specification, pre-build. `E0012` not built; the housing bottom half exists as design source
-- **Date:** 2026-09-10
+- **Status:** Working specification, pre-build. `E0012` not built; the housing bottom half exists as design source, and the duct set is in development and unidentified (§2)
+- **Date:** 2026-09-11
 - **E-number:** `E0012` · discipline mechanical · no module class, no strap
 - **Governing ADRs:** ADR-0032, ADR-0031 (rev 1), ADR-0017 (rev 3), ADR-0016, ADR-0003
 - **Companions:** `E0011-R-specification.md`
@@ -42,7 +42,8 @@ Not specified here:
 | Commanded by | `E0011` over the §5 harness. The unit accepts no command of its own |
 | Serialized | Yes. `-QP` carries dimensional and clamping-force inspection (ADR-0017 d10) |
 | Position | Assigned at integration, never present in the identifier (ADR-0017 d7) |
-| Design source | `store/E0012-000001-D-case-src.zip`, STEP only (ADR-0019 d9) |
+| Design source | Housing: `store/E0012-000001-D-case-src.zip`, STEP only (ADR-0019 d9). Duct set: `project/mechanical/`, outside the document store while the combination iterates |
+| Duct set identity | None. No section, flange or termination of the §5 path takes a number of its own; identification follows at the commit the combination reaches (ADR-0032 d8, ADR-0017 d5, ADR-0019 d9) |
 
 ## 3. Function
 
@@ -69,12 +70,19 @@ The unit publishes nothing. Every quantity its sensing elements carry is publish
 | RT1 | NTC 10 kΩ B25/85 3435, at WB1 | Trip element of `E0011`'s `T2` | The comparator is on the node, not in this unit |
 | CP1 | Clamping plate and disc-spring set | Column clamping load | `M1` |
 | TIM1 | Thermal interface material, both faces of each module | Module-to-plate conduction | `M2` |
-| HS1 | Printed housing, PETG | Duct, mounting and column location | `M4`; design source per §2 |
+| HS1 | Printed housing, PETG | Exchanger enclosure, mounting and column location | `M4`; design source per §2 |
+| DA1 | Printed fan flange, PETG | Carries `SP0008` on its hole pitch and presents the §5 flange | `M8` |
+| DT1 | Commodity tube sections and bends, DN 75 per §5 | The run between HX1 and each termination | Bend sweep `O-130` |
+| FC1 | Printed flange collar, PETG, one per tube end | Takes a DN 75 tube end and presents the §5 flange | `M7` |
+| IT1 | Printed intake termination, PETG | Floor intake of `M5` | `M9` |
+| PL1 | Printed discharge plenum, PETG | Converts the tract bore to the `M5` slot | `M9` |
+| SL1 | Printed TPU gasket, one per flange pair | Joint seal of every §5 flange | `M7`, `M4`, `O-130` |
 | WH1 | Harness and connector | The four §5 circuits | Unspecified — `O-126` |
 
 U1, U2 and RT1 are ordinary purchased components and stay MPN lines in the `L` document, on the
-same footing as the TMP117 counter-example of ADR-0019 d4. Every other part above is a unit of
-procurement, and `SP0008` is additionally an actuator device (d6).
+same footing as the TMP117 counter-example of ADR-0019 d4. Every SP-numbered part above is a unit
+of procurement, and `SP0008` is additionally an actuator device (d6). DA1, DT1, FC1, IT1, PL1 and
+SL1 carry no number while the combination iterates (§2).
 
 Deliberately absent:
 
@@ -104,6 +112,22 @@ Other interfaces:
 | Air intake and discharge | Grow volume | Terminations are this unit's (`M5`); the wall penetration is not (`O-107`) |
 | Mounting | Enclosure | Outside the grow volume, in the main-tract shaft |
 
+The air path is modular on one interface, shared with the humidity tract (ADR-0032 d8,
+`E0011`'s `M9`):
+
+![The main tract as a chain of flanged parts on one bore: the floor intake termination IT1, a run of tube sections and bends DT1 whose ends are taken by flange collars FC1, the fan flange DA1 carrying the fan E2 on the fan's own hole pitch, the exchanger HX1, a second DT1 run, and the discharge plenum PL1 converting the bore to the M5 ceiling slot; every joint is a bolted face flange with an SL1 gasket, and the only point narrower than the bore is the fan's own opening](./figures/e0012-duct-interface.svg)
+
+| Dimension | Value |
+|---|---|
+| Tract bore | DN 75 to DIN EN 1451-1: 75 mm outside, 1.9 mm wall, **71.2 mm free bore**, 39.8 cm² |
+| Bore basis | HX1's 62 × 74 mm section, 45.9 cm² gross |
+| `E2` fan face | 60 × 60 mm frame, 50 × 50 mm hole pitch, 3.7 mm holes, Ø 64 mm panel opening — the narrowest point of the path |
+| Flange | Ø 110 outside, Ø 96 bolt circle, 4 × M4, face 5 mm thick |
+| Gasket | SL1, flat, Ø 96 outside, Ø 71.2 inside, 2 mm thick |
+| Tube to flange | FC1 collar, socket Ø 75.6 × 32 deep, two M4 set screws at 90° |
+| Discharge | PL1 to the `M5` slot at the `M9` area |
+| Humidity tract | Same bore and same flange; sections, collars, flanges and terminations interchange |
+
 The unit's sensing serves both tracts. U1 derates every thermoelectric demand and RT1 removes
 both driver enables, so the humidity tract's protection depends on two elements mounted on WB1.
 
@@ -117,6 +141,18 @@ both driver enables, so the humidity tract's protection depends on two elements 
 | `T4` | U1 and RT1 each read WB1 plate temperature within 2 K (`verify`) at the `T1` duty | `E0011`'s `D9` and `T2` |
 | `T5` | Conduction from WB1 into the housing does not raise any printed surface past `M4`'s ceiling at the `T1` duty | `M4` |
 | `T6` | The tract's volume flow is the value at the fan's operating point with the fin stack, the duct and both terminations fitted, and that value is what `T1` and `T3` are evaluated against. `SP0008`'s free-air figure is not it | `O-127`, `E0011` §3 |
+| `T7` | The air path outside HX1 — DA1, DT1, FC1, both terminations and every flange — costs ≤ **30 Pa** at the §4 free-air flow. HX1's own drop is outside this budget | `O-127`, `O-112`, `T6` |
+
+Computed at the §4 free-air flow through the §5 bore, mean velocity 3.9 m/s. One metre of run
+with two bends totals 26 Pa. A flange carries no term of its own, the bore being continuous
+across it:
+
+| Term | Computed |
+|---|---|
+| DT1 friction | 3.5 Pa per metre of run |
+| Swept 90° bend | 4 Pa each; the family's 87° elbow is sharper, two 45° sections hold the term (`O-130`) |
+| IT1 plain socket entry | 5 Pa |
+| PL1 and the `M5` slot at the `M9` area | 9 Pa |
 
 ## 7. Mechanical requirements
 
@@ -125,9 +161,12 @@ both driver enables, so the humidity tract's protection depends on two elements 
 | `M1` | TEC1 and TEC2 are each clamped between HX1 and WB1 at the datasheet clamping force, through CP1 with disc springs. No printed part carries clamping load | `O-103` |
 | `M2` | Both faces of every module carry a thermal interface material rated for continuous 100 °C (`verify`) | `O-103` |
 | `M3` | HX1 and WB1 are degreased before assembly | `T2` |
-| `M4` | Printed parts are PETG. No printed part is in direct thermal contact with a module hot face or with WB1, and no printed surface exceeds **60 °C** continuous (`verify` — PETG HDT ≈ 70 °C at 0.45 MPa) | `T5` |
+| `M4` | Structural printed parts are PETG and printed seals are TPU. No printed part is in direct thermal contact with a module hot face or with WB1, and no printed surface exceeds **60 °C** continuous (`verify` — PETG HDT ≈ 70 °C at 0.45 MPa; TPU hardness and continuous service temperature are `O-130`) | `T5` |
 | `M5` | The discharge termination is a horizontal slot, gap ≤ 20 mm, directed at the far wall; the intake termination is at the floor. The two tracts' intakes are separated in height | ADR-0003 air movement |
 | `M6` | WB1's supply and return are the unit's only wet joints, and both are outside the housing. The column is serviceable without breaking the coolant circuit | ADR-0032 decision drivers |
+| `M7` | Every section, collar, flange and termination of the §5 path carries the tract bore, and every joint between them is a bolted face flange on the §5 pattern with an SL1 gasket. A joint separates by removing its four screws, with no cutting and no bonding. Nothing in the path is narrower than the bore except the `E2` opening and the `M5` slot | ADR-0032 d8, `T7` |
+| `M8` | DA1 carries `SP0008` on the §5 hole pitch and presents the §5 flange at the bore. No printed part tapers the bore | ADR-0032 d8, `T7` |
+| `M9` | PL1 converts the tract bore to the `M5` slot and IT1 the floor intake to the bore. The slot's open area is not less than the bore's 39.8 cm², which at `M5`'s 20 mm gap is 200 mm of slot width | `M5`, `T7`, `V7` |
 
 ## 8. Verification
 
@@ -139,9 +178,11 @@ both driver enables, so the humidity tract's protection depends on two elements 
 | `V4` | `T4` | Compare U1 and RT1 against a reference sensor on the WB1 plate at the `T1` duty |
 | `V5` | `M1`, `M2`, `M3` | Record clamping force at assembly against the module datasheet, the TIM temperature rating, and that each exchanger was degreased |
 | `V6` | `M4`, `T5` | Thermograph the printed parts at the `T1` duty; confirm no surface exceeds 60 °C |
-| `V7` | `M5` | Trace the discharge jet with the cabinet loaded; confirm it reaches the far wall and that intake air is not drawn directly from the discharge |
+| `V7` | `M5`, `M9` | Measure the slot's open area against the `M9` figure, then trace the discharge jet with the cabinet loaded; confirm it reaches the far wall and that intake air is not drawn directly from the discharge |
 | `V8` | `M6` | Pressure-test both joints at the loop's working pressure with the column assembled; confirm no wetted part is inside the housing |
 | `V9` | `T6` | Measure tract volume flow with the unit assembled and both terminations fitted, at full `E2` duty and at the `E0011` §3.1 minimum |
+| `V10` | `T7` | Measure static pressure from the IT1 inlet to the PL1 slot with the path assembled at full `E2` duty, then repeat with one bend added; the difference is the per-bend term |
+| `V11` | `M7`, `M8` | Unbolt every flange of the assembled path and re-assemble it; traverse each joint with the tract running and confirm no leakage, and repeat on one joint ten times against the same check |
 
 ## 9. Open items
 
@@ -151,18 +192,19 @@ both driver enables, so the humidity tract's protection depends on two elements 
 | `O-107` | Wall penetration, seal and thermal break are enclosure design; the unit's terminations meet them at an undrawn boundary. Owned by `E0011-R-specification.md`, consumed here | `M5` |
 | `O-112` | HX1's `Rth` is a catalogue figure that excludes spreading from two point-source modules on the base. Bench measurement required | `T3`, and through it `E0011`'s `D10` |
 | `O-126` | Harness and connector unspecified: whether the string, the fan drive, the 1-Wire line and the RT1 pair share one shell, and which family carries the string current | §5, `WH1` |
-| `O-127` | The main tract's 56 m³/h is `SP0008`'s **free-air** figure. The operating point against the fin stack, the duct and both terminations is unestablished and is necessarily lower, which moves the air-side film coefficient and with it `T1` and `T3`. The fan curve reaches roughly 100 Pa at shutoff, so the working point turns on a pressure drop nobody has computed or measured | `T6`, `T1`, and `E0011` §2.2's air-side terms |
+| `O-127` | The fan's operating point is unestablished: HX1's air-side drop is unpublished (`O-112`) and the duct's is computed, not measured. It lies below `SP0008`'s 56 m³/h free-air figure, which moves the air-side film coefficient and with it `T1` and `T3` | `T6`, `T1`, `O-112`, `E0011` §2.2's air-side terms |
+| `O-130` | The duct combination is unfixed: run length and bend count per tract; whether DN 75 carries a bend of the sweep `T7`'s 4 Pa term assumes; the `M5` slot's width at the `M9` area; SL1's TPU hardness, continuous service temperature and compression set over the `V11` cycles; whether FC1 holds a tube end on set screws alone | `T7`, `M4`, `M7`, `M9` |
 
 ## 10. Maturity
 
 | Rung | Content |
 |---|---|
-| **Requirements-fixed** | Complement and requirements fixed; values estimated or `verify`; housing bottom half drawn |
-| **Parts-committed** | `O-103` closed; housing complete; `L` document released |
+| **Requirements-fixed** | Complement and requirements fixed; values estimated or `verify`; housing bottom half drawn; duct set in development |
+| **Parts-committed** | `O-103` closed; housing complete; duct combination fixed and identified; `L` document released |
 | **As-built** | Estimates replaced by measurements; verification executed; open items closed in place |
 
 Current rung: **Requirements-fixed**.
 
-Reaching *Parts-committed* requires `O-103` and `O-126`. Reaching *As-built* additionally
-requires `O-112` and `O-127`, whose measurements `V2` and `V9` are, and `O-107`, without which
-`V7` has no boundary to run against.
+Reaching *Parts-committed* requires `O-103`, `O-126` and `O-130`. Reaching *As-built*
+additionally requires `O-112` and `O-127`, whose measurements `V2`, `V9` and `V10` are, and
+`O-107`, without which `V7` has no boundary to run against.

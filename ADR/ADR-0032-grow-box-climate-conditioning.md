@@ -14,6 +14,10 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 ## Revision history
 
+- **Amendments** — decision 8 (2026-09-11): the tract air path is a modular duct on one
+  interface bore, set by the exchanger face rather than by the air mover, with alternatives K
+  and L. Decisions 4 and 5 are untouched — the tracts, their duties and the dew-point floors
+  all stand; only the enclosure of the air between the elements is fixed.
 - **Amendments** — decision 7 (2026-09-09): the humidity tract's reheat is pumped from the
   rejection plate rather than generated resistively, with alternatives I and J. Decision 4 is
   qualified and not changed — subcool-and-reheat, the coil-temperature setpoint and the
@@ -151,6 +155,34 @@ Fixed elsewhere, not restated here:
    of ADR-0031 d6 is unchanged as a *drive* value and no longer implies zero *transfer*, which
    the specification declaring the element must state.
 
+8. **The tract air path is assembled from commodity tube sections and printed flanged parts on
+   one interface bore, and that bore follows the exchanger face rather than the air mover**
+   *(amendment, 2026-09-11)*. Both tracts carry the same bore and the same flange, so a section,
+   a bend, a flange or a termination made for one fits the other. The bore, the flange pattern
+   and the fan's own opening are specification values (`spec/E0012-R-specification.md` §5).
+
+   The exchanger sets the bore because the duct meets the fin stack, not the fan. The air mover
+   sits inside the unit ahead of its fin stack, and what its own throat costs is already inside
+   the exchanger's rated air-side resistance. A bore matched to that throat would instead
+   contract the stream at the fin-stack exit, re-accelerate air the exchanger has just slowed,
+   and still have to expand somewhere — at the discharge, where a sudden step is the most
+   expensive place to pay it. Duct friction at fixed volume flow scales as the fifth power of
+   the inverse bore, so the wider bore is also what removes run length and bend count from the
+   fan's operating point. That is what lets the enclosure iterate without moving a thermal
+   requirement.
+
+   Two rules follow. Their values are specification values (ADR-0000 d2):
+
+   | Rule | Fixed by |
+   |---|---|
+   | The bore is constant from termination to termination; the narrowest point of the path is the air mover's own opening | The exchanger sets the bore, the part sets its opening, and the two are within a few millimetres |
+   | The discharge termination's open area sets the velocity entering the grow volume, not the bore | The termination's throw, which is a specification requirement |
+
+   The parts of the combination are not identified while the combination iterates. A section, a
+   flange or a termination takes no number of its own: the mechanical development sources sit
+   outside the document store, and identification follows at the commit the combination reaches
+   (ADR-0017 d5), a part serving one parent filing on that parent's root (ADR-0019 d9).
+
 ## Alternatives considered
 
 **A. Vapour-compression cycle inside the cabinet.** *Rejected:* minimum capacity above the load,
@@ -194,6 +226,18 @@ the loop already sits near the reheat temperature. It puts a second wet branch a
 path inside the enclosure, which is the per-unit plumbing and leak-test obligation this record's
 first decision driver rejects, and its reheat follows the loop rather than a command.
 
+**K. A tract bore matched to the air mover's throat** *(amendment, 2026-09-11)*. *Rejected:* it
+contracts the stream at the fin-stack exit and re-accelerates air the exchanger has just slowed;
+friction per unit run rises as the fifth power of the bore ratio, so run length and bend count
+reach the fan's operating point; and the expansion is not avoided but moved to the discharge,
+where one sudden step costs several times the same expansion taken at the fan face.
+
+**L. One housing drawn per tract, with no interface** *(amendment, 2026-09-11)*. *Rejected:* a
+change of run, bend or termination is then a redraw of the whole part, and the two tracts share
+nothing although they already share their air mover. The mechanical envelope is the part of this
+apparatus with the most iterations ahead of it, and an interface is what makes an iteration a
+new flange rather than a new housing.
+
 ## Consequences
 
 ### Positive
@@ -207,6 +251,8 @@ first decision driver rejects, and its reheat follows the loop rather than a com
   humidity setpoint on a thermometer.
 - Decision 5 confines condensate to one collected surface, keeping condensation in ADR-0016's
   apparatus subspace.
+- Decision 8 makes run, bend count and terminations changeable without touching an element, a
+  requirement or a number, and gives both tracts one set of flanged parts.
 
 ### Negative
 
@@ -222,6 +268,10 @@ first decision driver rejects, and its reheat follows the loop rather than a com
   area.
 - An enclosure past decision 1's envelope has no conditioning record. ADR-0031 holds at that
   size; nothing else here does.
+- Decision 8 buys that freedom with joints, and every joint is a leak path and a fastener count
+  the assembled measurement has to carry.
+- A bore set by the main tract's exchanger is wide for the humidity tract, whose own difficulty
+  is the opposite one: its flow is so low that it wants a restriction rather than a clear path.
 
 ## Deferred decisions
 
