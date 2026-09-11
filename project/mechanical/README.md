@@ -17,4 +17,6 @@ identifier (ADR-0032 d8, ADR-0017 d5).
 | Exit | At the commit a combination reaches, its parts file under the identifier that commit assigns and leave this directory |
 
 `spec/E0012-R-specification.md` occupies it with the housing HS1 and the §5 duct set — DA1, DT1,
-IT1, PL1 and SL1.
+IT1, PL1 and SL1. A01-CLIMATE's humidity tract follows: TB1, the exchanger sections that house
+`SP0011`, the wall penetrations and the condensate collector, per `spec/E0011-R-specification.md`
+§9.
