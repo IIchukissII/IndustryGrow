@@ -113,10 +113,10 @@ Full scale of `E1`, `E3` and `E4` corresponds to the string current limit of `D2
 
 | Published quantity | Sensor | Sensor range | Expected operating range | Accuracy |
 |---|---|---|---|---|
-| WB1 block temperature | U1 DS18B20 in `E0012`, 1-Wire | −55…+125 °C (`verify`) | 22…30 °C, ceiling 45 °C (`D9`) | ±0.5 K over −10…+85 °C (`verify`) |
-| Main exchanger base temperature | U2 DS18B20 in `E0012`, same bus | −55…+125 °C (`verify`) | 9…17 °C; 15.8 °C day, 9.6 °C night | ±0.5 K over −10…+85 °C (`verify`) |
-| Subcooler coil base temperature | U3 DS18B20, same bus | −55…+125 °C (`verify`) | 5…12 °C; 7.6 °C day, 5.5 °C night, floor +1 °C (`D11`) | ±0.5 K over −10…+85 °C (`verify`) |
-| Reheater base temperature | U4 DS18B20, same bus | −55…+125 °C (`verify`) | 8…30 °C; 25.4 °C at the `D12` design point | ±0.5 K over −10…+85 °C (`verify`) |
+| WB1 block temperature | U1 DS18B20 in `E0012`, 1-Wire | −55…+125 °C | 22…30 °C, ceiling 45 °C (`D9`) | ±0.5 K over −10…+85 °C, ±2 K outside it |
+| Main exchanger base temperature | U2 DS18B20 in `E0012`, same bus | −55…+125 °C | 9…17 °C; 15.8 °C day, 9.6 °C night | ±0.5 K over −10…+85 °C, ±2 K outside it |
+| Subcooler coil base temperature | U3 DS18B20, same bus | −55…+125 °C | 5…12 °C; 7.6 °C day, 5.5 °C night, floor +1 °C (`D11`) | ±0.5 K over −10…+85 °C, ±2 K outside it |
+| Reheater base temperature | U4 DS18B20, same bus | −55…+125 °C | 8…30 °C; 25.4 °C at the `D12` design point | ±0.5 K over −10…+85 °C, ±2 K outside it |
 | Applied demand echo, per element | — (firmware state) | per §3.1 | per §3.1 | exact |
 | Drive state, per element | — (firmware state) | `off` / `run` / `inhibited` / `derated` / `tripped` / `fault` | — | exact |
 | Interlock state | `T2`–`T5` hardware lines | `armed` / `tripped` per line | `armed` | exact |
@@ -149,23 +149,26 @@ unpopulated branch publishes and commands (ADR-0014 d1, d2).
 
 | Ref | Device | Function | Supply | Rail |
 |---|---|---|---|---|
-| U1–U4 | DS18B20, 1-Wire, 12-bit, 750 ms conversion (`verify`) | Reported temperatures per §3.2. U1 and U2 are mounted in `E0012` | 3.3 V | 3V3 |
+| U1–U4 | DS18B20, 1-Wire, 12-bit, 750 ms conversion, 3.0–5.5 V | Reported temperatures per §3.2. U1 and U2 are mounted in `E0012` | 3.3 V | 3V3 |
 | RT1 | NTC 10 kΩ B25/85 3435, at WB1 in `E0012` | `T2` trip element; the comparator U7 is on this board | — | — |
 | RT2 | NTC 10 kΩ, on a lead in the grow volume | `T3` trip element, both thresholds (ADR-0018 d10) | — | — |
+| RT3, RT4 | NTC 10 kΩ B25/85 3435, on leads — **not fitted**; their dividers and filters are | Spare analog channels on `ADC_3` and `ADC_4` (§5.2) | — | — |
 | TEC1, TEC2 | In `E0012`; parameters in `E0012-R-specification.md` §4 | `E1`, series pair | Series string | `+24 V` actuator |
 | TEC3 | `SP0006`, the same part as TEC1 and TEC2 (`E0012-R-specification.md` §4) | `E3`, single | — | `+24 V` actuator |
 | TEC4 | Module for `E4`, **not** `SP0006`; sized by `D16` and `T11`, and takes its own SP when specified (`O-103`) | `E4`, single | — | `+24 V` actuator |
 | HX1 | In `E0012` | Grow-volume exchanger of the main tract, and the cabinet's circulation | — | — |
-| HX2 | Fischer LAM 5, 100 mm, `h·A` 1.64 W/K (`verify`) | Cold section of the humidity tract | — | — |
-| HX3 | Fischer LAM 5 50 5, `h·A` 0.82 W/K (`verify`) | Hot section of the humidity tract, carrying TEC4's hot face | — | — |
+| HX2 | `SP0011`, 80 mm long. `h·A` ≥ 1.9 W/K at the §3 tract flow | Cold section of the humidity tract, carrying TEC3's cold face | — | — |
+| HX3 | `SP0011`, 40 mm long. `h·A` ≥ 0.95 W/K at the §3 tract flow | Hot section of the humidity tract, carrying TEC4's hot face | — | — |
 | WB1 | In `E0012` | Rejection side of `E1`, and its clamping plate | — | — |
 | WB2 | Water block or cold plate, two working faces | Rejection side of `E3` and cold-side source for `E4` | — | — |
 | U5 | TI DRV8262, HTSSOP-44, **single-H-bridge mode**. 4.5…60 V; 50 mΩ HS+LS; integrated charge pump for 100 % duty; integrated high-side current sense, IPROPI ±4 %; UVLO, CPUV, OCP, OTSD, `nFAULT` | `E1` direction and current regulation (`D2`, `D3`) | 3.3 V logic, `+24 V` power | `+24 V` |
-| U6 | TI DRV8262, **dual-half-bridge mode** | `E3` current regulation and `E4` duty, unidirectional (`D11`, `D12`) | 3.3 V logic, `+24 V` power | `+24 V` |
-| L1, L2 | Series inductors, string side (`verify` — values from `D4`) | Ripple filters for the drivers' off-time chopping | — | — |
-| U7 | Comparator, water-block trip on `RT1` (`T2`) | Hardware interlock | 3.3 V | 3V3 |
-| U8 | Window comparator, grow-volume high and low trips on `RT2` (`T3`) | Hardware interlock (ADR-0018 d10) | 3.3 V | 3V3 |
-| U9 | 16-channel PWM generator, I²C (`verify` — part from `O-113`) | Module-local drive expansion (ADR-0031 rev 1 d11) | 3.3 V | 3V3 |
+| U6 | TI DRV8262, **dual-H-bridge mode**, 100 mΩ HS+LS per bridge | `E3` current regulation and `E4` duty, unidirectional (`D11`, `D12`) | 3.3 V logic, `+24 V` power | `+24 V` |
+| L1–L3 | Series inductors, one per string (`verify` — values from `D4`) | Ripple filters for the drivers' off-time chopping. `E4` carries one for the same reason `E1` and `E3` do: its duty is low and its string voltage far below `+24 V` | — | — |
+| U7 | Dual comparator, open-drain, rail-to-rail input: `RT1` over-temperature and `SF1` coolant flow | Hardware interlocks `T2` and `T4` | 3.3 V | 3V3 |
+| U8 | Quad comparator, open-drain, rail-to-rail input: the `RT2` window, the `FA1` airflow trip, and the `RT1` plausibility trip | Hardware interlocks `T3` (ADR-0018 d10), `T5` and the second half of `T2` | 3.3 V | 3V3 |
+| U11 | Quad 2-input AND gate | Combines the `T2`–`T4` chain, the `T5` line and the firmware enable into each driver's sleep input (`T10`) | 3.3 V | 3V3 |
+| Q4, D6 | P-channel MOSFET in the high side with a gate-source clamp | Reverse-polarity block on the `+24 V` entry (`P8`) | — | `+24 V` actuator |
+| U9 | NXP PCA9685PW, 16-channel 12-bit PWM generator, I²C Fm+, 2.3–5.5 V, 24–1526 Hz, address `0x40`, outputs LOW after power-on reset | Module-local drive expansion (ADR-0031 rev 1 d11) | 3.3 V | 3V3 |
 | U10 | 24Cxx serial EEPROM, I²C `0x50` | Module class ID (ADR-0014 d6) | 3.3 V | 3V3 |
 | SF1 | Coolant-flow switch, purchased (`T4`) | Rejection-loop interlock | — | — |
 | FA1 | Alarm output of the `E5` fan; `SP0008` carries it only as a custom variant (`O-128`) | Humidity-tract airflow interlock (`T5`) | — | — |
@@ -182,24 +185,28 @@ Deliberately absent:
 
 ## 5. Interfaces
 
-Header signals claimed (ADR-0014 d5):
+Header signals used (ADR-0014 d5):
 
 | Header signal | Carrier pin | Use |
 |---|---|---|
 | `PWM_1` | PC6 / TIM3_CH1 | U5 EN — `E1` magnitude (`D2`) |
-| `PWM_2` | PB0 / TIM3_CH3 | U5 VREF — `E1` current limit, RC-filtered to analog (`D2`) |
-| `PWM_3` | PC7 / TIM3_CH2 | U6 EN1 — `E3` magnitude (`D11`) |
+| `PWM_2` | PC7 / TIM3_CH2 | U6 EN1 — `E3` magnitude (`D11`) |
+| `PWM_3` | PB0 / TIM3_CH3 | U5 VREF — `E1` current limit, RC-filtered to analog (`D2`) |
 | `PWM_4` | PB1 / TIM3_CH4 | U6 VREF1 — `E3` current limit, RC-filtered to analog (`D11`) |
 | `ADC_1` | PC4 | U5 IPROPI — `E1` string current |
 | `ADC_2` | PC5 | U6 IPROPI1 — `E3` string current |
+| `ADC_3` | PC0 / ADC123_IN10, Header B position 17 — new, `O-100` | RT3 spare thermistor channel (§5.2) |
+| `ADC_4` | PC1 / ADC123_IN11, Header B position 19 — new, `O-100` | RT4 spare thermistor channel (§5.2) |
 | `OW_DATA` | PA0 | U1–U4 on one 1-Wire bus; external 4.7 kΩ pull-up |
-| `I2C1_SCL` / `I2C1_SDA` | PB6 / PB7 | U10 ID EEPROM `0x50`; U9 drive expansion |
+| `I2C1_SCL` / `I2C1_SDA` | PB6 / PB7 | U10 ID EEPROM `0x50`; U9 drive expansion; J14 |
+| `SPI2_SCK` / `SPI2_MISO` / `SPI2_MOSI` | PB13 / PB14 / PB15 | Claimed by no device; J14 (§5.2) |
+| `SPI_CS1` / `SPI_CS2` | PA3 / PA4 | Claimed by no device; J14 (§5.2) |
 | `GPIO_1` | PA9 | `T2` interlock state (input) |
 | `GPIO_2` | PA10 | `T3` interlock state (input) |
 | `GPIO_3` | PA15 | `T4` interlock state (input) |
 | `GPIO_4` | PB12 | `T5` interlock state (input) |
-| `STRAP_0`, reallocated | — | U5 and U6 `nFAULT`, wired-OR, open-drain (input) |
-| `STRAP_1`, `STRAP_2`, reallocated | — | Spare |
+| `STRAP_0`, reallocated | PA5 | U5 and U6 `nFAULT`, wired-OR, open-drain (input) |
+| `STRAP_1`, `STRAP_2`, reallocated | PA6 / PA7 | Spare inputs, 10 kΩ pull-down, J14 (§5.2) |
 
 Module-local expansion on U9 (ADR-0031 rev 1 d11):
 
@@ -210,26 +217,59 @@ Module-local expansion on U9 (ADR-0031 rev 1 d11):
 | 2 | `E5` humidity-tract fan, including the `D13` start pulse |
 | 3 | `E6` CO₂ valve — unpopulated in the baseline |
 | 4 | U5 PH — `E1` direction (`D3`) |
-| 5, 6 | U5, U6 nSLEEP — driver enable from firmware |
+| 5, 6 | U5, U6 firmware enable, into U11 and never onto a driver's sleep input directly (`T10`) |
+| 7–15 | `AUX_0`–`AUX_8`, signal reserve on J14 (§5.2) |
 
 Module-ID straps are not used for identification by this module (ADR-0031 d10); the table above
 reallocates all three. The pin-map changes this requires are `O-100`.
+
+### 5.1 Connectors
+
+| Ref | Connector | Carries |
+|---|---|---|
+| J1, J2 | 2×12 and 2×10, 2.54 mm | Carrier headers A and B (ADR-0014 d5, widened per `O-100`) |
+| J3 | 2-pole, 5.00 mm | `+24 V` actuator section entry, `SP0010` |
+| J4, J7, J8 | 2-pole, 5.00 mm | `E1`, `E3`, `E4` element outputs |
+| J5, J9 | 1×4, 2.54 mm | `E2` and `E5` fans: supply, return, duty, alarm |
+| J6 | 1×5, 2.54 mm | `E0012` sensing: 1-Wire for U1 and U2, `RT1` |
+| J10 | 1×3, 2.54 mm | Humidity-tract 1-Wire for U3 and U4 |
+| J11, J12 | 1×2, 2.54 mm | `RT2` lead, `SF1` flow switch |
+| J13 | 2-pole, 5.00 mm | `E6` CO₂ valve — not populated in the baseline |
+| J14 | 2×14, 2.54 mm | Signal reserve (§5.2) |
+| J15 | 1×4, 2.54 mm | `RT3` and `RT4` leads (§5.2) |
+
+### 5.2 Signal reserve
+
+Reserve fitted in both populations of §3.4. No reserve line is claimed by a requirement of this
+specification, and none carries a published quantity.
+
+| Reserve | Count | Source | Reaches |
+|---|---|---|---|
+| Drive channels `AUX_0`–`AUX_8` | 9 | U9 channels 7–15, totem pole, ≥ 12 mA sink at 0.5 V, 10 mA source at ≥ 2.3 V, 400 mA per package | J14 |
+| `I2C1` segment | 1 | Header I²C; addresses outside `0x40` and `0x50`–`0x57` are free | J14 |
+| `SPI2` segment with both chip selects | 1 | Header SPI, claimed by no device on this module | J14 |
+| Carrier inputs | 2 | `STRAP_1`, `STRAP_2`, 10 kΩ pull-down to ground | J14 |
+| Analog channels | 2 | `ADC_3`, `ADC_4` from the RT3 and RT4 dividers | J14 and Header B |
+| Header positions left unassigned | 2 | Header B positions 7 and 14, `RESERVED` and unconnected on this module as on every other | — |
+| Thermistor leads | 2 | `RT3`, `RT4`, conditioning fitted, thermistors not fitted | J15 |
+| 1-Wire addresses | Bus-limited, not pin-limited | The `OW_DATA` bus of §4 | J6, J10 |
+| Spare AND gate | 1 | U11 section D, inputs tied to ground, output unconnected | — |
 
 ## 6. Drive requirements
 
 | ID | Requirement | Reference |
 |---|---|---|
 | `D1` | `E1` is two modules wired as one series string. At the design points the string carries 1.45 A at 9.5 V (day, ΔT 12 K, `Qc` 25 W) and 1.68 A at 11.2 V (night, ΔT 15 K, `Qc` 26 W), all `verify` | `O-103` |
-| `D2` | `E1` drive is closed-loop **current**, regulated by U5 against its `VREF` setpoint. String current limit 2.0 A (`verify`). The integrated sense serves this loop only; no energy or consumption quantity is published from it | ADR-0018 d5 |
+| `D2` | `E1` drive is closed-loop **current**, regulated by U5 against its `VREF` setpoint. String current limit 1.98 A, realized by the IPROPI resistor at full-scale `VREF`, against a 10 A RMS single-H-bridge rating; `D1` decides whether it is enough. The integrated sense serves this loop only; no energy or consumption quantity is published from it | ADR-0018 d5 |
 | `D3` | `E1` direction reversal is by the U5 PH input. Reversal is permitted only after the drive has been at zero for `D5` | ADR-0031 d5 |
-| `D4` | Driver off-time chopping is set to one of 7 / 16 / 24 / 32 µs; `L1` and `L2` are sized so each string sees ripple ≤ 5 % of setpoint current (`verify`) | `O-103` |
-| `D5` | Dead band \|demand\| < 0.05 commands zero drive; minimum dwell at zero before a sign change is 60 s (`verify`) | ADR-0031 d5 |
+| `D4` | Driver off-time chopping is one of 7 / 16 / 24 / 32 µs, selected by the `TOFF` pin. `L1`–`L3` are sized so each string sees ripple ≤ 5 % of setpoint current (`verify`) | `O-103` |
+| `D5` | Dead band \|demand\| < 0.05 commands zero drive; minimum dwell at zero before a sign change is 60 s (commissioning value, `F7`) | ADR-0031 d5 |
 | `D6` | Every element of §3.1 is commanded independently; no element's demand forces another's | ADR-0031 d4 |
-| `D7` | Demand slew is limited to 0.05 s⁻¹ on `E1` and `E3` (`verify`) | ADR-0015 d18 |
+| `D7` | Demand slew is limited to 0.05 s⁻¹ on `E1` and `E3` (commissioning value, `F7`) | ADR-0015 d18 |
 | `D8` | A demand whose validity deadline has expired drives its element to the safe output: `E1`, `E3`, `E4`, `E6` to zero; `E2` and `E5` to full | ADR-0031 rev 1 d6 |
 | `D9` | Water-block temperature from U1 derates every thermoelectric demand: full scale below 35 °C, linear to zero at **45 °C**, re-enable below 32 °C (`verify`). Runs on the node and applies to any commanded value | ADR-0031 d4 |
-| `D10` | Main exchanger base temperature from U2 is floored so the surface stays above the grow-volume dew point. The operative floor arrives with the demand — 13.4 °C day, 3.7 °C night at the wet edge of the band (`verify`). The node holds a commissioned absolute minimum of 3.0 °C (`verify`) that no command lowers. `E1` cooling demand is derated to hold whichever floor is higher | ADR-0032 d5, ADR-0015 d18, `O-102` |
-| `D11` | `E3` is unidirectional. Its demand is conditioned against a coil-temperature setpoint measured at U3, with a hard floor of **+1 °C** (`verify`) below which cooling demand is driven to zero | ADR-0032 d4, ADR-0003 d7 |
+| `D10` | Main exchanger base temperature from U2 is floored so the surface stays above the grow-volume dew point. The operative floor arrives with the demand — 13.4 °C day, 3.7 °C night at the wet edge of the band, computed from the §2.2 setpoints and VPD band. The node holds a commissioned absolute minimum of 3.0 °C (commissioning value, `F7`) that no command lowers. `E1` cooling demand is derated to hold whichever floor is higher | ADR-0032 d5, ADR-0015 d18, `O-102` |
+| `D11` | `E3` is unidirectional. Its demand is conditioned against a coil-temperature setpoint measured at U3, with a hard floor of **+1 °C** (commissioning value, `F7`) below which cooling demand is driven to zero | ADR-0032 d4, ADR-0003 d7 |
 | `D12` | `E4` is the last element of the humidity tract, downstream of HX2, and pumps from WB2 rather than dissipating. `E4` is inhibited whenever `T5` is tripped or `E5` demand is below `D13`'s minimum | `T5`, ADR-0032 d7 |
 | `D13` | `E5` starts with a full-scale pulse before settling to its commanded duty, and commanded duty below the fan's stable minimum is driven as zero. Pulse duration and that minimum are `SP0008`'s and are unset; the superseded part's 250 ms and 0.15 do not carry over | `E5`, `O-128` |
 | `D14` | `E6` is commanded as a pulse train against a commissioned minimum open time; it is inhibited whenever `E5` demand is zero. Verified at the CO₂ population only | `O-110` |
@@ -241,20 +281,21 @@ reallocates all three. The pin-map changes this requires are `O-100`.
 | ID | Requirement | Reference |
 |---|---|---|
 | `P1` | Node logic is powered from the `+12 V` SELV sensor bus and derives 3.3 V on the carrier. No actuator element is on that rail | ADR-0018 d3 |
-| `P2` | Elements are fed from the `+24 V` actuator section, `SP0010`: TDK-Lambda Vega 650 (`K60050B`), C5 module, 24 V 10 A. Chassis total 650 W is shared across fitted modules (`verify`) | ADR-0018 d3, `O-104` |
+| `P2` | Elements are fed from the `+24 V` actuator section, `SP0010`: TDK-Lambda Vega 650 (`K60050B`), C5 module, 21.6–31 V at 10 A in one slot. Chassis total 650 W is shared across fitted modules and derates 2.5 % per °C above 50 °C. Output to output and output to earth are isolated to 200 V dc operational, which is what `P5` rests on | ADR-0018 d3, `O-104` |
 | `P3` | Draw at the worst simultaneous point: `E1` 18.7 W, `E3` 9.5 W, `E4` 1.7 W, `E2` 2.9 W, `E5` 2.9 W — 35.7 W, 1.5 A from `+24 V` (`verify`). `E2` and `E5` are the same part, so each is bounded at its full-duty draw. One C5 module carries the module with the balance available to other branches | `D1`, `SP0008` |
 | `P4` | Per-branch overcurrent protection is the supply module's own current limit plus the drivers' OCP; no central per-load fuse | ADR-0018 d8 |
 | `P5` | The switched return is not shared with the logic or analog ground at the module. Isolation of the command path lives at this actuator | ADR-0018 d7, d8 |
-| `P6` | U5 dissipates 0.20 W and U6 0.14 W at the `D2` and `D11` limits (50 mΩ HS+LS × I²). Each thermal pad is bonded to a copper pour sized for it (`verify`) | U5, U6 |
+| `P6` | Conduction loss at the current limits is 0.20 W on U5 (50 mΩ HS+LS, single H-bridge) and 0.50 W on U6 (100 mΩ per bridge, dual H-bridge, `E3` and `E4` together). Junction-to-ambient of the DDW package is 22.2 K/W, and each thermal pad is bonded to a copper pour sized against it | U5, U6 |
 | `P7` | Module energy at the design profile is 0.73 kWh/day: `E1` 0.37, `E3` 0.15, `E4` 0.01, `E2` 0.07, `E5` 0.01, rejection-loop pump 0.12 (`verify`). The `E5` term follows the duty `O-128` settles. Divergence from the M05 S0 meter beyond 15 % invalidates the §2.2 basis | ADR-0018 d5 |
+| `P8` | The `+24 V` entry carries a reverse-polarity block: a P-channel MOSFET in the high side with its gate clamped against the rail, ahead of the transient suppressor and every load. Conduction loss at the `P3` draw is ≤ 0.15 W (`verify`). The return is not switched, so the `P5` bond stays a single point | `P3`, `P5` |
 
 ## 8. Thermal requirements and interlocks
 
 | ID | Requirement | Reference |
 |---|---|---|
 | `T1` | The main tract's heat-removal duty is specified by `E0012` (`T1`) | `E0012-R-specification.md` |
-| `T2` | **Rejection over-temperature trip** (self-protective), independent of the MCU, gateway and cloud: `RT1` → U7 → driver enable on U5 and U6. Trip at 60 °C (`verify`), 15 K above the `D9` ceiling | ADR-0031 d7 |
-| `T3` | **Grow-volume temperature window trip** (process-protective), independent of the MCU, gateway and cloud: `RT2` → U8 → driver enable on U5 and U6. High trip 35 °C, low trip 5 °C (both `verify`) | ADR-0018 d10, ADR-0031 d7 |
+| `T2` | **Rejection plausibility window** (self-protective), independent of the MCU, gateway and cloud: `RT1` → U7 and U8 → driver enable on U5 and U6, both halves on one reported line. High trip 60 °C with 2.7 K hysteresis, 15 K above the `D9` ceiling. Low trip 0 °C with 4.1 K hysteresis, which is also what an open `RT1` lead reads; a shorted lead reads past the high trip | ADR-0031 d7 |
+| `T3` | **Grow-volume temperature window trip** (process-protective), independent of the MCU, gateway and cloud: `RT2` → U8 → driver enable on U5 and U6. High trip 35 °C with 2.6 K hysteresis, low trip 5 °C with 3.4 K. An open or shorted `RT2` lead reads outside the window and trips | ADR-0018 d10, ADR-0031 d7 |
 | `T4` | **Coolant-flow interlock** (self-protective): loss of flow in the rejection loop removes driver enable on U5 and U6 in hardware | ADR-0031 d7 |
 | `T5` | **Humidity-tract airflow interlock** (self-protective): loss of the `FA1` alarm output removes drive from **both** `E3` and `E4` in hardware | ADR-0031 d7 |
 | `T6` | The rejection loop dissipates ≥ 65 W continuous with supply water at ≤ 25 °C in a 22 °C room (`verify`) | ADR-0032 d3, `P3`, `T1` |
@@ -263,6 +304,7 @@ reallocates all three. The pin-map changes this requires are `O-100`.
 | `T9` | Conduction between HX2 and HX3 through `TB1` is ≤ 1 W at a section-to-section ΔT of 18 K (`verify`) | `M7` |
 | `T10` | `T2`–`T5` act on the driver enables directly. Firmware reads their state but cannot override or re-arm any of them | ADR-0015 d11, ADR-0018 d10 |
 | `T11` | **Zero drive on `E4` is not zero heat transfer.** TEC4 conducts WB2's heat into HX3 whenever WB2 is the warmer plate, including at the `D8` safe output and at every interlock trip. TEC4 is sized so that this uncommanded reheat stays ≤ **3 W** (`verify`) at the largest reverse lift, WB2 at the `D9` ceiling against a 25.4 °C HX3. The TEC1–TEC3 part fails that bound at 0.864 W/K and is therefore not TEC4 | ADR-0032 d7, ADR-0031 d6, `D8`, `O-103` |
+| `T12` | The cold section presents ≥ 1.78 W/K and the reheat section ≥ 0.63 W/K to the air at the §3 tract flow, both at the day design point: 20 °C inlet at the wet edge of the band, 7.6 °C coil, 5.8 g/h of condensate. `O-128` sets the flow, and the requirement rises with it | `D11`, `D12`, `O-111` |
 
 ## 9. Mechanical requirements
 
@@ -279,6 +321,9 @@ reallocates all three. The pin-map changes this requires are `O-100`.
 | `M7` | `TB1` is a printed insert of 15–20 mm with thin walls and an internal air passage, carrying the tract's low point and its liquid seal | `T9`, `T7` |
 | `M8` | HX2 and HX3 are degreased before assembly; HX1 is `E0012`'s (`M3`) | `T7` |
 | `M9` | The humidity tract's duct carries the same bore and the same flange as the main tract's (`E0012`'s §5), so sections, collars, flanges and terminations interchange between the tracts. A flow restriction `O-128` may call for is an element in the tract, not a reduction of the bore | ADR-0032 d8, `O-128` |
+| `M10` | HX2 and HX3 sit in duct sections sealed around the profile, so no air bypasses the fins. HX2 is mounted fins upward, its base at the bottom of the tract and falling toward the `TB1` low point | `T7`, `M7`, `M9` |
+
+The tract's designed parts — `TB1`, the exchanger sections of `M10`, the wall penetrations of `M3` and the condensate collector of `O-109` — are development sources in `project/mechanical/`, carrying no identifier while the design iterates (ADR-0032 d8).
 
 ## 10. Firmware requirements
 
@@ -306,7 +351,7 @@ reallocates all three. The pin-map changes this requires are `O-100`.
 | `V3` | `D3`, `D5` | Command an `E1` sign reversal; confirm zero drive is held for the dwell and that no reversal occurs inside it |
 | `V4` | `D7`, `D8`, `F4` | Step each element to full scale and confirm slew. Stop publishing each demand; confirm `E1`, `E3`, `E4` reach zero and `E2`, `E5` reach full within the deadline |
 | `V5` | `T6` | Executed on `E0012` (`V1`), whose pull-down run also records the loop supply temperature |
-| `V6` | `T2` | Heat `RT1` past the trip with the MCU held in reset; confirm both driver enables are removed |
+| `V6` | `T2` | Heat `RT1` past the high trip with the MCU held in reset; confirm both driver enables are removed. Repeat with `RT1` open-circuit and with it shorted, and confirm the enables are removed in each case |
 | `V7` | `T3` | Drive `RT2` past each threshold in turn with the MCU held in reset; confirm both driver enables are removed at each |
 | `V8` | `T4` | Stop coolant flow with `E1` at the limit; confirm both driver enables are removed |
 | `V9` | `T5` | Stall the `E5` fan with `E3` and `E4` running; confirm both lose drive in hardware |
@@ -314,7 +359,7 @@ reallocates all three. The pin-map changes this requires are `O-100`.
 | `V11` | `D9`, `F8` | Raise the water block past 35 °C with `E1` at full scale; record the derate curve and the 45 °C clamp. Disconnect U1; confirm the clamp |
 | `V12` | `D10` | Command a floor below 3.0 °C; confirm the node holds 3.0 °C. The wet-edge run that confirms no free water on HX1 is `E0012`'s (`V3`) |
 | `V13` | `D11` | Command a coil setpoint below +1 °C; confirm cooling demand is driven to zero at the floor and that HX2 does not frost over 8 h |
-| `V14` | `D12`, `T9` | Run the humidity tract at its design point; measure the humidity ratio and temperature at tract inlet and outlet, and the HX2-to-HX3 conduction by substituting a known electrical load for `E3` |
+| `V14` | `D12`, `T9`, `T12` | Run the humidity tract at its design point; measure the humidity ratio and temperature at tract inlet and outlet, and the HX2-to-HX3 conduction by substituting a known electrical load for `E3`. Derive each section's conductance from its inlet, outlet and base temperatures |
 | `V15` | `D13` | Command `E5` from zero to 0.17; confirm the start pulse and that the rotor starts on ten of ten attempts |
 | `V16` | `D6`, `D15` | Command every element independently at three levels; confirm no element's demand moves another. Command the pollination pulse; confirm `E2` reaches full for the commanded duration and returns to its prior demand |
 | `V17` | `F9` | Force a driver fault at reduced `VREF`; confirm zero drive on both strings, the published state, and the latch |
@@ -327,19 +372,19 @@ reallocates all three. The pin-map changes this requires are `O-100`.
 | `V24` | `T8` | Run at the `T6` rejection load for 4 h in the installed room; record the ambient rise |
 | `V25` | `P1`, `P5` | Measure isolation between the switched return and both logic and analog ground; confirm no element current returns on the `+12 V` bus |
 | `V26` | `M1`, `M2`, `M8` | Record clamping force on TEC3 and TEC4 against the module datasheet, the TIM temperature rating, and that HX2 and HX3 were degreased |
-| `V27` | `M3`, `M5`, `M7` | Inspect every penetration for seal and thermal break, confirm no metal crosses the insulation, confirm no I²C runs on the `RT2` lead, and confirm `TB1` drains at its low point |
+| `V27` | `M3`, `M5`, `M7`, `M10` | Inspect every penetration for seal and thermal break, confirm no metal crosses the insulation, confirm no I²C runs on the `RT2` lead, and confirm `TB1` drains at its low point. Confirm the exchanger sections seal around the profile and that HX2's base falls toward `TB1` |
 | `V28` | `F2`, `F10`, `F12` | Remove one 1-Wire device; confirm its quantity is not published. Offer the node a humidity, VPD or CO₂ setpoint; confirm it is refused |
 | `V29` | `F3`, `F5`, `F7` | Record the node loop rate; confirm a trip is published and latched until reset; confirm every `F7` constant is read from node-local storage and none from the profile |
-| `V30` | `P2`, `P4` | Short one element at its connector with the string at its limit; confirm the supply module's current limit and the driver OCP act, that no other branch on the C5 module drops out, and that the supply recovers on removal |
+| `V30` | `P2`, `P4`, `P8` | Short one element at its connector with the string at its limit; confirm the supply module's current limit and the driver OCP act, that no other branch on the C5 module drops out, and that the supply recovers on removal. Apply the `+24 V` entry reversed at the supply's current limit for 60 s; confirm no current reaches the rail and that the module runs unchanged afterwards |
 | `V31` | `D16`, `T11`, ADR-0032 d7 | Reheat delivered to HX3 measured against `E4`'s electrical input at the design point and at the largest lift; the coefficient of performance shall exceed 1 at both. With `E4` at zero drive and WB2 held at the `D9` ceiling, the heat crossing into HX3 measured against `T11`'s 3 W bound |
 
 ## 12. Open items
 
-- `O-100` — Actuator class IDs require the EEPROM transport, so A01 cannot run on carrier `E0001-000003` (ADR-0031 d10). The `E0001-000100` pin map must also carry the 1-Wire line and reallocate `STRAP_0` as a general input (§5). Blocks fabrication.
+- `O-100` — Actuator class IDs require the EEPROM transport, so A01 cannot run on carrier `E0001-000003` (ADR-0031 d10). The `E0001-000100` pin map must also carry the 1-Wire line and reallocate `STRAP_0` as a general input. Header B widens from 2×8 to 2×10, adding positions 17–20 as `ADC_3`, GND, `ADC_4`, GND on PC0 and PC1; positions 7 and 14 stay `RESERVED` and the 2×12 / 2×10 size asymmetry still keys the pair. A 2×8 module seats on positions 1–16 of the wider header unchanged. Widening the header is an ADR-0014 d5 revision and is not this specification's to make. Blocks fabrication.
 - ~~`O-101`~~ — ~~No actuator-taxonomy ADR (ADR-0014 d9).~~ — closed 2026-09-07 by ADR-0031.
 - `O-102` — No DSDL type for a signed or unsigned actuator demand with a validity deadline. Blocks `F3`.
 - `O-103` — Thermoelectric module not selected; α, R, K, clamping force and TIM are unconfirmed, and `L1`, `L2` follow from them. Driver continuous RMS current by package is unread. TEC4 is a separate selection under this item and is not the TEC1–TEC3 part: bounded below by `D16`'s largest lift, above by `T11`'s conductance ceiling. Blocks `D1`, `D4`, `D16`, `M1`, `M2`, `T11`.
-- `O-104` — Vega 650 startup, inhibit and output-isolation behaviour unconfirmed against the manual. Blocks `P2`.
+- `O-104` — Vega 650 startup behaviour, the ramp and the sequence of one output against another, is unconfirmed against the manual, and the per-module inhibit or enable option is an ordering suffix that has not been chosen. Output isolation is confirmed at 200 V dc operational and no longer part of this item. Blocks `P2`.
 - `O-105` — Envelope conductance is computed, not identified (ADR-0016 survey). Blocks sufficiency of `T1` and the `D10` floor.
 - `O-106` — Outdoor deployment variant not specified.
 - `O-107` — Wall penetrations, thermal breaks and the condensate drain are mechanical design. Blocks `M3`, `M6`, `T7`.
@@ -350,7 +395,8 @@ reallocates all three. The pin-map changes this requires are `O-100`.
 - `O-127` — The main tract's 56 m³/h is the fan's free-air figure, not its operating point; owned by `E0012-R-specification.md`, consumed here. Blocks the air-side terms of §2.2 and the flow in §3.
 - `O-128` — `E5` mounts `SP0008`, the same fan as `E2`, and the tract flow cannot be reached by duty alone. `SP0008` delivers 56 m³/h free air against the superseded part's 10.1 m³/h, so holding the §3 tract flow puts the duty near 0.05, an order below where a ball-bearing DC fan turns stably. One of three closes it: a fixed restriction sized so the fan's minimum stable duty yields the §3 flow, intermittent operation at that minimum, or a smaller fan for this tract. The variant question is the same item: `SP0008` carries a duty input and an alarm output only as custom variants, and `T5`'s trip element is that alarm, which the superseded part had as standard. Blocks `T5`, `D13`, `P3`, `P7`'s `E5` term and the `§3.1` range.
 - `O-129` — Humidity tract as a parallel branch off the main tract instead of a tract with its own fan: fed by `E2`, flow set by branch diameter and take-off geometry, humidity still set by `E3`'s current. Deferred to a later iteration; this build brings each regulated variable under control on its own tract first. Closing it needs the branch diameter, the take-off angle, the split at `E2`'s lowest continuous duty, `T5`'s element moved to `E2`, and `D16` and `T11` recomputed at the branch flow. Closes `O-128` if adopted, and amends ADR-0031 d4's element list and ADR-0032 d4.
-- `O-113` — U9 part not selected; `F11`'s fail-to-safe wiring follows from its output behaviour when its outputs are de-asserted. Blocks `F11`.
+- ~~`O-113`~~ — ~~U9 part not selected.~~ — closed 2026-09-11 by the PCA9685PW of §4: outputs are LOW after power-on reset, which is the state `F11` wires each element's safe output to.
+- ~~`O-131`~~ — ~~HX2 and HX3 named as Fischer LAM 5 catalogue aggregates, rated with their own fan at a flow the tract does not carry.~~ — closed 2026-09-11: both are one extruded profile cut to two lengths, specified in §4 against the §3 tract flow and mounted by `M10`.
 - `O-114` — The luminaire's position relative to the grow volume sets 19 W or 32 W of §2.2 day load and decides whether `D10` binds at the wet edge of the band. Owned by A02-LIGHT and the enclosure, consumed here.
 - ~~`O-115`~~ — ~~No governing ADR for cabinet climate conditioning.~~ — closed 2026-09-08 by ADR-0032.
 
@@ -362,6 +408,6 @@ reallocates all three. The pin-map changes this requires are `O-100`.
 | Schematic-frozen | Not reached |
 | As-built | Not reached |
 
-Next rung requires: `O-103`, `O-104`, `O-102` and `O-113` closed, and the component values that
-follow — `L1`, `L2`, both `VREF` dividers, driver off-times, the `U7` and `U8` thresholds —
-computed against the selected parts.
+Next rung requires: `O-102`, `O-103` and `O-104` closed, and the component values that
+follow — `L1`, `L2` and the driver off-times — computed against the selected thermoelectric
+modules. Both `VREF` dividers and the `U7` and `U8` thresholds are computed.
