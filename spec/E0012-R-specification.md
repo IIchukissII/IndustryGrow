@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # A01-CLIMATE tempering unit — assembly specification
 
 - **Status:** Working specification, pre-build. `E0012` not built; the housing bottom half exists as design source, and the duct set is in development and unidentified (§2)
-- **Date:** 2026-09-11
+- **Date:** 2026-09-12
 - **E-number:** `E0012` · discipline mechanical · no module class, no strap
 - **Governing ADRs:** ADR-0032, ADR-0031 (rev 1), ADR-0017 (rev 3), ADR-0016, ADR-0003
 - **Companions:** `E0011-R-specification.md`
@@ -76,7 +76,7 @@ The unit publishes nothing. Every quantity its sensing elements carry is publish
 | FC1 | Printed flange collar, PETG, one per tube end | Takes a DN 75 tube end and presents the §5 flange | `M7` |
 | IT1 | Printed intake termination, PETG | Floor intake of `M5` | `M9` |
 | PL1 | Printed discharge plenum, PETG | Converts the tract bore to the `M5` slot | `M9` |
-| SL1 | Printed TPU gasket, one per flange pair | Joint seal of every §5 flange | `M7`, `M4`, `O-130` |
+| SL1 | Joint seal, two pieces: a TPU O-ring and a printed PETG spigot ring | Seals every §5 flange pair and carries the bore across it | `M7`, `M4`, `O-130` |
 | WH1 | Harness and connector | The four §5 circuits | Unspecified — `O-126` |
 
 U1, U2 and RT1 are ordinary purchased components and stay MPN lines in the `L` document, on the
@@ -115,15 +115,18 @@ Other interfaces:
 The air path is modular on one interface, shared with the humidity tract (ADR-0032 d8,
 `E0011`'s `M9`):
 
-![The main tract as a chain of flanged parts on one bore: the floor intake termination IT1, a run of tube sections and bends DT1 whose ends are taken by flange collars FC1, the fan flange DA1 carrying the fan E2 on the fan's own hole pitch, the exchanger HX1, a second DT1 run, and the discharge plenum PL1 converting the bore to the M5 ceiling slot; every joint is a bolted face flange with an SL1 gasket, and the only point narrower than the bore is the fan's own opening](./figures/e0012-duct-interface.svg)
+![The main tract as a chain of flanged parts on one bore: the floor intake termination IT1, a run of tube sections and bends DT1 whose ends are taken by flange collars FC1, the fan flange DA1 carrying the fan E2 on the fan's own hole pitch, the exchanger HX1, a second DT1 run, and the discharge plenum PL1 converting the bore to the M5 ceiling slot; every joint is a bolted face flange with the SL1 seal, and the only point narrower than the bore is the fan's own opening](./figures/e0012-duct-interface.svg)
 
 | Dimension | Value |
 |---|---|
-| Tract bore | DN 75 to DIN EN 1451-1: 75 mm outside, 1.9 mm wall, **71.2 mm free bore**, 39.8 cm² |
+| Tract bore | **Ø 70**, 38.5 cm², through every printed part of the path |
 | Bore basis | HX1's 62 × 74 mm section, 45.9 cm² gross |
-| `E2` fan face | 60 × 60 mm frame, 50 × 50 mm hole pitch, 3.7 mm holes, Ø 64 mm panel opening — the narrowest point of the path |
-| Flange | Ø 110 outside, Ø 96 bolt circle, 4 × M4, face 5 mm thick |
-| Gasket | SL1, flat, Ø 96 outside, Ø 71.2 inside, 2 mm thick |
+| Tube | DN 75 to DIN EN 1451-1: 75 mm outside, 1.9 mm wall, 71.2 mm free bore |
+| `E2` fan face | 60 × 60 mm frame, 50 × 50 mm hole pitch, 3.7 mm holes, Ø 64 mm panel opening |
+| DA1 opening | Ø 63 — the narrowest point of the path |
+| Flange | Ø 110 outside, Ø 98 bolt circle, 4 × M4, face 5 mm thick |
+| Seal groove | Round section, Ø 4.5, on a Ø 86 circle, in each flange face |
+| Seal | SL1 O-ring, Ø 5 cord on a Ø 86 circle; SL1 spigot ring, Ø 82 waist, 6 mm long, over the Ø 70 bore |
 | Tube to flange | FC1 collar, socket Ø 75.6 × 32 deep, two M4 set screws at 90° |
 | Discharge | PL1 to the `M5` slot at the `M9` area |
 | Humidity tract | Same bore and same flange; sections, collars, flanges and terminations interchange |
@@ -143,16 +146,16 @@ both driver enables, so the humidity tract's protection depends on two elements 
 | `T6` | The tract's volume flow is the value at the fan's operating point with the fin stack, the duct and both terminations fitted, and that value is what `T1` and `T3` are evaluated against. `SP0008`'s free-air figure is not it | `O-127`, `E0011` §3 |
 | `T7` | The air path outside HX1 — DA1, DT1, FC1, both terminations and every flange — costs ≤ **30 Pa** at the §4 free-air flow. HX1's own drop is outside this budget | `O-127`, `O-112`, `T6` |
 
-Computed at the §4 free-air flow through the §5 bore, mean velocity 3.9 m/s. One metre of run
-with two bends totals 26 Pa. A flange carries no term of its own, the bore being continuous
+Computed at the §4 free-air flow through the §5 bore, mean velocity 4.0 m/s. One metre of run
+with two bends totals 28 Pa. A flange carries no term of its own, the bore being continuous
 across it:
 
 | Term | Computed |
 |---|---|
-| DT1 friction | 3.5 Pa per metre of run |
-| Swept 90° bend | 4 Pa each; the family's 87° elbow is sharper, two 45° sections hold the term (`O-130`) |
-| IT1 plain socket entry | 5 Pa |
-| PL1 and the `M5` slot at the `M9` area | 9 Pa |
+| DT1 friction | 3.8 Pa per metre of run |
+| Swept 90° bend | 4.3 Pa each; the family's 87° elbow is sharper, two 45° sections hold the term (`O-130`) |
+| IT1 plain socket entry | 5.4 Pa |
+| PL1 and the `M5` slot at the `M9` area | 9.7 Pa |
 
 ## 7. Mechanical requirements
 
@@ -164,9 +167,9 @@ across it:
 | `M4` | Structural printed parts are PETG and printed seals are TPU. No printed part is in direct thermal contact with a module hot face or with WB1, and no printed surface exceeds **60 °C** continuous (`verify` — PETG HDT ≈ 70 °C at 0.45 MPa; TPU hardness and continuous service temperature are `O-130`) | `T5` |
 | `M5` | The discharge termination is a horizontal slot, gap ≤ 20 mm, directed at the far wall; the intake termination is at the floor. The two tracts' intakes are separated in height | ADR-0003 air movement |
 | `M6` | WB1's supply and return are the unit's only wet joints, and both are outside the housing. The column is serviceable without breaking the coolant circuit | ADR-0032 decision drivers |
-| `M7` | Every section, collar, flange and termination of the §5 path carries the tract bore, and every joint between them is a bolted face flange on the §5 pattern with an SL1 gasket. A joint separates by removing its four screws, with no cutting and no bonding. Nothing in the path is narrower than the bore except the `E2` opening and the `M5` slot | ADR-0032 d8, `T7` |
+| `M7` | Every section, collar, flange and termination of the §5 path carries the tract bore, and every joint between them is a bolted face flange on the §5 pattern with the SL1 seal. A joint separates by removing its four screws, with no cutting and no bonding. Nothing in the path is narrower than the bore except the `E2` opening and the `M5` slot | ADR-0032 d8, `T7` |
 | `M8` | DA1 carries `SP0008` on the §5 hole pitch and presents the §5 flange at the bore. No printed part tapers the bore | ADR-0032 d8, `T7` |
-| `M9` | PL1 converts the tract bore to the `M5` slot and IT1 the floor intake to the bore. The slot's open area is not less than the bore's 39.8 cm², which at `M5`'s 20 mm gap is 200 mm of slot width | `M5`, `T7`, `V7` |
+| `M9` | PL1 converts the tract bore to the `M5` slot and IT1 the floor intake to the bore. The slot's open area is not less than the bore's 38.5 cm², which at `M5`'s 20 mm gap is 193 mm of slot width | `M5`, `T7`, `V7` |
 
 ## 8. Verification
 
