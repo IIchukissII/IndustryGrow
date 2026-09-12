@@ -10,10 +10,9 @@ FILE_DESCRIPTION(
 
 FILE_NAME(
 /* name */ 
-'C:\\Users\\admin\\Documents\\Inventor\\industrygrow\\heater\\o-ring_t
-pu.stp',
+'SL1-tpu.stp',
 /* time_stamp */ '2026-09-11T18:54:15+02:00',
-/* author */ ('admin'),
+/* author */ (''),
 /* organization */ (''),
 /* preprocessor_version */ 'ST-DEVELOPER v18.1',
 /* originating_system */ 'Autodesk Inventor 2022',
