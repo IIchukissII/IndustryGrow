@@ -16,5 +16,5 @@ identifier (ADR-0032 d8, ADR-0017 d5).
 | Licence | CERN-OHL-S-2.0 (`REUSE.toml`), as `store/**` |
 | Exit | At the commit a combination reaches, its parts file under the identifier that commit assigns and leave this directory |
 
-The duct set of `spec/E0012-R-specification.md` §5 is the first occupant: DA1, DT1, IT1, PL1
-and SL1.
+`spec/E0012-R-specification.md` occupies it with the housing HS1 and the §5 duct set — DA1, DT1,
+IT1, PL1 and SL1.

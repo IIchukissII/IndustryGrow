@@ -5,7 +5,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 # A01-CLIMATE tempering unit — assembly specification
 
-- **Status:** Working specification, pre-build. `E0012` not built; the housing bottom half exists as design source, and the duct set is in development and unidentified (§2)
+- **Status:** Working specification, pre-build. `E0012` not built; the housing bottom half and the duct set are in development and unidentified (§2)
 - **Date:** 2026-09-12
 - **E-number:** `E0012` · discipline mechanical · no module class, no strap
 - **Governing ADRs:** ADR-0032, ADR-0031 (rev 1), ADR-0017 (rev 3), ADR-0016, ADR-0003
@@ -42,7 +42,7 @@ Not specified here:
 | Commanded by | `E0011` over the §5 harness. The unit accepts no command of its own |
 | Serialized | Yes. `-QP` carries dimensional and clamping-force inspection (ADR-0017 d10) |
 | Position | Assigned at integration, never present in the identifier (ADR-0017 d7) |
-| Design source | Housing: `store/E0012-000001-D-case-src.zip`, STEP only (ADR-0019 d9). Duct set: `project/mechanical/`, outside the document store while the combination iterates |
+| Design source | `project/mechanical/`, outside the document store while the combination iterates: the housing `HS1` and the §5 duct set, STEP only (ADR-0019 d9, ADR-0032 d8) |
 | Duct set identity | None. No section, flange or termination of the §5 path takes a number of its own; identification follows at the commit the combination reaches (ADR-0032 d8, ADR-0017 d5, ADR-0019 d9) |
 
 ## 3. Function
@@ -202,7 +202,7 @@ across it:
 
 | Rung | Content |
 |---|---|
-| **Requirements-fixed** | Complement and requirements fixed; values estimated or `verify`; housing bottom half drawn; duct set in development |
+| **Requirements-fixed** | Complement and requirements fixed; values estimated or `verify`; housing bottom half and duct set in development |
 | **Parts-committed** | `O-103` closed; housing complete; duct combination fixed and identified; `L` document released |
 | **As-built** | Estimates replaced by measurements; verification executed; open items closed in place |
 
