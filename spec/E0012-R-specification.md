@@ -123,7 +123,7 @@ The air path is modular on one interface, shared with the humidity tract (ADR-00
 | Bore basis | HX1's 62 × 74 mm section, 45.9 cm² gross |
 | Tube | DN 75 to DIN EN 1451-1: 75 mm outside, 1.9 mm wall, 71.2 mm free bore |
 | `E2` fan face | 60 × 60 mm frame, 50 × 50 mm hole pitch, 3.7 mm holes, Ø 64 mm panel opening |
-| DA1 opening | Ø 63 — the narrowest point of the path |
+| DA1 opening | Ø 62 — the narrowest point of the path |
 | Flange | Ø 110 outside, Ø 98 bolt circle, 4 × M4, face 5 mm thick |
 | Seal groove | Round section, Ø 4.5, on a Ø 86 circle, in each flange face |
 | Seal | SL1 O-ring, Ø 5 cord on a Ø 86 circle; SL1 spigot ring, Ø 82 waist, 6 mm long, over the Ø 70 bore |
