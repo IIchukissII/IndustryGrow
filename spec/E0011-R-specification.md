@@ -354,7 +354,7 @@ The tract's designed parts — `TB1`, the exchanger sections of `M10`, the wall 
 | `V2` | `D2`, `D4` | Measure each string's current and ripple at 25 %, 50 % and 100 % of its limit with a current probe; cross-check against IPROPI |
 | `V3` | `D3`, `D5` | Command an `E1` sign reversal; confirm zero drive is held for the dwell and that no reversal occurs inside it |
 | `V4` | `D7`, `D8`, `F4` | Step each element to full scale and confirm slew. Stop publishing each demand; confirm `E1`, `E3`, `E4` reach zero and `E2`, `E5` reach full within the deadline |
-| `V5` | `T6` | Executed on `E0012` (`V1`), whose pull-down run also records the loop supply temperature |
+| `V5` | `T1`, `T6` | Executed on `E0012` (`V1`), whose pull-down run also records the loop supply temperature and the main tract's heat-removal duty |
 | `V6` | `T2` | Heat `RT1` past the high trip with the MCU held in reset; confirm both driver enables are removed. Repeat with `RT1` open-circuit and with it shorted, and confirm the enables are removed in each case |
 | `V7` | `T3` | Drive `RT2` past each threshold in turn with the MCU held in reset; confirm both driver enables are removed at each |
 | `V8` | `T4` | Stop coolant flow with `E1` at the limit; confirm both driver enables are removed |
@@ -362,13 +362,13 @@ The tract's designed parts — `TB1`, the exchanger sections of `M10`, the wall 
 | `V10` | `T10` | Attempt to re-arm each trip from firmware; confirm it cannot |
 | `V11` | `D9`, `F8` | Raise the water block past 35 °C with `E1` at full scale; record the derate curve and the 45 °C clamp. Disconnect U1; confirm the clamp |
 | `V12` | `D10` | Command a floor below 3.0 °C; confirm the node holds 3.0 °C. The wet-edge run that confirms no free water on HX1 is `E0012`'s (`V3`) |
-| `V13` | `D11` | Command a coil setpoint below +1 °C; confirm cooling demand is driven to zero at the floor and that HX2 does not frost over 8 h |
+| `V13` | `D11`, `T7` | Command a coil setpoint below +1 °C; confirm cooling demand is driven to zero at the floor, that HX2 does not frost over 8 h, and that free water forms on HX2 and nowhere else in the tract |
 | `V14` | `D12`, `T9`, `T12` | Run the humidity tract at its design point; measure the humidity ratio and temperature at tract inlet and outlet, and the HX2-to-HX3 conduction by substituting a known electrical load for `E3`. Derive each section's conductance from its inlet, outlet and base temperatures |
 | `V15` | `D13` | Command `E5` from zero to 0.17; confirm the start pulse and that the rotor starts on ten of ten attempts |
 | `V16` | `D6`, `D15` | Command every element independently at three levels; confirm no element's demand moves another. Command the pollination pulse; confirm `E2` reaches full for the commanded duration and returns to its prior demand |
 | `V17` | `F9` | Force a driver fault at reduced `VREF`; confirm zero drive on both strings, the published state, and the latch |
 | `V18` | `F11` | Open the U9 I²C link with all elements running; confirm `E1`, `E3`, `E4` reach zero and `E2`, `E5` run full |
-| `V19` | `F1`, `F6`, `F12` | Read the published class ID; confirm `0x80`. Enumerate every published subject; confirm no energy or consumption quantity is among them, and that the unpopulated CO₂ branch publishes and accepts nothing |
+| `V19` | `D14`, `F1`, `F6`, `F12` | Read the published class ID; confirm `0x80`. Enumerate every published subject; confirm no energy or consumption quantity is among them, and that the unpopulated CO₂ branch publishes and accepts nothing. `D14`'s dosing is executed at the CO₂ population only |
 | `V20` | `P6` | Measure U5 and U6 case temperatures at their limits for 1 h |
 | `V21` | `P7` | Log the M05 S0 meter over a full 24 h profile; compare against the `P7` figure |
 | `V22` | `M6` | Thermograph the humidity tract's printed parts at the `T6` rejection load; confirm no surface exceeds 60 °C |
