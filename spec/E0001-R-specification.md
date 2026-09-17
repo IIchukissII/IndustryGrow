@@ -6,9 +6,9 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # Universal carrier — module specification
 
 - **Status:** `E0001-000003` fabricated and in service; `E0001-000100` specified, not laid out
-- **Date:** 2026-09-11
+- **Date:** 2026-09-17
 - **E-number:** `E0001` · no class ID — the carrier is not a module
-- **Governing ADRs:** ADR-0002 (rev 3), ADR-0007 (rev 1), ADR-0014 (rev 4), ADR-0017 (rev 2), ADR-0018, ADR-0029, ADR-0031 (rev 1)
+- **Governing ADRs:** ADR-0002 (rev 3), ADR-0007 (rev 1), ADR-0014 (rev 4), ADR-0017 (rev 2), ADR-0018, ADR-0027, ADR-0029, ADR-0031 (rev 1)
 - **Companions:** every module specification in `spec/`; `store/E0001-000003-D-pinmap.md` for the fabricated revision
 - **Supersedes:** nothing
 
@@ -39,6 +39,7 @@ Not specified here:
 | E-number | `E0001` — one bare design per revision, one assembly (ADR-0017 d4) |
 | Class ID | None. The carrier is the parent of a node and carries no module class |
 | Node identity | ATECC608 on the carrier, not on the module (ADR-0007 rev 1) |
+| Node-ID store | Flash record at `E0001-000003`; the carrier EEPROM U4 at `E0001-000100` (ADR-0027 d2, d11) |
 | Serialized | Yes, per assembly |
 
 ### 2.1 Revisions in service
@@ -62,7 +63,7 @@ on `E0001-000100` (ADR-0031 d10).
 | Present the module contract | Two sockets carrying the §5 signal set |
 | Indicate state | Four indicators: input rail, node rail, bus activity, node status |
 
-![The field bus and the twelve volt supply arrive together on one connector and leave on its twin, so nodes daisy-chain; the supply passes the input protection to the buck, whose output is the only rail the carrier derives and reaches the core board and both module headers; the bus pair reaches the transceiver with its termination jumper and on to the core board, the secure element sits on a second segment no module reaches, and everything a module may use crosses the two header sockets](./figures/e0001-carrier-topology.svg)
+![The field bus and the twelve volt supply arrive together on one connector and leave on its twin, so nodes daisy-chain; the supply passes the input protection to the buck, whose output is the only rail the carrier derives and reaches the core board and both module headers; the bus pair reaches the transceiver with its termination jumper and on to the core board, the secure element sits on a second segment no module reaches, everything a module may use crosses the two header sockets, and at the later revision the carrier's own Node-ID store answers on the header bus beside the module's class-ID EEPROM](./figures/e0001-carrier-topology.svg)
 
 ### 3.1 Exclusions
 
@@ -80,6 +81,7 @@ on `E0001-000100` (ADR-0031 d10).
 | U1 | TI TPS54302, SOT-23-6 | 3.3 V buck from the `+12 V` bus, with L1 10 µH | `+12 V` |
 | U2 | TI SN65HVD230, SOIC-8 | CAN transceiver on CAN1 | 3V3 |
 | U3 | Microchip ATECC608B-SSHDA, SOIC-8 | Secure element on I²C2, node identity (ADR-0007 rev 1) | 3V3 |
+| U4 | Serial EEPROM, 24Cxx class | Node-ID store on the header I²C, fitted at `E0001-000100` only (ADR-0027 d11) | 3V3 |
 | F2 | Fuse, 0.5 A | Bus-input protection | `+12 V` |
 | D4 | SK26AH Schottky | Reverse-polarity protection on the bus input | `+12 V` |
 | D5 | SMBJ16A | Transient suppressor on the bus input | `+12 V` |
@@ -113,7 +115,7 @@ Every module mates through **two** sockets carrying one signal set, whatever its
 |---|---|---|
 | Power | 3 | 3V3 at Header A position 1 and Header B position 1; 5 V at Header A position 2, unconnected |
 | Ground | 14 at `E0001-000003`, 16 at `E0001-000100` | Interspersed; every analog input flanked |
-| I²C | 2 | `I2C_SCL`, `I2C_SDA` — also the class-ID EEPROM transport |
+| I²C | 2 | `I2C_SCL`, `I2C_SDA` — also the transport of the module class-ID EEPROM and, at `E0001-000100`, of U4 |
 | SPI | 5 | `SPI_SCK`, `SPI_MISO`, `SPI_MOSI`, `SPI_CS1`, `SPI_CS2` |
 | 1-Wire | 1 | `OW_DATA` |
 | PWM | 4 | `PWM_1`–`PWM_4`, one timer, independent duty |
@@ -222,6 +224,7 @@ Unassigned processor pins:
 | `I6` | Every analog input on Header B is flanked by ground, and no switching signal shares Header B | ADR-0014 d5 |
 | `I7` | Bus termination is fitted by `JP1` only at the two ends of the run | ADR-0002 rev 3 |
 | `I8` | SWD reaches the processor on the core board's own debug header; the carrier routes neither line | §5.2 |
+| `I9` | U4 and a fitted module's class-ID EEPROM share the header I²C, both take an address inside `0x50`–`0x57`, and the two addresses are distinct | ADR-0027 d11, `O-133` |
 
 ## 6. Power
 
@@ -245,6 +248,7 @@ Unassigned processor pins:
 | `F5` | `GPIO_5`–`GPIO_7` are configured as inputs at reset and driven only after identification, because a module may hold them against a rail | `F4` |
 | `F6` | The node publishes its heartbeat and health over the field bus; the carrier publishes no measured quantity | §3.1 |
 | `F7` | `GPIO_1` and `GPIO_2` carry USART1. A bench console is available only while no fitted module claims them, and the module wins | §5.2 |
+| `F8` | At `E0001-000100` the Node-ID is the record U4 holds — magic, version, Node-ID, CRC — and the class ID is never read as an instance identity. At `E0001-000003` the same record is held in flash | ADR-0027 d2, d9, d11 |
 
 ## 8. Verification
 
@@ -258,10 +262,12 @@ Unassigned processor pins:
 | `V6` | `P3`, `P5` | Load the 3.3 V rail to the `P5` bound for 1 h; record the buck case temperature and the rail's droop |
 | `V7` | `F1`, `F2`, `F3`, `F4` | Present in turn a module with a programmed EEPROM, one reading `0xFF`, and one with only a strap pattern; confirm the identity each yields, and that the image reports the revision it was built for |
 | `V8` | `F5`, `F6`, `F7` | Hold `GPIO_5`–`GPIO_7` against both rails through a module and confirm no carrier output opposes them at reset. Enumerate every subject the node publishes and confirm no measured quantity is among them. Open a console on USART1 with no module fitted, then seat one that claims `GPIO_1`, and confirm the console stops |
+| `V9` | `I9`, `F8` | Address-scan the header I²C with a module seated; confirm U4 and the module EEPROM answer at distinct addresses. Write a Node-ID through the provisioning path, power-cycle, and confirm the node claims the written identifier and rejects a record whose CRC fails |
 
 ## 9. Open items
 
 - `O-100` — `E0001-000100` is specified here but not laid out and not fabricated. Blocks every actuator module (ADR-0031 d10).
+- `O-133` — The `0x50`–`0x57` address allocation between U4 and a module's class-ID EEPROM is unassigned (ADR-0027 deferred decisions). Blocks `I9` and the layout of `E0001-000100`.
 - `O-132` — The 3.3 V rail's current bound is not established: the buck's rating, the fitted inductor and the carrier's thermal design have not been read together, and no module specification states its own draw against it. Blocks `P5`.
 
 ## 10. Maturity
