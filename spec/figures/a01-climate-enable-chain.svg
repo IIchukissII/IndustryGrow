@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="780" height="440" viewBox="0 0 780 440" role="img" aria-label="A01-CLIMATE driver enable chain">
+  <title>A01-CLIMATE — driver enable chain</title>
+  <desc>Four trip elements each reach a comparator section: RT1 at the water block feeds both halves of the T2 plausibility window in U7 and U8, RT2 in the grow volume feeds both halves of the T3 window in U8, the SF1 coolant-flow switch feeds T4 in U7, and the FA1 airflow alarm feeds T5 in U8. T2, T3 and T4 pull one wired-AND enable chain. T5 does not: it reaches only the gate that enables U6, so a loss of humidity-tract airflow removes drive from E3 and E4 while E1 keeps running. U11 combines the chain with a firmware enable from U9 for U5, and the chain with T5 and a second firmware enable for U6. The firmware enable is one input of an AND gate, so firmware can withhold an enable but can assert none against a trip. Each trip line is also read back on its own header GPIO, and the wired-OR fault output of both drivers returns on GPIO_5.</desc>
+
+  <defs>
+    <marker id="ar" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#5F5E5A"/></marker>
+    <marker id="ars" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#D85A30"/></marker>
+    <marker id="arb" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#7A8DA6"/></marker>
+  </defs>
+
+  <rect x="0.5" y="0.5" width="779" height="439" rx="10" fill="#FFFFFF" stroke="#E5E3DC"/>
+  <text x="390" y="28" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12.5" fill="#2C2C2A">A01-CLIMATE — driver enable chain</text>
+
+  <!-- ============ trip elements ============ -->
+  <text x="24" y="56" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">trip element</text>
+  <rect x="24" y="62" width="124" height="34" rx="4" fill="#FDF4F0" stroke="#D85A30"/>
+  <text x="86" y="79" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">RT1 at WB1</text>
+  <text x="86" y="91" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">rejection temperature</text>
+
+  <rect x="24" y="106" width="124" height="34" rx="4" fill="#FDF4F0" stroke="#D85A30"/>
+  <text x="86" y="123" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">RT2 in the volume</text>
+  <text x="86" y="135" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">grow-volume temperature</text>
+
+  <rect x="24" y="150" width="124" height="34" rx="4" fill="#FDF4F0" stroke="#D85A30"/>
+  <text x="86" y="167" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">SF1</text>
+  <text x="86" y="179" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">coolant flow</text>
+
+  <rect x="24" y="194" width="124" height="34" rx="4" fill="#FDF4F0" stroke="#D85A30"/>
+  <text x="86" y="211" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">FA1</text>
+  <text x="86" y="223" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">tract airflow</text>
+
+  <!-- ============ comparator sections ============ -->
+  <text x="176" y="56" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">comparator, no MCU in the path</text>
+  <line x1="148" y1="79" x2="174" y2="79" stroke="#D85A30" stroke-width="1.2" marker-end="url(#ars)"/>
+  <rect x="176" y="62" width="150" height="34" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="251" y="79" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">T2 — U7 and U8</text>
+  <text x="251" y="91" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">window, high and low halves</text>
+
+  <line x1="148" y1="123" x2="174" y2="123" stroke="#D85A30" stroke-width="1.2" marker-end="url(#ars)"/>
+  <rect x="176" y="106" width="150" height="34" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="251" y="123" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">T3 — U8</text>
+  <text x="251" y="135" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">window, high and low halves</text>
+
+  <line x1="148" y1="167" x2="174" y2="167" stroke="#D85A30" stroke-width="1.2" marker-end="url(#ars)"/>
+  <rect x="176" y="150" width="150" height="34" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="251" y="167" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">T4 — U7</text>
+  <text x="251" y="179" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">contact, open is tripped</text>
+
+  <line x1="148" y1="211" x2="174" y2="211" stroke="#D85A30" stroke-width="1.2" marker-end="url(#ars)"/>
+  <rect x="176" y="194" width="150" height="34" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="251" y="211" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">T5 — U8</text>
+  <text x="251" y="223" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">contact, open is tripped</text>
+
+  <!-- ============ the chain ============ -->
+  <path d="M326 79 L360 79 L360 132" fill="none" stroke="#D85A30" stroke-width="1.2"/>
+  <path d="M326 123 L360 123" fill="none" stroke="#D85A30" stroke-width="1.2"/>
+  <path d="M326 167 L360 167 L360 136" fill="none" stroke="#D85A30" stroke-width="1.2"/>
+  <rect x="360" y="106" width="106" height="34" rx="4" fill="#F7F6F2" stroke="#D85A30"/>
+  <text x="413" y="123" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">enable chain</text>
+  <text x="413" y="135" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">wired AND</text>
+
+  <!-- chain to both gates -->
+  <path d="M466 116 L500 116 L500 92" fill="none" stroke="#D85A30" stroke-width="1.2" marker-end="url(#ars)"/>
+  <path d="M466 130 L500 130 L500 198" fill="none" stroke="#D85A30" stroke-width="1.2" marker-end="url(#ars)"/>
+
+  <!-- T5 bypasses the chain, reaching the U6 gate only -->
+  <path d="M326 211 L508 211 L508 206" fill="none" stroke="#D85A30" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#ars)"/>
+  <text x="372" y="205" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#D85A30">T5 reaches U6 only</text>
+
+  <!-- ============ gates ============ -->
+  <text x="504" y="56" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">U11 — AND</text>
+  <rect x="504" y="62" width="112" height="34" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="560" y="79" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">U5 enable</text>
+  <text x="560" y="91" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">chain · firmware</text>
+
+  <rect x="504" y="206" width="112" height="34" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="560" y="223" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">U6 enable</text>
+  <text x="560" y="235" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">chain · T5 · firmware</text>
+
+  <!-- ============ drivers ============ -->
+  <line x1="616" y1="79" x2="644" y2="79" stroke="#5F5E5A" stroke-width="1.2" marker-end="url(#ar)"/>
+  <rect x="646" y="62" width="110" height="34" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="701" y="79" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">U5 — E1</text>
+  <text x="701" y="91" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">main stack</text>
+
+  <line x1="616" y1="223" x2="644" y2="223" stroke="#5F5E5A" stroke-width="1.2" marker-end="url(#ar)"/>
+  <rect x="646" y="206" width="110" height="34" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="701" y="223" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">U6 — E3, E4</text>
+  <text x="701" y="235" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">humidity tract</text>
+
+  <!-- ============ firmware side ============ -->
+  <rect x="360" y="292" width="150" height="40" rx="4" fill="#F7F6F2" stroke="#7A8DA6"/>
+  <text x="435" y="309" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">U9 channels 5, 6</text>
+  <text x="435" y="322" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">firmware enable</text>
+  <path d="M510 302 L560 302 L560 100" fill="none" stroke="#7A8DA6" stroke-width="1.2" marker-end="url(#arb)"/>
+  <path d="M510 316 L544 316 L544 244" fill="none" stroke="#7A8DA6" stroke-width="1.2" marker-end="url(#arb)"/>
+
+  <rect x="150" y="292" width="180" height="40" rx="4" fill="#F7F6F2" stroke="#7A8DA6"/>
+  <text x="240" y="309" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">GPIO_1 … GPIO_4</text>
+  <text x="240" y="322" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">interlock state, read only</text>
+  <path d="M251 228 L251 290" fill="none" stroke="#7A8DA6" stroke-width="1" stroke-dasharray="3 3" marker-end="url(#arb)"/>
+
+  <rect x="600" y="292" width="156" height="40" rx="4" fill="#F7F6F2" stroke="#7A8DA6"/>
+  <text x="678" y="309" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">GPIO_5 — nFAULT</text>
+  <text x="678" y="322" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">wired OR, both drivers</text>
+  <path d="M701 96 L730 96 L730 290" fill="none" stroke="#7A8DA6" stroke-width="1" stroke-dasharray="3 3" marker-end="url(#arb)"/>
+  <path d="M701 240 L716 240 L716 290" fill="none" stroke="#7A8DA6" stroke-width="1" stroke-dasharray="3 3" marker-end="url(#arb)"/>
+
+  <!-- ============ footer ============ -->
+  <line x1="24" y1="360" x2="756" y2="360" stroke="#E5E3DC" stroke-width="1"/>
+  <text x="24" y="380" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">Solid orange is the protective path and holds without the MCU, the gateway or the cloud. Blue is firmware, and reaches the drivers only as one input of an AND gate.</text>
+  <text x="24" y="396" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">Firmware can withhold an enable and can assert none against a trip, and can neither override nor re-arm one (T10).</text>
+  <text x="24" y="412" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">Thresholds, hysteresis and the safe output each element takes are in the T2 to T5 and D8 rows, not here.</text>
+</svg>

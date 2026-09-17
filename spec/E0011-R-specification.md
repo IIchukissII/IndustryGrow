@@ -293,6 +293,8 @@ specification, and none carries a published quantity.
 
 ## 8. Thermal requirements and interlocks
 
+![Four trip elements each reach a comparator section without the MCU in the path; three of them pull one wired-AND enable chain while the tract-airflow trip reaches only the gate that enables the humidity-tract driver, so a loss of that airflow removes drive from the subcooler and reheater while the main stack keeps running; a quad AND gate combines the chain, that fourth trip and a firmware enable into each driver's sleep input, so firmware can withhold an enable and assert none; each trip line is read back on its own header input and the wired-OR driver fault returns on another](./figures/a01-climate-enable-chain.svg)
+
 | ID | Requirement | Reference |
 |---|---|---|
 | `T1` | The main tract's heat-removal duty is specified by `E0012` (`T1`) | `E0012-R-specification.md` |
