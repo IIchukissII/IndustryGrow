@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="780" height="420" viewBox="0 0 780 420" role="img" aria-label="E0001 carrier topology">
+  <title>Universal carrier — what reaches what</title>
+  <desc>The field bus and the twelve volt supply arrive together on J1 and leave on J2, so nodes daisy-chain. The supply passes the input protection F2, D4, D5 and FB1 and reaches the buck U1, whose output is the only rail the board derives: it feeds the core board through J3 and both module headers at their position one. The bus pair reaches the transceiver U2, terminated by JP1 only at the two ends of the run, and U2 carries CAN1 to the core board. The secure element U3 sits on I2C2, a segment that reaches no module. Everything a module may use crosses J5 as Header A and J6 as Header B, and the module's own class-ID EEPROM answers on the header I2C that crosses J5. SWD does not cross the carrier at all: a debugger attaches to the core board's own header.</desc>
+
+  <defs>
+    <marker id="ar" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#5F5E5A"/></marker>
+    <marker id="ars" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#D85A30"/></marker>
+    <marker id="arb" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#7A8DA6"/></marker>
+  </defs>
+
+  <rect x="0.5" y="0.5" width="779" height="419" rx="10" fill="#FFFFFF" stroke="#E5E3DC"/>
+  <text x="390" y="28" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12.5" fill="#2C2C2A">Universal carrier — what reaches what</text>
+
+  <!-- ============ power band ============ -->
+  <text x="24" y="56" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">supply</text>
+  <rect x="24" y="62" width="124" height="40" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="86" y="79" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">J1 · J2</text>
+  <text x="86" y="92" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">bus and +12 V, in and out</text>
+
+  <line x1="148" y1="82" x2="174" y2="82" stroke="#5F5E5A" stroke-width="1.2" marker-end="url(#ar)"/>
+  <rect x="176" y="62" width="136" height="40" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="244" y="79" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">F2 · D4 · D5 · FB1</text>
+  <text x="244" y="92" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">input protection (P1)</text>
+
+  <line x1="312" y1="82" x2="338" y2="82" stroke="#5F5E5A" stroke-width="1.2" marker-end="url(#ar)"/>
+  <rect x="340" y="62" width="104" height="40" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="392" y="79" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">U1</text>
+  <text x="392" y="92" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">the node rail (P2)</text>
+
+  <line x1="444" y1="82" x2="470" y2="82" stroke="#5F5E5A" stroke-width="1.2" marker-end="url(#ar)"/>
+  <rect x="472" y="70" width="284" height="24" rx="4" fill="#F7F6F2" stroke="#5F5E5A"/>
+  <text x="614" y="86" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">3V3 — the only rail the carrier derives</text>
+
+  <!-- rail taps -->
+  <path d="M520 94 L520 150" fill="none" stroke="#5F5E5A" stroke-width="1" stroke-dasharray="3 3" marker-end="url(#ar)"/>
+  <path d="M660 94 L660 208" fill="none" stroke="#5F5E5A" stroke-width="1" stroke-dasharray="3 3" marker-end="url(#ar)"/>
+  <path d="M700 94 L700 272" fill="none" stroke="#5F5E5A" stroke-width="1" stroke-dasharray="3 3" marker-end="url(#ar)"/>
+
+  <!-- ============ bus band ============ -->
+  <text x="24" y="150" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">field bus</text>
+  <path d="M86 102 L86 162 L174 162" fill="none" stroke="#7A8DA6" stroke-width="1.2" marker-end="url(#arb)"/>
+  <rect x="176" y="144" width="136" height="40" rx="4" fill="#F7F6F2" stroke="#7A8DA6"/>
+  <text x="244" y="161" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">U2 · JP1</text>
+  <text x="244" y="174" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">CAN transceiver (I7)</text>
+
+  <line x1="312" y1="164" x2="470" y2="164" stroke="#7A8DA6" stroke-width="1.2" marker-end="url(#arb)"/>
+  <text x="391" y="158" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">CAN1</text>
+
+  <!-- ============ core board ============ -->
+  <rect x="472" y="116" width="160" height="88" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="552" y="136" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">J3 · J4</text>
+  <text x="552" y="150" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">SP0005 core board</text>
+  <text x="552" y="172" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">two sockets, each spanning</text>
+  <text x="552" y="184" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">a signal header and its</text>
+  <text x="552" y="196" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">power header (5.4)</text>
+
+  <!-- secure element -->
+  <path d="M472 196 L400 196 L400 236" fill="none" stroke="#7A8DA6" stroke-width="1.2" marker-end="url(#arb)"/>
+  <text x="404" y="192" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">I2C2</text>
+  <rect x="316" y="238" width="168" height="40" rx="4" fill="#F7F6F2" stroke="#7A8DA6"/>
+  <text x="400" y="255" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">U3 — node identity</text>
+  <text x="400" y="268" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">no module reaches this segment</text>
+
+  <!-- debug, not routed -->
+  <path d="M552 116 L552 104" fill="none" stroke="#C9C6BC" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="560" y="112" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">SWD on the core board's own header (I8)</text>
+
+  <!-- ============ module headers ============ -->
+  <rect x="620" y="208" width="136" height="40" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="688" y="225" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">J5 — Header A</text>
+  <text x="688" y="238" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">same at every revision</text>
+
+  <rect x="620" y="272" width="136" height="40" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="688" y="289" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">J6 — Header B</text>
+  <text x="688" y="302" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">wider at -000100</text>
+
+  <path d="M632 186 L606 186 L606 228 L618 228" fill="none" stroke="#5F5E5A" stroke-width="1.2" marker-end="url(#ar)"/>
+  <path d="M606 228 L606 292 L618 292" fill="none" stroke="#5F5E5A" stroke-width="1.2" marker-end="url(#ar)"/>
+
+  <!-- module -->
+  <rect x="316" y="292" width="168" height="40" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
+  <text x="400" y="309" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">module, any class</text>
+  <text x="400" y="322" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">class ID in its own EEPROM (F2)</text>
+  <path d="M618 302 L490 302" fill="none" stroke="#7A8DA6" stroke-width="1.2" marker-end="url(#arb)"/>
+  <path d="M618 240 L540 240 L540 296 L490 296" fill="none" stroke="#7A8DA6" stroke-width="1.2" marker-end="url(#arb)"/>
+  <text x="546" y="256" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">header I2C</text>
+
+  <!-- ============ footer ============ -->
+  <line x1="24" y1="352" x2="756" y2="352" stroke="#E5E3DC" stroke-width="1"/>
+  <text x="24" y="372" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">Grey carries power, blue carries signal. Dashed grey is the 3V3 rail reaching the core board and both headers.</text>
+  <text x="24" y="388" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">The signal set at J5 and J6, and which processor pin each position reaches, are in the 5.1 to 5.3 tables and not repeated here.</text>
+  <text x="24" y="404" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">The carrier measures nothing and switches nothing (3.1).</text>
+</svg>

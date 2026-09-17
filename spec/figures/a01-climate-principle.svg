@@ -36,7 +36,7 @@
   <text x="234" y="132" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">E1 · signed · current-regulated</text>
 
   <rect x="336" y="100" width="188" height="44" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
-  <text x="430" y="118" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">U6 DRV8262 — dual half-bridge</text>
+  <text x="430" y="118" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#2C2C2A">U6 DRV8262 — dual H-bridge</text>
   <text x="430" y="132" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">E3 subcooler · E4 reheat pump · unsigned</text>
 
   <rect x="532" y="100" width="216" height="44" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
@@ -59,7 +59,7 @@
   <text x="42" y="274" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#7A8DA6">main tract — sets air temperature</text>
 
   <rect x="42" y="284" width="222" height="60" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
-  <text x="153" y="302" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">HX1 Fischer LA 6 150 12 + E2 fan</text>
+  <text x="153" y="302" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">HX1 + E2 fan</text>
   <text x="153" y="317" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">base temperature reported by U2</text>
   <text x="153" y="332" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#7A8DA6">held above dew point — no condensate</text>
 
@@ -76,11 +76,11 @@
   <text x="288" y="274" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#7A8DA6">humidity tract — sets humidity ratio</text>
 
   <rect x="288" y="284" width="230" height="30" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
-  <text x="403" y="303" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#2C2C2A">E5 Sepa MFB 50 · start pulse (D13)</text>
+  <text x="403" y="303" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#2C2C2A">E5 fan · start pulse (D13)</text>
   <path d="M403 314 L403 326" fill="none" stroke="#7A8DA6" stroke-width="1.2" marker-end="url(#arb)"/>
 
   <rect x="288" y="328" width="230" height="60" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
-  <text x="403" y="346" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">HX2 LAM 5 100 + E3 — TEC × 1</text>
+  <text x="403" y="346" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">HX2 + E3 — TEC × 1</text>
   <text x="403" y="361" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">coil temperature reported by U3</text>
   <text x="403" y="376" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#7A8DA6">setpoint is a coil temperature · floored (D11)</text>
   <path d="M403 388 L403 400" fill="none" stroke="#7A8DA6" stroke-width="1.2" marker-end="url(#arb)"/>
@@ -94,7 +94,7 @@
   <text x="562" y="433" font-family="Helvetica, Arial, sans-serif" font-size="8.5" fill="#5F5E5A">of the volume</text>
 
   <rect x="288" y="460" width="230" height="56" rx="4" fill="#F7F6F2" stroke="#C9C6BC"/>
-  <text x="403" y="477" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">HX3 LAM 5 50 + E4 — TEC × 1</text>
+  <text x="403" y="477" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#2C2C2A">HX3 + E4 — TEC × 1</text>
   <text x="403" y="491" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#5F5E5A">base temperature reported by U4</text>
   <text x="403" y="505" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#7A8DA6">zero drive still conducts (T11)</text>
 
