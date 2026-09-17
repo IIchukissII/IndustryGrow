@@ -9,8 +9,12 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Date:** 2026-09-11
 - **E-number:** `E0011` · module class ID `0x80`
 - **Governing ADRs:** ADR-0031 (rev 1), ADR-0032, ADR-0014 (rev 4), ADR-0015, ADR-0016, ADR-0017 (rev 2), ADR-0018, ADR-0003
-- **Companions:** `E0012-R-specification.md`, `E0002-R-specification.md`, `E0006-R-specification.md`, `E0008-R-specification.md`, `E0009-R-specification.md`
+- **Companions:** `E0001-R-specification.md`, `E0012-R-specification.md`, `E0002-R-specification.md`, `E0006-R-specification.md`, `E0008-R-specification.md`, `E0009-R-specification.md`
 - **Supersedes:** `spec/A01-THERMAL-specification.md` (2026-09-07)
+
+**This module runs on carrier `E0001-000100` only.** No earlier revision carries a transport for
+an 8-bit class ID (ADR-0031 d10), and this module's Header B is a 2×10 that does not seat in the
+2×8 socket those revisions fit (§5, `E0001-R-specification.md` §5.3).
 
 Rationale for the decisions applied here is in the governing ADRs and is not restated.
 Values marked `verify` are not confirmed against the manufacturer datasheet.
@@ -27,7 +31,7 @@ Not specified here:
 
 | Subject | Owner |
 |---|---|
-| Carrier design and header allocation | `store/E0001-VVVVVV-D-pinmap.md` |
+| Carrier design and header allocation | `spec/E0001-R-specification.md` |
 | Cultivation setpoints | `profiles/strawberry-day-neutral-v1.json` |
 | Control-loop structure and gains | ADR-0015 d8/d18, `gateway/control_model.py` |
 | Outdoor deployment variant | Not specified — `O-106` |
@@ -41,10 +45,10 @@ Not specified here:
 |---|---|
 | Module class | A01-CLIMATE |
 | Module class ID | `0x80` — first actuator class (ADR-0031 d1, rev 1 d2; range per ADR-0014 rev 4 d6) |
-| ID transport | Serial EEPROM, 24Cxx class, byte 0, I²C `0x50` (ADR-0014 d6). The 3-bit strap cannot express `0x80` |
+| ID transport | Serial EEPROM, 24Cxx class, byte 0, I²C `0x50` (ADR-0014 d6). `E0001-000100` carries no module-ID strap |
 | E-number | `E0011` — first assembly. A populate variant takes its own assembly E-number at design commit (ADR-0017 rev 2 d4) |
 | Bare design | One layout, one class ID, one firmware image |
-| Carrier | `E0001-000100` or later (ADR-0031 d10). **Not `E0001-000003`** — see `O-100` |
+| Carrier | `E0001-000100`, `spec/E0001-R-specification.md`. Not laid out — `O-100` |
 
 ### 2.1 Deployment variant — indoor
 
@@ -185,28 +189,29 @@ Deliberately absent:
 
 ## 5. Interfaces
 
-Header signals used (ADR-0014 d5):
+Header positions claimed. The carrier side of every signal is `spec/E0001-R-specification.md`
+§5, and this module requires `E0001-000100` (§2).
 
-| Header signal | Carrier pin | Use |
-|---|---|---|
-| `PWM_1` | PC6 / TIM3_CH1 | U5 EN — `E1` magnitude (`D2`) |
-| `PWM_2` | PC7 / TIM3_CH2 | U6 EN1 — `E3` magnitude (`D11`) |
-| `PWM_3` | PB0 / TIM3_CH3 | U5 VREF — `E1` current limit, RC-filtered to analog (`D2`) |
-| `PWM_4` | PB1 / TIM3_CH4 | U6 VREF1 — `E3` current limit, RC-filtered to analog (`D11`) |
-| `ADC_1` | PC4 | U5 IPROPI — `E1` string current |
-| `ADC_2` | PC5 | U6 IPROPI1 — `E3` string current |
-| `ADC_3` | PC0 / ADC123_IN10, Header B position 17 — new, `O-100` | RT3 spare thermistor channel (§5.2) |
-| `ADC_4` | PC1 / ADC123_IN11, Header B position 19 — new, `O-100` | RT4 spare thermistor channel (§5.2) |
-| `OW_DATA` | PA0 | U1–U4 on one 1-Wire bus; external 4.7 kΩ pull-up |
-| `I2C1_SCL` / `I2C1_SDA` | PB6 / PB7 | U10 ID EEPROM `0x50`; U9 drive expansion; J14 |
-| `SPI2_SCK` / `SPI2_MISO` / `SPI2_MOSI` | PB13 / PB14 / PB15 | Claimed by no device; J14 (§5.2) |
-| `SPI_CS1` / `SPI_CS2` | PA3 / PA4 | Claimed by no device; J14 (§5.2) |
-| `GPIO_1` | PA9 | `T2` interlock state (input) |
-| `GPIO_2` | PA10 | `T3` interlock state (input) |
-| `GPIO_3` | PA15 | `T4` interlock state (input) |
-| `GPIO_4` | PB12 | `T5` interlock state (input) |
-| `STRAP_0`, reallocated | PA5 | U5 and U6 `nFAULT`, wired-OR, open-drain (input) |
-| `STRAP_1`, `STRAP_2`, reallocated | PA6 / PA7 | Spare inputs, 10 kΩ pull-down, J14 (§5.2) |
+| Interface | Use |
+|---|---|
+| Header A pin 1 / 3 — 3V3, GND | Node logic supply (`P1`) |
+| Header A pin 4 / 5 — `I2C_SCL`, `I2C_SDA` | U10 class ID at `0x50`, U9 drive expansion at `0x40`, and J14 (§5.2) |
+| Header A pin 7 — `OW_DATA` | U1–U4 on one 1-Wire bus; 4.7 kΩ pull-up on the module |
+| Header A pins 9, 10, 11, 13, 14 — `SPI_SCK`, `SPI_MISO`, `SPI_MOSI`, `SPI_CS1`, `SPI_CS2` | Claimed by no device; J14 (§5.2) |
+| Header A pins 15, 16, 17, 18 — `GPIO_1`–`GPIO_4` | `T2`, `T3`, `T4`, `T5` interlock state, one line each (ADR-0031 d11) |
+| Header A pin 20 — `PWM_1` | U5 EN — `E1` magnitude (`D2`) |
+| Header A pin 21 — `PWM_2` | U6 EN1 — `E3` magnitude (`D11`) |
+| Header A pin 22 — `PWM_3` | U5 VREF — `E1` current limit, RC-filtered to analog (`D2`) |
+| Header A pin 23 — `PWM_4` | U6 VREF1 — `E3` current limit, RC-filtered to analog (`D11`) |
+| Header B pin 1 / 2 — 3V3, GND | Node logic supply |
+| Header B pin 3 — `GPIO_5` | U5 and U6 `nFAULT`, wired-OR, open-drain (ADR-0031 d11) |
+| Header B pins 4, 5 — `GPIO_6`, `GPIO_7` | Spare inputs, 10 kΩ pull-down, J14 (§5.2) |
+| Header B pin 10 / 12 — `ADC_1`, `ADC_2` | U5 IPROPI, U6 IPROPI1 — `E1` and `E3` string current |
+| Header B pin 17 / 19 — `ADC_3`, `ADC_4` | RT3 and RT4 spare thermistor channels (§5.2) |
+
+Every header signal the carrier offers is claimed. Only the two positions the carrier itself
+leaves unassigned — Header B 7 and 14 — and the unfitted 5 V at Header A 2 stay unconnected
+(`E0001-R-specification.md` `I4`, `I5`).
 
 Module-local expansion on U9 (ADR-0031 rev 1 d11):
 
@@ -220,14 +225,11 @@ Module-local expansion on U9 (ADR-0031 rev 1 d11):
 | 5, 6 | U5, U6 firmware enable, into U11 and never onto a driver's sleep input directly (`T10`) |
 | 7–15 | `AUX_0`–`AUX_8`, signal reserve on J14 (§5.2) |
 
-Module-ID straps are not used for identification by this module (ADR-0031 d10); the table above
-reallocates all three. The pin-map changes this requires are `O-100`.
-
 ### 5.1 Connectors
 
 | Ref | Connector | Carries |
 |---|---|---|
-| J1, J2 | 2×12 and 2×10, 2.54 mm | Carrier headers A and B (ADR-0014 d5, widened per `O-100`) |
+| J1, J2 | 2×12 and 2×10, 2.54 mm | Carrier headers A and B (ADR-0014 d5, `E0001-000100`) |
 | J3 | 2-pole, 5.00 mm | `+24 V` actuator section entry, `SP0010` |
 | J4, J7, J8 | 2-pole, 5.00 mm | `E1`, `E3`, `E4` element outputs |
 | J5, J9 | 1×4, 2.54 mm | `E2` and `E5` fans: supply, return, duty, alarm |
@@ -248,9 +250,9 @@ specification, and none carries a published quantity.
 | Drive channels `AUX_0`–`AUX_8` | 9 | U9 channels 7–15, totem pole, ≥ 12 mA sink at 0.5 V, 10 mA source at ≥ 2.3 V, 400 mA per package | J14 |
 | `I2C1` segment | 1 | Header I²C; addresses outside `0x40` and `0x50`–`0x57` are free | J14 |
 | `SPI2` segment with both chip selects | 1 | Header SPI, claimed by no device on this module | J14 |
-| Carrier inputs | 2 | `STRAP_1`, `STRAP_2`, 10 kΩ pull-down to ground | J14 |
+| Carrier inputs | 2 | `GPIO_6`, `GPIO_7`, 10 kΩ pull-down to ground | J14 |
 | Analog channels | 2 | `ADC_3`, `ADC_4` from the RT3 and RT4 dividers | J14 and Header B |
-| Header positions left unassigned | 2 | Header B positions 7 and 14, `RESERVED` and unconnected on this module as on every other | — |
+| Header positions left unassigned | 2 | Header B positions 7 and 14, `RESERVED` on the carrier and unconnected here | — |
 | Thermistor leads | 2 | `RT3`, `RT4`, conditioning fitted, thermistors not fitted | J15 |
 | 1-Wire addresses | Bus-limited, not pin-limited | The `OW_DATA` bus of §4 | J6, J10 |
 | Spare AND gate | 1 | U11 section D, inputs tied to ground, output unconnected | — |
@@ -380,7 +382,7 @@ The tract's designed parts — `TB1`, the exchanger sections of `M10`, the wall 
 
 ## 12. Open items
 
-- `O-100` — Actuator class IDs require the EEPROM transport, so A01 cannot run on carrier `E0001-000003` (ADR-0031 d10). The `E0001-000100` pin map must also carry the 1-Wire line and reallocate `STRAP_0` as a general input. Header B widens from 2×8 to 2×10, adding positions 17–20 as `ADC_3`, GND, `ADC_4`, GND on PC0 and PC1; positions 7 and 14 stay `RESERVED` and the 2×12 / 2×10 size asymmetry still keys the pair. A 2×8 module seats on positions 1–16 of the wider header unchanged. Widening the header is an ADR-0014 d5 revision and is not this specification's to make. Blocks fabrication.
+- `O-100` — `E0001-000100` is specified but not laid out and not fabricated; owned by `spec/E0001-R-specification.md`, consumed here. A01 cannot run on `E0001-000003`: actuator class IDs need the EEPROM transport (ADR-0031 d10). Blocks fabrication of this module.
 - ~~`O-101`~~ — ~~No actuator-taxonomy ADR (ADR-0014 d9).~~ — closed 2026-09-07 by ADR-0031.
 - `O-102` — No DSDL type for a signed or unsigned actuator demand with a validity deadline. Blocks `F3`.
 - `O-103` — Thermoelectric module not selected; α, R, K, clamping force and TIM are unconfirmed, and `L1`, `L2` follow from them. Driver continuous RMS current by package is unread. TEC4 is a separate selection under this item and is not the TEC1–TEC3 part: bounded below by `D16`'s largest lift, above by `T11`'s conductance ceiling. Blocks `D1`, `D4`, `D16`, `M1`, `M2`, `T11`.
