@@ -1049,7 +1049,7 @@
 				(justify left bottom)
 			)
 		)
-		(property "Footprint" "Package_SO:HTSSOP-44-1EP_6.1x14mm_P0.635mm_EP5.2x14mm_Mask4.31x8.26mm_ThermalVias"
+		(property "Footprint" "industrygrow:HTSSOP-44-1EP_6.1x14mm_P0.635mm_EP5.2x14mm_Mask4.31x8.26mm_ThermalVias_Drill0.3mm"
 			(at 0 -20.575 0)
 			(show_name no)
 			(do_not_autoplace no)

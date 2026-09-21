@@ -47,6 +47,14 @@ precedence = "override"
 SPDX-FileCopyrightText = "WeAct Studio"
 SPDX-License-Identifier = "LicenseRef-WeAct-unstated"
 
+# Footprints derived from the KiCad footprint library keep that library's licence, not the
+# store's CERN-OHL-S. KiCad's exception waives the share-alike clause for designs that use them.
+[[annotations]]
+path = "store/industrygrow.pretty/HTSSOP-44-1EP_6.1x14mm_P0.635mm_EP5.2x14mm_Mask4.31x8.26mm_ThermalVias_Drill0.3mm.kicad_mod"
+precedence = "override"
+SPDX-FileCopyrightText = "KiCad Libraries Team"
+SPDX-License-Identifier = "CC-BY-SA-4.0"
+
 # Project images/logos, ADR and spec figures, the roadmap figure, and this manifest itself
 # (no inline-comment option for the binary PNGs; SVGs kept uniform with them).
 [[annotations]]
