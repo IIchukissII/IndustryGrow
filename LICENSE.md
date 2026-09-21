@@ -66,6 +66,7 @@ from different trees.
 | `service-tool/Core/Src/system_stm32h7xx.c`, `stm32h7xx_it.c`, `stm32h7xx_hal_timebase_tim.c`, `syscalls.c`, `sysmem.c`, `Core/Inc/stm32h7xx_hal_conf.h`, `stm32h7xx_it.h`, `Core/Startup/startup_stm32h747xihx.s` | STM32CubeH7 `Projects/STM32H747I-EVAL/Templates/` — CubeMX user-code templates and the CubeIDE H747 startup file | [`BSD-3-Clause`](LICENSES/BSD-3-Clause.txt) |
 | `service-tool/Core/Startup/startup_stm32h753xx.s` | STM32CubeH7 `Drivers/CMSIS/Device/ST/STM32H7xx/Source/Templates/gcc/` | [`Apache-2.0`](LICENSES/Apache-2.0.txt) |
 | `service-tool/Core/Inc/lv_conf.h` | LVGL `lv_conf_template.h` | [`MIT`](LICENSES/MIT.txt) |
+| `store/industrygrow.pretty/HTSSOP-44-1EP_…_ThermalVias_Drill0.3mm.kicad_mod` | KiCad footprint library `Package_SO:HTSSOP-44-1EP_6.1x14mm_P0.635mm_EP5.2x14mm_Mask4.31x8.26mm_ThermalVias`, thermal via drills 0.2 → 0.3 mm | [`CC-BY-SA-4.0`](LICENSES/CC-BY-SA-4.0.txt), with the KiCad libraries' exception for designs that use it |
 
 The STM32CubeH7 and LVGL checkouts themselves are **not** vendored here; the build
 consumes them from outside the repository (`service-tool/README.md`).
