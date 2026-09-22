@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # A01-CLIMATE — module specification
 
 - **Status:** Working specification, pre-schematic capture. `E0011` not laid out, not fabricated
-- **Date:** 2026-09-11
+- **Date:** 2026-09-22
 - **E-number:** `E0011` · module class ID `0x80`
 - **Governing ADRs:** ADR-0031 (rev 1), ADR-0032, ADR-0014 (rev 4), ADR-0015, ADR-0016, ADR-0017 (rev 2), ADR-0018, ADR-0003
 - **Companions:** `E0001-R-specification.md`, `E0012-R-specification.md`, `E0002-R-specification.md`, `E0006-R-specification.md`, `E0008-R-specification.md`, `E0009-R-specification.md`
@@ -230,15 +230,15 @@ Module-local expansion on U9 (ADR-0031 rev 1 d11):
 | Ref | Connector | Carries |
 |---|---|---|
 | J1, J2 | 2×12 and 2×10, 2.54 mm | Carrier headers A and B (ADR-0014 d5, `E0001-000100`) |
-| J3 | 2-pole, 5.00 mm | `+24 V` actuator section entry, `SP0010` |
-| J4, J7, J8 | 2-pole, 5.00 mm | `E1`, `E3`, `E4` element outputs |
-| J5, J9 | 1×4, 2.54 mm | `E2` and `E5` fans: supply, return, duty, alarm |
-| J6 | 1×5, 2.54 mm | `E0012` sensing: 1-Wire for U1 and U2, `RT1` |
-| J10 | 1×3, 2.54 mm | Humidity-tract 1-Wire for U3 and U4 |
-| J11, J12 | 1×2, 2.54 mm | `RT2` lead, `SF1` flow switch |
-| J13 | 2-pole, 5.00 mm | `E6` CO₂ valve — not populated in the baseline |
+| J3 | Screw terminal, 2-pole, 5.00 mm | `+24 V` actuator section entry, `SP0010` |
+| J4, J7, J8 | Screw terminal, 2-pole, 5.00 mm | `E1`, `E3`, `E4` element outputs |
+| J5, J9 | Micro-Fit 3.0, 1×4, horizontal | `E2` and `E5` fans: supply, return, duty, alarm |
+| J6 | Micro-Fit 3.0, 1×5, horizontal | `E0012` sensing: 1-Wire for U1 and U2, `RT1` |
+| J10 | Micro-Fit 3.0, 1×3, horizontal | Humidity-tract 1-Wire for U3 and U4 |
+| J11, J12 | Micro-Fit 3.0, 1×2, horizontal | `RT2` lead, `SF1` flow switch |
+| J13 | Screw terminal, 2-pole, 5.00 mm | `E6` CO₂ valve — not populated in the baseline |
 | J14 | 2×14, 2.54 mm | Signal reserve (§5.2) |
-| J15 | 1×4, 2.54 mm | `RT3` and `RT4` leads (§5.2) |
+| J15 | Micro-Fit 3.0, 1×4, horizontal | `RT3` and `RT4` leads (§5.2) |
 
 ### 5.2 Signal reserve
 
@@ -326,6 +326,7 @@ specification, and none carries a published quantity.
 | `M8` | HX2 and HX3 are degreased before assembly; HX1 is `E0012`'s (`M3`) | `T7` |
 | `M9` | The humidity tract's duct carries the same bore and the same flange as the main tract's (`E0012`'s §5), so sections, collars, flanges and terminations interchange between the tracts. A flow restriction `O-128` may call for is an element in the tract, not a reduction of the bore | ADR-0032 d8, `O-128` |
 | `M10` | HX2 and HX3 sit in duct sections sealed around the profile, so no air bypasses the fins. HX2 is mounted fins upward, its base at the bottom of the tract and falling toward the `TB1` low point | `T7`, `M7`, `M9` |
+| `M11` | Every field lead is retained at the board against withdrawal: a screw clamp at J3, J4, J7, J8 and J13, a positive latch at J5, J6, J9, J10, J11, J12 and J15 (§5.1) | `T2`–`T5` |
 
 The tract's designed parts — `TB1`, the exchanger sections of `M10`, the wall penetrations of `M3` and the condensate collector of `O-109` — are development sources in `project/mechanical/`, carrying no identifier while the design iterates (ADR-0032 d8).
 
@@ -381,6 +382,7 @@ The tract's designed parts — `TB1`, the exchanger sections of `M10`, the wall 
 | `V29` | `F3`, `F5`, `F7` | Record the node loop rate; confirm a trip is published and latched until reset; confirm every `F7` constant is read from node-local storage and none from the profile |
 | `V30` | `P2`, `P4`, `P8` | Short one element at its connector with the string at its limit; confirm the supply module's current limit and the driver OCP act, that no other branch on the C5 module drops out, and that the supply recovers on removal. Apply the `+24 V` entry reversed at the supply's current limit for 60 s; confirm no current reaches the rail and that the module runs unchanged afterwards |
 | `V31` | `D16`, `T11`, ADR-0032 d7 | Reheat delivered to HX3 measured against `E4`'s electrical input at the design point and at the largest lift; the coefficient of performance shall exceed 1 at both. With `E4` at zero drive and WB2 held at the `D9` ceiling, the heat crossing into HX3 measured against `T11`'s 3 W bound |
+| `V32` | `M11` | Pull each field lead along its axis at the connector's rated retention force (`verify`) and hold 10 s; confirm no connector separates and no conductor leaves its clamp |
 
 ## 12. Open items
 
