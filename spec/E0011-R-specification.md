@@ -5,10 +5,10 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 # A01-CLIMATE — module specification
 
-- **Status:** Working specification, pre-schematic capture. `E0011` not laid out, not fabricated
-- **Date:** 2026-09-22
+- **Status:** Working specification, pre-schematic capture. `E0011-000001` laid out, not fabricated
+- **Date:** 2026-09-29
 - **E-number:** `E0011` · module class ID `0x80`
-- **Governing ADRs:** ADR-0031 (rev 1), ADR-0032, ADR-0014 (rev 4), ADR-0015, ADR-0016, ADR-0017 (rev 2), ADR-0018, ADR-0003
+- **Governing ADRs:** ADR-0031 (rev 1), ADR-0032, ADR-0014 (rev 4), ADR-0015, ADR-0016, ADR-0017 (rev 2), ADR-0018, ADR-0003, ADR-0002 (rev 3)
 - **Companions:** `E0001-R-specification.md`, `E0012-R-specification.md`, `E0002-R-specification.md`, `E0006-R-specification.md`, `E0008-R-specification.md`, `E0009-R-specification.md`
 - **Supersedes:** `spec/A01-THERMAL-specification.md` (2026-09-07)
 
@@ -327,6 +327,7 @@ specification, and none carries a published quantity.
 | `M9` | The humidity tract's duct carries the same bore and the same flange as the main tract's (`E0012`'s §5), so sections, collars, flanges and terminations interchange between the tracts. A flow restriction `O-128` may call for is an element in the tract, not a reduction of the bore | ADR-0032 d8, `O-128` |
 | `M10` | HX2 and HX3 sit in duct sections sealed around the profile, so no air bypasses the fins. HX2 is mounted fins upward, its base at the bottom of the tract and falling toward the `TB1` low point | `T7`, `M7`, `M9` |
 | `M11` | Every field lead is retained at the board against withdrawal: a screw clamp at J3, J4, J7, J8 and J13, a positive latch at J5, J6, J9, J10, J11, J12 and J15 (§5.1) | `T2`–`T5` |
+| `M12` | The board is 147 × 110 mm on four copper layers: `F.Cu` and `B.Cu` carry signals, `In1.Cu` is a full `GNDPWR` plane, `In2.Cu` a full `GND` plane | ADR-0002 d12 |
 
 The tract's designed parts — `TB1`, the exchanger sections of `M10`, the wall penetrations of `M3` and the condensate collector of `O-109` — are development sources in `project/mechanical/`, carrying no identifier while the design iterates (ADR-0032 d8).
 
@@ -383,6 +384,7 @@ The tract's designed parts — `TB1`, the exchanger sections of `M10`, the wall 
 | `V30` | `P2`, `P4`, `P8` | Short one element at its connector with the string at its limit; confirm the supply module's current limit and the driver OCP act, that no other branch on the C5 module drops out, and that the supply recovers on removal. Apply the `+24 V` entry reversed at the supply's current limit for 60 s; confirm no current reaches the rail and that the module runs unchanged afterwards |
 | `V31` | `D16`, `T11`, ADR-0032 d7 | Reheat delivered to HX3 measured against `E4`'s electrical input at the design point and at the largest lift; the coefficient of performance shall exceed 1 at both. With `E4` at zero drive and WB2 held at the `D9` ceiling, the heat crossing into HX3 measured against `T11`'s 3 W bound |
 | `V32` | `M11` | Pull each field lead along its axis at the connector's rated retention force (`verify`) and hold 10 s; confirm no connector separates and no conductor leaves its clamp |
+| `V33` | `M12` | Inspect `E0011-000001-D-fab.zip`: four copper layers, `In1_Cu` a `GNDPWR` plane, `In2_Cu` a `GND` plane. Confirm the ordered stackup names four layers |
 
 ## 12. Open items
 
