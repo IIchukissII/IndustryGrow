@@ -17,6 +17,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **rev 3 (2026-05-16)** — Gateway side only: the rev-2 persistent SQLite local buffer becomes an in-memory ring buffer and the gateway hardware minimum drops to Raspberry Pi 3B+, following ADR-0004 rev 1's stateless-edge reframing. The smart-node side (carrier, WeAct core board, ATECC608, sensor-module header) is unchanged from rev 2. See decision 6, decision 8, and alternative J. Earlier revisions: rev 1 placed the MCU directly on the carrier (alternative D); rev 2 specified a Pi 5 with a persistent SQLite buffer (alternative J).
 - **Amendments** — decision 10 (2026-08-15): WeAct publishes no gerbers and no licence; corrects the premises of decisions 2 and 4.
 - **Amendments** — decision 11 (2026-08-25): the gateway is the bus time-synchronization master; fixes the network time base that decision 1 leaves unassigned.
+- **Amendments** — decision 12 (2026-09-29): the copper-layer count of a board is set by its specification; qualifies the layer estimate in decision 3.
 
 ## Context and problem
 
@@ -101,6 +102,8 @@ The smart-node side (carrier PCB, WeAct core board, F405/F412/F446 drop-in, ATEC
     **Bounded accuracy claim.** The achievable accuracy is milliseconds, not the microseconds the algorithm permits. The master's transmit timestamp comes from the SocketCAN transmit echo across an SPI-attached MCP2515 (decision 6), and a node timestamps reception in its polled main loop rather than in an interrupt; the second term is the larger. This is sufficient for the purpose — giving samples from different nodes a shared origin, which ADR-0016's state estimator requires and per-node uptime cannot provide — and insufficient for any claim finer than that. Sub-millisecond synchronization would need hardware receive timestamping on the node and is not decided here.
 
     This qualifies no decision on record. Decision 1 adopts Cyphal without assigning a time base; decision 7's trusted-zone boundary is unchanged, and the master is trusted exactly as every other publisher inside the cabinet already is.
+
+12. **The copper-layer count of a board is set by its specification** *(added 2026-09-29)*. The layer count is not an architectural decision: each board takes the layers its layout needs, and its specification records the count. Decision 3's "likely 2-layer" is an estimate for the carrier and binds no other board. This qualifies decision 3 on the layer count only.
 
 ## Alternatives considered
 
