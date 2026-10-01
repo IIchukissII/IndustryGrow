@@ -5,8 +5,8 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 # Universal carrier — module specification
 
-- **Status:** `E0001-000003` fabricated and in service; `E0001-000100` specified, not laid out
-- **Date:** 2026-09-17
+- **Status:** `E0001-000003` fabricated and in service; `E0001-000100` schematic captured, not laid out
+- **Date:** 2026-10-01
 - **E-number:** `E0001` · no class ID — the carrier is not a module
 - **Governing ADRs:** ADR-0002 (rev 3), ADR-0007 (rev 1), ADR-0014 (rev 4), ADR-0017 (rev 2), ADR-0018, ADR-0027, ADR-0029, ADR-0031 (rev 1)
 - **Companions:** every module specification in `spec/`; `store/E0001-000003-D-pinmap.md` for the fabricated revision
@@ -47,7 +47,7 @@ Not specified here:
 | Revision | Module identification | Header B | State |
 |---|---|---|---|
 | `E0001-000003` | 3-bit strap pattern on Header B positions 3–5 (ADR-0014 rev 4 d6) | 2×8 | Fabricated, in service |
-| `E0001-000100` | 8-bit class ID read from the module's EEPROM over the header I²C, at an address inside `0x50`–`0x57` (ADR-0014 rev 4 d6) | 2×10 | Specified, not laid out (`O-100`) |
+| `E0001-000100` | 8-bit class ID read from the module's EEPROM over the header I²C at `0x50` (ADR-0014 rev 4 d6) | 2×10 | Schematic captured, not laid out (`O-100`) |
 
 Neither supersedes the other. Each carries its own firmware image. An actuator module runs only
 on `E0001-000100` (ADR-0031 d10).
@@ -81,7 +81,7 @@ on `E0001-000100` (ADR-0031 d10).
 | U1 | TI TPS54302, SOT-23-6 | 3.3 V buck from the `+12 V` bus, with L1 10 µH | `+12 V` |
 | U2 | TI SN65HVD230, SOIC-8 | CAN transceiver on CAN1 | 3V3 |
 | U3 | Microchip ATECC608B-SSHDA, SOIC-8 | Secure element on I²C2, node identity (ADR-0007 rev 1) | 3V3 |
-| U4 | Serial EEPROM, 24Cxx class | Node-ID store on the header I²C, fitted at `E0001-000100` only (ADR-0027 d11) | 3V3 |
+| U4 | ST M24C64-RMN6TP, 64 kbit, SO8 | Node-ID store on the header I²C at `0x57`: `E0`–`E2` to 3V3, `WC` to GND. Fitted at `E0001-000100` only, decoupled by C10 100 nF (ADR-0027 d11) | 3V3 |
 | F2 | Fuse, 0.5 A | Bus-input protection | `+12 V` |
 | D4 | SK26AH Schottky | Reverse-polarity protection on the bus input | `+12 V` |
 | D5 | SMBJ16A | Transient suppressor on the bus input | `+12 V` |
@@ -224,7 +224,7 @@ Unassigned processor pins:
 | `I6` | Every analog input on Header B is flanked by ground, and no switching signal shares Header B | ADR-0014 d5 |
 | `I7` | Bus termination is fitted by `JP1` only at the two ends of the run | ADR-0002 rev 3 |
 | `I8` | SWD reaches the processor on the core board's own debug header; the carrier routes neither line | §5.2 |
-| `I9` | U4 and a fitted module's class-ID EEPROM share the header I²C, both take an address inside `0x50`–`0x57`, and the two addresses are distinct | ADR-0027 d11, `O-133` |
+| `I9` | U4 answers at `0x57` and a fitted module's class-ID EEPROM at `0x50`, both on the header I²C. No module places another device inside `0x50`–`0x57` | ADR-0027 d11, ADR-0014 rev 4 d6 |
 
 ## 6. Power
 
@@ -242,9 +242,9 @@ Unassigned processor pins:
 | ID | Requirement | Reference |
 |---|---|---|
 | `F1` | Each revision runs its own image; an image identifies the revision it was built for | §2.1 |
-| `F2` | On `E0001-000100`, probe the module EEPROM at the reserved I²C address first. A module that answers is identified by byte 0 and its `GPIO_5`–`GPIO_7` are never read as an identity | ADR-0014 rev 4 d6 |
+| `F2` | On `E0001-000100`, probe the module EEPROM at `0x50` first. A module that answers is identified by byte 0 and its `GPIO_5`–`GPIO_7` are never read as an identity | ADR-0014 rev 4 d6 |
 | `F3` | `0x00` and `0xFF` are *unidentified*, never a class | ADR-0014 rev 4 d6 |
-| `F4` | On `E0001-000100`, a module that answers at no reserved address may be identified by the legacy strap pattern on `GPIO_5`–`GPIO_7` | §2.1 |
+| `F4` | On `E0001-000100`, a module that does not answer at `0x50` may be identified by the legacy strap pattern on `GPIO_5`–`GPIO_7` | §2.1 |
 | `F5` | `GPIO_5`–`GPIO_7` are configured as inputs at reset and driven only after identification, because a module may hold them against a rail | `F4` |
 | `F6` | The node publishes its heartbeat and health over the field bus; the carrier publishes no measured quantity | §3.1 |
 | `F7` | `GPIO_1` and `GPIO_2` carry USART1. A bench console is available only while no fitted module claims them, and the module wins | §5.2 |
@@ -266,8 +266,7 @@ Unassigned processor pins:
 
 ## 9. Open items
 
-- `O-100` — `E0001-000100` is specified here but not laid out and not fabricated. Blocks every actuator module (ADR-0031 d10).
-- `O-133` — The `0x50`–`0x57` address allocation between U4 and a module's class-ID EEPROM is unassigned (ADR-0027 deferred decisions). Blocks `I9` and the layout of `E0001-000100`.
+- `O-100` — `E0001-000100` has a captured schematic but is not laid out and not fabricated. Blocks every actuator module (ADR-0031 d10).
 - `O-132` — The 3.3 V rail's current bound is not established: the buck's rating, the fitted inductor and the carrier's thermal design have not been read together, and no module specification states its own draw against it. Blocks `P5`.
 
 ## 10. Maturity
@@ -276,6 +275,6 @@ Unassigned processor pins:
 |---|---|
 | Requirements-fixed | Reached for both revisions |
 | **`E0001-000003` as-built** | **Current.** Fabricated, in service, its layout and fabrication outputs released |
-| `E0001-000100` schematic-frozen | Not reached — not laid out |
+| `E0001-000100` schematic-frozen | Not reached — schematic captured in `store/E0001-000100-S-src.zip`, not laid out |
 
-`E0001-000100` reaches the next rung when its schematic and layout exist and `O-132` is closed.
+`E0001-000100` reaches the next rung when its layout exists and `O-132` is closed.
