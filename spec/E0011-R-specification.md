@@ -171,7 +171,7 @@ unpopulated branch publishes and commands (ADR-0014 d1, d2).
 | U7 | Dual comparator, open-drain, rail-to-rail input: `RT1` over-temperature and `SF1` coolant flow | Hardware interlocks `T2` and `T4` | 3.3 V | 3V3 |
 | U8 | Quad comparator, open-drain, rail-to-rail input: the `RT2` window, the `FA1` airflow trip, and the `RT1` plausibility trip | Hardware interlocks `T3` (ADR-0018 d10), `T5` and the second half of `T2` | 3.3 V | 3V3 |
 | U11 | Quad 2-input AND gate | Combines the `T2`–`T4` chain, the `T5` line and the firmware enable into each driver's sleep input (`T10`) | 3.3 V | 3V3 |
-| Q4, D6 | P-channel MOSFET in the high side with a gate-source clamp | Reverse-polarity block on the `+24 V` entry (`P8`) | — | `+24 V` actuator |
+| Q4, D6 | Q4 Stanson ST2317S23RG, P-channel, SOT-23, `V_DS` −40 V, `V_GS` ±20 V, `R_DS(on)` ≤ 45 mΩ at −10 V and 25 °C, in the high side; D6 15 V Zener, gate-source clamp | Reverse-polarity block on the `+24 V` entry (`P8`) | — | `+24 V` actuator |
 | U9 | NXP PCA9685PW, 16-channel 12-bit PWM generator, I²C Fm+, 2.3–5.5 V, 24–1526 Hz, address `0x40`, outputs LOW after power-on reset | Module-local drive expansion (ADR-0031 rev 1 d11) | 3.3 V | 3V3 |
 | U10 | 24Cxx serial EEPROM, I²C `0x50` | Module class ID (ADR-0014 d6) | 3.3 V | 3V3 |
 | SF1 | Coolant-flow switch, purchased (`T4`) | Rejection-loop interlock | — | — |
