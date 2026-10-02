@@ -3,32 +3,19 @@ Comment,Designator,Footprint,LCSC
 100n/100V,C2,Capacitor_SMD:C_0805_2012Metric,C28233
 10n/100V,"C3,C4,C12,C13",Capacitor_SMD:C_0805_2012Metric,C18741
 1u/16V,"C5,C14",Capacitor_SMD:C_0805_2012Metric,C28323
-100n,"C6,C15,C17,C20,C21,C22,C23,C24,C26,C27,C28,C29,C30,C31",Capacitor_SMD:C_0805_2012Metric,C49678
+100n,"C6,C15,C20,C21,C22,C23,C24,C26,C27,C28,C29,C30,C31",Capacitor_SMD:C_0805_2012Metric,C49678
 1u,"C7,C16",Capacitor_SMD:C_0805_2012Metric,C28323
 10n,"C8,C18",Capacitor_SMD:C_0805_2012Metric,C1710
 100u/50V,"C9,C19",Capacitor_SMD:CP_Elec_8x10.5,C48935396
 100n/100V,C11,Capacitor_SMD:C_0603_1608Metric,C15725
-10u/16V,C25,Capacitor_SMD:C_0805_2012Metric,C440198
+10u/16V,"C17,C25",Capacitor_SMD:C_0805_2012Metric,C440198
+10u/50V,"C32,C33,C34",Capacitor_SMD:C_1210_3225Metric,C138687
 BAT54,"D1,D2,D3",Diode_SMD:D_SOD-123,C7502705
 SMAJ33A,D4,Diode_SMD:D_SMA,C908777
 15V,D6,Diode_SMD:D_SOD-123,C19077428
-Sensor_Header_A,J1,Connector_PinHeader_2.54mm:PinHeader_2x12_P2.54mm_Vertical,C492429
-Sensor_Header_B,J2,Connector_PinHeader_2.54mm:PinHeader_2x10_P2.54mm_Vertical,C492427
-+24V in,J3,"TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-2_1x02_P5.00mm_Horizontal",C480516
-E1 to E0012,J4,"TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-2_1x02_P5.00mm_Horizontal",C480516
-fan E2,J5,Connector_Molex:Molex_Micro-Fit_3.0_43650-0400_1x04_P3.00mm_Horizontal,C277684
-E0012 sensing,J6,Connector_Molex:Molex_Micro-Fit_3.0_43650-0500_1x05_P3.00mm_Horizontal,
-E3 subcooler,J7,"TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-2_1x02_P5.00mm_Horizontal",C480516
-E4 reheater,J8,"TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-2_1x02_P5.00mm_Horizontal",C480516
-fan E5,J9,Connector_Molex:Molex_Micro-Fit_3.0_43650-0400_1x04_P3.00mm_Horizontal,C277684
-U3 U4 1-Wire,J10,Connector_Molex:Molex_Micro-Fit_3.0_43650-0300_1x03_P3.00mm_Horizontal,C503478
-RT2 lead,J11,Connector_Molex:Molex_Micro-Fit_3.0_43650-0200_1x02_P3.00mm_Horizontal,
-SF1 flow switch,J12,Connector_Molex:Molex_Micro-Fit_3.0_43650-0200_1x02_P3.00mm_Horizontal,
-expansion,J14,Connector_PinHeader_2.54mm:PinHeader_2x14_P2.54mm_Vertical,C22465888
-RT3 RT4 leads,J15,Connector_Molex:Molex_Micro-Fit_3.0_43650-0400_1x04_P3.00mm_Horizontal,C277684
 TBD,"L1,L2,L3",Inductor_SMD:L_12x12mm_H8mm,
 2N7002,"Q1,Q2",Package_TO_SOT_SMD:SOT-23,C8545
-TBD,Q4,Package_TO_SOT_SMD:SOT-23,
+ST2317S23RG,Q4,Package_TO_SOT_SMD:SOT-23,C2682896
 10.0k,"R1,R6,R7,R9,R14,R15,R17,R18,R20,R21,R22,R24,R28,R43,R50,R51,R53,R55,R57",Resistor_SMD:R_0805_2012Metric,C17414
 1.00k,"R2,R8,R16,R19,R54,R56",Resistor_SMD:R_0805_2012Metric,C17513
 33.2k,R3,Resistor_SMD:R_0805_2012Metric,C37252
