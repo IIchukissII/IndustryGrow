@@ -204,7 +204,7 @@ four or five objects, not fourteen.
 | `E0001-000003` (carrier v0.0.3) | `E0001-000003-D-fab.zip` | `-D-pos.csv`, `-D.png`, `-D-pinmap.md`, `-L.csv` |
 | `E0002-000001` (M01 v0.0.1) | `E0002-000001-D-fab.zip` | `-D-pos.csv`, `-D.png`, `-L.csv` |
 | `E0006-000001` (M05 v0.0.1) | `E0006-000001-D-fab.zip` | `-D-pos.csv`, `-D.png`, `-L.csv` |
-| `E0011-000001` (A01 v0.0.1) | `E0011-000001-D-fab.zip` | `-D-pos.csv`, `-D.png` |
+| `E0011-000001` (A01 v0.0.1) | `E0011-000001-D-fab.zip` | `-D-pos.csv`, `-D.png`, `-L.csv` |
 
 The layer is the `-D-` infix, not the extension (the placement `.csv` is `D`, not
 `L`; so are the render `-D.png` and pin map `-D-pinmap.md`). Licensing inherits
