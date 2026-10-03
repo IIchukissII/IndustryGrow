@@ -108,10 +108,10 @@ own state (`D9`, `D10`, `D11`) and executes it (ADR-0015 d18).
 | `E3` | Subcooler thermoelectric module | 1 × 40 × 40 mm module | 0.000 … 1.000, unsigned; cooling only | 0 … 0.30 | 0.001 |
 | `E4` | Reheater | Thermoelectric module bridging WB2 and HX3, cold face on WB2 | 0.000 … 1.000, unsigned; heating only | 0 … 0.35 | 0.001 |
 | `E5` | Humidity-tract fan | `SP0008`, the same part as `E2` (`E0012-R-specification.md` §4) | 0.000 … 1.000 | 0.03 … 0.07 by fan law against the §3 tract flow, which is below any stable duty for `SP0008` (`O-128`); set at commissioning (`F7`) | 0.001 |
-| `E6` | CO₂ metering valve | Solenoid, pulse-dosed — **not populated in the baseline** | 0.000 … 1.000 | — | 0.001 |
+| `E6` | CO₂ metering valve | Solenoid, pulse-dosed, on J13 — **valve not fitted in the baseline** | 0.000 … 1.000 | — | 0.001 |
 
 Full scale of `E1`, `E3` and `E4` corresponds to the string current limit of `D2`, not to the module's
-`Imax`. `E6` is unpopulated under ADR-0003 d8 and §3.4.
+`Imax`. The `E6` valve is not fitted under ADR-0003 d8 and §3.4; its drive is.
 
 ### 3.2 Published quantities
 
@@ -143,8 +143,8 @@ Full scale of `E1`, `E3` and `E4` corresponds to the string current limit of `D2
 
 | Population | Fitted | Omitted |
 |---|---|---|
-| Baseline | `E1`–`E5` and their drivers, sensors and interlocks | `E6` and its valve, regulator and dosing branch |
-| CO₂ variant | All of `E1`–`E6` | — |
+| Baseline | `E1`–`E5` and their drivers, sensors and interlocks; the `E6` drive Q3, D5 and J13 | The `E6` valve, regulator and dosing (`O-110`) |
+| CO₂ variant | All of `E1`–`E6`, the valve on J13 | — |
 
 Both populations carry class ID `0x80` and one firmware image; `F2` and `F12` govern what an
 unpopulated branch publishes and commands (ADR-0014 d1, d2).
@@ -173,6 +173,7 @@ unpopulated branch publishes and commands (ADR-0014 d1, d2).
 | U8 | Quad comparator, open-drain, rail-to-rail input: the `RT2` window, the `FA1` airflow trip, and the `RT1` plausibility trip | Hardware interlocks `T3` (ADR-0018 d10), `T5` and the second half of `T2` | 3.3 V | 3V3 |
 | U11 | Quad 2-input AND gate | Combines the `T2`–`T4` chain, the `T5` line and the firmware enable into each driver's sleep input (`T10`) | 3.3 V | 3V3 |
 | Q4, D6 | Q4 Stanson ST2317S23RG, P-channel, SOT-23, `V_DS` −40 V, `V_GS` ±20 V, `R_DS(on)` ≤ 45 mΩ at −10 V and 25 °C, in the high side; D6 15 V Zener, gate-source clamp | Reverse-polarity block on the `+24 V` entry (`P8`) | — | `+24 V` actuator |
+| Q3, D5 | Q3 Alpha & Omega AO3422, N-channel, SOT-23, `V_DS` 55 V, `R_DS(on)` ≤ 200 mΩ at `V_GS` 2.5 V, low side, gate from U9 channel 3 through R48 with R49 to ground; D5 onsemi MBR1H100SFT3G, Schottky, 100 V, 1 A, across J13. Valve coil current ≤ 1 A (`O-110`) | `E6` valve drive (`D14`) | — | `+24 V` actuator |
 | U9 | NXP PCA9685PW, 16-channel 12-bit PWM generator, I²C Fm+, 2.3–5.5 V, 24–1526 Hz, address `0x40`, outputs LOW after power-on reset | Module-local drive expansion (ADR-0031 rev 1 d11) | 3.3 V | 3V3 |
 | U10 | 24Cxx serial EEPROM, I²C `0x50` | Module class ID (ADR-0014 d6) | 3.3 V | 3V3 |
 | SF1 | Coolant-flow switch, purchased (`T4`) | Rejection-loop interlock | — | — |
@@ -221,7 +222,7 @@ Module-local expansion on U9 (ADR-0031 rev 1 d11):
 | 0 | `E2` main-tract fan |
 | 1 | U6 EN2 — `E4` enable, held on while `E4` is driven (`D4`) |
 | 2 | `E5` humidity-tract fan, including the `D13` start pulse |
-| 3 | `E6` CO₂ valve — unpopulated in the baseline |
+| 3 | `E6` CO₂ valve drive, Q3 gate |
 | 4 | U5 PH — `E1` direction (`D3`) |
 | 5, 6 | U5, U6 firmware enable, into U11 and never onto a driver's sleep input directly (`T10`) |
 | 7 | U6 VREF2 — `E4` current setpoint, RC-filtered to analog (`D4`, `D12`) |
@@ -238,7 +239,7 @@ Module-local expansion on U9 (ADR-0031 rev 1 d11):
 | J6 | Micro-Fit 3.0, 1×5, horizontal | `E0012` sensing: 1-Wire for U1 and U2, `RT1` |
 | J10 | Micro-Fit 3.0, 1×3, horizontal | Humidity-tract 1-Wire for U3 and U4 |
 | J11, J12 | Micro-Fit 3.0, 1×2, horizontal | `RT2` lead, `SF1` flow switch |
-| J13 | Screw terminal, 2-pole, 5.00 mm | `E6` CO₂ valve — not populated in the baseline |
+| J13 | Screw terminal, 2-pole, 5.00 mm | `E6` CO₂ valve |
 | J14 | 2×14, 2.54 mm | Signal reserve (§5.2) |
 | J15 | Micro-Fit 3.0, 1×4, horizontal | `RT3` and `RT4` leads (§5.2) |
 
