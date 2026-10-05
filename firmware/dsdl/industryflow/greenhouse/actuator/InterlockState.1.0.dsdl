@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# The state of an actuator module's hardware interlocks, read back from their
+# trip lines. The interlocks act without the MCU (ADR-0015 d11, ADR-0031 d7);
+# this record reports them and nothing else.
+#
+# Bit n of each mask is the module's n-th interlock line; which trip that is
+# belongs to the module specification. `latched` holds every line that has
+# tripped since the node started, so a trip shorter than the publication
+# period is still seen.
+uavcan.time.SynchronizedTimestamp.1.0 timestamp
+uint8 tripped          # lines tripped now
+uint8 latched          # lines tripped at any time since reset
+@extent 16 * 8
