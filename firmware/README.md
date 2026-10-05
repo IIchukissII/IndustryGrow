@@ -7,8 +7,8 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 Firmware for the IndustryGrow Cyphal/CAN sensor nodes. One codebase, one carrier (`E0001`), one
 MCU (STM32F405RGT6 on a WeAct STM32F4 64-Pin Core Board, ADR-0002 rev 3). **One application
-image** holds every module personality; the module-ID strap selects among them at boot
-(ADR-0017 rev 2 d16). A node carries two components: a bootloader at the reset vector and that
+image** per carrier revision holds every module personality; the module class ID selects among
+them at boot (ADR-0017 rev 2 d16). A node carries two components: a bootloader at the reset vector and that
 application in one of two slots (ADR-0029 d1). Sources are `AGPL-3.0-or-later` (ADR-0002 d5); this document is
 `CC-BY-SA-4.0`.
 
@@ -20,6 +20,8 @@ application in one of two slots (ADR-0029 d1). Sources are `AGPL-3.0-or-later` (
 | M01-CLIMATE (`E0002`) | Verified on hardware 2026-08-24; ten subjects publish (4112–4121) |
 | M02-LIGHT (`E0003`) | Written against the datasheets; four subjects (4128–4131). **No hardware — nothing in M02 spec §11 is executed** |
 | M04-PLANT (`E0005`) | Written against the datasheet; one subject (4144) plus an interval frame served over `uavcan.file.Read`. **No hardware — nothing in M04 spec §11 is executed** |
+| A01-CLIMATE (`E0011`) | Written against the datasheets and the `E0011-000001` netlist; eleven subjects (4352–4362), six demand subscriptions (4368–4373). Selected only by an `E0001-000100` image. **No hardware — nothing in A01 spec §11 is executed** |
+| `E0001-000100` image | Class ID read from the module EEPROM, strap fallback (E0001 spec `F2`–`F5`). **Node-ID still from the flash store, not from `U4` (`F8`)** |
 | Node-ID store (ADR-0027) | Built; verified on hardware 2026-08-28 |
 | U3 temperature offset | Implemented as vendor command 3; applied per instance `-CC` (ADR-0028) |
 | Boot chain (ADR-0029) | Verified on hardware 2026-08-29: hand-over, fallback, update-state write |
@@ -40,7 +42,8 @@ A Cyphal/CAN node. Application protocol and wire vocabulary are fixed elsewhere.
   accumulated S0 energy is joule (ADR-0005 rev 1 d3); door and leak are minimal `safety` status
   types with no command field (M05 is sense-only, ADR-0018 d9).
 - **Identity** — three values from three sources, none standing in for another (ADR-0027 d9).
-  Module *class* from the ID straps at boot (ADR-0014 rev 6 d6, d8). Cyphal `unique_id` from the
+  Module *class* at boot from the ID straps on `E0001-000003`, from byte 0 of the module EEPROM on
+  `E0001-000100` (ADR-0014 rev 4 d6, d8). Cyphal `unique_id` from the
   ATECC608 serial, STM32 factory UID as fallback (ADR-0027 d8). *Node-ID* from the flash store
   below. Role and zone are gateway-side tags, not firmware (ADR-0014 rev 6 d7).
 
@@ -59,8 +62,8 @@ A Cyphal/CAN node. Application protocol and wire vocabulary are fixed elsewhere.
 ## Layout
 
 The **carrier `E0001` is the parent**: `common/carrier/` owns the bus, LEDs, MCU socket and node
-identity shared by every node. A **node `nodes/<type>/` is a child**: it asserts a module-ID strap
-pattern and adds its sensor personality. M03 becomes a sibling `nodes/`, adding one line to
+identity shared by every node. A **node `nodes/<type>/` is a child**: it carries a module class ID
+and adds its sensor or actuator personality. M03 becomes a sibling `nodes/`, adding one line to
 `nodes/registry.c`.
 
 ```
@@ -79,6 +82,7 @@ firmware/
 │   │               partition.h image.{h,c} update_state.{h,c} crc32.{h,c}
 │   │               sha256.{h,c}   ← the ADR-0029 flash map, shared by both images
 │   ├── drivers/    can i2c uart   ← bxCAN, I2C1, debug UART (register-level)
+│   │               onewire pwm    ← header 1-Wire (PA0) and PWM_1–PWM_4 (TIM3)
 │   └── cyphal/     cyphal registers ← Heartbeat/GetInfo/register/ExecuteCommand
 ├── nodes/
 │   ├── registry.c                ← module-ID → personality table (the ONLY file
@@ -95,9 +99,14 @@ firmware/
 │   └── m04_plant/
 │       ├── module_id.h (0x04)  sensors.{h,c}
 │       │   frame.{h,c} (accumulation + served file) flatfield.{h,c} (the trim)
-│       └── drivers/  mlx90640 (imager) m24c64 (trim store U2)
+│   │   └── drivers/  mlx90640 (imager) m24c64 (trim store U2)
+│   └── a01_climate/
+│       ├── module_id.h (0x80)  actuators.{h,c}
+│       │   condition.{h,c} (dead band, dwell, slew, derates)
+│       └── drivers/  pca9685 (drive expansion U9) ds18b20 (U1–U4)
 ├── dsdl/industryflow/greenhouse/
 │   ├── safety/    DoorStatus, LeakStatus
+│   ├── actuator/  Demand, ElementState, InterlockState
 │   ├── climate/   RelativeHumidity, Co2Concentration, GasResistance
 │   ├── light/     SpectralSample, PhotonFluxDensity, Irradiance, FlickerStatus
 │   └── plant/     CanopyThermalSummary
@@ -182,6 +191,22 @@ and `frame_available` (ADR-0005 d11, d12). Its flat-field trim arrives the other
 `uavcan.file.Write` at `/plant/flatfield.bin`, and is committed to the module's own EEPROM bound to
 the imager's device ID (ADR-0028 d10).
 
+| ID | A01 subject | Source | Type |
+|----|-------------|--------|------|
+| 4352 | WB1 block temperature | U1 DS18B20 | `uavcan.si.sample.temperature.Scalar` (K) |
+| 4353 | main exchanger base temperature | U2 DS18B20 | `uavcan.si.sample.temperature.Scalar` (K) |
+| 4354 | subcooler coil base temperature | U3 DS18B20 | `uavcan.si.sample.temperature.Scalar` (K) |
+| 4355 | reheater base temperature | U4 DS18B20 | `uavcan.si.sample.temperature.Scalar` (K) |
+| 4356–4361 | applied demand and drive state, `E1`–`E6` | firmware | `…actuator.ElementState` |
+| 4362 | interlock lines `T2`–`T5`, now and latched | `GPIO_1`–`GPIO_4` | `…actuator.InterlockState` |
+| 4368–4373 | demand, `E1`–`E6` (subscribed) | gateway | `…actuator.Demand` |
+
+A temperature publishes only once its DS18B20 ROM code is written to `a01.ow.rom`
+(U1–U4, `natural64[4]`); vendor command 1 lists the codes the boot search found. `E6` neither
+subscribes nor publishes until `a01.valve` marks the valve fitted (A01 spec `F12`). The other
+commissioning registers are `a01.drive`, `a01.thermal`, `a01.fan` and `a01.e1.heat_ph`,
+defaulting to the specification's values. **None persists across power-up** (ADR-0005 d7).
+
 Only 4112–4114 are admissible for VPD and the climate control loop. 4118–4121 are the secondary
 sources of M01 spec §4; 4120 and 4121 are valid for an instance once its `-CC` is filed (O-45,
 ADR-0028 d9).
@@ -199,6 +224,10 @@ cmake -S firmware -B firmware/build -G Ninja \
       -DCMAKE_TOOLCHAIN_FILE="$PWD/firmware/cmake/arm-none-eabi.cmake"
 cmake --build firmware/build
 ```
+
+The image is built for one carrier revision, `-DIGROW_CARRIER_REV=000003` (the default) or
+`000100` (E0001 spec `F1`). Only a `000100` image reaches an actuator class, because no strap
+carries `0x80`.
 
 Both settings are cached, so later configures may pass only `-DCMAKE_BUILD_TYPE=`. Release is much
 smaller than Debug (~21 KB against ~66 KB). Linker warnings from `nosys.specs` (`_close is not

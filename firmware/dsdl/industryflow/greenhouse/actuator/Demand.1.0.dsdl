@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# A demand for one actuator element and the horizon over which it stays valid
+# (ADR-0015 d18). One subject per independently drivable element (ADR-0031 d4).
+# Minted because no standard type carries a validity deadline (ADR-0005 d2):
+# the UDRAL setpoints rely on a node-side timeout instead.
+#
+# The node conditions and limits the value on its own state and executes it; a
+# demand whose horizon has passed drives the element to its safe output
+# (ADR-0031 rev 1 d6). The horizon counts from reception, so the fail-safe does
+# not depend on the bus time base.
+#
+# `kelvin` is a temperature the element's demand is conditioned against, for
+# the elements that have one: the grow-volume dew-point floor on a main-tract
+# stack, the coil-temperature setpoint on a subcooler. NaN where the element
+# takes none.
+float16 value          # signed -1..+1 or unsigned 0..1 per element; clamped to the element's range
+float32 kelvin         # conditioning temperature, NaN = none
+uint16 horizon_ms      # validity from reception; 0 = drive the safe output now
+@extent 16 * 8

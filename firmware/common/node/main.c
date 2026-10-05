@@ -31,6 +31,9 @@
 #include "cyphal.h"
 #include "can.h"
 #include "uart.h"
+#if IGROW_CARRIER_000100
+#include "i2c.h"
+#endif
 
 /* This image's vector table, placed first by the linker script. Its address is
  * both what VTOR must point at and how the image learns which slot it runs
@@ -62,7 +65,8 @@ int main(void)
     e0001_init();
     uart_init();
 
-    uart_puts("\r\nIndustryGrow node firmware (carrier E0001) v");
+    uart_puts(IGROW_CARRIER_000100 ? "\r\nIndustryGrow node firmware (carrier E0001-000100) v"
+                                   : "\r\nIndustryGrow node firmware (carrier E0001-000003) v");
     uart_put_u32(IGROW_IMAGE_VERSION_MAJOR);
     uart_putc('.');
     uart_put_u32(IGROW_IMAGE_VERSION_MINOR);
@@ -85,17 +89,35 @@ int main(void)
      * and because a trial image confirms itself out of it further down. */
     update_state_load();
 
-    /* Module-ID strap -> personality (ADR-0014 rev 4 d6, ADR-0017 d16).
+    /* Module class ID -> personality (ADR-0014 rev 4 d6, ADR-0017 d16).
      *
-     * The strap carries 3 bits on this carrier revision, so it reaches classes
-     * 0x01..0x07 -- every sensor class defined today. Actuator classes start at
-     * 0x80 and need the EEPROM transport of E0001-000100; this image is built
-     * for the strap carrier and does not attempt to fall back between the two. */
+     * E0001-000003: the 3-bit strap, reaching classes 0x01..0x07 -- every
+     * sensor class defined today. E0001-000100: the module EEPROM first, the
+     * strap only when nothing answers at 0x50 (E0001 spec F2, F4). An EEPROM
+     * that answers but cannot be read is unidentified, never a strap module:
+     * F2 forbids reading the pins of a module that carries an EEPROM. */
+#if IGROW_CARRIER_000100
+    uint8_t module_id = 0x00u;
+    bool eeprom_answered = false;
+    i2c_init();
+    const int eeprom_rc = e0001_read_class_id(&module_id, &eeprom_answered);
+    if (!eeprom_answered) {
+        module_id = e0001_read_module_id();
+        uart_puts("module EEPROM absent; module-id strap = 0b");
+        uart_put_bin3(module_id);
+    } else {
+        if (eeprom_rc != 0) {
+            module_id = 0x00u;
+        }
+        uart_puts("module class ID (EEPROM 0x50) = ");
+        put_hex8(module_id);
+    }
+#else
     uint8_t module_id = e0001_read_module_id();
-    const node_personality_t *node = node_for_module_id(module_id);
-
     uart_puts("module-id strap = 0b");
     uart_put_bin3(module_id);
+#endif
+    const node_personality_t *node = node_for_module_id(module_id);
     if (node != NULL) {
         uart_puts(" -> ");
         uart_puts(node->name);

@@ -72,6 +72,12 @@ static struct {
     cyphal_service_fn fn;
     CanardRxSubscription sub;
 } s_served[CYPHAL_SERVED_MAX];
+/* Messages a personality subscribes to. */
+static struct {
+    uint16_t port; /* 0 = free */
+    cyphal_message_fn fn;
+    CanardRxSubscription sub;
+} s_subscribed[CYPHAL_SUBSCRIBED_MAX];
 static bool s_pending_reset; /* set by ExecuteCommand RESTART, acted on after TX flush */
 static const char *s_node_name = "org.industrygrow.node"; /* set by cyphal_init() */
 
@@ -259,6 +265,36 @@ bool cyphal_serve(uint16_t service_id, size_t extent, cyphal_service_fn fn)
                                  &s_served[i].sub) >= 0;
     }
     return false;
+}
+
+bool cyphal_subscribe(uint16_t subject_id, size_t extent, cyphal_message_fn fn)
+{
+    if ((subject_id == 0u) || (fn == NULL)) {
+        return false;
+    }
+    for (unsigned i = 0; i < CYPHAL_SUBSCRIBED_MAX; i++) {
+        if ((s_subscribed[i].port != 0u) && (s_subscribed[i].port != subject_id)) {
+            continue;
+        }
+        s_subscribed[i].port = subject_id;
+        s_subscribed[i].fn = fn;
+        return canardRxSubscribe(&s_canard, CanardTransferKindMessage,
+                                 (CanardPortID)subject_id, extent,
+                                 CANARD_DEFAULT_TRANSFER_ID_TIMEOUT_USEC,
+                                 &s_subscribed[i].sub) >= 0;
+    }
+    return false;
+}
+
+static void handle_subscribed(const CanardRxTransfer *t)
+{
+    for (unsigned i = 0; i < CYPHAL_SUBSCRIBED_MAX; i++) {
+        if ((s_subscribed[i].port != 0u) && (s_subscribed[i].port == t->metadata.port_id)) {
+            s_subscribed[i].fn(t->metadata.remote_node_id,
+                               (const uint8_t *)t->payload, t->payload_size);
+            return;
+        }
+    }
 }
 
 bool cyphal_subscribe_response(uint16_t service_id, size_t extent, cyphal_response_fn fn)
@@ -476,9 +512,17 @@ static void publish_port_list(void)
     }
     m.publishers.sparse_list.count = n;
 
-    /* Subscribers: none. The node consumes no subjects, only services. */
+    /* Subscribers: the time base, plus whatever the personality consumes --
+     * an actuator's demands. */
     uavcan_node_port_SubjectIDList_1_0_select_sparse_list_(&m.subscribers);
-    m.subscribers.sparse_list.count = 0;
+    n = 0;
+    m.subscribers.sparse_list.elements[n++].value = uavcan_time_Synchronization_1_0_FIXED_PORT_ID_;
+    for (unsigned i = 0; i < CYPHAL_SUBSCRIBED_MAX; i++) {
+        if (s_subscribed[i].port != 0u) {
+            m.subscribers.sparse_list.elements[n++].value = s_subscribed[i].port;
+        }
+    }
+    m.subscribers.sparse_list.count = n;
 
     /* Servers: the three the skeleton answers, plus whatever the personality
      * registered -- M04's file services are discoverable the same way its
@@ -785,6 +829,8 @@ static void pump_rx(void)
                 if (transfer.metadata.port_id ==
                     uavcan_time_Synchronization_1_0_FIXED_PORT_ID_) {
                     handle_timesync(&transfer);
+                } else {
+                    handle_subscribed(&transfer);
                 }
             } else if ((s_resp_fn != NULL) && (transfer.metadata.port_id == s_resp_port)) {
                 /* The source and the transfer-ID travel with the payload: a

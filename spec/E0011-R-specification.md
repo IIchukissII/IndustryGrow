@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # A01-CLIMATE — module specification
 
 - **Status:** Working specification, pre-schematic capture. `E0011-000001` laid out, not fabricated
-- **Date:** 2026-10-02
+- **Date:** 2026-10-05
 - **E-number:** `E0011` · module class ID `0x80`
 - **Governing ADRs:** ADR-0031 (rev 1), ADR-0032, ADR-0014 (rev 4), ADR-0015, ADR-0016, ADR-0017 (rev 2), ADR-0018, ADR-0003, ADR-0002 (rev 3)
 - **Companions:** `E0001-R-specification.md`, `E0012-R-specification.md`, `E0002-R-specification.md`, `E0006-R-specification.md`, `E0008-R-specification.md`, `E0009-R-specification.md`
@@ -103,7 +103,7 @@ own state (`D9`, `D10`, `D11`) and executes it (ADR-0015 d18).
 
 | ID | Element | Device | Command range | Expected operating range | Resolution |
 |---|---|---|---|---|---|
-| `E1` | Main thermoelectric stack | TEC1, TEC2 in `E0012`, series pair | −1.000 … +1.000, signed; positive heats the grow volume | −0.30 … 0 | 0.001 (`verify` against DSDL type, `O-102`) |
+| `E1` | Main thermoelectric stack | TEC1, TEC2 in `E0012`, series pair | −1.000 … +1.000, signed; positive heats the grow volume | −0.30 … 0 | 0.001 |
 | `E2` | Main-tract fan | `SP0008` in `E0012`, integral to HX1 | 0.000 … 1.000 | 0.4 … 1.0 continuous, 1.0 in the `D15` pulse | 0.001 |
 | `E3` | Subcooler thermoelectric module | 1 × 40 × 40 mm module | 0.000 … 1.000, unsigned; cooling only | 0 … 0.30 | 0.001 |
 | `E4` | Reheater | Thermoelectric module bridging WB2 and HX3, cold face on WB2 | 0.000 … 1.000, unsigned; heating only | 0 … 0.35 | 0.001 |
@@ -273,7 +273,7 @@ specification, and none carries a published quantity.
 | `D7` | Demand slew is limited to 0.05 s⁻¹ on `E1` and `E3` (commissioning value, `F7`) | ADR-0015 d18 |
 | `D8` | A demand whose validity deadline has expired drives its element to the safe output: `E1`, `E3`, `E4`, `E6` to zero; `E2` and `E5` to full | ADR-0031 rev 1 d6 |
 | `D9` | Water-block temperature from U1 derates every thermoelectric demand: full scale below 35 °C, linear to zero at **45 °C**, re-enable below 32 °C (`verify`). Runs on the node and applies to any commanded value | ADR-0031 d4 |
-| `D10` | Main exchanger base temperature from U2 is floored so the surface stays above the grow-volume dew point. The operative floor arrives with the demand — 13.4 °C day, 3.7 °C night at the wet edge of the band, computed from the §2.2 setpoints and VPD band. The node holds a commissioned absolute minimum of 3.0 °C (commissioning value, `F7`) that no command lowers. `E1` cooling demand is derated to hold whichever floor is higher | ADR-0032 d5, ADR-0015 d18, `O-102` |
+| `D10` | Main exchanger base temperature from U2 is floored so the surface stays above the grow-volume dew point. The operative floor arrives with the demand — 13.4 °C day, 3.7 °C night at the wet edge of the band, computed from the §2.2 setpoints and VPD band. The node holds a commissioned absolute minimum of 3.0 °C (commissioning value, `F7`) that no command lowers. `E1` cooling demand is derated to hold whichever floor is higher | ADR-0032 d5, ADR-0015 d18, §10.1 |
 | `D11` | `E3` is unidirectional. Its demand is conditioned against a coil-temperature setpoint measured at U3, with a hard floor of **+1 °C** (commissioning value, `F7`) below which cooling demand is driven to zero | ADR-0032 d4, ADR-0003 d7 |
 | `D12` | `E4` is the last element of the humidity tract, downstream of HX2, and pumps from WB2 rather than dissipating. `E4` is inhibited whenever `T5` is tripped or `E5` demand is below `D13`'s minimum | `T5`, ADR-0032 d7 |
 | `D13` | `E5` starts with a full-scale pulse before settling to its commanded duty, and commanded duty below the fan's stable minimum is driven as zero. Pulse duration and that minimum are `SP0008`'s and are unset; the superseded part's 250 ms and 0.15 do not carry over | `E5`, `O-128` |
@@ -348,8 +348,26 @@ The tract's designed parts — `TB1`, the exchanger sections of `M10`, the wall 
 | `F8` | Loss of U1 for more than 5 s (`verify`) is treated as the `D9` ceiling reached; loss of U2 or U3 drives `E1` or `E3` respectively to zero | `D9`, `D10`, `D11` |
 | `F9` | A `nFAULT` assertion drives both strings to zero, is published as drive state `fault`, and is latched until the node is reset | U5, U6 |
 | `F10` | The humidity setpoint the node accepts is a **coil temperature** for U3, not a humidity or VPD value. No M01 quantity is an input to this node | ADR-0032 d4, ADR-0031 d8, `D11` |
-| `F11` | Loss of the U9 I²C link drives every U9-borne element to its `D8` safe output. `E2` and `E5` are wired so that a de-asserted U9 output runs them at full without firmware acting | ADR-0031 rev 1 d6, d11, `O-113` |
+| `F11` | Loss of the U9 I²C link drives every U9-borne element to its `D8` safe output. `E2` and `E5` are wired so that a de-asserted U9 output runs them at full without firmware acting | ADR-0031 rev 1 d6, d11, `O-113`, `O-135` |
 | `F12` | An unpopulated branch publishes no demand echo and accepts no demand for its elements | §3.4, ADR-0014 d2 |
+
+### 10.1 Subjects
+
+Baked defaults in the unregulated range. ADR-0005 d7 makes these `uavcan.pub.<name>.id` and
+`uavcan.sub.<name>.id` register entries.
+
+| ID | Direction | Quantity | Type |
+|----|-----------|----------|------|
+| 4352–4355 | publish | U1–U4 temperature, §3.2 | `uavcan.si.sample.temperature.Scalar` |
+| 4356–4361 | publish | Applied demand and drive state, `E1`–`E6` | `industryflow.greenhouse.actuator.ElementState` |
+| 4362 | publish | `T2`–`T5` line state, now and latched (`F5`) | `industryflow.greenhouse.actuator.InterlockState` |
+| 4368–4373 | subscribe | Demand and validity horizon, `E1`–`E6` | `industryflow.greenhouse.actuator.Demand` |
+
+| `Demand` field | `E1` | `E2`, `E5` | `E3` | `E4`, `E6` |
+|---|---|---|---|---|
+| `value` | −1 … +1 | 0 … 1 | 0 … 1 | 0 … 1 |
+| `kelvin` | `D10` floor; NaN = commissioned minimum only | NaN | `D11` coil setpoint; NaN = no demand executed | NaN |
+| `horizon_ms` | validity from reception; 0 = `D8` safe output | same | same | same |
 
 ## 11. Verification
 
@@ -393,7 +411,7 @@ The tract's designed parts — `TB1`, the exchanger sections of `M10`, the wall 
 
 - `O-100` — `E0001-000100` is specified but not laid out and not fabricated; owned by `spec/E0001-R-specification.md`, consumed here. A01 cannot run on `E0001-000003`: actuator class IDs need the EEPROM transport (ADR-0031 d10). Blocks fabrication of this module.
 - ~~`O-101`~~ — ~~No actuator-taxonomy ADR (ADR-0014 d9).~~ — closed 2026-09-07 by ADR-0031.
-- `O-102` — No DSDL type for a signed or unsigned actuator demand with a validity deadline. Blocks `F3`.
+- ~~`O-102`~~ — ~~No DSDL type for a signed or unsigned actuator demand with a validity deadline.~~ — closed 2026-10-05 by `industryflow.greenhouse.actuator.Demand.1.0`, §10.1.
 - `O-103` — Thermoelectric module not selected; α, R, K, clamping force and TIM are unconfirmed, and L1–L3 and C32–C34 follow from them. Driver continuous RMS current by package is unread. TEC4 is a separate selection under this item and is not the TEC1–TEC3 part: bounded below by `D16`'s largest lift, above by `T11`'s conductance ceiling. Blocks `D1`, `D4`, `D16`, `M1`, `M2`, `T11`.
 - `O-104` — Vega 650 startup behaviour, the ramp and the sequence of one output against another, is unconfirmed against the manual, and the per-module inhibit or enable option is an ordering suffix that has not been chosen. Output isolation is confirmed at 200 V dc operational and no longer part of this item. Blocks `P2`.
 - `O-105` — Envelope conductance is computed, not identified (ADR-0016 survey). Blocks sufficiency of `T1` and the `D10` floor.
@@ -411,6 +429,7 @@ The tract's designed parts — `TB1`, the exchanger sections of `M10`, the wall 
 - `O-114` — The luminaire's position relative to the grow volume sets 19 W or 32 W of §2.2 day load and decides whether `D10` binds at the wet edge of the band. Owned by A02-LIGHT and the enclosure, consumed here.
 - ~~`O-115`~~ — ~~No governing ADR for cabinet climate conditioning.~~ — closed 2026-09-08 by ADR-0032.
 - `O-134` — U6 has one `TOFF` pin for `E3` and `E4`. `E4` near 1.6 V needs about 7 % duty from `+24 V`, which the 1.5 µs minimum on-time reaches only at the longer off-times, and the longer off-time raises `E3`'s ripple in L2. The U6 off-time, L2, L3 and C33–C34 are set together, after `O-103`. Blocks `D4`.
+- `O-135` — U9 `OE` is tied to GND, so a U9 that keeps its supply while its I²C link is lost holds its last outputs: `FW_EN_U6`, `E4` enable and `VREF2`, and the `E2` and `E5` duties. `E1` and `E3` stop from the header lines; `E4`, `E2` and `E5` do not reach their `D8` safe output. Blocks `F11`.
 
 ## 13. Maturity
 
@@ -420,6 +439,6 @@ The tract's designed parts — `TB1`, the exchanger sections of `M10`, the wall 
 | Schematic-frozen | Not reached |
 | As-built | Not reached |
 
-Next rung requires: `O-102`, `O-103` and `O-104` closed, and the component values that
+Next rung requires: `O-103`, `O-104` and `O-135` closed, and the component values that
 follow — L1–L3, C32–C34 and the driver off-times — computed against the selected thermoelectric
 modules. Both `VREF` dividers and the `U7` and `U8` thresholds are computed.

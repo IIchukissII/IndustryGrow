@@ -4,8 +4,8 @@
  */
 
 /*
- * The module-ID -> personality table. One entry per built node type; the strap
- * read at boot selects among them (ADR-0017 d16).
+ * The module-ID -> personality table. One entry per built node type; the class
+ * ID read at boot -- strap or module EEPROM -- selects among them (ADR-0017 d16).
  *
  * This is the only file that knows every personality, which is what keeps the
  * common boot path (common/node/main.c) free of node-specific code. Adding a
@@ -30,6 +30,8 @@
 #include "m02_light/module_id.h"
 #include "m04_plant/sensors.h"
 #include "m04_plant/module_id.h"
+#include "a01_climate/actuators.h"
+#include "a01_climate/module_id.h"
 
 static const node_personality_t s_personalities[] = {
     {
@@ -59,6 +61,13 @@ static const node_personality_t s_personalities[] = {
         .cyphal_name = "org.industrygrow.node.m04",
         .init = m04_sensors_init,
         .spin = m04_sensors_spin,
+    },
+    {
+        .module_id = A01_MODULE_ID,
+        .name = "A01-CLIMATE (E0011)",
+        .cyphal_name = "org.industrygrow.node.a01",
+        .init = a01_actuators_init,
+        .spin = a01_actuators_spin,
     },
 };
 

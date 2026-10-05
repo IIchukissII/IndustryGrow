@@ -12,6 +12,7 @@ typedef enum {
     REG_NATURAL16,
     REG_STRING,
     REG_REAL32,
+    REG_NATURAL64,
 } reg_type_t;
 
 typedef struct {
@@ -23,6 +24,8 @@ typedef struct {
     char str[64];       /* REG_STRING (NUL-terminated) */
     float *f32;         /* REG_REAL32 -- the personality's storage, borrowed */
     uint8_t f32_count;
+    uint64_t *n64;      /* REG_NATURAL64 -- the personality's storage, borrowed */
+    uint8_t n64_count;
 } reg_entry_t;
 
 /* The table. Port-id registers for the sensor subjects (uavcan.pub.*.id) are
@@ -34,10 +37,10 @@ typedef struct {
  * The seam is deliberately one-way: a personality may ADD a register, and
  * nothing removes one, so the index a List walk returns stays stable for the
  * life of the boot. */
-#define REG_CAP 8u
+#define REG_CAP 16u
 static reg_entry_t s_regs[REG_CAP] = {
-    {"uavcan.node.id", REG_NATURAL16, true, true, 0u, {0}, NULL, 0u},
-    {"uavcan.node.description", REG_STRING, true, false, 0u, "IndustryGrow node", NULL, 0u},
+    {"uavcan.node.id", REG_NATURAL16, true, true, 0u, {0}, NULL, 0u, NULL, 0u},
+    {"uavcan.node.description", REG_STRING, true, false, 0u, "IndustryGrow node", NULL, 0u, NULL, 0u},
 };
 static size_t s_reg_n = 2u;
 
@@ -63,6 +66,23 @@ bool registers_add_real32(const char *name, float *values, uint8_t count)
     r->persistent = false;
     r->f32 = values;
     r->f32_count = count;
+    s_reg_n++;
+    return true;
+}
+
+bool registers_add_natural64(const char *name, uint64_t *values, uint8_t count)
+{
+    if ((s_reg_n >= REG_CAP) || (name == NULL) || (values == NULL) ||
+        (count == 0u) || (count > REGISTERS_NATURAL64_MAX)) {
+        return false;
+    }
+    reg_entry_t *r = &s_regs[s_reg_n];
+    r->name = name;
+    r->type = REG_NATURAL64;
+    r->mutable_ = true;
+    r->persistent = false;
+    r->n64 = values;
+    r->n64_count = count;
     s_reg_n++;
     return true;
 }
@@ -117,6 +137,12 @@ static void load_value(const reg_entry_t *r, uavcan_register_Value_1_0 *out)
             out->real32.value.elements[i] = r->f32[i];
         }
         out->real32.value.count = r->f32_count;
+    } else if (r->type == REG_NATURAL64) {
+        uavcan_register_Value_1_0_select_natural64_(out);
+        for (uint8_t i = 0; i < r->n64_count; i++) {
+            out->natural64.value.elements[i] = r->n64[i];
+        }
+        out->natural64.value.count = r->n64_count;
     } else { /* REG_STRING */
         uavcan_register_Value_1_0_select_string_(out);
         size_t len = strlen(r->str);
@@ -162,6 +188,12 @@ void registers_access(const uavcan_register_Name_1_0 *name,
                  * back unchanged and the operator sees the write refused. */
                 for (uint8_t i = 0; i < r->f32_count; i++) {
                     r->f32[i] = in->real32.value.elements[i];
+                }
+            } else if (r->type == REG_NATURAL64 && uavcan_register_Value_1_0_is_natural64_(in) &&
+                       in->natural64.value.count == r->n64_count) {
+                /* All or nothing, as for real32. */
+                for (uint8_t i = 0; i < r->n64_count; i++) {
+                    r->n64[i] = in->natural64.value.elements[i];
                 }
             } else if (r->type == REG_STRING && uavcan_register_Value_1_0_is_string_(in)) {
                 size_t len = in->_string.value.count;

@@ -55,6 +55,14 @@ void registers_init(uint8_t node_id, const char *description);
 #define REGISTERS_REAL32_MAX 16u
 bool registers_add_real32(const char *name, float *values, uint8_t count);
 
+/* As registers_add_real32(), for a natural64 array: an identifier a node must
+ * be told rather than compute. A01's first -- which 1-Wire ROM code is which
+ * sensor, since four DS18B20 on one bus are indistinguishable until someone who
+ * knows where each is mounted says so (A01 spec F7). Same lifetime, same
+ * all-or-nothing write, same absence of a store. */
+#define REGISTERS_NATURAL64_MAX 8u
+bool registers_add_natural64(const char *name, uint64_t *values, uint8_t count);
+
 /* Number of registers, for List index bounds. */
 size_t registers_count(void);
 

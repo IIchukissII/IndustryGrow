@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# The demand an actuator element is executing and why it differs from the one
+# commanded. One subject per element, beside its Demand subject.
+#
+# Applied value and state are one record because they describe one element at
+# one instant: published apart, a zero applied value could not be told from a
+# trip, a derate or a stale demand (ADR-0005, alternative D's atomicity case).
+#
+# Report only. Nothing here is a command, and a consumer cannot re-arm a trip
+# through it (ADR-0015 d11).
+uavcan.time.SynchronizedTimestamp.1.0 timestamp
+
+float16 applied        # after conditioning, in the element's demand range
+
+uint8 STATE_OFF = 0        # no demand, or a demand inside the dead band
+uint8 STATE_RUN = 1        # executing the demand as commanded
+uint8 STATE_INHIBITED = 2  # held off by another element's state or a lost input
+uint8 STATE_DERATED = 3    # executing less than commanded on the node's own limits
+uint8 STATE_TRIPPED = 4    # a hardware interlock has removed the drive
+uint8 STATE_FAULT = 5      # the driver reported a fault; latched until reset
+uint8 state
+
+bool stale             # the last demand's horizon has passed; `applied` is the safe output
+@extent 16 * 8

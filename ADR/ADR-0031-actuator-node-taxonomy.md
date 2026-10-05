@@ -207,7 +207,7 @@ CO₂ accumulation in an occupied room — moves to `A01-CLIMATE`'s unpopulated 
 
 ## Deferred decisions
 
-- **DSDL types for actuator commands.** The signed/unsigned demand with a validity deadline has no wire type (`O-102`). ADR-0005 governs the vocabulary.
+- **DSDL types for actuator commands.** The signed/unsigned demand with a validity deadline has no wire type (`O-102`). ADR-0005 governs the vocabulary. **Discharged 2026-10-05** by `industryflow.greenhouse.actuator.Demand.1.0`, minted under ADR-0005 d2; the field layout is the `.dsdl` file's.
 - **Per-class specifications** for `A02-LIGHT` and `A03-ROOTZONE`, and their class IDs with them.
 - **Commissioning of node-local conditioning constants** — current limits, dead bands, dwell, slew — sit with ADR-0028's custody model; the mechanism for writing them is not specified.
 - **Actuator instance identity and zone tagging** at multi-instance scale, analogous to ADR-0014 d1 and d7.

@@ -146,6 +146,17 @@ bool cyphal_request(uint16_t service_id, uint8_t server_node_id, uint8_t *transf
                     const uint8_t *payload, size_t size);
 bool cyphal_subscribe_response(uint16_t service_id, size_t extent, cyphal_response_fn fn);
 
+/* --- subscriptions: the messages a personality consumes --------------------
+ *
+ * An actuator node takes its demands as messages (ADR-0015 d18), one subject
+ * per element (ADR-0031 d4). The payload is delivered raw, as for a response;
+ * the personality deserializes it. `fn` runs from cyphal_spin(), so it must
+ * return promptly and do no I2C. Returns false when the table is full or the
+ * subscription is refused. Six slots, because A01 takes six demands. */
+#define CYPHAL_SUBSCRIBED_MAX 6u
+typedef void (*cyphal_message_fn)(uint8_t from_node_id, const uint8_t *payload, size_t size);
+bool cyphal_subscribe(uint16_t subject_id, size_t extent, cyphal_message_fn fn);
+
 /* Restart once the TX queue and the CAN mailboxes have drained. This is how
  * ExecuteCommand RESTART is honoured, and what an update request uses after
  * recording itself (ADR-0029 d3): the response must reach the caller before
