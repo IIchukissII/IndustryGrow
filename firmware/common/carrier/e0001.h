@@ -94,11 +94,40 @@
 #define E0001_DBG_AF          7u
 #define E0001_DBG_BAUD        115200u
 
-/* Bring up GPIO clocks and configure LEDs + straps. Call after clock_init(). */
+/* --- Carrier revision --------------------------------------------------- *
+ * One image per carrier revision (E0001 spec F1), chosen at configure time by
+ * IGROW_CARRIER_REV. E0001-000003 identifies a module by the 3-bit strap only.
+ * E0001-000100 carries no strap: the module's 24Cxx EEPROM at 0x50 holds the
+ * 8-bit class ID at byte 0 (ADR-0014 rev 4 d6, E0001 spec F2), and the old strap
+ * positions are the general inputs GPIO_5-GPIO_7. */
+#ifndef IGROW_CARRIER_000100
+#define IGROW_CARRIER_000100 0
+#endif
+
+/* Module EEPROM. 16-bit word address: the class of part the specification names
+ * (M24C64 on E0005 and E0011) takes two address bytes, and a one-byte pointer
+ * write leaves its counter half-set. */
+#define E0001_MODULE_EEPROM_ADDR 0x50u
+#define E0001_CLASS_ID_OFFSET    0u
+
+/* Bring up GPIO clocks and configure LEDs + straps. Call after clock_init().
+ * On E0001-000100 the strap positions are left as inputs with no pull: a module
+ * may drive or pull them, and E0011 pulls GPIO_5 up as its driver-fault line
+ * (E0001 spec F5). */
 void e0001_init(void);
 
-/* Read the 3-bit module-ID strap pattern (bit0=STRAP_0 .. bit2=STRAP_2). */
+/* Read the 3-bit module-ID strap pattern (bit0=STRAP_0 .. bit2=STRAP_2). On
+ * E0001-000100 this is the legacy fallback of spec F4 and applies the
+ * pull-downs itself before reading. */
 uint8_t e0001_read_module_id(void);
+
+#if IGROW_CARRIER_000100
+/* Read the 8-bit class ID from the module EEPROM (E0001 spec F2). Returns 0 and
+ * sets *answered = true when the device ACKs, false when nothing is at 0x50 --
+ * which is the condition under which F4 allows the strap fallback. Needs
+ * i2c_init(). */
+int e0001_read_class_id(uint8_t *class_id, bool *answered);
+#endif
 
 void e0001_led_status(bool on);
 void e0001_weact_led(bool on);

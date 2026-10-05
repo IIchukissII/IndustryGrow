@@ -53,6 +53,21 @@ set(IGROW_SLOT_B_BASE 0x08080000)
 # definition: the C code takes it as a macro and mkimage.py as an argument, so
 # a released image cannot claim a version its node denies. The bootloader is
 # versioned separately -- the two are built, signed and flashed apart.
+# One image per carrier revision (E0001 spec F1). 000003 identifies a module by
+# its 3-bit strap; 000100 reads the 8-bit class ID from the module EEPROM, which
+# is the only transport an actuator class reaches (ADR-0014 rev 4 d6). Both
+# images carry every personality.
+set(IGROW_CARRIER_REV "000003" CACHE STRING "Carrier revision the image is built for: 000003 or 000100")
+set_property(CACHE IGROW_CARRIER_REV PROPERTY STRINGS 000003 000100)
+if(IGROW_CARRIER_REV STREQUAL "000100")
+  set(IGROW_CARRIER_000100 1)
+elseif(IGROW_CARRIER_REV STREQUAL "000003")
+  set(IGROW_CARRIER_000100 0)
+else()
+  message(FATAL_ERROR "IGROW_CARRIER_REV must be 000003 or 000100, got ${IGROW_CARRIER_REV}")
+endif()
+message(STATUS "igrow: carrier E0001-${IGROW_CARRIER_REV}")
+
 set(IGROW_APP_VERSION_MAJOR 0)
 set(IGROW_APP_VERSION_MINOR 1)
 set(IGROW_BOOT_VERSION_MAJOR 0)
@@ -209,7 +224,8 @@ function(igrow_target_settings target)
     "${CMSIS_DEVICE}/Include"
     "${CMSIS_CORE}/CMSIS/Core/Include"
   )
-  target_compile_definitions(${target} PRIVATE STM32F405xx)
+  target_compile_definitions(${target} PRIVATE STM32F405xx
+    IGROW_CARRIER_000100=${IGROW_CARRIER_000100})
   target_compile_options(${target} PRIVATE
     -Wall -Wextra -Wundef -ffunction-sections -fdata-sections
     $<$<CONFIG:Debug>:-Og -g3>
