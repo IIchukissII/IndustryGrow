@@ -171,6 +171,8 @@ set(APP_SOURCES
   common/platform/watchdog.c
   common/drivers/can.c
   common/drivers/i2c.c
+  common/drivers/onewire.c
+  common/drivers/pwm.c
   common/cyphal/cyphal.c
   common/cyphal/registers.c
   # --- personalities, selected at runtime by the module-ID strap ---
@@ -194,6 +196,10 @@ set(APP_SOURCES
   nodes/m04_plant/flatfield.c
   nodes/m04_plant/drivers/mlx90640.c
   nodes/m04_plant/drivers/m24c64.c
+  nodes/a01_climate/actuators.c
+  nodes/a01_climate/condition.c
+  nodes/a01_climate/drivers/pca9685.c
+  nodes/a01_climate/drivers/ds18b20.c
   # --- vendored runtimes + device support ---
   "${LIBCANARD}/libcanard/canard.c"
   "${O1HEAP}/o1heap/o1heap.c"
@@ -218,6 +224,8 @@ function(igrow_target_settings target)
     nodes/m02_light/drivers
     nodes/m04_plant
     nodes/m04_plant/drivers
+    nodes/a01_climate
+    nodes/a01_climate/drivers
     "${LIBCANARD}/libcanard"
     "${O1HEAP}/o1heap"
     "${DSDL_GEN_DIR}"
