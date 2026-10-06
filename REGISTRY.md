@@ -203,6 +203,7 @@ four or five objects, not fourteen.
 | Board version | Package | Loose `D` / `L` faces |
 |---------------|---------|-----------------------|
 | `E0001-000003` (carrier v0.0.3) | `E0001-000003-D-fab.zip` | `-D-pos.csv`, `-D.png`, `-D-pinmap.md`, `-L.csv` |
+| `E0001-000100` (carrier v0.1.0) | `E0001-000100-D-fab.zip` | `-D-pos.csv`, `-D.png`, `-L.csv` |
 | `E0002-000001` (M01 v0.0.1) | `E0002-000001-D-fab.zip` | `-D-pos.csv`, `-D.png`, `-L.csv` |
 | `E0006-000001` (M05 v0.0.1) | `E0006-000001-D-fab.zip` | `-D-pos.csv`, `-D.png`, `-L.csv` |
 | `E0011-000001` (A01 v0.0.1) | `E0011-000001-D-fab.zip` | `-D-pos.csv`, `-D.png`, `-L.csv` |
