@@ -48,7 +48,7 @@ Not specified here:
 | ID transport | Serial EEPROM, 24Cxx class, byte 0, I²C `0x50` (ADR-0014 d6). `E0001-000100` carries no module-ID strap |
 | E-number | `E0011` — first assembly. A populate variant takes its own assembly E-number at design commit (ADR-0017 rev 2 d4) |
 | Bare design | One layout, one class ID, one firmware image |
-| Carrier | `E0001-000100`, `spec/E0001-R-specification.md`. Not laid out — `O-100` |
+| Carrier | `E0001-000100`, `spec/E0001-R-specification.md`. Not fabricated — `O-100` |
 
 ### 2.1 Deployment variant — indoor
 
@@ -409,7 +409,7 @@ Baked defaults in the unregulated range. ADR-0005 d7 makes these `uavcan.pub.<na
 
 ## 12. Open items
 
-- `O-100` — `E0001-000100` is specified but not laid out and not fabricated; owned by `spec/E0001-R-specification.md`, consumed here. A01 cannot run on `E0001-000003`: actuator class IDs need the EEPROM transport (ADR-0031 d10). Blocks fabrication of this module.
+- `O-100` — `E0001-000100` is laid out and not fabricated; owned by `spec/E0001-R-specification.md`, consumed here. A01 cannot run on `E0001-000003`: actuator class IDs need the EEPROM transport (ADR-0031 d10). Blocks fabrication of this module.
 - ~~`O-101`~~ — ~~No actuator-taxonomy ADR (ADR-0014 d9).~~ — closed 2026-09-07 by ADR-0031.
 - ~~`O-102`~~ — ~~No DSDL type for a signed or unsigned actuator demand with a validity deadline.~~ — closed 2026-10-05 by `industryflow.greenhouse.actuator.Demand.1.0`, §10.1.
 - `O-103` — Thermoelectric module not selected; α, R, K, clamping force and TIM are unconfirmed, and L1–L3 and C32–C34 follow from them. Driver continuous RMS current by package is unread. TEC4 is a separate selection under this item and is not the TEC1–TEC3 part: bounded below by `D16`'s largest lift, above by `T11`'s conductance ceiling. Blocks `D1`, `D4`, `D16`, `M1`, `M2`, `T11`.

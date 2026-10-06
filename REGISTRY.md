@@ -36,7 +36,7 @@ Conventions:
 
 | E-number | Designation | Discipline | Notes |
 |----------|-------------|------------|-------|
-| `E0001` | Universal carrier | electrical | One bare design, one assembly — no real variant (ADR-0017 decision 4). Hosts the WeAct core board (`SP0005`). Two revisions, each with its own firmware image: `E0001-000003`, in service, identifies a module by the 3-bit strap; `E0001-000100`, schematic captured and not laid out, identifies it by the 8-bit class ID in the module's EEPROM, carries no strap, and widens Header B to 2×10 for two further analog channels (ADR-0014 rev 4 d6). Both header contracts and both pin assignments are in the specification. Specification: `spec/E0001-R-specification.md`. |
+| `E0001` | Universal carrier | electrical | One bare design, one assembly — no real variant (ADR-0017 decision 4). Hosts the WeAct core board (`SP0005`). Two revisions, each with its own firmware image: `E0001-000003`, in service, identifies a module by the 3-bit strap; `E0001-000100`, laid out and not fabricated, identifies it by the 8-bit class ID in the module's EEPROM, carries no strap, and widens Header B to 2×10 for two further analog channels (ADR-0014 rev 4 d6). Both header contracts and both pin assignments are in the specification. Specification: `spec/E0001-R-specification.md`. |
 | `E0002` | M01-CLIMATE sensor module | electrical | Module-ID strap `0b001`. Air *state* at the canopy: SHT45, BME688, SCD41 — all board-mounted. Airflow moved to `E0008` (ADR-0014 rev 2). `E0002-000001` fabricated; bench bring-up 2026-08-24, all ten subjects published; node draw measured (V3, 2026-08-26). Specification: `spec/E0002-R-specification.md`. |
 | `E0003` | M02-LIGHT sensor module | electrical | Module-ID strap `0b010`. Photic: AS7343 14-channel spectral + TSL2585 UV-A, separated by a TCA9543A I2C switch since both answer at 0x39 (ADR-0014 rev 6). `E0003-000001` carries this complement in both schematic and layout, and is fabricated. Specification: `spec/E0003-R-specification.md`. |
 | `E0004` | M03-ANALYTICS sensor module | electrical (mixed-signal) | Module-ID strap `0b011`. Hydroponic solution: pH (LMP7721 front-end), EC (AD5933), DS18B20, ADuM isolation. |
@@ -137,6 +137,7 @@ the board does not have.
 | Board version | `.kicad_dru` scope |
 |---------------|--------------------|
 | `E0001-000003` (carrier v0.0.3) | — |
+| `E0001-000100` (carrier v0.1.0) | — |
 | `E0002-000001` (M01 v0.0.1) | U5, XDFN4 pad pitch |
 | `E0003-000001` (M02 v0.0.1) | — |
 | `E0005-000001` (M04 v0.0.1) | — |
@@ -202,6 +203,7 @@ four or five objects, not fourteen.
 | Board version | Package | Loose `D` / `L` faces |
 |---------------|---------|-----------------------|
 | `E0001-000003` (carrier v0.0.3) | `E0001-000003-D-fab.zip` | `-D-pos.csv`, `-D.png`, `-D-pinmap.md`, `-L.csv` |
+| `E0001-000100` (carrier v0.1.0) | `E0001-000100-D-fab.zip` | `-D-pos.csv`, `-D.png`, `-L.csv` |
 | `E0002-000001` (M01 v0.0.1) | `E0002-000001-D-fab.zip` | `-D-pos.csv`, `-D.png`, `-L.csv` |
 | `E0006-000001` (M05 v0.0.1) | `E0006-000001-D-fab.zip` | `-D-pos.csv`, `-D.png`, `-L.csv` |
 | `E0011-000001` (A01 v0.0.1) | `E0011-000001-D-fab.zip` | `-D-pos.csv`, `-D.png`, `-L.csv` |
