@@ -5,8 +5,8 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 # Universal carrier — module specification
 
-- **Status:** `E0001-000003` fabricated and in service; `E0001-000100` schematic captured, not laid out
-- **Date:** 2026-10-01
+- **Status:** `E0001-000003` fabricated and in service; `E0001-000100` laid out, not fabricated
+- **Date:** 2026-10-06
 - **E-number:** `E0001` · no class ID — the carrier is not a module
 - **Governing ADRs:** ADR-0002 (rev 3), ADR-0007 (rev 1), ADR-0014 (rev 4), ADR-0017 (rev 2), ADR-0018, ADR-0027, ADR-0029, ADR-0031 (rev 1)
 - **Companions:** every module specification in `spec/`; `store/E0001-000003-D-pinmap.md` for the fabricated revision
@@ -47,7 +47,7 @@ Not specified here:
 | Revision | Module identification | Header B | State |
 |---|---|---|---|
 | `E0001-000003` | 3-bit strap pattern on Header B positions 3–5 (ADR-0014 rev 4 d6) | 2×8 | Fabricated, in service |
-| `E0001-000100` | 8-bit class ID read from the module's EEPROM over the header I²C at `0x50` (ADR-0014 rev 4 d6) | 2×10 | Schematic captured, not laid out (`O-100`) |
+| `E0001-000100` | 8-bit class ID read from the module's EEPROM over the header I²C at `0x50` (ADR-0014 rev 4 d6) | 2×10 | Laid out, not fabricated (`O-100`) |
 
 Neither supersedes the other. Each carries its own firmware image. An actuator module runs only
 on `E0001-000100` (ADR-0031 d10).
@@ -82,7 +82,7 @@ on `E0001-000100` (ADR-0031 d10).
 | U2 | TI SN65HVD230, SOIC-8 | CAN transceiver on CAN1 | 3V3 |
 | U3 | Microchip ATECC608B-SSHDA, SOIC-8 | Secure element on I²C2, node identity (ADR-0007 rev 1) | 3V3 |
 | U4 | ST M24C64-RMN6TP, 64 kbit, SO8 | Node-ID store on the header I²C at `0x57`: `E0`–`E2` to 3V3, `WC` to GND. Fitted at `E0001-000100` only, decoupled by C10 100 nF (ADR-0027 d11) | 3V3 |
-| F2 | Fuse, 0.5 A | Bus-input protection | `+12 V` |
+| F2 | PTC resettable fuse, 0.5 A hold, 16 V, 0805. `E0001-000003` is fitted with 0.35 A hold | Bus-input protection | `+12 V` |
 | D4 | SK26AH Schottky | Reverse-polarity protection on the bus input | `+12 V` |
 | D5 | SMBJ16A | Transient suppressor on the bus input | `+12 V` |
 | FB1 | BLM21P ferrite | Bus-input filter | `+12 V` |
@@ -266,7 +266,7 @@ Unassigned processor pins:
 
 ## 9. Open items
 
-- `O-100` — `E0001-000100` has a captured schematic but is not laid out and not fabricated. Blocks every actuator module (ADR-0031 d10).
+- `O-100` — `E0001-000100` is laid out and not fabricated. Blocks every actuator module (ADR-0031 d10).
 - `O-132` — The 3.3 V rail's current bound is not established: the buck's rating, the fitted inductor and the carrier's thermal design have not been read together, and no module specification states its own draw against it. Blocks `P5`.
 
 ## 10. Maturity
@@ -275,6 +275,6 @@ Unassigned processor pins:
 |---|---|
 | Requirements-fixed | Reached for both revisions |
 | **`E0001-000003` as-built** | **Current.** Fabricated, in service, its layout and fabrication outputs released |
-| `E0001-000100` schematic-frozen | Not reached — schematic captured in `store/E0001-000100-S-src.zip`, not laid out |
+| `E0001-000100` schematic-frozen | Not reached — schematic and layout released, `O-132` open |
 
-`E0001-000100` reaches the next rung when its layout exists and `O-132` is closed.
+`E0001-000100` reaches the next rung when `O-132` is closed.
