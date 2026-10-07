@@ -5,7 +5,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 # Universal carrier — module specification
 
-- **Status:** `E0001-000003` fabricated and in service; `E0001-000100` laid out, not fabricated
+- **Status:** `E0001-000003` fabricated and in service; `E0001-000100` ordered, not received
 - **Date:** 2026-10-06
 - **E-number:** `E0001` · no class ID — the carrier is not a module
 - **Governing ADRs:** ADR-0002 (rev 3), ADR-0007 (rev 1), ADR-0014 (rev 4), ADR-0017 (rev 2), ADR-0018, ADR-0027, ADR-0029, ADR-0031 (rev 1)
@@ -47,7 +47,7 @@ Not specified here:
 | Revision | Module identification | Header B | State |
 |---|---|---|---|
 | `E0001-000003` | 3-bit strap pattern on Header B positions 3–5 (ADR-0014 rev 4 d6) | 2×8 | Fabricated, in service |
-| `E0001-000100` | 8-bit class ID read from the module's EEPROM over the header I²C at `0x50` (ADR-0014 rev 4 d6) | 2×10 | Laid out, not fabricated (`O-100`) |
+| `E0001-000100` | 8-bit class ID read from the module's EEPROM over the header I²C at `0x50` (ADR-0014 rev 4 d6) | 2×10 | Ordered, not received (`O-100`) |
 
 Neither supersedes the other. Each carries its own firmware image. An actuator module runs only
 on `E0001-000100` (ADR-0031 d10).
@@ -266,7 +266,7 @@ Unassigned processor pins:
 
 ## 9. Open items
 
-- `O-100` — `E0001-000100` is laid out and not fabricated. Blocks every actuator module (ADR-0031 d10).
+- `O-100` — `E0001-000100` is ordered and not received. Blocks every actuator module (ADR-0031 d10).
 - `O-132` — The 3.3 V rail's current bound is not established: the buck's rating, the fitted inductor and the carrier's thermal design have not been read together, and no module specification states its own draw against it. Blocks `P5`.
 
 ## 10. Maturity
