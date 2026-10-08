@@ -257,6 +257,7 @@ add_executable(igrowboot.elf
   common/carrier/atecc608.c
   common/carrier/identity.c
   common/drivers/can.c
+  common/drivers/i2c.c       # Node-ID store U4 on E0001-000100
   common/cyphal/cyphal.c
   common/cyphal/registers.c
   "${LIBCANARD}/libcanard/canard.c"

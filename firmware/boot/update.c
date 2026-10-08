@@ -17,6 +17,9 @@
 #include "image.h"
 #include "partition.h"
 #include "update_state.h"
+#if IGROW_CARRIER_000100
+#include "i2c.h"
+#endif
 
 #include "uavcan/file/Read_1_1.h"
 #include "uavcan/diagnostic/Severity_1_0.h"
@@ -110,6 +113,10 @@ static uint8_t bus_up(void)
      * bootloader doing something, not running. */
     e0001_weact_led(true);
     atecc608_init();
+#if IGROW_CARRIER_000100
+    /* The Node-ID store is U4 on the header I2C here (E0001 spec F8). */
+    i2c_init();
+#endif
     identity_init();
     const uint8_t node_id = identity_node_id();
     (void)can_init_normal();

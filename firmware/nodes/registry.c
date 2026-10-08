@@ -13,7 +13,7 @@
  *
  * A personality carries no Node-ID. One ID per module class collides as soon as
  * a class has two instances, which ADR-0006 already schedules; ADR-0027 d1 makes
- * the Node-ID an instance value provisioned into carrier flash
+ * the Node-ID an instance value provisioned into the carrier
  * (common/carrier/identity.h) and leaves this table with what it is for --
  * which class means which sensors.
  */

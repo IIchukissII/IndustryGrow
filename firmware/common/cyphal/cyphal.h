@@ -15,7 +15,7 @@
  * on the gateway. The per-node personality (sensor publications) sits on top
  * via cyphal_publish().
  *
- * `node_id` is the instance identity read from the carrier flash store
+ * `node_id` is the instance identity read from the carrier Node-ID store
  * (ADR-0027 d1/d2), not a value derived from the module class. Call
  * cyphal_init() once after can_init_normal(), then cyphal_spin() as often as
  * possible from the main loop.

@@ -23,6 +23,10 @@
  * alone; and identity follows the carrier, so swapping a sensor module leaves
  * the node's number and the gateway's mapping intact.
  *
+ * On E0001-000100 the same record lives in the carrier EEPROM U4 instead (d11,
+ * E0001 spec F8), on the header I2C at 0x57. The flash sector stays reserved
+ * there but is not read: an image built for 000100 has one store, never two.
+ *
  * Provisioning is a write to the `uavcan.node.id` register, effective at the
  * next restart (d5). An unprovisioned node runs as IGROW_NODE_ID_UNPROVISIONED
  * and publishes no telemetry subjects (d6).
@@ -52,7 +56,14 @@
 #define IGROW_IDENTITY_FLASH_SECTOR 11u
 #define IGROW_IDENTITY_FLASH_SIZE   (128u * 1024u)
 
-/* Read and validate the record. Call once at boot, after clock_init(). */
+/* E0001-000100: U4, an M24C64 with E0-E2 to 3V3 (E0001 spec I9). The record
+ * sits at word address 0 and fits one 32-byte page, so a commit is one page
+ * write. */
+#define IGROW_IDENTITY_EEPROM_ADDR  0x57u
+#define IGROW_IDENTITY_EEPROM_WORD  0u
+
+/* Read and validate the record. Call once at boot, after clock_init(), and on
+ * E0001-000100 after i2c_init(). */
 void identity_init(void);
 
 /* The Node-ID this boot is running as: the provisioned value, else
@@ -76,7 +87,8 @@ bool identity_commit_pending(void);
  * running transport invalidates in-flight transfer state.
  *
  * Blocks for the sector erase -- of the order of a second, with interrupts
- * masked (common/platform/flash.h). Only ever called from provisioning. */
+ * masked (common/platform/flash.h); on E0001-000100 for one EEPROM page
+ * write, at most 10 ms. Only ever called from provisioning. */
 int identity_commit(uint8_t node_id);
 
 /* Human-readable state for the bring-up console. */
