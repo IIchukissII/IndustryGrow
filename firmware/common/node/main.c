@@ -12,7 +12,7 @@
  * that differs between an E0002 and an E0006 in the socket.
  *
  * Two independent questions are answered here, and neither answers the other
- * (ADR-0027 d1): the strap says WHAT is fitted, the carrier flash store says
+ * (ADR-0027 d1): the class ID says WHAT is fitted, the carrier Node-ID store says
  * WHICH INSTANCE this node is. Telemetry needs both.
  *
  * Nothing here knows what a personality measures. That is the point: a new
@@ -152,9 +152,9 @@ int main(void)
         uart_puts("absent -> STM32 factory UID\r\n");
     }
 
-    /* Instance identity: the Node-ID, read from the dedicated carrier flash
-     * sector (ADR-0027 d2). Not derived from the strap -- one ID per module
-     * class collides the moment a class has two instances. */
+    /* Instance identity: the Node-ID, read from the carrier Node-ID store --
+     * flash sector or U4 (ADR-0027 d2, d11). Not derived from the class -- one
+     * ID per module class collides the moment a class has two instances. */
     identity_init();
     const uint8_t node_id = identity_node_id();
     uart_puts("node identity: ");

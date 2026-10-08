@@ -21,7 +21,7 @@ application in one of two slots (ADR-0029 d1). Sources are `AGPL-3.0-or-later` (
 | M02-LIGHT (`E0003`) | Written against the datasheets; four subjects (4128–4131). **No hardware — nothing in M02 spec §11 is executed** |
 | M04-PLANT (`E0005`) | Written against the datasheet; one subject (4144) plus an interval frame served over `uavcan.file.Read`. **No hardware — nothing in M04 spec §11 is executed** |
 | A01-CLIMATE (`E0011`) | Written against the datasheets and the `E0011-000001` netlist; eleven subjects (4352–4362), six demand subscriptions (4368–4373). Selected only by an `E0001-000100` image. **No hardware — nothing in A01 spec §11 is executed** |
-| `E0001-000100` image | Class ID read from the module EEPROM, strap fallback (E0001 spec `F2`–`F5`). **Node-ID still from the flash store, not from `U4` (`F8`)** |
+| `E0001-000100` image | Class ID read from the module EEPROM, strap fallback (E0001 spec `F2`–`F5`). Node-ID from the carrier EEPROM `U4` at `0x57` (`F8`). **No hardware — `V9` not executed** |
 | Node-ID store (ADR-0027) | Built; verified on hardware 2026-08-28 |
 | U3 temperature offset | Implemented as vendor command 3; applied per instance `-CC` (ADR-0028) |
 | Boot chain (ADR-0029) | Verified on hardware 2026-08-29: hand-over, fallback, update-state write |
@@ -44,7 +44,7 @@ A Cyphal/CAN node. Application protocol and wire vocabulary are fixed elsewhere.
 - **Identity** — three values from three sources, none standing in for another (ADR-0027 d9).
   Module *class* at boot from the ID straps on `E0001-000003`, from byte 0 of the module EEPROM on
   `E0001-000100` (ADR-0014 rev 4 d6, d8). Cyphal `unique_id` from the
-  ATECC608 serial, STM32 factory UID as fallback (ADR-0027 d8). *Node-ID* from the flash store
+  ATECC608 serial, STM32 factory UID as fallback (ADR-0027 d8). *Node-ID* from the store
   below. Role and zone are gateway-side tags, not firmware (ADR-0014 rev 6 d7).
 
 ## Toolchain
@@ -129,27 +129,29 @@ Publishing requires both a provisioned identity and a resolved personality.
 
 ### Provisioning a Node-ID
 
-The store is the last flash sector (`0x080E0000`, sector 11), reserved by the linker script and
-outside the application region. A record is magic, version, Node-ID and CRC; an absent or
-interrupted record reads as unprovisioned.
+On `E0001-000003` the store is the last flash sector (`0x080E0000`, sector 11), reserved by the
+linker script and outside the application region. On `E0001-000100` it is the carrier EEPROM `U4`
+at `0x57` on the header I²C, word address 0 (ADR-0027 d11, E0001 spec `F8`); the flash sector is
+not read there. A record is magic, version, Node-ID and CRC; an absent or interrupted record, or a
+`U4` that does not answer, reads as unprovisioned.
 
 | Step | Effect |
 |---|---|
-| Write `uavcan.node.id` = *n* (0–126) | Sector erased and rewritten. The register reads *n* while the transport still runs on the old value |
+| Write `uavcan.node.id` = *n* (0–126) | Record rewritten. The register reads *n* while the transport still runs on the old value |
 | Restart | *n* is adopted |
 | Write `uavcan.node.id` = 127 | Store cleared; the node returns to unprovisioned |
 
-An out-of-range value or a flash failure leaves the register reading what the store holds, which is
+An out-of-range value or a write failure leaves the register reading what the store holds, which is
 how a rejected write is visible. While a committed value differs from the running one, the node
 repeats a `uavcan.diagnostic.Record` naming it (ADR-0027 d5).
 
 **A flashing tool must not mass-erase.** Writing an image erases only the sectors it covers, and
 the store is not one of them (ADR-0027 d4, ADR-0029 d1). A mass erase de-provisions every node it
-touches.
+touches on `E0001-000003`; on `E0001-000100` the identity stays with the carrier's `U4`.
 
-The commit blocks for the sector erase — of the order of a second, interrupts masked. The erase
-routine runs from RAM and reloads the watchdog itself, because the flash controller stalls every
-flash read while it works; `millis()` loses that interval.
+On `E0001-000003` the commit blocks for the sector erase — of the order of a second, interrupts
+masked. The erase routine runs from RAM and reloads the watchdog itself, because the flash
+controller stalls every flash read while it works; `millis()` loses that interval.
 
 ## Default subject-ID map
 

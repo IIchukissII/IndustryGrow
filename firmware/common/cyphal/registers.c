@@ -45,7 +45,7 @@ static reg_entry_t s_regs[REG_CAP] = {
 static size_t s_reg_n = 2u;
 
 /* uavcan.node.id is the provisioning interface of ADR-0027 d5: mutable and
- * persistent, backed by the carrier flash sector, effective at the next restart
+ * persistent, backed by the carrier Node-ID store, effective at the next restart
  * rather than immediately. It is the only register with a store behind it, so
  * the write path is special-cased here by index rather than generalised into a
  * per-entry hook that nothing else would use. */
@@ -168,7 +168,7 @@ void registers_access(const uavcan_register_Name_1_0 *name,
                 in->natural16.value.count >= 1u) {
                 const uint16_t v = in->natural16.value.elements[0];
                 if (i == REG_IDX_NODE_ID) {
-                    /* Out of range, or a flash failure, leaves the register
+                    /* Out of range, or a store failure, leaves the register
                      * reading what the store actually holds -- which is how an
                      * operator sees the write rejected. 127 is not an identity
                      * (d10), so writing it clears the store rather than being

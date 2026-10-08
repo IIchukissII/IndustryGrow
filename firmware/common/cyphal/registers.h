@@ -20,7 +20,7 @@
  * (node-id, subject-id port assignments) and string (descriptions).
  *
  * One register is not RAM-backed: `uavcan.node.id` is mutable and PERSISTENT,
- * and a write commits to the carrier flash sector behind
+ * and a write commits to the carrier Node-ID store behind
  * common/carrier/identity.h (ADR-0027 d5). It takes effect at the next restart,
  * so between the write and that restart the register reports the committed
  * value while the transport still runs on the previous one. Every other
