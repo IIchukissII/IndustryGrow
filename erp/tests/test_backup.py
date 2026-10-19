@@ -29,6 +29,7 @@ import pytest
 from app.backup import (
     BACKED_UP_COLLECTIONS,
     LIFECYCLE_SUFFIXES,
+    _counter_state,
     counters_ahead,
     is_backed_up_object,
     read_manifest,
@@ -107,6 +108,16 @@ def test_matching_or_behind_counters_do_not_block():
     # Archive ahead of live is the normal case after a fresh restore; not a hazard,
     # because rolling *forwards* never re-issues a number.
     assert counters_ahead({"E0002-020100": 2}, {"E0002-020100": 9}) == {}
+
+
+async def test_the_counter_state_is_read_from_real_allocations(db):
+    # The literal-value tests above cannot catch a field-name mismatch between
+    # the allocator and the backup; a zero here disarms the refusal.
+    from app.services import serials
+
+    await serials.allocate(db, "E0002", "020100", 3)
+    await serials.allocate(db, "E0006", "010000", 1)
+    assert await _counter_state(db) == {"E0002-020100": 3, "E0006-010000": 1}
 
 
 # ---------------------------------------------------------------------------

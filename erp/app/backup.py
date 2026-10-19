@@ -107,7 +107,7 @@ async def _counter_state(db) -> dict[str, int]:
     """
     counters: dict[str, int] = {}
     async for doc in db[FOUNDATION["serial_counter"]].find({}):
-        counters[str(doc.get("_id"))] = int(doc.get("last", doc.get("seq", 0)))
+        counters[str(doc.get("_id"))] = int(doc.get("last_serial", 0))
     return counters
 
 
