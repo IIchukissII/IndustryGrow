@@ -7,9 +7,9 @@
 # industrygrow-can.service EnvironmentFile). Idempotent.
 #
 #   vcan*  — virtual CAN: software loopback, carries NO bit rate. Used at bring-up
-#            to validate the stack before any physical hardware (ADR-0002 rev 3).
+#            to validate the stack before any physical hardware (ADR-0002).
 #   canN   — physical CAN: brought up at the FIXED 500 kbit/s classic-CAN rate
-#            (ADR-0002 rev 3 d8 — a single fixed rate, no negotiation). The HAT and
+#            (ADR-0002 d8 — a single fixed rate, no negotiation). The HAT and
 #            its device-tree overlay must already be present so the device exists.
 set -euo pipefail
 

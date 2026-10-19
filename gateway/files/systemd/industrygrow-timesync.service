@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
-# IndustryGrow bus time-synchronization master (ADR-0002 rev 3 d11).
+# IndustryGrow bus time-synchronization master (ADR-0002 d11).
 #
 # Publishes uavcan.time.Synchronization (subject 7168) at least once per second.
 # Every node on the
@@ -51,7 +51,7 @@ MemoryMax=64M
 TasksAccounting=yes
 TasksMax=8
 
-# --- Least-privilege hardening (ADR-0004 rev 1 decision 7) -------------------
+# --- Least-privilege hardening (ADR-0004 decision 7) -------------------
 # Same sandbox as gateway-pycyphal.service. CAN is reached through an AF_CAN
 # socket, granted by RestrictAddressFamilies below — classic SocketCAN exposes no
 # /dev character device, so there is deliberately no DeviceAllow=.

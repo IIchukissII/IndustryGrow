@@ -89,7 +89,7 @@ int main(void)
      * and because a trial image confirms itself out of it further down. */
     update_state_load();
 
-    /* Module class ID -> personality (ADR-0014 rev 4 d6, ADR-0017 d16).
+    /* Module class ID -> personality (ADR-0014 d6, ADR-0017 d16).
      *
      * E0001-000003: the 3-bit strap, reaching classes 0x01..0x07 -- every
      * sensor class defined today. E0001-000100: the module EEPROM first, the

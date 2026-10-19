@@ -76,7 +76,7 @@ static const node_personality_t s_personalities[] = {
 const node_personality_t *node_for_module_id(uint8_t module_id)
 {
     /* 0x00 is reserved (unknown / unprogrammed) and 0xFF is not a valid class
-     * (ADR-0014 rev 4 d6). Neither may match, whatever the table says. */
+     * (ADR-0014 d6). Neither may match, whatever the table says. */
     if ((module_id == 0x00u) || (module_id == 0xFFu)) {
         return NULL;
     }

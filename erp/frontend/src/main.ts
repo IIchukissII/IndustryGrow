@@ -658,7 +658,7 @@ async function firmware(): Promise<string> {
  * machine's certificate on record and the profile version waiting for it — both
  * ERP-owned configuration — and it states plainly that whether the gateway has
  * actually collected that profile is not knowable here. That gap is deliberate
- * (ADR-0022 d8 rev 1, d9): a pull-confirmation write would be a machine
+ * (ADR-0022 d8, d9): a pull-confirmation write would be a machine
  * reporting an operational act. Naming the gap is more honest than a green tick
  * that means "we recorded it", which is what an operator would read it as.
  */
@@ -875,7 +875,7 @@ async function looksTextual(blob: Blob): Promise<boolean> {
  * Open one indexed document over the console.
  *
  * The bytes come from the object store, not from the ERP: they stream through
- * our own origin (ADR-0022 rev 2 d7) and the ERP keeps none of them. Two things
+ * our own origin (ADR-0022 d7) and the ERP keeps none of them. Two things
  * an operator can do with a document, and they need different mechanics:
  *
  * - **Save** uses the bytes already fetched here, so it works for every document

@@ -46,7 +46,7 @@ class ProvisionRequest(BaseModel):
 
 
 class MachineProvisionRequest(BaseModel):
-    """A machine's provisioning binding — public material only (ADR-0022 rev 1 d12).
+    """A machine's provisioning binding — public material only (ADR-0022 d12).
 
     Not ProvisionRequest with a different key: a machine binding carries the two
     facts that identify the *unit* (the SP0004 vendor serial and the ATECC die
@@ -299,7 +299,7 @@ class MachineIdentityOut(BaseModel):
 
     ``expires_in_days`` is computed from the recorded validity, so it answers
     "when does the certificate the ERP knows about expire", which is only the
-    live one if re-certification wrote the binding again (ADR-0022 rev 1 d12).
+    live one if re-certification wrote the binding again (ADR-0022 d12).
     """
 
     machine_id: str
@@ -319,7 +319,7 @@ class GatewayChannelOut(BaseModel):
     Deliberately incomplete, and the field names say where: there is no
     ``last_pulled_at`` and there will not be one. Whether the gateway has actually
     collected its profile is operational, lives in the gateway's own journal, and
-    is excluded from this API by ADR-0022 d9 (see d8, rev 1).
+    is excluded from this API by ADR-0022 d9 (see d8.
     """
 
     machine_id: str

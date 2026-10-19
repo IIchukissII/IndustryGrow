@@ -8,7 +8,7 @@
 #
 # The node conditions and limits the value on its own state and executes it; a
 # demand whose horizon has passed drives the element to its safe output
-# (ADR-0031 rev 1 d6). The horizon counts from reception, so the fail-safe does
+# (ADR-0031 d6). The horizon counts from reception, so the fail-safe does
 # not depend on the bus time base.
 #
 # `kelvin` is a temperature the element's demand is conditioned against, for

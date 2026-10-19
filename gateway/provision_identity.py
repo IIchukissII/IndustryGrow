@@ -685,7 +685,7 @@ def cmd_csr(args: argparse.Namespace) -> int:
 def public_key_fingerprint(public_key: bytes) -> str:
     """SHA-256 over the SubjectPublicKeyInfo — the stable anchor.
 
-    ADR-0007 rev 1 d10d and ADR-0024's deferred deny-list note both key on this
+    ADR-0007 d10d and ADR-0024's deferred deny-list note both key on this
     rather than on a certificate serial, because it survives renewal and
     re-certification under another operator: the key is generated once and never
     regenerated (manual §9).
@@ -826,7 +826,7 @@ def cmd_binding(args: argparse.Namespace) -> int:
             "       --fixture to mark the output as a pipeline exercise, never a real unit."
         )
 
-    # Shaped as the ERP's machine-binding request body (ADR-0022 rev 1 d12), so
+    # Shaped as the ERP's machine-binding request body (ADR-0022 d12), so
     # this file is submittable as-is rather than hand-translated:
     #   curl --cert … --key … -H 'Content-Type: application/json' \
     #        -d @GBOX_0001-binding.json  https://erp/api/v1/machines/GBOX_0001/provisioning
@@ -844,10 +844,10 @@ def cmd_binding(args: argparse.Namespace) -> int:
         named = _cert_common_name(cert)
         if named != args.gbox:
             raise ProvisioningError(f"the certificate names {named}, not {args.gbox}")
-        # Flat, because that is the request body's shape (ADR-0022 rev 1 d12).
+        # Flat, because that is the request body's shape (ADR-0022 d12).
         # These describe one issuance, not the unit: the serial and validity are
         # replaced at every renewal, while machine_id and the fingerprint above
-        # are what survive it (ADR-0007 rev 1 d10d). The API upserts on that
+        # are what survive it (ADR-0007 d10d). The API upserts on that
         # basis, so re-certification submits this file again.
         record["cert_serial"] = _cert_field(cert, "-serial").removeprefix("serial=")
         record["cert_not_before"] = _openssl_date(_cert_field(cert, "-startdate"))

@@ -13,7 +13,7 @@ d2).
 **Where it runs.** One host of your choosing that can reach the gateways it
 serves — a spare box, a NAS, an existing service host. **Not a gateway**: the
 gateway is the stateless replaceable edge (ADR-0004; ADR-0020 d5), so a system of
-record there turns a gateway swap into a data-loss event (ADR-0021 rev 2
+record there turns a gateway swap into a data-loss event (ADR-0021
 decision 1, alternative L).
 
 On top of that architectural rule there is a practical one worth checking before

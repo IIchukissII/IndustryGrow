@@ -10,7 +10,7 @@ shape of this CA and why. This file is the *procedure* and the *numbers* — the
 `what` to that record's `why`, per [ADR-0000](../ADR/ADR-0000-decision-records-and-source-of-truth.md)
 decision 2.
 
-[ADR-0007](../ADR/ADR-0007-pki-and-secure-element-identity-rev1.md) decision 3 roots
+[ADR-0007](../ADR/ADR-0007-pki-and-secure-element-identity.md) decision 3 roots
 trust **per operator**: there is no IndustryGrow root CA, and nobody can issue
 into your deployment but you. That independence is the point, and the price of it
 is this procedure.
@@ -29,7 +29,7 @@ is this procedure.
 
 The gateway leaf's `clientAuth` and cert-derived identity are ADR-0022 decision 2;
 that the identity rides the **CN** specifically is pinned by the deployment, not the
-ADR — see [`erp/deploy/mtls/README.md`](../erp/deploy/mtls/README.md) (ADR-0007 rev 1
+ADR — see [`erp/deploy/mtls/README.md`](../erp/deploy/mtls/README.md) (ADR-0007
 decision 10b keeps `GBOX_NNNN` stable across that CN and, at stage 11, IndustryFlow's
 SAN device segment).
 

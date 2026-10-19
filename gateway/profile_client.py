@@ -52,7 +52,7 @@ from pathlib import Path
 
 GBOX_RE = re.compile(r"^GBOX_[0-9]{4}$")
 
-# ADR-0015 d4 fixes the active-profile path; the rest sit beside it. The
+# ADR-0015 d4 holds the active profile on disk; its path is set here and the rest sit beside it. The
 # last-known-good copy is what ADR-0020 d11's cold boot resumes from when the
 # current file is unreadable.
 CONFIG_DIR = Path(os.environ.get("IGROW_CONFIG_DIR", "/etc/industrygrow"))
@@ -117,7 +117,7 @@ class Config:
 def machine_identity(chain: Path) -> str:
     """This gateway's `GBOX_NNNN`, read from its own certificate's CN.
 
-    ADR-0007 rev 1 d10b puts the machine identifier in the CN verbatim, and
+    ADR-0007 d10b puts the machine identifier in the CN verbatim, and
     ADR-0022 d2 has the ERP authorise the pull by that same string. Reading it
     here rather than from a config variable means the identity the gateway checks
     a profile against cannot drift from the identity it authenticated as — there

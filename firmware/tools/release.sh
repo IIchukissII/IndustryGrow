@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
 # Build the node images and publish the release artifacts into store/ under the
-# ADR-0017 (rev 1) 'F' (Firmware) document layer, rooted on the carrier E0001
+# ADR-0017 'F' (Firmware) document layer, rooted on the carrier E0001
 # (one shared codebase across node types; decision 16):
 #   store/E0001-000001-F-boot.hex    bootloader, sectors 0-3
 #   store/E0001-000001-F-slot-a.hex  application linked for slot A

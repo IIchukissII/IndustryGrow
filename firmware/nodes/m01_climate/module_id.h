@@ -11,7 +11,7 @@
 #ifndef IGROW_M01_MODULE_ID_H
 #define IGROW_M01_MODULE_ID_H
 
-/* Module class ID for M01-CLIMATE (ADR-0014 rev 4 d6: 0x01).
+/* Module class ID for M01-CLIMATE (ADR-0014 d6: 0x01).
  *
  * The identifier is 8-bit; its TRANSPORT depends on the carrier revision. On
  * E0001-000002 and earlier that transport is the 3-bit strap field, which

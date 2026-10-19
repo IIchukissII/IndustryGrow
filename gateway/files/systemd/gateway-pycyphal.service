@@ -1,10 +1,10 @@
 # SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 # SPDX-License-Identifier: CC-BY-SA-4.0
 #
-# IndustryGrow gateway service — Pycyphal/SocketCAN edge (ADR-0002 rev 3 d6).
+# IndustryGrow gateway service — Pycyphal/SocketCAN edge (ADR-0002 d6).
 #
 # Runs as the dedicated unprivileged SYSTEM user `gateway` with a least-privilege
-# sandbox (ADR-0004 rev 1 decision 7). At bring-up it binds vcan0; for physical
+# sandbox (ADR-0004 decision 7). At bring-up it binds vcan0; for physical
 # hardware, change the interface in /etc/industrygrow/gateway.env (see Manual).
 #
 # ExecStart is the telemetry consumer: it subscribes to the node subjects, decodes
@@ -29,7 +29,7 @@ Group=gateway
 
 EnvironmentFile=-/etc/industrygrow/gateway.env
 # /var/lib/industrygrow — created and owned by the service user. Holds the
-# monotonic batch sequence number (ADR-0004 rev 1 d10) and, only on an SSD/NVMe
+# monotonic batch sequence number (ADR-0004 d10) and, only on an SSD/NVMe
 # medium, the bounded store-and-forward buffer (ADR-0020 d2/d10) as
 # telemetry.sqlite3. On the SD bring-up card the buffer stays disabled
 # (IGROW_PERSISTENT_BUFFER=off; ADR-0020 d10; ADR-0004 d8-9 RAM-only), and the
@@ -44,11 +44,11 @@ ExecStart=/opt/industrygrow/venv/bin/python /opt/industrygrow/gateway_telemetry.
 Restart=on-failure
 RestartSec=5
 
-# --- Resource limits (sized for the Pi 3B+ / 1 GB floor, ADR-0002 rev 3 d6) ---
+# --- Resource limits (sized for the smallest supported host, ADR-0002 d6) ---
 # The same unit runs on every gateway (uniformity, ADR-0002), so limits target the
 # smallest supported host, not the one it happens to run on. The dominant memory
-# consumer is the in-memory ring buffer (default 100 MB, ADR-0002 rev 3 d6 /
-# ADR-0004 rev 1 d9); MemoryHigh/Max leave headroom above it for the
+# consumer is the in-memory upload buffer (default 100 MB, ADR-0004 d9;
+# ADR-0020 d7); MemoryHigh/Max leave headroom above it for the
 # Python/Pycyphal runtime while preventing the service from OOM-ing the host. CPU
 # is accounted but not capped — real-time CAN decoding must not be throttled.
 # Tunable per deployment (raise with the ring-buffer size) via a drop-in:
@@ -60,7 +60,7 @@ TasksAccounting=yes
 TasksMax=64
 CPUAccounting=yes
 
-# --- Least-privilege hardening (ADR-0004 rev 1 decision 7) ---
+# --- Least-privilege hardening (ADR-0004 decision 7) ---
 NoNewPrivileges=yes
 ProtectSystem=strict
 ProtectHome=yes

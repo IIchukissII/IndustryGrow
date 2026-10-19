@@ -11,7 +11,7 @@
 #ifndef IGROW_M04_MODULE_ID_H
 #define IGROW_M04_MODULE_ID_H
 
-/* Module class ID for M04-PLANT (ADR-0014 rev 6 d6: 0x04; M04 spec 2).
+/* Module class ID for M04-PLANT (ADR-0014 d6: 0x04; M04 spec 2).
  *
  * The identifier is 8-bit; its TRANSPORT on this carrier revision is the 3-bit
  * strap field, which carries 0x01..0x07. The strap bit index equals the strap

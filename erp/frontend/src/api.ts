@@ -101,10 +101,10 @@ export interface MachineIdentity {
 }
 
 /**
- * What the ERP owns about a machine's gateway channel (ADR-0022 rev 1 d12).
+ * What the ERP owns about a machine's gateway channel (ADR-0022 d12).
  *
  * There is no `last_pulled_at` here and there will not be one: the pull is a
- * pure read and the ERP records no operational act (d8 rev 1, d9). The console
+ * pure read and the ERP records no operational act (d8, d9). The console
  * shows that as a gap rather than the API inventing an answer.
  */
 export interface GatewayChannel {
@@ -297,7 +297,7 @@ export const api = {
   storeDocumentUrl: (key: string) =>
     req<DocumentUrl>("GET", `/store-documents/${encodeURIComponent(key)}/url`),
   /**
-   * Same-origin paths for reading a document through the ERP (ADR-0022 rev 2 d7).
+   * Same-origin paths for reading a document through the ERP (ADR-0022 d7).
    * The bytes stream from the object store and the ERP keeps none of them; going
    * through our own origin is what makes them readable without a CORS policy on
    * the bucket, which the deployment's credentials may not be able to set.

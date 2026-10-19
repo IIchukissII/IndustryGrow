@@ -8,7 +8,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Status:** Working specification, pre-schematic capture. `E0009` not laid out, not fabricated
 - **Date:** 2026-08-04 (restructured to specification form; no decision changed)
 - **E-number:** `E0009` · module-ID strap `0b111`
-- **Governing ADRs:** ADR-0014 (rev 3), ADR-0001, ADR-0002 (rev 3), ADR-0016, ADR-0017 (rev 2), ADR-0018, ADR-0019
+- **Governing ADRs:** ADR-0014, ADR-0001, ADR-0002, ADR-0016, ADR-0017, ADR-0018, ADR-0019
 - **Companions:** `E0002-R-specification.md`, `E0003-R-specification.md`, `E0005-R-specification.md`, `E0006-R-specification.md`, `E0008-R-specification.md`
 
 Rationale for the decisions applied here is in the governing ADRs and is not restated.
@@ -29,7 +29,7 @@ outdoor run (ADR-0002, O-14), gateway-side handling of published subjects (ADR-0
 |---|---|
 | Module class | M07-AMBIENT |
 | Module-ID strap | `0b111` |
-| E-number | `E0009` — first assembly. The second variant takes its own assembly E-number, assigned at design commit (ADR-0017 rev 2 d4) |
+| E-number | `E0009` — first assembly. The second variant takes its own assembly E-number, assigned at design commit (ADR-0017 d4) |
 | Bare design | One layout, one strap, one firmware image, two populated configurations |
 | Carrier | `E0001`, sensor-module header pair (ADR-0014 d5) |
 

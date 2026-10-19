@@ -98,7 +98,7 @@
  * One image per carrier revision (E0001 spec F1), chosen at configure time by
  * IGROW_CARRIER_REV. E0001-000003 identifies a module by the 3-bit strap only.
  * E0001-000100 carries no strap: the module's 24Cxx EEPROM at 0x50 holds the
- * 8-bit class ID at byte 0 (ADR-0014 rev 4 d6, E0001 spec F2), and the old strap
+ * 8-bit class ID at byte 0 (ADR-0014 d6, E0001 spec F2), and the old strap
  * positions are the general inputs GPIO_5-GPIO_7. */
 #ifndef IGROW_CARRIER_000100
 #define IGROW_CARRIER_000100 0

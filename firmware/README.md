@@ -6,9 +6,9 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # IndustryGrow node firmware
 
 Firmware for the IndustryGrow Cyphal/CAN sensor nodes. One codebase, one carrier (`E0001`), one
-MCU (STM32F405RGT6 on a WeAct STM32F4 64-Pin Core Board, ADR-0002 rev 3). **One application
+MCU (STM32F405RGT6 on a WeAct STM32F4 64-Pin Core Board, ADR-0002). **One application
 image** per carrier revision holds every module personality; the module class ID selects among
-them at boot (ADR-0017 rev 2 d16). A node carries two components: a bootloader at the reset vector and that
+them at boot (ADR-0017 d16). A node carries two components: a bootloader at the reset vector and that
 application in one of two slots (ADR-0029 d1). Sources are `AGPL-3.0-or-later` (ADR-0002 d5); this document is
 `CC-BY-SA-4.0`.
 
@@ -39,13 +39,13 @@ A Cyphal/CAN node. Application protocol and wire vocabulary are fixed elsewhere.
   ADR-0005 d6, ADR-0027).
 - **Vocabulary** — DSDL: the OpenCyphal standard `uavcan.*` set plus project
   `industryflow.greenhouse.*` types (ADR-0005). Physical quantities ride `uavcan.si.sample.*`;
-  accumulated S0 energy is joule (ADR-0005 rev 1 d3); door and leak are minimal `safety` status
+  accumulated S0 energy is joule (ADR-0005 d3); door and leak are minimal `safety` status
   types with no command field (M05 is sense-only, ADR-0018 d9).
 - **Identity** — three values from three sources, none standing in for another (ADR-0027 d9).
   Module *class* at boot from the ID straps on `E0001-000003`, from byte 0 of the module EEPROM on
-  `E0001-000100` (ADR-0014 rev 4 d6, d8). Cyphal `unique_id` from the
+  `E0001-000100` (ADR-0014 d6, d8). Cyphal `unique_id` from the
   ATECC608 serial, STM32 factory UID as fallback (ADR-0027 d8). *Node-ID* from the store
-  below. Role and zone are gateway-side tags, not firmware (ADR-0014 rev 6 d7).
+  below. Role and zone are gateway-side tags, not firmware (ADR-0014 d7).
 
 ## Toolchain
 
@@ -119,7 +119,7 @@ Pin assignments are not repeated here; `store/E0001-000003-D-pinmap.md` is the B
 
 ## Identity resolution
 
-A strap value no personality claims is **unidentified**, never a guessed class (ADR-0014 rev 6 d6).
+A strap value no personality claims is **unidentified**, never a guessed class (ADR-0014 d6).
 The node still brings up the Cyphal skeleton and enumerates as
 `org.industrygrow.node.unidentified`, publishing no subjects.
 
@@ -183,7 +183,7 @@ leaving the one before it room to grow.
 |----|-------------|--------|------|
 | 4144 | canopy thermal summary, 32×24 field | U1 MLX90640, derived | `…plant.CanopyThermalSummary` (K) |
 
-4132 and 4133 were UV-B and UV-C and are **retired, not reassigned** (ADR-0014 rev 6): nothing
+4132 and 4133 were UV-B and UV-C and are **retired, not reassigned** (ADR-0014): nothing
 may bind a new quantity to either. 4129 carries a `valid` flag because PPFD needs commissioning
 coefficients the node does not have until they are written (M02 spec 6.2, O-52).
 
@@ -302,7 +302,7 @@ server retries nothing and boots what it already had.
 
 ## Release artifacts (`store/`)
 
-`tools/release.sh` builds the image and publishes it under the ADR-0017 rev 2 **`F` (Firmware)**
+`tools/release.sh` builds the image and publishes it under the ADR-0017 **`F` (Firmware)**
 document layer (see `REGISTRY.md`):
 
 ```
@@ -315,17 +315,17 @@ store/E0001-000001-F-src.zip     # source snapshot of firmware/ at HEAD
 ```
 
 Filed under `E0001` — the carrier whose one codebase every node runs, so firmware identity follows
-the carrier, not the module (ADR-0017 rev 2 d16). One `F` object per firmware version covers every
+the carrier, not the module (ADR-0017 d16). One `F` object per firmware version covers every
 node type. Refreshed in place at the same `F` version while unverified against hardware; `F` bumps
 on a released change. `firmware/build*/` stays git-ignored.
 
 ## References
 
-- ADR-0002 rev 3 — field bus: Cyphal/CAN, MCU, carrier, 500 kbit/s.
-- ADR-0005 rev 1 — DSDL foundation: vocabulary, joule energy, node skeleton, port-IDs.
-- ADR-0014 rev 6 — sensor-node taxonomy: module straps, presence probing, gateway tagging.
-- ADR-0007 rev 1 — PKI and hardware identity: the ATECC608 as identity anchor.
-- ADR-0017 rev 2 — document layers; d16 roots firmware on the carrier.
+- ADR-0002 — field bus: Cyphal/CAN, MCU, carrier, 500 kbit/s.
+- ADR-0005 — DSDL foundation: vocabulary, joule energy, node skeleton, port-IDs.
+- ADR-0014 — sensor-node taxonomy: module straps, presence probing, gateway tagging.
+- ADR-0007 — PKI and hardware identity: the ATECC608 as identity anchor.
+- ADR-0017 — document layers; d16 roots firmware on the carrier.
 - ADR-0029 — node firmware update and bootloader: the flash partition, A/B slots and image header.
 - ADR-0018 — M05 sense-only; door/leak report-only; S0 energy.
 - ADR-0027 — node identity model: the Node-ID store, its survival and `127`.

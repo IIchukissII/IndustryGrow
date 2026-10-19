@@ -32,7 +32,7 @@ services:
     # on a shared host means it reserves against memory the other services are
     # already using. Capped here rather than left to the default: the ERP's working
     # set is small (an index over an object store, ADR-0021 d15), and a host that
-    # also runs something else is the expected case (ADR-0021 rev 2 d1 — a host of
+    # also runs something else is the expected case (ADR-0021 d1 — a host of
     # the operator's choosing). Raise it on a box with room to spare.
     command:
       - mongod

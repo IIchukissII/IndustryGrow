@@ -12,7 +12,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Stage:** roadmap stage 1 (CAN bring-up), bench host `gbox-dev`.
 - **Validated configuration:** Raspberry Pi 5 (8 GB) on Debian 13 trixie / aarch64
   / Python 3.13, incl. a real Waveshare 2-CH MCP2515 HAT at 500 kbit/s. The same
-  unit targets the Pi 3B+ / 1 GB floor (ADR-0002 rev 3 d6).
+  unit targets the Pi 3B+ / 1 GB floor (ADR-0002 d6).
 
 ---
 
@@ -22,12 +22,12 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 |-------|------|--------|
 | **Hostname = position** | `gbox-NNNN` per cabinet; `gbox-dev` for the bench. Set by the Imager. | ADR-0017 d6/d7 |
 | **Users = role** | `igrow` (admin) and `gateway` (service), identical on every box. `GBOX` is never in a username — only the hostname is position-scoped. | ADR-0004 d7; ADR-0017 |
-| **Password / keys = per-instance, off-repo** | No password or private key is in the repo. Per-instance secrets (login/sudo password, SSH keys, future ATECC608 binding + cert) live in a secret manager / IndustryFlow. | ADR-0017 (two-homes); ADR-0019 d2 |
+| **Password / keys = per-instance, off-repo** | No password or private key is in the repo. Per-instance secrets (login/sudo password, SSH keys, future ATECC608 binding + cert) live in a secret manager / IndustryFlow. | ADR-0017 d21; ADR-0019 d2 |
 | **Part = SP0004** | Purchased gateway SBC: no version field; instance-tracked by vendor serial; model in the BOM. | ADR-0019 d2/d7 |
 
 **Supported models (SP0004 variants).** SP0004 is a spec, not one SKU (ADR-0019 d3);
 the chosen model is a BOM line. **Pi 3B+** (apartment minimum), **Pi 4**, **Pi 5**
-(ADR-0002 rev 3 d6). The only model-specific bring-up step is the Pi 5 CAN overlay
+(ADR-0002 d6). The only model-specific bring-up step is the Pi 5 CAN overlay
 ([§6](#6-physical-mcp2515-hat-optional-later)).
 
 ---
@@ -38,7 +38,7 @@ Done once with **Raspberry Pi Imager**, before any automation (the automation ru
 post-first-boot and does **not** image the card).
 
 - **Image:** Raspberry Pi OS **Lite, 64-bit, Trixie (Debian 13)** — headless
-  (ADR-0002 rev 3 d6).
+  (ADR-0002 d6).
 - **Advanced options (Ctrl-Shift-X):**
   - **Hostname:** `gbox-dev` (bench) or `gbox-NNNN` (field).
   - **Username:** `igrow`; set a strong per-instance password (off-repo, §1).
@@ -84,7 +84,7 @@ The script is **idempotent** — safe to re-run after editing
 | Base packages | `python3-venv`, `nftables`, `fail2ban`, `unattended-upgrades`, `can-utils`, `sqlite3`. **No Docker** — one systemd service, not a container. | ADR-0002; ADR-0004 |
 | Service user | System user `gateway`: `adduser --system`, no login shell, no sudo; scoped to CAN + its config dir. | ADR-0004 d7 |
 | Python venv | `/opt/industrygrow/venv`, pinned deps. **Never** `pip --break-system-packages` (PEP 668). | ADR-0002 d6 |
-| vcan0 | Bring up **virtual CAN first** for validation before any HAT. | ADR-0002 rev 3 d6/d8 |
+| vcan0 | Bring up **virtual CAN first** for validation before any HAT. | ADR-0002 d6/d8 |
 | Gateway service | `gateway-pycyphal.service` as `gateway`, hardened sandbox (`NoNewPrivileges`, `ProtectSystem=strict`, `RestrictAddressFamilies=AF_CAN`, `Restart=`) **+ resource limits** (`MemoryMax`/`MemoryHigh`, `TasksMax`) sized for the Pi 3B+/1 GB floor, headroom above the 100 MB ring buffer. Runs `gateway_telemetry.py`: subscribes to the node subjects, decodes them through the DSDL vocabulary, stamps `t_acq`/`t_rx`/`t_store` and writes the local store. Subscribe-only, so it takes no Node-ID. | ADR-0004 d7, d18, d21; ADR-0002 d6; ADR-0020 d2 |
 | DSDL packages | Compiled on the Pi into `/opt/industrygrow/dsdl` from `firmware/dsdl/industryflow` and the pinned regulated set, staged beside `provision.sh` by `deploy.ps1`. Generated code is never vendored. | ADR-0005 d10 |
 | Time master | `industrygrow-timesync.service` as `gateway`, same sandbox. Publishes `uavcan.time.Synchronization` (subject 7168) so nodes stamp telemetry against one time base; without it every node reports `UNKNOWN` (0). Separate unit from the Cyphal edge — the time base must not go stale while that one restarts. | ADR-0002 d11; ADR-0004 d7, d20 |
@@ -133,7 +133,7 @@ reachable on the next boot with the firewall skipped, key-only; then re-run
 
 vcan0 needs none of this — do not configure it for validation. For a physical bus:
 
-1. Fit the isolated 2-channel CAN HAT (MCP2515 + SN65HVD230, ADR-0002 rev 3 d6).
+1. Fit the isolated 2-channel CAN HAT (MCP2515 + SN65HVD230, ADR-0002 d6).
 2. Enable SPI + the MCP2515 overlay in `/boot/firmware/config.txt` and reboot (so
    the `can0` device exists). The **oscillator must match the crystal printed on
    the board**. Validated for the Waveshare 2-CH Isolated CAN HAT (16 MHz crystals):
@@ -155,7 +155,7 @@ vcan0 needs none of this — do not configure it for validation. For a physical 
 3. Set `IGROW_CAN_IFACE=can0` in `/etc/industrygrow/gateway.env`, then re-run
    `provision.sh` (or `sudo systemctl restart industrygrow-can`). The automation
    brings `can0` up at the **fixed 500 kbit/s classic-CAN** rate from
-   `IGROW_CAN_BITRATE` (ADR-0002 rev 3 d8) — no manual `ip link` needed. Verify:
+   `IGROW_CAN_BITRATE` (ADR-0002 d8) — no manual `ip link` needed. Verify:
    `ip -details link show can0` → `bitrate 500000`.
 
 > **A physical bus needs another node.** Classic CAN requires at least one other
@@ -296,8 +296,8 @@ cansend vcan0 123#494752    # should be printed by candump
 ## 12. References (why — owned by the ADRs)
 
 - **ADR-0000** — decision records / single-source-of-truth.
-- **ADR-0002 (rev 3)** — Pycyphal/SocketCAN gateway; classic CAN, 500 kbit/s; Pi tiers.
-- **ADR-0004 (rev 1)** — host hardening (d2 SSH, d3 fail2ban, d4 upgrades, d5/d6 firewall, d7 service user, d11 journald).
+- **ADR-0002** — Pycyphal/SocketCAN gateway; classic CAN, 500 kbit/s; Pi tiers.
+- **ADR-0004** — host hardening (d2 SSH, d3 fail2ban, d4 upgrades, d5/d6 firewall, d7 service user, d11 journald).
 - **ADR-0017** — identification (d6 GBOX, d9 document layers).
 - **ADR-0019** — purchased-part SP scheme (d2 no version, d7 Pi=SP).
 - **ADR-0020** — gateway persistence (SD provisional, SSD/NVMe production).

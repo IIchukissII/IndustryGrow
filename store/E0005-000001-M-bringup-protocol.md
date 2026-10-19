@@ -20,7 +20,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 | Item | Requirement | Source |
 |---|---|---|
-| U1 parts | `MLX90640ESF-BAA-000-TU`. `BAB` is a different assembly E-number | spec §2, §4.1, ADR-0017 rev 2 d4 |
+| U1 parts | `MLX90640ESF-BAA-000-TU`. `BAB` is a different assembly E-number | spec §2, §4.1, ADR-0017 d4 |
 | Footprint print | 1:1 paper plot of `industrygrow:MLX90640_TO-39-4` from `E0005-000001-D-src.zip` | spec §11 V5 |
 | Metrology | Calipers to 0.02 mm | §2 |
 | Jig supply | 3.3 V, ≥ 50 mA | spec §7.2 |
@@ -28,7 +28,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 | Jig fixture | TO-39 4-lead test socket, or flying leads. A 2.54 mm breadboard does not take a Ø5.84 mm lead circle | spec §4.1 |
 | Handling | Can held by the rim; aperture clear of flux and skin; part never rested aperture-down | spec §9 M3, M4 |
 | Board under test | One assembled `E0005-000001` — §4 only | — |
-| Carrier | One `E0001` instance with a WeAct STM32F405RGT6 core board | ADR-0002 rev 3 |
+| Carrier | One `E0001` instance with a WeAct STM32F405RGT6 core board | ADR-0002 |
 | Gateway | `SP0004` on `can0` at 500 kbit/s, terminated, time master running | `SP0004-M-gateway-bringup` |
 | Supply | `+12 V` SELV, with a current readout to 1 mA | ADR-0018, spec §7.1 |
 | Programmer | ST-Link V3 over SWD; console on the VCP, 115200 8N1 | — |
@@ -256,7 +256,7 @@ See `spec/E0005-R-specification.md` §11.
 | ADR-0028 | Calibration-record lifecycle; d10 places the flat field in U2 |
 | ADR-0017 | Document layers and the identifier form |
 | ADR-0005 d7, d11, d12 | Subject set, the served frame, and the register store the deployment constants do not have |
-| ADR-0014 rev 6 d6, d8 | Module-ID strap and presence probing |
+| ADR-0014 d6, d8 | Module-ID strap and presence probing |
 | ADR-0027 d4 | Node-ID store, and why a mass erase de-provisions a node |
 | ADR-0029 d1 | Bootloader and application in separate sectors |
 | `firmware/README.md` | Default subject-ID map and the Node-ID provisioning steps |

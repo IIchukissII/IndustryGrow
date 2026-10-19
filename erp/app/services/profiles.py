@@ -5,7 +5,7 @@
 This is a versioned *store* and a record of *which version is active where* — it
 is NOT a deploy path. There is deliberately no "push to gateway" function: the
 cabinet runs what the gateway pulls into ``active-profile.json``, the single
-mutation channel (ADR-0015 d4). A profile version is one whole document
+mutation channel (ADR-0015 d1). A profile version is one whole document
 (setpoints + model), never split (ADR-0016 alt D).
 """
 

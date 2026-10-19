@@ -19,7 +19,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 | Item | Requirement | Source |
 |---|---|---|
 | Board under test | One `E0002-000001`, assembled | — |
-| Carrier | One `E0001` instance with a WeAct STM32F405RGT6 core board | ADR-0002 rev 3 |
+| Carrier | One `E0001` instance with a WeAct STM32F405RGT6 core board | ADR-0002 |
 | Gateway | `SP0004` on `can0` at 500 kbit/s, terminated | `SP0004-M-gateway-bringup` |
 | Supply | `+12 V` SELV | ADR-0018 |
 | Programmer | ST-Link V3 over SWD | — |
@@ -187,7 +187,7 @@ is discharged by executing it. See `spec/E0002-R-specification.md` §11.
 | ADR-0017 d9 | Document layers, `M` = Manual |
 | ADR-0017 d10 | `-QP` / `-QR` definition |
 | ADR-0017 d16 | One image, personality selected by the module-ID strap |
-| ADR-0017, *Registry and store location* | The instance layer lives platform-side, off this repo |
+| ADR-0017 d21 | The instance layer lives platform-side, off this repo |
 | ADR-0021 d4, d7 | ERP as serial authority; lifecycle-document index over the warehouse |
 | ADR-0014 | Sensor-node taxonomy, module-ID strap, presence probing |
 | `spec/E0002-R-specification.md` | Module specification — expected ranges (§3), published subjects (§10.1), verification (§11), bring-up record (§11.2) |

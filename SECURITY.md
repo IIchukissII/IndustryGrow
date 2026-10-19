@@ -59,9 +59,9 @@ This is a small, early-stage project, so responses are **best effort**:
 The security architecture is described in the Architecture Decision Records
 ([`ADR/`](ADR/)) and is the best context for a report:
 
-- **ADR-0004 (rev 1)** — gateway host hardening, stateless-edge operation,
+- **ADR-0004** — gateway host hardening, stateless-edge operation,
   firmware signing, and the gateway↔IndustryFlow trust boundary.
-- **ADR-0002 (rev 3)** — field bus architecture and the per-node ATECC608 secure
+- **ADR-0002** — field bus architecture and the per-node ATECC608 secure
   element.
 - **ADR-0007** — PKI: ATECC608 binding, certificate provisioning, and
   gateway-to-platform authentication.

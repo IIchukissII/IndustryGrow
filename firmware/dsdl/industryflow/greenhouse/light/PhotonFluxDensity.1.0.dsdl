@@ -5,7 +5,7 @@
 # the standard set carries no photon-flux type (ADR-0005 d2).
 #
 # mol per square metre per second, unscaled SI. The horticultural convention is
-# micromol, and micro is a display prefix -- the same argument ADR-0005 rev 1
+# micromol, and micro is a display prefix -- the same argument ADR-0005
 # made for joule over watt-hour. 300 umol/m2/s is 300e-6 here.
 #
 # Reconstructed on the node from the ten in-window band counts by the

@@ -1,11 +1,11 @@
 # SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 # SPDX-License-Identifier: CC-BY-SA-4.0
 #
-# fail2ban — ADR-0004 rev 1 decision 3 (strict thresholds on SSH).
+# fail2ban — ADR-0004 decision 3 (strict thresholds on SSH).
 # Installed to /etc/fail2ban/jail.local
 #
 # Trixie's fail2ban reads the systemd journal directly (no /var/log/auth.log
-# needed), which fits the journald-only logging posture (ADR-0004 rev 1 d11).
+# needed), which fits the journald-only logging posture (ADR-0004 d11).
 
 [DEFAULT]
 backend         = systemd

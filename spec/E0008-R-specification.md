@@ -8,7 +8,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Status:** Working specification, pre-schematic capture. `E0008` not laid out, not fabricated
 - **Date:** 2026-08-04
 - **E-number:** `E0008` · module-ID strap `0b110`
-- **Governing ADRs:** ADR-0014 (rev 3), ADR-0002 (rev 3), ADR-0003, ADR-0016, ADR-0017 (rev 2), ADR-0018
+- **Governing ADRs:** ADR-0014, ADR-0002, ADR-0003, ADR-0016, ADR-0017, ADR-0018
 - **Companions:** `E0002-R-specification.md`, `E0003-R-specification.md`, `E0005-R-specification.md`, `E0006-R-specification.md`, `E0009-R-specification.md`
 - **Supersedes:** the M06 sections of `M01-M06-air-nodes-specification.md` (2026-08-03), split into this document
 
@@ -30,7 +30,7 @@ module exists), gateway-side handling of published subjects (ADR-0014 d7).
 | Module class | M06-VENTILATION |
 | Module-ID strap | `0b110` |
 | E-number | `E0008` — fully-populated assembly |
-| Bare design | One layout; each standard populated configuration takes its own assembly E-number (ADR-0017 rev 2 d4) |
+| Bare design | One layout; each standard populated configuration takes its own assembly E-number (ADR-0017 d4) |
 | Carrier | `E0001`, sensor-module header pair 2×12 + 2×8 (ADR-0014 d5) |
 
 ## 3. Function

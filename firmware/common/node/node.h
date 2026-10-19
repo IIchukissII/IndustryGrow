@@ -23,7 +23,7 @@
  * identically whichever module is fitted.
  */
 typedef struct {
-    uint8_t module_id;  /* 8-bit class ID, ADR-0014 rev 4 d6 */
+    uint8_t module_id;  /* 8-bit class ID, ADR-0014 d6 */
     const char *name;        /* human, for the debug console */
     const char *cyphal_name; /* reverse-DNS uavcan.node.GetInfo name, <= 50 bytes */
     void (*init)(void); /* called once, before the watchdog starts */
@@ -34,7 +34,7 @@ typedef struct {
  *
  * NULL is a real and expected answer, not an error path: a strap value with no
  * personality means the carrier has no module fitted, an unbuilt module class,
- * or a mis-strapped board. ADR-0014 rev 4 d6 is explicit that an unreadable or
+ * or a mis-strapped board. ADR-0014 d6 is explicit that an unreadable or
  * unknown ID is *unidentified* and never a guessed class, so the caller brings
  * up the standard node skeleton and publishes nothing. */
 const node_personality_t *node_for_module_id(uint8_t module_id);
@@ -46,7 +46,7 @@ const node_personality_t *node_for_module_id(uint8_t module_id);
  * one thing -- no Node-ID provisioned (d10) -- and not "no personality". */
 
 /* GetInfo name when no personality claims the strap. Deliberately its own name
- * rather than a default class: ADR-0014 rev 4 d6 forbids guessing a class from
+ * rather than a default class: ADR-0014 d6 forbids guessing a class from
  * an ID that does not resolve, and the gateway must be able to see the
  * difference between a module it does not know and a module that is missing.
  * This name and the node's health are how an unresolved personality is

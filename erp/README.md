@@ -35,12 +35,12 @@ core; the `domain.*` `[D]` collections stay the IndustryGrow layer.
 
 These are deliberate *absences*. Each would create a second source of truth:
 
-- **No telemetry / operational / forensic trail** — stays platform-side (ADR-0004 rev 1 d10; ADR-0021 d10).
+- **No telemetry / operational / forensic trail** — stays platform-side (ADR-0004 d10; ADR-0021 d10).
 - **No type meaning** — `Exxxx`/`SPxxxx` meaning lives in `REGISTRY.md` (ADR-0021 d11); the ERP references it.
 - **No SKU / price / supplier** — those live in the BOM (ADR-0000; ADR-0021 d9, d11).
 - **No blobs** — the warehouse holds them; the ERP holds keys only (ADR-0021 d7).
 - **No community profile *templates*** — those live in the public registry (ADR-0001 d5); the ERP stores deployment-specific *instance* versions.
-- **No "deploy profile" action** — the gateway's pull into `active-profile.json` is the single mutation channel (ADR-0015 d4; ADR-0021 d12). This app is a *store*, not a deploy path.
+- **No "deploy profile" action** — the gateway's pull into `active-profile.json` is the single mutation channel (ADR-0015 d1; ADR-0021 d12). This app is a *store*, not a deploy path.
 - **No firmware update action, and no record of what a node runs** — the ERP holds the release an operator *intends* (ADR-0021 d18) and serves its images from the warehouse; the gateway compares that against what it observes on the bus and performs the transfer (ADR-0029 d15-17). There is no flash endpoint and no route a machine may write.
 - **No tenancy machinery** — single-tenant now; multitenancy is IndustryFlow's `[F]` concern (ADR-0021 d16).
 

@@ -38,7 +38,7 @@ precedence = "override"
 SPDX-FileCopyrightText = "2026 The IndustryGrow contributors"
 SPDX-License-Identifier = "AGPL-3.0-or-later"
 
-# Vendor reference document retained per ADR-0002 rev 3 d4 (REGISTRY.md). Third-party
+# Vendor reference document retained per ADR-0002 d4 (REGISTRY.md). Third-party
 # content: WeAct publishes it with no licence stated, so it is neither project
 # copyright nor CERN-OHL-S and must override the store/** default above.
 [[annotations]]

@@ -463,7 +463,7 @@ def test_a_store_file_not_yet_mirrored_says_so(client, warehouse):
 
 
 def test_a_document_can_be_read_through(client, warehouse):
-    # ADR-0022 rev 2 d7's third form. The ERP holds no copy — the bytes stream from
+    # ADR-0022 d7's third form. The ERP holds no copy — the bytes stream from
     # the object store — so ADR-0021 d7's "does not duplicate" still holds. It
     # exists because a presigned URL is only spendable by a browser the store has
     # been configured to accept, and a grant that cannot be spent is nothing.
@@ -620,8 +620,8 @@ def _machine_binding(**over) -> dict:
 
 
 def test_a_machine_carries_its_own_provisioning_binding(client):
-    # ADR-0022 rev 1 d12: a gateway is SP0004 with no Exxxx-VVVVVV-NNNNNN serial,
-    # so it cannot use the E-instance binding route (alternative N rejects minting
+    # ADR-0022 d12: a gateway is SP0004 with no Exxxx-VVVVVV-NNNNNN serial,
+    # so it cannot use the E-instance binding route (ADR-0021 alternative M rejects minting
     # it a synthetic instance id to reach that row).
     r = client.post(
         "/api/v1/machines/GBOX_0001/provisioning", json=_machine_binding(), headers=AUTH
@@ -648,7 +648,7 @@ def test_the_binding_is_upserted_so_renewal_replaces_it(client):
         "identity"
     ]
     assert identity["cert_serial"] == "NEWSERIAL01"
-    # The anchors that survive renewal are unchanged (ADR-0007 rev 1 d10d).
+    # The anchors that survive renewal are unchanged (ADR-0007 d10d).
     assert identity["public_key_fingerprint"] == "A" * 64
     assert identity["vendor_serial"] == "SP0004-SN-000123"
 
@@ -680,7 +680,7 @@ def test_a_machine_binding_needs_a_machine_identifier(client):
 
 
 def test_the_gateway_channel_never_reports_a_pull(client):
-    # ADR-0022 d8 (rev 1) / d9: the pull is a pure read and the ERP records no
+    # ADR-0022 d8 / d9: the pull is a pure read and the ERP records no
     # operational act. This asserts the *absence* deliberately — a future field
     # named anything like this should fail here and be argued through the ADR
     # rather than added quietly.

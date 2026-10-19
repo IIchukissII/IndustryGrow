@@ -79,11 +79,11 @@ treated as though it were.
 
 | Object | Origin | SPDX ID |
 |--------|--------|---------|
-| `store/SP0005-D-coreboard-snapshot.zip` | WeAct STM32F4 core-board schematic, board outline and 3D model, retained per ADR-0002 rev 3 d4 | [`LicenseRef-WeAct-unstated`](LICENSES/LicenseRef-WeAct-unstated.txt) |
+| `store/SP0005-D-coreboard-snapshot.zip` | WeAct STM32F4 core-board schematic, board outline and 3D model, retained per ADR-0002 d4 | [`LicenseRef-WeAct-unstated`](LICENSES/LicenseRef-WeAct-unstated.txt) |
 | `service-tool/ldscripts/STM32H753XIHX_FLASH.ld` | Emitted by the STM32CubeIDE generator; ST's notice points at a `LICENSE` file the generator does not ship, and the file has no counterpart in the STM32CubeH7 distribution to match against | [`LicenseRef-ST-CubeIDE-unstated`](LICENSES/LicenseRef-ST-CubeIDE-unstated.txt) |
 
 The SnapEDA EDA library content for the ams OSRAM AS7331 — symbol, footprint and 3D
-model — was removed on 2026-08-23. ADR-0014 rev 6 withdrew the part from M02-LIGHT and
+model — was removed on 2026-08-23. ADR-0014 withdrew the part from M02-LIGHT and
 `E0003-000001` no longer references any of it, so the repository carries no SnapEDA
 content and `LicenseRef-SnapEDA-unstated` is retired.
 

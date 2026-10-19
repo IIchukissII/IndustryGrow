@@ -49,7 +49,7 @@ experiments require operator-controllable actuators.
 | 1 | CAN bring-up | — (root) | ADR-0002, ADR-0004, ADR-0017 | Nodes enumerate on the gateway console |
 | 2 | DSDL foundation | 1 | ADR-0005 | Stable wire vocabulary for the whole system |
 | 3 | Sensor MVP | 2 | ADR-0014 | Live telemetry from the first sensor node |
-| 4 | Sensor platform | 3 | ADR-0014 (rev 5), ADR-0018 | Full cabinet telemetry (M01–M05) — **end of Phase 1** |
+| 4 | Sensor platform | 3 | ADR-0014, ADR-0018 | Full cabinet telemetry (M01–M05) — **end of Phase 1** |
 | 5 | Actuator layer | 4 | ADR-0018 (d10 interlock) | Environment can be driven; HW thermal cutoff + watchdog |
 | 6 | Gateway MVP *(branch)* | 5 | ADR-0015 | Cabinet runs without cloud on rule-based loops (provisional) |
 | 7 | Survey mode | 5 | ADR-0016, ADR-0020 | Dense, high-rate data for system identification |
@@ -81,7 +81,7 @@ revisited after modeling. The natural dependency order is
 **2 — Persistence is a blocker for the survey, not a later concern. _(Resolved by ADR-0020.)_** Stage 7
 emits bulk, high-rate data, but the cloud only arrives at stage 11 — so for stages
 1–10 the gateway is necessarily the primary durable sink; the survey cannot run
-with no store. ADR-0020 resolves this: it supersedes ADR-0004 rev 1's rejection of
+with no store. ADR-0020 resolves this: it supersedes ADR-0004's rejection of
 a local buffer (decisions 8–11, alternative D) on the endurance axis — an external
 SSD/NVMe medium retires that constraint — and defines a time-boxed survey-capture
 path plus a bounded store-and-forward buffer. The local store is the primary record
@@ -90,7 +90,7 @@ the tamper-evident local audit log stays rejected (threat model unchanged). This
 not OTA or containers — was the concrete driver for that ADR.
 
 **3 — The profile system is two artifacts.** A plain local profile file is
-achievable at stage 6 (ADR-0015 decision 4, atomic `rename()`). A *signed,
+achievable at stage 6 (ADR-0015 decisions 4 and 6, atomic `rename()`). A *signed,
 versioned, roll-back-able* profile needs PKI and the IndustryFlow profile store,
 which are stage 11. First cultivation (stage 10) can run on a plain local file;
 full profile governance lands with cloud integration, so stage 9 effectively
@@ -106,9 +106,9 @@ straddles stages 6 and 11.
   carrier-identity read (ADR-0007) implemented. Stage 1's *outcome* — nodes
   **enumerating on the gateway** — is not yet reached: the bare WeAct has no CAN
   transceiver, so it waits on the carrier PCB. Released image: the carrier-rooted
-  `store/E0001-000001-F` (ADR-0017 rev 1). This is the firmware half of the
+  `store/E0001-000001-F` (ADR-0017). This is the firmware half of the
   procurement long pole below — code waiting on boards.
-- ADR-0005 (DSDL) now exists and is **Accepted (rev 1)** — it grounds stage 2.
+- ADR-0005 (DSDL) now exists and is **Accepted** — it grounds stage 2.
   ADR-0009 (profile schema) is still referenced but not yet written; it must
   exist before stage 9.
 - Gateway/host OTA and container delivery (stage 13) are not covered by any ADR.
@@ -117,7 +117,7 @@ straddles stages 6 and 11.
 - Procurement is the silent long pole. This roadmap is a bring-up/integration
   view and assumes the boards (E0001 + M01–M05) exist; PCB fabrication and the
   Raspberry Pi lead time sit underneath stage 1 and are not represented here.
-- **M06-VENTILATION and M07-AMBIENT are defined, not scheduled.** ADR-0014 rev 2
+- **M06-VENTILATION and M07-AMBIENT are defined, not scheduled.** ADR-0014
   adds both classes to the taxonomy (`E0008`, `E0009`), but neither is laid out or
   fabricated and **no stage below is scoped to them**. Every `M01–M05` in this
   document is deliberate: the phase gate is E0001 bring-up, then E0006
@@ -186,10 +186,10 @@ the gate is passed.
 - ADR-0002 — field-bus architecture (Cyphal/CAN, gateway).
 - ADR-0003 — strawberry day-neutral reference profile.
 - ADR-0004 — gateway host hardening, stateless-edge operation.
-- ADR-0005 (rev 1) — DSDL foundation *(Accepted)*.
+- ADR-0005 — DSDL foundation *(Accepted)*.
 - ADR-0007 — PKI, hardware identity, provisioning *(Accepted)*.
 - ADR-0009 — profile schema *(deferred; not yet audited)*.
-- ADR-0014 (rev 5) — sensor node taxonomy (M01–M07; only M01–M05 are scheduled here).
+- ADR-0014 — sensor node taxonomy (M01–M07; only M01–M05 are scheduled here).
 - ADR-0015 — gateway profile caching and local control loops.
 - ADR-0016 — empirical survey, state-space modeling, sensor-density lifecycle.
 - ADR-0017 — component / document / instance identification.

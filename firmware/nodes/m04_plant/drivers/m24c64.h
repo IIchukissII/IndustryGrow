@@ -20,7 +20,7 @@
  * that describes THIS module must not follow the carrier.
  *
  * E0-E2 are strapped to GND, which puts the device at 0x50 -- inside the
- * 0x50-0x57 block ADR-0014 rev 4 d6 reserves, occupied here by design.
+ * 0x50-0x57 block ADR-0014 d6 reserves, occupied here by design.
  */
 
 #define M24C64_ADDR  0x50u

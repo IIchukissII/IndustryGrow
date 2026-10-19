@@ -50,7 +50,7 @@ class FakeWarehouse:
     async def open_stream(self, key: str):
         # Same contract as the real one: an object with .read(n)/.close(), a
         # content type and a length, so the read-through can stream it (ADR-0022
-        # rev 2 d7) without the test holding a different shape from production.
+        # d7) without the test holding a different shape from production.
         import io
 
         if key not in self.objects:

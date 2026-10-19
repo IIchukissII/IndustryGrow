@@ -8,7 +8,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Status:** Working specification, pre-schematic capture. `E0011-000001` laid out, not fabricated
 - **Date:** 2026-10-05
 - **E-number:** `E0011` · module class ID `0x80`
-- **Governing ADRs:** ADR-0031 (rev 1), ADR-0032, ADR-0014 (rev 4), ADR-0015, ADR-0016, ADR-0017 (rev 2), ADR-0018, ADR-0003, ADR-0002 (rev 3)
+- **Governing ADRs:** ADR-0031, ADR-0032, ADR-0014, ADR-0015, ADR-0016, ADR-0017, ADR-0018, ADR-0003, ADR-0002
 - **Companions:** `E0001-R-specification.md`, `E0012-R-specification.md`, `E0002-R-specification.md`, `E0006-R-specification.md`, `E0008-R-specification.md`, `E0009-R-specification.md`
 - **Supersedes:** `spec/A01-THERMAL-specification.md` (2026-09-07)
 
@@ -25,7 +25,7 @@ Requirements for the A01-CLIMATE actuator module in the indoor deployment varian
 elements, actuator complement, drive, interfaces, power, thermal, interlock, mechanical and
 firmware requirements, and their verification. The module acts on the grow-volume air and
 carries every regulated variable of that medium — air temperature, humidity, and CO₂ when
-populated (ADR-0031 rev 1 d2).
+populated (ADR-0031 d2).
 
 Not specified here:
 
@@ -44,9 +44,9 @@ Not specified here:
 | | Value |
 |---|---|
 | Module class | A01-CLIMATE |
-| Module class ID | `0x80` — first actuator class (ADR-0031 d1, rev 1 d2; range per ADR-0014 rev 4 d6) |
+| Module class ID | `0x80` — first actuator class (ADR-0031 d1 d2; range per ADR-0014 d6) |
 | ID transport | Serial EEPROM, 24Cxx class, byte 0, I²C `0x50` (ADR-0014 d6). `E0001-000100` carries no module-ID strap |
-| E-number | `E0011` — first assembly. A populate variant takes its own assembly E-number at design commit (ADR-0017 rev 2 d4) |
+| E-number | `E0011` — first assembly. A populate variant takes its own assembly E-number at design commit (ADR-0017 d4) |
 | Bare design | One layout, one class ID, one firmware image |
 | Carrier | `E0001-000100`, `spec/E0001-R-specification.md`. Not fabricated — `O-100` |
 
@@ -135,9 +135,9 @@ Full scale of `E1`, `E3` and `E4` corresponds to the string current limit of `D2
 | Canopy PPFD and spectrum | M02-LIGHT |
 | Cabinet `+12 V` bus current, door, leak | M05-SAFETY |
 | Actuator energy consumption | DIN kWh meter over S0, read by M05 (ADR-0018 d5) |
-| Condensate accumulation rate | M05-SAFETY, counted pulse input (ADR-0014 rev 7 d4) |
+| Condensate accumulation rate | M05-SAFETY, counted pulse input (ADR-0014 d4) |
 | Transpiration rate derived from condensate | Gateway soft sensor (ADR-0016 d20) |
-| Luminaire drive | A02-LIGHT — not specified (ADR-0031 rev 1 d2) |
+| Luminaire drive | A02-LIGHT — not specified (ADR-0031 d2) |
 
 ### 3.4 Partial populations
 
@@ -174,7 +174,7 @@ unpopulated branch publishes and commands (ADR-0014 d1, d2).
 | U11 | Quad 2-input AND gate | Combines the `T2`–`T4` chain, the `T5` line and the firmware enable into each driver's sleep input (`T10`) | 3.3 V | 3V3 |
 | Q4, D6 | Q4 Stanson ST2317S23RG, P-channel, SOT-23, `V_DS` −40 V, `V_GS` ±20 V, `R_DS(on)` ≤ 45 mΩ at −10 V and 25 °C, in the high side; D6 15 V Zener, gate-source clamp | Reverse-polarity block on the `+24 V` entry (`P8`) | — | `+24 V` actuator |
 | Q3, D5 | Q3 Alpha & Omega AO3422, N-channel, SOT-23, `V_DS` 55 V, `R_DS(on)` ≤ 200 mΩ at `V_GS` 2.5 V, low side, gate from U9 channel 3 through R48 with R49 to ground; D5 onsemi MBR1H100SFT3G, Schottky, 100 V, 1 A, across J13. Valve coil current ≤ 1 A (`O-110`) | `E6` valve drive (`D14`) | — | `+24 V` actuator |
-| U9 | NXP PCA9685PW, 16-channel 12-bit PWM generator, I²C Fm+, 2.3–5.5 V, 24–1526 Hz, address `0x40`, outputs LOW after power-on reset | Module-local drive expansion (ADR-0031 rev 1 d11) | 3.3 V | 3V3 |
+| U9 | NXP PCA9685PW, 16-channel 12-bit PWM generator, I²C Fm+, 2.3–5.5 V, 24–1526 Hz, address `0x40`, outputs LOW after power-on reset | Module-local drive expansion (ADR-0031 d11) | 3.3 V | 3V3 |
 | U10 | 24Cxx serial EEPROM, I²C `0x50` | Module class ID (ADR-0014 d6) | 3.3 V | 3V3 |
 | SF1 | Coolant-flow switch, purchased (`T4`) | Rejection-loop interlock | — | — |
 | FA1 | Alarm output of the `E5` fan; `SP0008` carries it only as a custom variant (`O-128`) | Humidity-tract airflow interlock (`T5`) | — | — |
@@ -215,7 +215,7 @@ Every header signal the carrier offers is claimed. Only the two positions the ca
 leaves unassigned — Header B 7 and 14 — and the unfitted 5 V at Header A 2 stay unconnected
 (`E0001-R-specification.md` `I4`, `I5`).
 
-Module-local expansion on U9 (ADR-0031 rev 1 d11):
+Module-local expansion on U9 (ADR-0031 d11):
 
 | U9 channel | Use |
 |---|---|
@@ -271,14 +271,14 @@ specification, and none carries a published quantity.
 | `D5` | Dead band \|demand\| < 0.05 commands zero drive; minimum dwell at zero before a sign change is 60 s (commissioning value, `F7`) | ADR-0031 d5 |
 | `D6` | Every element of §3.1 is commanded independently; no element's demand forces another's | ADR-0031 d4 |
 | `D7` | Demand slew is limited to 0.05 s⁻¹ on `E1` and `E3` (commissioning value, `F7`) | ADR-0015 d18 |
-| `D8` | A demand whose validity deadline has expired drives its element to the safe output: `E1`, `E3`, `E4`, `E6` to zero; `E2` and `E5` to full | ADR-0031 rev 1 d6 |
+| `D8` | A demand whose validity deadline has expired drives its element to the safe output: `E1`, `E3`, `E4`, `E6` to zero; `E2` and `E5` to full | ADR-0031 d6 |
 | `D9` | Water-block temperature from U1 derates every thermoelectric demand: full scale below 35 °C, linear to zero at **45 °C**, re-enable below 32 °C (`verify`). Runs on the node and applies to any commanded value | ADR-0031 d4 |
 | `D10` | Main exchanger base temperature from U2 is floored so the surface stays above the grow-volume dew point. The operative floor arrives with the demand — 13.4 °C day, 3.7 °C night at the wet edge of the band, computed from the §2.2 setpoints and VPD band. The node holds a commissioned absolute minimum of 3.0 °C (commissioning value, `F7`) that no command lowers. `E1` cooling demand is derated to hold whichever floor is higher | ADR-0032 d5, ADR-0015 d18, §10.1 |
 | `D11` | `E3` is unidirectional. Its demand is conditioned against a coil-temperature setpoint measured at U3, with a hard floor of **+1 °C** (commissioning value, `F7`) below which cooling demand is driven to zero | ADR-0032 d4, ADR-0003 d7 |
 | `D12` | `E4` is the last element of the humidity tract, downstream of HX2, and pumps from WB2 rather than dissipating. `E4` is inhibited whenever `T5` is tripped or `E5` demand is below `D13`'s minimum | `T5`, ADR-0032 d7 |
 | `D13` | `E5` starts with a full-scale pulse before settling to its commanded duty, and commanded duty below the fan's stable minimum is driven as zero. Pulse duration and that minimum are `SP0008`'s and are unset; the superseded part's 250 ms and 0.15 do not carry over | `E5`, `O-128` |
 | `D14` | `E6` is commanded as a pulse train against a commissioned minimum open time; it is inhibited whenever `E5` demand is zero. Verified at the CO₂ population only | `O-110` |
-| `D15` | `E2` also carries the pollination pulse: a full-scale excursion over the flowering zone at the profile's duration and interval, issued by the gateway as an ordinary demand. No pulse timing is node-local | ADR-0003 d13, ADR-0031 rev 1 d2 |
+| `D15` | `E2` also carries the pollination pulse: a full-scale excursion over the flowering zone at the profile's duration and interval, issued by the gateway as an ordinary demand. No pulse timing is node-local | ADR-0003 d13, ADR-0031 d2 |
 | `D16` | `E4` is unidirectional. At the design point it delivers 6.6 W to HX3 at 0.51 A and 1.61 V, drawing **0.82 W**; at the largest lift, WB2 at 22 °C against a 30 °C HX3, it draws **1.69 W** (both `verify`, computed on the TEC1–TEC3 parameters pending `O-103`). Demand is conditioned against U4 | ADR-0032 d7, `O-103` |
 
 ## 7. Power
@@ -348,7 +348,7 @@ The tract's designed parts — `TB1`, the exchanger sections of `M10`, the wall 
 | `F8` | Loss of U1 for more than 5 s (`verify`) is treated as the `D9` ceiling reached; loss of U2 or U3 drives `E1` or `E3` respectively to zero | `D9`, `D10`, `D11` |
 | `F9` | A `nFAULT` assertion drives both strings to zero, is published as drive state `fault`, and is latched until the node is reset | U5, U6 |
 | `F10` | The humidity setpoint the node accepts is a **coil temperature** for U3, not a humidity or VPD value. No M01 quantity is an input to this node | ADR-0032 d4, ADR-0031 d8, `D11` |
-| `F11` | Loss of the U9 I²C link drives every U9-borne element to its `D8` safe output. `E2` and `E5` are wired so that a de-asserted U9 output runs them at full without firmware acting | ADR-0031 rev 1 d6, d11, `O-113`, `O-135` |
+| `F11` | Loss of the U9 I²C link drives every U9-borne element to its `D8` safe output. `E2` and `E5` are wired so that a de-asserted U9 output runs them at full without firmware acting | ADR-0031 d6, d11, `O-113`, `O-135` |
 | `F12` | An unpopulated branch publishes no demand echo and accepts no demand for its elements | §3.4, ADR-0014 d2 |
 
 ### 10.1 Subjects
@@ -418,7 +418,7 @@ Baked defaults in the unregulated range. ADR-0005 d7 makes these `uavcan.pub.<na
 - `O-106` — Outdoor deployment variant not specified.
 - `O-107` — Wall penetrations, thermal breaks and the condensate drain are mechanical design. Blocks `M3`, `M6`, `T7`.
 - `O-108` — The dry edge of the night VPD band is not reachable: 1.2 kPa at 14 °C requires a coil at −6 °C, and `D11`'s floor yields 0.94 kPa. Resolved by the profile — narrow the night band, add a defrost cycle, or raise the night setpoint — not by this module.
-- `O-109` — The condensate collector, its count transducer and its lead are mechanical design of this module's humidity tract; the counter itself is M05's (ADR-0014 rev 7 d4) and `E0006-000001` has no free pulse input (`O-116`). Volume per count is a commissioning constant of the collector and is unset. Blocks the `O-111` measurement.
+- `O-109` — The condensate collector, its count transducer and its lead are mechanical design of this module's humidity tract; the counter itself is M05's (ADR-0014 d4) and `E0006-000001` has no free pulse input (`O-116`). Volume per count is a commissioning constant of the collector and is unset. Blocks the `O-111` measurement.
 - `O-110` — CO₂ branch unspecified: source, regulator, valve, minimum dose against the §2.2 grow volume, and CO₂ accumulation in an occupied room. Blocks `D14` and the §3.4 CO₂ population.
 - `O-111` — Transpiration is assumed at 140 ml/day and is unmeasured; it sets the humidity-tract mass flow. Closed by the first `O-109` measurement.
 - `O-127` — The main tract's 56 m³/h is the fan's free-air figure, not its operating point; owned by `E0012-R-specification.md`, consumed here. Blocks the air-side terms of §2.2 and the flow in §3.

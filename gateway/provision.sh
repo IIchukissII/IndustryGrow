@@ -9,8 +9,8 @@
 # Imager already installed; it contains NO secrets. It does NOT image the card.
 #
 # Grounding (cite, do not restate — ADR-0000):
-#   ADR-0002 rev 3 d6/d8  — Pycyphal/SocketCAN gateway; 500 kbit/s classic CAN.
-#   ADR-0004 rev 1 d2-7,11 — host hardening, least-priv service user, journald.
+#   ADR-0002 d6/d8  — Pycyphal/SocketCAN gateway; 500 kbit/s classic CAN.
+#   ADR-0004 d2-7,11 — host hardening, least-priv service user, journald.
 #   ADR-0017 / ADR-0019    — role-scoped users; secrets off-repo; SP0004 gateway.
 #   ADR-0020               — SD provisional; SSD/NVMe is the production medium.
 #
@@ -165,7 +165,7 @@ apt_base() {
 }
 
 create_service_user() {
-    # ADR-0004 rev 1 d7: dedicated unprivileged SYSTEM user, no login shell, no sudo.
+    # ADR-0004 d7: dedicated unprivileged SYSTEM user, no login shell, no sudo.
     # Role-scoped name `gateway` — identical on every box; position (GBOX) is the
     # hostname, never the username (ADR-0017).
     if id gateway >/dev/null 2>&1; then
@@ -307,7 +307,7 @@ setup_can_hat() {
 setup_can() {
     # ADR-0002: bring up the configured CAN interface. At bring-up that is vcan0
     # (validation, no bit rate); a physical canN is set to IGROW_CAN_BITRATE
-    # (fixed 500 kbit/s, ADR-0002 rev 3 d8) by can-up.sh. The bit rate has ONE home
+    # (fixed 500 kbit/s, ADR-0002 d8) by can-up.sh. The bit rate has ONE home
     # (gateway.env), not a literal per interface.
     log "installing CAN bring-up unit (iface=${IGROW_CAN_IFACE}, physical bitrate=${IGROW_CAN_BITRATE})"
     # Retire the old single-purpose vcan0.service if a previous deploy left it.
@@ -338,7 +338,7 @@ install_gateway_service() {
 }
 
 install_timesync_service() {
-    # The bus time master (ADR-0002 rev 3 d11). Separate unit from
+    # The bus time master (ADR-0002 d11). Separate unit from
     # gateway-pycyphal.service on purpose — see the unit file's header: the nodes'
     # time base must not go stale because the telemetry consumer is restarting.
     log "installing industrygrow-timesync.service (Cyphal time master, subject 7168)"

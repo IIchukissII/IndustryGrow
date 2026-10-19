@@ -8,7 +8,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Status:** Working specification. Schematic and layout captured — `store/E0005-000001-S-src.zip`, `store/E0005-000001-D-src.zip`. Firmware written against DS12 and unverified — no hardware. No fab package
 - **Date:** 2026-09-05
 - **E-number:** `E0005` · module-ID strap `0b100`
-- **Governing ADRs:** ADR-0014 (rev 7), ADR-0002 (rev 3), ADR-0003, ADR-0005 (rev 1, d11 and d12), ADR-0006, ADR-0016, ADR-0017 (rev 2), ADR-0020, ADR-0027, ADR-0028 (d10)
+- **Governing ADRs:** ADR-0014, ADR-0002, ADR-0003, ADR-0005 (d11 and d12), ADR-0006, ADR-0016, ADR-0017, ADR-0020, ADR-0027, ADR-0028 (d10)
 - **Companions:** `E0002-R-specification.md`, `E0003-R-specification.md`, `E0006-R-specification.md`, `E0008-R-specification.md`, `E0009-R-specification.md`
 
 Rationale for the decisions applied here is in the governing ADRs and is not restated.
@@ -34,7 +34,7 @@ rev 1).
 | Module class | M04-PLANT |
 | Module-ID strap | `0b100` — STRAP_0 low, STRAP_1 low, STRAP_2 high |
 | E-number | `E0005` — assembly populated with the 110° × 75° imager (§6.6) |
-| Bare design | One layout; each standard populated configuration takes its own assembly E-number (ADR-0017 rev 2 d4). The two FOV options share one footprint and differ in ordering code, can height and aperture (§4.1) |
+| Bare design | One layout; each standard populated configuration takes its own assembly E-number (ADR-0017 d4). The two FOV options share one footprint and differ in ordering code, can height and aperture (§4.1) |
 | Carrier | `E0001`, sensor-module header pair 2×12 + 2×8 (ADR-0014 d5) |
 
 ## 3. Function
@@ -89,7 +89,7 @@ layer named.
 | Ambient boundary conditions outside the enclosure | M07-AMBIENT |
 | Bus voltage and current, door, leak | M05-SAFETY |
 | **Canopy-to-air temperature differential** — needs M01's air temperature from a second node | **Gateway** (ADR-0016 d5, soft sensor) |
-| **Leaf VPD, per-leaf temperature** | **Deferred** (ADR-0014 rev 1 and d4): requires a canopy-segmentation pipeline that does not exist |
+| **Leaf VPD, per-leaf temperature** | **Deferred** (ADR-0014 and d4): requires a canopy-segmentation pipeline that does not exist |
 | **Canopy segmentation** — which pixels are leaf and which are structure, medium or luminaire | **Not implemented.** §6.4's statistics are frame-wide, not canopy-only. O-88 |
 | Visible-light camera | **Gateway** (ADR-0014 d9); the channel is owned by ADR-0033, which houses it with this module (d11) |
 
@@ -105,7 +105,7 @@ holds the trim (§6.7), and a module without it declares none (ADR-0028 d5, d10)
 The **FOV option is a populated-BOM variant** (ADR-0014 d2, third dimension): both ordering codes
 share the TO-39 lead pattern of §4.1 and differ in can height, aperture and obstacle-free cone.
 `E0005` names the `BAA` build (§6.6); a `BAB` build takes its own assembly E-number at design
-commit (ADR-0017 rev 2 d4), as M07's second variant does. Firmware is identical across both
+commit (ADR-0017 d4), as M07's second variant does. Firmware is identical across both
 (§10) — the FOV is not readable from the device.
 
 ## 4. Sensor complement
@@ -114,7 +114,7 @@ commit (ADR-0017 rev 2 d4), as M07's second variant does. Firmware is identical 
 |---|--------|---------------|----------|------|-------------|--------------|
 | U1 | Melexis MLX90640 | `MLX90640ESF-BAA-000-TU` | 32 × 24 IR array, 768 pixels, factory calibrated | 3.3 V | `0x33` default | EEPROM-programmable, `0x01`…`0xFF` (`0x00` forbidden), cell `0x240F` |
 
-Named by ADR-0014 d4. `0x33` lies outside the `0x50`–`0x57` block ADR-0014 rev 4 d6 reserves for
+Named by ADR-0014 d4. `0x33` lies outside the `0x50`–`0x57` block ADR-0014 d6 reserves for
 the module-ID EEPROM, which this module fits at `0x50` as U2 (§4.2) to hold the flat-field trim of
 §6.7. M04 still identifies by strap (§5). **U1's address shall be left at its factory default**;
 the boot probe of §10 assumes it.
@@ -187,7 +187,7 @@ correctly.
 | Levels | SDA and SCL are 5 V tolerant and referenced to the pull-up rail, not to VDD. V_IH 0.7 · VDD, V_IL 0.3 · VDD, V_OL 0.4 V at 3 mA sink |
 | Pull-ups | R1, R2, **2.2 kΩ** to 3.3 V, on the module; the carrier carries none (O-51). Sink 1.5 mA against the 3 mA V_OL condition, and against the **10 mA** ceiling DS12 Table 5 note 4 places on the SDA driver for thermal reasons (absolute maximum 40 mA) |
 | Sizing check | Fast mode allows 300 ns of rise time. At 2.2 kΩ that admits 161 pF on the segment, against 10 pF at U1, ≈ 8 pF at U2 and short board traces. DS12 Figure 26 uses 1 kΩ, which would sink 3.3 mA — at the V_OL test condition rather than below it |
-| Address | U1 `0x33`, U2 `0x50` — the block ADR-0014 rev 4 d6 reserves, occupied here by design (§4.2). No collision, and U2's 5 ms self-timed write cycle falls in commissioning only |
+| Address | U1 `0x33`, U2 `0x50` — the block ADR-0014 d6 reserves, occupied here by design (§4.2). No collision, and U2's 5 ms self-timed write cycle falls in commissioning only |
 
 ### 5.2 Bus occupancy
 

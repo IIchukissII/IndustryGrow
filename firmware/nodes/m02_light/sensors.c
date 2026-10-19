@@ -28,7 +28,7 @@
  * 4128 and leaves M01's block room to grow.
  *
  * 4132 and 4133 were UV-B and UV-C and are RETIRED, not reassigned (M02 spec
- * 10.1): ADR-0014 rev 6 withdrew the AS7331 that measured them, and a gateway
+ * 10.1): ADR-0014 withdrew the AS7331 that measured them, and a gateway
  * holding an older register set must not silently bind a new quantity to an
  * identifier it already knows as something else. Nothing here may use them. */
 #define SUBJ_SPECTRUM 4128u /* U4 AS7343 -- 12 bands + clear + settings */

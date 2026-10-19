@@ -560,7 +560,7 @@ async def pass_once(config: Config, dry_run: bool = False) -> int:
         updated = 0
         for plan in todo:
             # One node at a time. A transfer is a gateway-paced burst on a 500
-            # kbit/s bus (ADR-0002 rev 3) and two at once would contend for it;
+            # kbit/s bus (ADR-0002) and two at once would contend for it;
             # fleet-wide ordering and concurrency are ADR-0029's deferred item, so
             # this does the one thing that cannot contradict whatever it decides.
             if await update_node(bus, plan):

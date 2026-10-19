@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""MongoDB layer — the document metadata store (ADR-0021 rev 1).
+"""MongoDB layer — the document metadata store (ADR-0021).
 
 Collection names encode the [F]/[D] split as a physical prefix boundary so the
 stage-11 re-layering is mechanical: ``foundation.*`` migrates into IndustryFlow's
@@ -23,7 +23,7 @@ FOUNDATION = {
     "serial_counter": "foundation.serial_counter",
     "module_instance": "foundation.module_instance",
     "instance_identity": "foundation.instance_identity",
-    # The machine-scoped provisioning binding (ADR-0022 rev 1 d12). Separate from
+    # The machine-scoped provisioning binding (ADR-0022 d12). Separate from
     # instance_identity because it is keyed by GBOX_NNNN rather than by an
     # E-instance serial — a gateway is SP0004 and has no Exxxx-VVVVVV-NNNNNN.
     "machine_identity": "foundation.machine_identity",

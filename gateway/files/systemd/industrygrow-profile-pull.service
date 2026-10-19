@@ -5,7 +5,7 @@
 # (ADR-0015 d5-d7, ADR-0025). Driven by industrygrow-profile-pull.timer.
 #
 # WHY THIS IS A SEPARATE UNIT from gateway-pycyphal.service: that one keeps
-# /etc/industrygrow READ-ONLY (ADR-0004 rev 1 d7) and only ever reads the active
+# /etc/industrygrow READ-ONLY (ADR-0004 d7) and only ever reads the active
 # profile, which is right for the process that drives actuators. Something has to
 # write it, and giving the control-loop service write access to its own
 # configuration directory would widen the privileges of the longest-running,
@@ -31,7 +31,7 @@ Group=gateway
 EnvironmentFile=-/etc/industrygrow/gateway.env
 ExecStart=/opt/industrygrow/venv/bin/python /opt/industrygrow/profile_client.py once
 
-# --- Least-privilege hardening (ADR-0004 rev 1 decision 7) ---
+# --- Least-privilege hardening (ADR-0004 decision 7) ---
 # Same posture as gateway-pycyphal.service, with one deliberate difference: this
 # unit may write the profile directory, and only that.
 NoNewPrivileges=yes

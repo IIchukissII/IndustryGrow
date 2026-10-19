@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 // SPDX-License-Identifier: CC-BY-SA-4.0
 //
-// Unattended security updates — ADR-0004 rev 1 decision 4.
+// Unattended security updates — ADR-0004 decision 4.
 // Installed to /etc/apt/apt.conf.d/52-industrygrow-unattended-upgrades
 //
 // Security patches only. Automatic reboot is DISABLED by default: ADR-0004 d4
