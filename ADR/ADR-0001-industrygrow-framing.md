@@ -3,115 +3,76 @@ SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
-# ADR-0001 (rev 1): IndustryGrow — open-core cultivation platform built on IndustryFlow
+# ADR-0001 — IndustryGrow as an open-core cultivation platform on IndustryFlow
 
-- **ID:** ADR-0001 (rev 1)
 - **Status:** Accepted
-- **Date:** 2026-05-16
-- **Project:** IndustryGrow
-- **Supersedes:** ADR-0001 (initial draft, same date)
+- **Date:** accepted 2026-05-16; changed 2026-10-19
+- **Related:** ADR-0002 (realises decision 8), ADR-0003 (the seed profile of decision 5), ADR-0006 (cabinet form for decision 6), ADR-0021 (core-plus-layer integration of decision 7)
 
-## Revision history
+## Context
 
-- **rev 1 (2026-05-16)** — Decision 8's phased two-tier hardware model (BluePill prototype / STM32G4 production) was superseded by ADR-0002 rev 3's single uniform smart-node platform; the supersession is recorded as an inline amendment note on decision 8, and the planned ADR-0010 (hardware tiering) was repurposed to commercial-operations / managed-deployment policy. No other decision changed.
+IndustryGrow is a modular cultivation platform meant to scale from an apartment-sized cabinet to a commercial facility of several hundred square metres. It is the domain layer over IndustryFlow, the industrial-IoT core platform, and it extends that core with a slot entity, cultivation DSDL types and plugin interfaces. IndustryFlow has no other end-to-end deployment.
 
-## Context and problem
-
-**IndustryGrow** is a modular cultivation platform that scales from an apartment-sized cabinet to a several-hundred-square-meter commercial facility. It uses IndustryFlow as its underlying industrial-IoT data platform and contributes specific extensions to it (production_unit entity, cultivation-domain DSDL types, plugin interfaces).
-
-I am a mechatronics engineer and the author of IndustryFlow. The decision before this ADR is the *shape* of IndustryGrow as a project: who its users are, what is open vs commercial, what artifacts it produces, and what the first deployment looks like.
-
-The decision is made now rather than later because every downstream choice — protocol selection, hardware tiering, security architecture, repository structure, licensing — depends on whether IndustryGrow is a personal artifact, a community open-source project, a commercial product, or a hybrid.
-
-## Decision drivers
-
-- The system must scale: from a single furniture-grade cabinet in an apartment to commercial cultivation facilities. Architecture must support both ends; implementation starts at the small end.
-- The first deployment (a strawberry cabinet in my apartment) must validate the self-build path — the same path any community member or third-party deployer would take.
-- IndustryFlow has no end-to-end real deployment yet. IndustryGrow becomes its first.
-- Community contribution is a content-distribution mechanism, especially for cultivation knowledge (profiles, recipes, nutrient mixes). A "GitHub for cultivation know-how" is a strategically valuable layer.
-- Commercial sustainability matters. This is not a hobby in the long run; it must support its own development.
-- Aesthetics, modularity, and replaceability are non-negotiable for the apartment-scale deployment and remain valuable at commercial scale.
-- I prefer to commit framing decisions before technological ones. Solution before implementation.
+Every downstream choice — protocol, hardware, security, repository structure, licensing — depends on whether the project is personal, community open source, commercial, or a hybrid. Three forces bound the answer: development must fund itself; cultivation knowledge spreads fastest when the community can contribute it; and the first deployment must exercise the same self-build path a community member or third-party deployer takes. Aesthetics, modularity and replaceability are required at apartment scale and remain valuable at commercial scale.
 
 ## Decision
 
-IndustryGrow is an **open-core cultivation platform** with the following structure:
+1. **The open core is licensed AGPL-3.0-or-later.** It covers the data model, ingestion, storage, basic alerting, observability, basic ML (thresholds, standard anomaly detection), reference firmware and basic control loops, and may be self-hosted, modified and operated for any purpose. The network clause obliges a service provider to share its modifications; a customer needing closed integration buys a commercial licence (dual licensing).
+2. **The DSDL and protocol layer is licensed Apache-2.0.** Third parties, competitors included, can then build interoperable node hardware and firmware. Type-system fragmentation costs every participant in the ecosystem.
+3. **Hardware reference designs are licensed CERN-OHL-S.** Schematics and layouts are strong-reciprocal open hardware, the counterpart of the AGPL core. Manufacturing is a separate commercial activity.
+4. **Commercial modules are closed and built against open-core plugin interfaces, never as patches to the core.** Two categories: predictive ML (disease-risk forecasting, yield prediction, transpiration-based optimisation, cross-deployment learning, spectrum analysis) and advanced control (model-predictive climate control, adaptive dosing, autonomous spectrum optimisation, whole-cabinet autopilot). They differentiate on capability, not on lock-in.
+5. **Community content is open by default and distributed through a shared registry.** Cultivation profiles, nutrient recipes, hardware modifications and integration examples can be forked, customised and contributed back. The strawberry day-neutral profile (ADR-0003) is the seed entry.
+6. **The first deployment is a strawberry cabinet built from open-core artifacts only.** Continuous staggered cultivation on about nine slots at a two-week cadence. Excluding commercial modules validates the self-build path.
+7. **Data model: the cabinet is an IndustryFlow `machine`, functional subsystems are `module` entities, slots are `production_unit` entities.** Plant positions are first-class platform entities, which requires the IndustryFlow extension ADR-IF-0001.
+8. **Field instrumentation is modular smart nodes on a Cyphal/CAN bus, on one uniform hardware platform at every deployment scale.** The node platform and the bus are ADR-0002's. Uniform hardware keeps one design, one firmware and one inventory across self-build and commercial deployments.
 
-1. **Open core (AGPL-3.0-or-later).** The platform itself — data model, ingestion, storage, basic alerting, observability, basic ML (threshold and standard anomaly detection), reference firmware, hardware reference designs, DSDL types, Cyphal stack, basic control loops. Anyone may self-host, modify, and operate IndustryGrow for any purpose, including commercial. The AGPL clause requires service-providers to share their modifications, which protects against AWS-style strip-mining of the open core. Enterprise customers needing closed integration purchase a commercial license — classical dual-licensing pattern.
+## Alternatives
 
-2. **DSDL and protocol layer (Apache 2.0).** Permissively licensed so that third parties — including potential commercial competitors — can build interoperable smart-node hardware and firmware. This is deliberate: type-system fragmentation hurts the whole ecosystem.
-
-3. **Hardware reference designs (CERN-OHL-S).** Schematics and PCB layouts for both prototype-grade and production-grade nodes are published under strong-reciprocal open hardware license, paired ideologically with AGPL. Manufacturing is a separate commercial activity (open hardware + commercial manufacturing — the Framework / MNT Reform pattern).
-
-4. **Commercial closed modules (proprietary EULA).** Two categories, both built against open-core plugin interfaces, never as patches to the core:
-   - **Predictive ML modules** — botrytis risk forecasting, yield prediction, transpiration-based optimization, cross-deployment learning, A/B-spectrum analysis.
-   - **Advanced control modules** — Model Predictive Control for climate, adaptive nutrient dosing, autonomous spectrum optimization, autopilot for whole-cabinet operation.
-
-5. **Community-contributed content (open by default).** Cultivation profiles, nutrient recipe mixes, hardware mods, integration examples — published to a shared registry by community members. The registry pattern is "GitHub for cultivation know-how": anyone can fork, customize, and contribute back. The strawberry day-neutral profile (ADR-0003) is one seed entry; lettuce, basil, microgreens, and other profiles come from the community.
-
-6. **First deployment: strawberry cabinet.** Continuous staggered cultivation, ~9 slots, 2-week cadence. Built from open-core artifacts only (no commercial modules) to validate the self-build path that defines IndustryGrow's accessibility.
-
-7. **Data model: machine = cabinet, modules = functional subsystems, slots = production units.** Plant positions are first-class entities in IndustryFlow's data model, requiring platform extension (tracked as ADR-IF-0001).
-
-8. **Field instrumentation via modular smart nodes** on a Cyphal/CAN bus, with phased hardware tiering (prototype-grade BluePill carriers for self-builders, production-grade STM32G4 PCBs for commercial deployments — both speak the same DSDL). Details in ADR-0002.
-
-   > **Amended by ADR-0002 rev 3 (2026-05-16):** the phased two-tier hardware model (BluePill prototype / STM32G4 production) was rejected in favour of a single uniform smart-node platform — a WeAct STM32F4 core board on one carrier PCB — across all deployment scales. Uniformity superseded tiering; see ADR-0002 rev 3 decision 2 and alternative A. The "both grades" wording in the deferred-decisions list below, and the hardware-tiering scope of the planned ADR-0010, are superseded accordingly.
-
-## Alternatives considered
-
-**A. Stay personal / decorative.** A single strawberry cabinet, no platform ambition. *Rejected:* the architecture being designed already exceeds personal scope, the IndustryFlow validation goal demands a generalizable shape, and a second cabinet is in the planning horizon regardless.
-
-**B. Pure closed-source product.** All code, hardware, and content closed. *Rejected:* no community contribution path, harder to seed adoption, conflicts with author's values and with the IndustryFlow open foundation. Closed-only platforms in this domain have not produced the network effects of open-platform players.
-
-**C. Pure open-source, no commercial layer.** Everything AGPL-3, no commercial modules. *Rejected:* no sustainable funding model. Long-term development requires income; existing open-source-only platforms in agtech struggle to sustain development pace.
-
-**D. BSL (Business Source License) instead of AGPL.** Time-bounded restriction on commercial use, converts to Apache 2.0 after 3–4 years. *Considered:* more enterprise-friendly, less ideologically open. *Rejected:* AGPL has a clearer message and a more established pattern in the developer community; BSL still triggers skepticism in some segments. Migration to BSL remains possible if AGPL proves too restrictive in practice.
-
-**E. Commercial-first with optional source release.** Build closed, open the source later as a marketing move. *Rejected:* signals the wrong values, makes community contribution feel like a token, and starts the project with the wrong cultural foundation.
+| Dec | Rejected alternative | Why rejected |
+|---|---|---|
+| — | **A.** Personal or decorative cabinet with no platform ambition | The architecture already exceeds personal scope, validating IndustryFlow needs a generalisable shape, and a second cabinet is planned regardless |
+| — | **B.** Pure closed-source product | No community contribution path, harder adoption, and conflicts with the open IndustryFlow foundation; closed-only platforms in the domain have not produced network effects |
+| — | **C.** Pure open source, no commercial layer | No sustainable funding; open-source-only agtech platforms struggle to sustain development pace |
+| — | **E.** Commercial first, source released later | Makes community contribution a token and starts the project on the wrong foundation |
+| 1 | **D.** Business Source License instead of AGPL | More enterprise-friendly but less open; AGPL is the more established, less contested pattern among developers. Migration remains possible if AGPL proves too restrictive |
+| 8 | Two hardware tiers: prototype-grade carriers for self-builders, production-grade boards for commercial deployments, one DSDL | Two carriers double engineering and documentation, mixed-grade buses impose lowest-common-denominator caveats, and clone-board supply is a long-tail risk (ADR-0002) |
 
 ## Consequences
 
-### Positive
+**Positive**
 
-- IndustryFlow gets its first real deployment, with a clear validation path for the platform's data model, ingestion, alerting, and ML pipeline.
-- The system is replaceable component-by-component, from sensor to platform layer.
-- Community contribution mechanism for cultivation knowledge becomes a self-amplifying knowledge commons.
-- Commercial modules differentiate on value (predictive intelligence, autonomous control) rather than on lock-in.
-- Open-core model is fundable. AGPL+commercial-modules is a pattern that investors and grant programs (including EXIST) recognize.
-- The architecture supports growth from one-cabinet to many-cabinet without redesign.
-- AGPL protects against extractive cloud-vendor competition.
-- IndustryGrow as a name leaves room for additional verticals on the IndustryX family (IndustryHealth, IndustryFarm, etc.) in the future.
+- IndustryFlow gains its first real deployment, validating its data model, ingestion, alerting and ML pipeline.
+- The system is replaceable component by component, from sensor to platform.
+- Community-contributed cultivation knowledge accumulates as a shared commons.
+- The open-core model with commercial modules is a pattern investors and grant programmes recognise.
+- Growth from one cabinet to many needs no redesign.
+- The AGPL network clause protects the core against extractive hosting by cloud vendors.
 
-### Negative
+**Negative**
 
-- Build cost and time are materially higher than personal-project scope. Rough estimate: 3–5× the personal-cabinet effort to reach a publicly-releasable open-core platform.
-- Open-core requires real plugin architecture, entitlement infrastructure, and licensing tooling. These are new components, tracked as future ADRs.
-- AGPL is enterprise-shy in some segments. Commercial customers who need closed integration must purchase a separate commercial license. This adds a sales motion that does not yet exist.
-- Community management is an ongoing cost. A registry of community-contributed content requires moderation, quality standards, and governance.
-- The author is the platform builder AND the first deployer. Bias toward "the platform supports my use case" is real. Mitigation: features needed only by my cabinet are flagged as such; post-deployment retrospectives are written as if by a third party.
-- IndustryFlow extensions required for IndustryGrow couple the platform's roadmap to this project's needs. Both projects share the author, which mitigates in practice but creates a conceptual single point of failure.
+- Reaching a publicly releasable open core costs several times the effort of a personal cabinet.
+- Open core requires a plugin architecture, entitlement infrastructure and licensing tooling that do not yet exist.
+- Customers needing closed integration require a commercial licence, which adds a sales process.
+- A community registry needs moderation, quality standards and governance as an ongoing cost.
+- The platform builder is also the first deployer, so features serving only the seed cabinet are flagged as such and post-deployment reviews are written as by a third party.
+- IndustryFlow's roadmap is coupled to IndustryGrow's needs, and both depend on one author.
 
-## Deferred decisions
+## Deferred
 
-- **ADR-0002:** Field bus protocol, smart-node hardware (both grades), gateway architecture.
-- **ADR-0003:** Strawberry day-neutral cultivation profile (reference profile #1).
-- **ADR-0004:** Gateway host hardening, audit log, firmware signing.
-- **ADR-0005:** DSDL namespace structure and Subject-ID allocation.
-- **ADR-0006:** ~~(deferred)~~ Cabinet form factor, materials, mechanical decomposition — **written and Accepted**; that record names this reservation as discharged.
-- **ADR-0007:** PKI architecture — community-self-hosted CA pattern and commercial CA infrastructure.
-- **ADR-0008 (future):** Deployment topology and operational scale.
-- **ADR-0009 (future):** Cultivation profile schema, contribution workflow, registry design.
-- **ADR-0010 (future):** ~~Hardware tiering — full specification of production-grade nodes.~~ Repurposed to commercial-operations / managed-deployment policy; the hardware-tiering premise was dropped by ADR-0002 rev 3 (uniform single-tier hardware). See ADR-0002 deferred list and README.
-- **ADR-0011 (future):** Plugin architecture for commercial modules — interfaces, host pattern, isolation.
-- **ADR-0012 (future):** Entitlement and license verification.
-- **ADR-0013 (future):** Repository structure and licensing per artifact.
-- **ADR-IF-0001:** IndustryFlow data model extension — production_unit entity.
+| Open question | Settled by |
+|---|---|
+| Deployment topology and operational scale | ADR-0008 |
+| Cultivation profile schema, contribution workflow, registry design | ADR-0009 |
+| Operational policy for commercial managed deployments | ADR-0010 |
+| Plugin architecture for commercial modules: interfaces, host pattern, isolation | ADR-0011 |
+| Entitlement and licence verification | ADR-0012 |
+| Repository structure and licensing per artifact | ADR-0013 |
+| IndustryFlow slot entity (`production_unit`) | ADR-IF-0001 |
 
 ## References
 
-- IndustryFlow repository: https://github.com/IIchukissII/industryflow
-- AGPL-3.0-or-later license text: https://www.gnu.org/licenses/agpl-3.0.html
-- CERN-OHL-S open hardware license: https://cern-ohl.web.cern.ch/
-- Apache License 2.0: https://www.apache.org/licenses/LICENSE-2.0
-- Open-core business model precedents: GitLab, Sentry, MongoDB (pre-SSPL), Elastic (pre-relicense), HashiCorp (pre-BSL).
-- Hardware open-source + commercial manufacturing precedents: Framework Computer, MNT Reform, System76.
+- ADR-0002 — field bus and uniform node platform.
+- `REUSE.toml`, `LICENSES/` — the per-path licence assignment.
+- IndustryFlow: https://github.com/IIchukissII/industryflow
+- AGPL-3.0-or-later, Apache-2.0, CERN-OHL-S-2.0 licence texts.
+- Precedents: GitLab, Sentry, MongoDB, Elastic, HashiCorp (open core); Framework, MNT Reform, System76 (open hardware with commercial manufacturing).
