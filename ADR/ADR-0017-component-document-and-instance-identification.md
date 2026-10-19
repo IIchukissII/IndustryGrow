@@ -6,9 +6,9 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0017 — Component, document and instance identification
 
 - **Status:** Accepted
-- **Date:** accepted 2026-05-31; changed 2026-10-19
-- **Parent:** ADR-0001
-- **Related:** ADR-0002 (carrier and module classes are E-modules; the `I` layer carries its Cyphal/DSDL definitions), ADR-0004 (the operational audit log this scheme does not duplicate), ADR-0007 (secure-element identity bound to the serial; the `-PR` record), ADR-0014 (module-class vocabulary; partial-BOM populations; gateway role and zone tagging), ADR-0015 (deployment profiles are profile-versioned, not suffix-addressed), ADR-0016 (instance mobility between deployments), ADR-0019 (the purchased-part `SP` root on the same identity axis), ADR-0021 (hosts the instance and integration layer), ADR-0022 (the one place the grammar is parsed), ADR-0023 (how the type registry is consumed), ADR-0008 (planned; a position root above the machine), ADR-IF-0001 (planned; `production_unit`, the platform counterpart of the depth code)
+- **Date:** 2026-05-31; changed 2026-10-19
+- **Parent:** [ADR-0001](ADR-0001-industrygrow-framing.md)
+- **Related:** [ADR-0002](ADR-0002-field-bus-architecture.md) (carrier and module classes are E-modules; the `I` layer carries its Cyphal/DSDL definitions), [ADR-0004](ADR-0004-gateway-host-hardening.md) (the operational audit log this scheme does not duplicate), [ADR-0007](ADR-0007-pki-and-secure-element-identity.md) (secure-element identity bound to the serial; the `-PR` record), [ADR-0014](ADR-0014-sensor-node-taxonomy.md) (module-class vocabulary; partial-BOM populations; gateway role and zone tagging), [ADR-0015](ADR-0015-gateway-profile-and-control-loops.md) (deployment profiles are profile-versioned, not suffix-addressed), [ADR-0016](ADR-0016-empirical-survey-and-state-space-modeling.md) (instance mobility between deployments), [ADR-0019](ADR-0019-purchased-part-%28SP%29-identification.md) (the purchased-part `SP` root on the same identity axis), [ADR-0021](ADR-0021-instance-and-integration-erp.md) (hosts the instance and integration layer), [ADR-0022](ADR-0022-instance-integration-erp-api.md) (the one place the grammar is parsed), [ADR-0023](ADR-0023-machine-readable-type-registry.md) (how the type registry is consumed), ADR-0008 (planned; a position root above the machine), ADR-IF-0001 (planned; `production_unit`, the platform counterpart of the depth code)
 
 ## Context
 
@@ -82,20 +82,20 @@ Identity has two orthogonal axes that never fuse. The **identity axis** — what
 
 | Dec | Rejected alternative | Why rejected |
 |---|---|---|
-| — | **A.** A flat identifier: one serial namespace not separating type, instance and position | Cannot express one design with many instances or an instance moving between positions; type-level and per-instance documents become indistinguishable |
-| 1 | **D.** Overflow a full serial range into the version's patch field | Addresses fewer instances than a six-digit serial and corrupts the version; the serial is widened instead |
-| 2 | **E.** Record firmware and telemetry history as document-store suffixes | ADR-0004 routes these to IndustryFlow's audit log; a parallel record is a second source of truth |
-| 4 | **D.** Treat each populated-BOM variant as a new version | Version is the design's semantic version; a populate variant in it corrupts version semantics and rollback |
+| — | A flat identifier: one serial namespace not separating type, instance and position | Cannot express one design with many instances or an instance moving between positions; type-level and per-instance documents become indistinguishable |
+| 1 | Overflow a full serial range into the version's patch field | Addresses fewer instances than a six-digit serial and corrupts the version; the serial is widened instead |
+| 2 | Record firmware and telemetry history as document-store suffixes | ADR-0004 routes these to IndustryFlow's audit log; a parallel record is a second source of truth |
+| 4 | Treat each populated-BOM variant as a new version | Version is the design's semantic version; a populate variant in it corrupts version semantics and rollback |
 | 4 | Treat M07's indoor and outdoor variants as one assembly, as the carrier is | A group fitted or omitted at build is ordered, stocked and serialized differently; the carrier's variant is an install-time jumper |
-| 5 | **B.** Encode discipline in the identifier by default (range partition or dedicated field) | The identifier is opaque with meaning in the registry; range-partitioning stays available under decision 5 |
-| 7 | **C.** Bake position (zone, role, slot) into the part or serial number | Breaks instance interchangeability and mobility; position is assigned at integration |
+| 5 | Encode discipline in the identifier by default (range partition or dedicated field) | The identifier is opaque with meaning in the registry; range-partitioning stays available under decision 5 |
+| 7 | Bake position (zone, role, slot) into the part or serial number | Breaks instance interchangeability and mobility; position is assigned at integration |
 | 7 | Widen the depth code with the serial and machine fields | Depth is bounded by one cabinet's decomposition, not deployment size |
-| 8 | **F.** Issue a fresh serial when a board moves to a new deployment | The serial is the durable key bound to the secure element; mobility must preserve history |
+| 8 | Issue a fresh serial when a board moves to a new deployment | The serial is the durable key bound to the secure element; mobility must preserve history |
 | 11 | Stamp calibration records to the day | Two calibrations in one session share a key and the second overwrites the first's raw points |
-| 16 | **G.** File firmware per node module (`E000x-F`), under the module whose personality it runs | Conflates the binary with the shared codebase; one code change would bump the `F` version of every module |
-| 18 | **H.** Keep fabrication outputs as loose per-file objects | The set only moves, versions and re-spins together; per-file keys add objects no query uses |
-| 19 | **I.** Keep design sources loose with no document-layer letter | The one artifact class outside decision 1's form; nothing chose it |
-| 19 | **I.** Letter design sources and keep them loose (`Exxxx-VVVVVV-S.kicad_sch`) | Makes objects of project settings and board rules that open nothing alone |
+| 16 | File firmware per node module (`E000x-F`), under the module whose personality it runs | Conflates the binary with the shared codebase; one code change would bump the `F` version of every module |
+| 18 | Keep fabrication outputs as loose per-file objects | The set only moves, versions and re-spins together; per-file keys add objects no query uses |
+| 19 | Keep design sources loose with no document-layer letter | The one artifact class outside decision 1's form; nothing chose it |
+| 19 | Letter design sources and keep them loose (`Exxxx-VVVVVV-S.kicad_sch`) | Makes objects of project settings and board rules that open nothing alone |
 | 19 | One source archive for the whole CAD project | No correct key: either layer letter misfiles the other half |
 | 20 | Give a specification a version field | It tracks the class, not a build; the field would name a board revision it does not belong to |
 | 20 | File specifications under `P` | `P` is Protocol; a second meaning makes the letter ambiguous |

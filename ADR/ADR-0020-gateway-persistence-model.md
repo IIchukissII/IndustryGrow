@@ -6,9 +6,9 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0020 — Gateway persistence model
 
 - **Status:** Accepted
-- **Date:** accepted 2026-07-26; changed 2026-10-19
-- **Parent:** ADR-0001
-- **Related:** ADR-0004 (its RAM-only decisions 8–9 and rejected alternative D are replaced by this record for a gateway with a local store; its decision 10 hash chain is relied upon), ADR-0015 (configuration state of decision 4 beside the operational state permitted here), ADR-0016 (survey phase that needs the store), ADR-0018 (supply that powers the storage medium), ADR-0019 (whether the medium takes an SP number), ADR-0024 and ADR-0025 (trust material added to decision 5), ADR-0033 (raw imagery as its own storage purpose)
+- **Date:** 2026-07-26; changed 2026-10-19
+- **Parent:** [ADR-0001](ADR-0001-industrygrow-framing.md)
+- **Related:** [ADR-0004](ADR-0004-gateway-host-hardening.md) (its RAM-only decisions 8–9 and the local-buffer alternative of its decision 9 are replaced by this record for a gateway with a local store; its decision 10 hash chain is relied upon), [ADR-0015](ADR-0015-gateway-profile-and-control-loops.md) (configuration state of decision 4 beside the operational state permitted here), [ADR-0016](ADR-0016-empirical-survey-and-state-space-modeling.md) (survey phase that needs the store), [ADR-0018](ADR-0018-power-distribution-and-rail-monitoring.md) (supply that powers the storage medium), [ADR-0019](ADR-0019-purchased-part-%28SP%29-identification.md) (whether the medium takes an SP number), [ADR-0024](ADR-0024-operator-ca-bootstrap-and-key-ceremony.md) and [ADR-0025](ADR-0025-cultivation-profile-signing.md) (trust material added to decision 5), [ADR-0033](ADR-0033-canopy-imaging-channel.md) (raw imagery as its own storage purpose)
 
 ## Context
 
@@ -38,12 +38,12 @@ A dead gateway must stay a drop-in swap that loses at most an un-flushed tail, n
 | Dec | Rejected alternative | Why rejected |
 |---|---|---|
 | — | Restate the replacement inside a revised ADR-0004 | Puts this record's decision in a second home (ADR-0000 d3) |
-| 1 | **A.** Keep the gateway RAM-only | Presupposes a cloud sink that does not exist before stage 11; survey and first cultivation would have no record |
-| 1 | **B.** Defer all local persistence until IndustryFlow exists | Alternative A for stages 1–10; blocks the survey campaign those stages exist to run |
+| 1 | Keep the gateway RAM-only | Presupposes a cloud sink that does not exist before stage 11; survey and first cultivation would have no record |
+| 1 | Defer all local persistence until IndustryFlow exists | Alternative A for stages 1–10; blocks the survey campaign those stages exist to run |
 | 2 | Bound the buffer by capacity | Scalar telemetry volume does not bind; tolerable outage length does |
-| 3 | **D.** Guaranteed durability against device failure, also post-cloud | A failed gateway becomes a data-recovery procedure instead of a drop-in swap |
-| 9 | **C.** Resurrect the local hash-chained audit log (ADR-0004 alternative A) | The medium change answers endurance, not the threat model |
-| 10 | **E.** Persistent buffer on bare SD | The write-endurance problem ADR-0004 cited |
+| 3 | Guaranteed durability against device failure, also post-cloud | A failed gateway becomes a data-recovery procedure instead of a drop-in swap |
+| 9 | Resurrect the local hash-chained audit log (ADR-0004 dec 8 alternatives) | The medium change answers endurance, not the threat model |
+| 10 | Persistent buffer on bare SD | The write-endurance problem ADR-0004 cited |
 
 ## Consequences
 
@@ -69,7 +69,7 @@ A dead gateway must stay a drop-in swap that loses at most an un-flushed tail, n
 
 ## References
 
-- ADR-0004 — decisions 8–11 and 13, alternatives A and D.
+- ADR-0004 — decisions 8–11 and 13, and the alternatives of decisions 8 and 9.
 - `gateway/files/app/gateway_telemetry.py` — the store, its eviction and its durability settings.
 - `gateway/gateway.env.example` — store switch and retention figure.
 - `store/SP0004-M-gateway-bringup.md` — SD at bring-up, SSD/NVMe in production.

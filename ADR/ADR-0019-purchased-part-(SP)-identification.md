@@ -6,9 +6,9 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0019 — Purchased-part (SP) identification
 
 - **Status:** Accepted
-- **Date:** accepted 2026-06-13; changed 2026-10-19
-- **Parent:** ADR-0001
-- **Related:** ADR-0017 (the identity axis this adds a second root to; its document layers and E-number rules), ADR-0000 (SKU and price stay downstream in the BOM), ADR-0018 (the cabinet parts and the spec-over-SKU pattern of its energy meter), ADR-0014 (actuator and sensor boards are E-modules), ADR-0031 (actuator classes whose devices are purchased parts), ADR-0021 (holds SP stock and instances), ADR-0023 (how the SP registry is consumed)
+- **Date:** 2026-06-13; changed 2026-10-19
+- **Parent:** [ADR-0001](ADR-0001-industrygrow-framing.md)
+- **Related:** [ADR-0017](ADR-0017-component-document-and-instance-identification.md) (the identity axis this adds a second root to; its document layers and E-number rules), [ADR-0018](ADR-0018-power-distribution-and-rail-monitoring.md) (the cabinet parts and the spec-over-SKU pattern of its energy meter), [ADR-0014](ADR-0014-sensor-node-taxonomy.md) (actuator and sensor boards are E-modules), [ADR-0031](ADR-0031-actuator-node-taxonomy.md) (actuator classes whose devices are purchased parts), [ADR-0021](ADR-0021-instance-and-integration-erp.md) (holds SP stock and instances), [ADR-0023](ADR-0023-machine-readable-type-registry.md) (how the SP registry is consumed)
 
 ## Context
 
@@ -35,13 +35,13 @@ The vendor part is swappable; the characteristic it must meet is the durable com
 
 | Dec | Rejected alternative | Why rejected |
 |---|---|---|
-| 1 | **A.** Give purchased parts E-numbers | E's version and serial would be empty or foreign for a bought part; E semantics erode |
-| 1 | **B.** No identifier for purchased parts; MPN strings in BOMs only | No stable key for cost and inventory roll-up or for citing one part from several documents; the spec-over-SKU pattern has nowhere to attach |
-| 2 | **D.** Give every SP instance a project serial | Most COTS parts are not tracked individually; where tracking matters, the vendor serial is the key |
-| 3 | **C.** Encode the manufacturer or SKU in the SP number | Binds the identifier to a vendor that is swappable by design; the SKU is a downstream value |
+| 1 | Give purchased parts E-numbers | E's version and serial would be empty or foreign for a bought part; E semantics erode |
+| 1 | No identifier for purchased parts; MPN strings in BOMs only | No stable key for cost and inventory roll-up or for citing one part from several documents; the spec-over-SKU pattern has nowhere to attach |
+| 2 | Give every SP instance a project serial | Most COTS parts are not tracked individually; where tracking matters, the vendor serial is the key |
+| 3 | Encode the manufacturer or SKU in the SP number | Binds the identifier to a vendor that is swappable by design; the SKU is a downstream value |
 | 8 | A parallel document-layer vocabulary for SP parts | Two vocabularies for one classifier; ADR-0017's letters already cover an SP part's documents |
 | 8 | Fork the document set per vendor model of one spec | Contradicts decision 3; one spec has one document set |
-| 9 | **E.** Give every designed accessory its own E-number with a version field | Multiplies roots for artifacts with no existence apart from their parent and moves the served part into registry metadata, losing the single-prefix dossier; slug revisions suffice for low-churn accessories |
+| 9 | Give every designed accessory its own E-number with a version field | Multiplies roots for artifacts with no existence apart from their parent and moves the served part into registry metadata, losing the single-prefix dossier; slug revisions suffice for low-churn accessories |
 
 ## Consequences
 

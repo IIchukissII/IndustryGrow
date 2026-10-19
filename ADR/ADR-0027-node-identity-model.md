@@ -6,9 +6,9 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0027 — Node identity model
 
 - **Status:** Accepted
-- **Date:** accepted 2026-08-25; changed 2026-10-19
-- **Parent:** ADR-0002
-- **Related:** ADR-0005 (decision 6: the persistent Node-ID rule this realizes), ADR-0006 (two hydroponic loops: two instances of one class), ADR-0007 (the secure element's scope and the `unique_id` anchor), ADR-0014 (decision 6: the class ID and its transports; decision 7: gateway mapping keyed off the Node-ID), ADR-0017 (serial and `-PR` record; personality selection), ADR-0028 (commissioning that provisions the Node-ID), ADR-0029 (the update path that preserves the store)
+- **Date:** 2026-08-25; changed 2026-10-19
+- **Parent:** [ADR-0002](ADR-0002-field-bus-architecture.md)
+- **Related:** [ADR-0005](ADR-0005-dsdl-foundation.md) (decision 6: the persistent Node-ID rule this realizes), [ADR-0006](ADR-0006-cabinet-decomposition-and-hydroponic-topology.md) (two hydroponic loops: two instances of one class), [ADR-0007](ADR-0007-pki-and-secure-element-identity.md) (the secure element's scope and the `unique_id` anchor), [ADR-0014](ADR-0014-sensor-node-taxonomy.md) (decision 6: the class ID and its transports; decision 7: gateway mapping keyed off the Node-ID), [ADR-0017](ADR-0017-component-document-and-instance-identification.md) (serial and `-PR` record; personality selection), [ADR-0028](ADR-0028-commissioning-sequence-and-trim-custody.md) (commissioning that provisions the Node-ID), [ADR-0029](ADR-0029-node-firmware-update-and-bootloader.md) (the update path that preserves the store)
 
 ## Context
 
@@ -43,15 +43,15 @@ The store must reach the carriers in service, whose only class-identity transpor
 
 | Dec | Rejected alternative | Why rejected |
 |---|---|---|
-| 1 | **C.** Keep deriving the Node-ID from the class ID and forbid two instances of a class | Contradicts ADR-0006 and ADR-0014's instance multiplication; turns a firmware limitation into an architectural constraint |
-| 1 | **D.** Widen the derivation: class ID plus an instance strap | Strap transport is transitional and exhausted (ADR-0014 decision 6); fixes instance identity at manufacture |
-| 2 | **A.** The module's class-ID serial EEPROM | Absent from carriers in service; manufacture-programmed and not field-writable; on the module, so a swap carries the identity away |
-| 2 | **B.** A data slot of the secure element | Needs an irreversible configuration-zone lock on every node ahead of node-side provisioning; slots are reserved for the keypair; widens what a compromise exposes |
+| 1 | Keep deriving the Node-ID from the class ID and forbid two instances of a class | Contradicts ADR-0006 and ADR-0014's instance multiplication; turns a firmware limitation into an architectural constraint |
+| 1 | Widen the derivation: class ID plus an instance strap | Strap transport is transitional and exhausted (ADR-0014 decision 6); fixes instance identity at manufacture |
+| 2 | The module's class-ID serial EEPROM | Absent from carriers in service; manufacture-programmed and not field-writable; on the module, so a swap carries the identity away |
+| 2 | A data slot of the secure element | Needs an irreversible configuration-zone lock on every node ahead of node-side provisioning; slots are reserved for the keypair; widens what a compromise exposes |
 | 5 | Apply a Node-ID write immediately | Changing a Node-ID under a live transport invalidates in-flight transfer state |
 | 6 | An unprovisioned node stays silent | A silent node cannot be diagnosed |
-| 7 | **E.** Cyphal plug-and-play allocation | Adds an allocator role and non-determinism a closed single-gateway bus does not need; the map would be chosen by no human |
+| 7 | Cyphal plug-and-play allocation | Adds an allocator role and non-determinism a closed single-gateway bus does not need; the map would be chosen by no human |
 | 8 | Treat the secure-element serial and the MCU UID as equivalent | The MCU UID binds to no record and survives no board swap |
-| 10 | **F.** Reserve a second value: `126` unprovisioned, `127` unidentified | Spends a reserved identifier to encode personality state in the field that means only "which instance"; fixes no collision |
+| 10 | Reserve a second value: `126` unprovisioned, `127` unidentified | Spends a reserved identifier to encode personality state in the field that means only "which instance"; fixes no collision |
 | 11 | Keep the flash sector as the store on series-built carriers | Mass erase at programming de-provisions the board, and per-unit identity in program flash prevents identical images |
 
 ## Consequences

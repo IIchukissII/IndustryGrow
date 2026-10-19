@@ -33,7 +33,7 @@
  * room to grow rather than butting against it.
  *
  * Ten subjects, not one record: each sensor's absence has to be expressible on
- * its own (ADR-0005 d8, alternative D). The three T/RH pairs are separate
+ * its own (ADR-0005 dec 8 alternatives). The three T/RH pairs are separate
  * subjects for the same reason plus one more -- only U1's pair is admissible
  * for VPD (M01 spec 4), and a shared subject would lose that distinction. */
 #define SUBJ_AIR_TEMPERATURE 4112u /* U1 SHT45 -- primary */

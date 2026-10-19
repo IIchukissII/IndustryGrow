@@ -155,7 +155,7 @@ and stay loose. Licensing inherits the `store/**` CERN-OHL-S default.
 
 ADR-0017 (decision 16) adds **`F` (Firmware)** — the built node image and
 its source snapshot — to the d9 layer set. The *why* (carrier-rooted, not
-per-module) is decision 16 / alternative G; the *what*:
+per-module) is decision 16 and its alternatives; the *what*:
 
 ```
 E0001-VVVVVV-F-<variant>        e.g.  E0001-000001-F-boot.hex    (bootloader)

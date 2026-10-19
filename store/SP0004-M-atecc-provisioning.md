@@ -283,7 +283,7 @@ gateway is not. So the local values this step captures are `GBOX_NNNN`, the SP00
 anchor a renewal or migration re-certification does not disturb (ADR-0007 d10d;
 ADR-0024 deferred deny-list note). Those are the values ADR-0022 d12's
 machine-scoped binding takes; the E-instance `-PR` record shape is not reused, and
-ADR-0021 alternative M records why a synthetic serial was rejected.
+ADR-0021 dec 17 alternatives record why a synthetic serial was rejected.
 
 ---
 

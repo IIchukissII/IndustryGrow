@@ -343,7 +343,7 @@ M04 declares one calibration trim (ADR-0028 d1 step 4).
 | Form | 768 × `int16`, 0.01 K per LSB, one offset per pixel, subtracted after the compensation chain of §6.2 and before the statistics of §6.4 and the accumulation of §6.5 |
 | Store | **U2** (§4.2), by ADR-0028 d10: the MLX90640 has no user cell for 768 corrections, so the trim lives on the module rather than in the corrected device |
 | Layout in U2 | Byte 0 class ID (ADR-0014 d6), bytes 1–15 reserved, byte 16 onward a 32 B header — magic `IGFF`, version, kind, pixel count, **U1's 48-bit device ID**, determination scene temperature and Ta as `float32` K, determination time, CRC-32 — followed by the 1536 B table. 1568 B in all |
-| Binding | The header's device ID shall match the `0x2407`–`0x2409` read of §10. A field whose ID does not match is **not applied**, and the mismatch is reported — this is the module-swap failure ADR-0028 alternative A names, closed by construction |
+| Binding | The header's device ID shall match the `0x2407`–`0x2409` read of §10. A field whose ID does not match is **not applied**, and the mismatch is reported — this is the module-swap failure the ADR-0028 dec 2 alternatives name, closed by construction |
 | Voided by | Replacement of U1 (ADR-0028 d8), or a change to any validity condition its `-CC` names (ADR-0028 d7) |
 | Absent | The node publishes uncorrected and reports it (ADR-0028 d5): `flat_field = false` in the record of §10.1 and in the frame header of §10.2. Firmware writes no default back |
 | Written | Over the bus on a running node (ADR-0028 d4), never at flash time. `uavcan.file.Write` to `/plant/flatfield.bin`; the node validates the CRC and the device ID before committing to U2 |

@@ -6,9 +6,9 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0026 — ERP backup and restore across two stores
 
 - **Status:** Accepted
-- **Date:** accepted 2026-07-26; changed 2026-10-19
-- **Parent:** ADR-0021
-- **Related:** ADR-0004 (stateless gateway, out of scope), ADR-0017 (identifier as object key, which makes verification a key check), ADR-0020 (enumerated gateway state, out of scope), ADR-0022 (blob-first write order that decisions 3–4 invert), ADR-0023 (type registry in git; the mirror's restore path), ADR-0024 (custody model decision 6 reuses; CA material excluded), ADR-0025 (key-proliferation argument decision 7 applies; signing key excluded)
+- **Date:** 2026-07-26; changed 2026-10-19
+- **Parent:** [ADR-0021](ADR-0021-instance-and-integration-erp.md)
+- **Related:** [ADR-0004](ADR-0004-gateway-host-hardening.md) (stateless gateway, out of scope), [ADR-0017](ADR-0017-component-document-and-instance-identification.md) (identifier as object key, which makes verification a key check), [ADR-0020](ADR-0020-gateway-persistence-model.md) (enumerated gateway state, out of scope), [ADR-0022](ADR-0022-instance-integration-erp-api.md) (blob-first write order that decisions 3–4 invert), [ADR-0023](ADR-0023-machine-readable-type-registry.md) (type registry in git; the mirror's restore path), [ADR-0024](ADR-0024-operator-ca-bootstrap-and-key-ceremony.md) (custody model decision 6 reuses; CA material excluded), [ADR-0025](ADR-0025-cultivation-profile-signing.md) (key-proliferation argument decision 7 applies; signing key excluded)
 
 ## Context
 
@@ -46,13 +46,13 @@ The operator CA and profile-signing key have their own ceremony-based custody (A
 
 | Dec | Rejected alternative | Why rejected |
 |---|---|---|
-| 1 | **B.** Back up the whole warehouse bucket, including the repository mirror | Copies what git versions and inflates every backup, which decides whether second copies are kept and restores tested |
-| 3 | **F.** Snapshot the two stores in either order and reconcile afterwards | A dangling index row cannot be reconciled against an object the backup does not hold; correct ordering costs nothing |
-| 5 | **A.** Volume snapshots of the database directory as the primary form | Bound to a database major version and host filesystem, and not inspectable without restoring; permitted as an extra pre-upgrade rollback |
-| 6 | **C.** Rely on the object store's own durability and versioning for the blobs | Shares the account and provider with the live data; does not survive bucket deletion or account loss |
-| 7 | **D.** Require encryption to a keypair rather than a passphrase | Adds a fourth long-lived secret to custody (ADR-0025 dec 4); permitted as a choice |
-| 7 | **E.** No application-level encryption; rely on the target's server-side encryption | The operator holds neither those keys nor that access control |
-| 8 | **G.** Let the restore complete and warn about the serial counter | A scrolled-past warning is not a control for a silent, permanent, physical failure |
+| 1 | Back up the whole warehouse bucket, including the repository mirror | Copies what git versions and inflates every backup, which decides whether second copies are kept and restores tested |
+| 3 | Snapshot the two stores in either order and reconcile afterwards | A dangling index row cannot be reconciled against an object the backup does not hold; correct ordering costs nothing |
+| 5 | Volume snapshots of the database directory as the primary form | Bound to a database major version and host filesystem, and not inspectable without restoring; permitted as an extra pre-upgrade rollback |
+| 6 | Rely on the object store's own durability and versioning for the blobs | Shares the account and provider with the live data; does not survive bucket deletion or account loss |
+| 7 | Require encryption to a keypair rather than a passphrase | Adds a fourth long-lived secret to custody (ADR-0025 dec 4); permitted as a choice |
+| 7 | No application-level encryption; rely on the target's server-side encryption | The operator holds neither those keys nor that access control |
+| 8 | Let the restore complete and warn about the serial counter | A scrolled-past warning is not a control for a silent, permanent, physical failure |
 
 ## Consequences
 

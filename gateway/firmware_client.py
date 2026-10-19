@@ -13,7 +13,7 @@ what it is running, and update the ones that are not running it.
     firmware_client.py serve   # poll on an interval, for a host without timers
 
 WHAT THIS DOES NOT DO. It reports nothing back to the ERP. There is no route to
-report to and that is deliberate (ADR-0022 d9, alternative Q): what a node runs
+report to and that is deliberate (ADR-0022 d9; dec 14 alternatives): what a node runs
 is operational, it is observed here, and it stays here. The ERP holds the
 operator's intent; the journal below holds what came of it.
 

@@ -262,7 +262,7 @@ class FirmwareIntentOut(BaseModel):
     There is no ``running_version``, no ``updated_at``, no per-node state, and
     there will not be. Whether the machine's nodes have reached this release is
     observed on the bus by the gateway (ADR-0029 d15) and is excluded from this
-    API by ADR-0022 d9 — consumers show it as a gap (ADR-0022 alternative Q).
+    API by ADR-0022 d9 — consumers show it as a gap (ADR-0022 dec 14 alternatives).
 
     ``artifact_keys`` are the objects a gateway may fetch for this release: the
     two slot images, header plus body, the only form a node can be given over the

@@ -6,9 +6,9 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0002 — Field bus architecture: Cyphal/CAN, core board on a carrier, Raspberry Pi gateway
 
 - **Status:** Accepted
-- **Date:** accepted 2026-05-16; changed 2026-10-19
-- **Parent:** ADR-0001
-- **Related:** ADR-0004 (gateway host hardening behind decision 7), ADR-0005 (the DSDL vocabulary of decision 1), ADR-0007 (the PKI the secure element of decision 3 serves), ADR-0014 (sensor modules and the module-class strap behind decision 5), ADR-0016 (the state estimator decision 11 serves), ADR-0017 (firmware rooted on the carrier, decision 5), ADR-0018 (power distribution upstream of decisions 3 and 8), ADR-0019 (purchased-part identity of the core board), ADR-0020 (gateway persistence, decision 6)
+- **Date:** 2026-05-16; changed 2026-10-19
+- **Parent:** [ADR-0001](ADR-0001-industrygrow-framing.md)
+- **Related:** [ADR-0004](ADR-0004-gateway-host-hardening.md) (gateway host hardening behind decision 7), [ADR-0005](ADR-0005-dsdl-foundation.md) (the DSDL vocabulary of decision 1), [ADR-0007](ADR-0007-pki-and-secure-element-identity.md) (the PKI the secure element of decision 3 serves), [ADR-0014](ADR-0014-sensor-node-taxonomy.md) (sensor modules and the module-class strap behind decision 5), [ADR-0016](ADR-0016-empirical-survey-and-state-space-modeling.md) (the state estimator decision 11 serves), [ADR-0017](ADR-0017-component-document-and-instance-identification.md) (firmware rooted on the carrier, decision 5), [ADR-0018](ADR-0018-power-distribution-and-rail-monitoring.md) (power distribution upstream of decisions 3 and 8), [ADR-0019](ADR-0019-purchased-part-%28SP%29-identification.md) (purchased-part identity of the core board), [ADR-0020](ADR-0020-gateway-persistence-model.md) (gateway persistence, decision 6)
 
 ## Context
 
@@ -43,20 +43,20 @@ The bus must be deterministic, because some loops are safety-relevant and must n
 
 | Dec | Rejected alternative | Why rejected |
 |---|---|---|
-| 1 | **E.** CANopen | Dated tooling, archaic EDS workflow; DSDL is the closer match |
-| 1 | **G.** MQTT over WiFi per node | Not deterministic, no fault containment, modularity in name only |
-| 1 | **H.** Modbus RTU over RS-485 | Polling-based, no typed payloads, weaker tooling |
-| 1 | **I.** USB sensor hub | Anti-modular; the hub is a single point of failure |
-| 2 | **A.** Two hardware tiers: prototype clone board, production STM32G4 board | Small price gap, two carriers to engineer and document, lowest-common-denominator caveats on mixed buses, long-tail clone-supply risk; contradicts uniformity |
-| 2 | **B.** STM32G431 on a third-party breakout | Niche breakout, vendor dependency without published hardware |
-| 2 | **C.** STM32F411 breakout | The STM32F411 has no CAN peripheral |
-| 2 | **D.** MCU placed directly on the carrier | An open core board meets the same requirements at lower EE cost, faster bring-up and better supply hedging |
+| 1 | CANopen | Dated tooling, archaic EDS workflow; DSDL is the closer match |
+| 1 | MQTT over WiFi per node | Not deterministic, no fault containment, modularity in name only |
+| 1 | Modbus RTU over RS-485 | Polling-based, no typed payloads, weaker tooling |
+| 1 | USB sensor hub | Anti-modular; the hub is a single point of failure |
+| 2 | Two hardware tiers: prototype clone board, production STM32G4 board | Small price gap, two carriers to engineer and document, lowest-common-denominator caveats on mixed buses, long-tail clone-supply risk; contradicts uniformity |
+| 2 | STM32G431 on a third-party breakout | Niche breakout, vendor dependency without published hardware |
+| 2 | STM32F411 breakout | The STM32F411 has no CAN peripheral |
+| 2 | MCU placed directly on the carrier | An open core board meets the same requirements at lower EE cost, faster bring-up and better supply hedging |
 | 3 | Per-carrier barrel-jack power input, separate from the bus wiring | Power and bus share one daisy-chained connector run from the distribution board (ADR-0018 dec 13) |
 | 5 | Static personality: one firmware binary per node type | A change to shared code would multiply releases per type; the personality is a hardware attribute read at boot (ADR-0017 dec 16) |
-| 6 | **J.** Raspberry Pi 5 only, with a persistent SQLite buffer | Gateway model is a headroom choice, not a fixed requirement; local persistence is decided by ADR-0020, not here |
+| 6 | Raspberry Pi 5 only, with a persistent SQLite buffer | Gateway model is a headroom choice, not a fixed requirement; local persistence is decided by ADR-0020, not here |
 | 6 | RAM-only ring buffer, reboot-during-outage loss accepted | No cloud sink exists before IndustryFlow arrives, so the gateway must hold a durable record (ADR-0020) |
-| 6 | **K.** Allwinner T527-class SBC with native CAN and NPU | Mainline Linux support immature; revisit for commercial gateways needing on-edge ML or an extended temperature range |
-| 8 | **F.** CAN FD throughout (STM32G0/G4) | Classic-CAN STM32F4 is more mainstream; the 8-byte payload is handled by node aggregation and multi-frame transfers |
+| 6 | Allwinner T527-class SBC with native CAN and NPU | Mainline Linux support immature; revisit for commercial gateways needing on-edge ML or an extended temperature range |
+| 8 | CAN FD throughout (STM32G0/G4) | Classic-CAN STM32F4 is more mainstream; the 8-byte payload is handled by node aggregation and multi-frame transfers |
 | 8 | 1 Mbit/s | Shortens maximum bus length and tightens transceiver and stub margins for no throughput need |
 | 8 | A bit rate below 500 kbit/s | Wastes headroom with no length benefit inside a cabinet |
 | 11 | Publish exactly at the maximum publication period | Ordinary scheduling jitter pushes about half the intervals past the limit, and slaves discard those pairs |

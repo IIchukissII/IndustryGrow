@@ -6,9 +6,9 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0033 — Canopy imaging channel
 
 - **Status:** Proposed
-- **Date:** proposed 2026-09-08; changed 2026-10-19
-- **Parent:** ADR-0001
-- **Related:** ADR-0003 (phase-dependent spectrum d11 and DLI target d12 that decisions 3 and 4 work against), ADR-0014 (d9 places the camera outside the Cyphal taxonomy), ADR-0015 (d1 profile channel that carries the schedule), ADR-0016 (lifecycle phases and soft-sensor rule decisions 16–17 apply), ADR-0017 and ADR-0019 (numbering at design or selection commit), ADR-0020 (d4 survey-storage premise that decision 15 bounds), ADR-0028 (commissioning of registration), ADR-0031 (`A02-LIGHT` that decision 14 places a requirement on; command rules), ADR-0032 (enclosure envelope)
+- **Date:** 2026-09-08; changed 2026-10-19
+- **Parent:** [ADR-0001](ADR-0001-industrygrow-framing.md)
+- **Related:** [ADR-0003](ADR-0003-strawberry-day-neutral-profile.md) (phase-dependent spectrum d11 and DLI target d12 that decisions 3 and 4 work against), [ADR-0014](ADR-0014-sensor-node-taxonomy.md) (d9 places the camera outside the Cyphal taxonomy), [ADR-0015](ADR-0015-gateway-profile-and-control-loops.md) (d1 profile channel that carries the schedule), [ADR-0016](ADR-0016-empirical-survey-and-state-space-modeling.md) (lifecycle phases and soft-sensor rule decisions 16–17 apply), [ADR-0017](ADR-0017-component-document-and-instance-identification.md) and [ADR-0019](ADR-0019-purchased-part-%28SP%29-identification.md) (numbering at design or selection commit), [ADR-0020](ADR-0020-gateway-persistence-model.md) (d4 survey-storage premise that decision 15 bounds), [ADR-0028](ADR-0028-commissioning-sequence-and-trim-custody.md) (commissioning of registration), [ADR-0031](ADR-0031-actuator-node-taxonomy.md) (`A02-LIGHT` that decision 14 places a requirement on; command rules), [ADR-0032](ADR-0032-grow-box-climate-conditioning.md) (enclosure envelope)
 
 ## Context
 
@@ -59,27 +59,27 @@ Out of scope: replacing or validating away any environmental sensor (a correlati
 
 | Dec | Rejected alternative | Why rejected |
 |---|---|---|
-| — | **I.** Defer the channel until an analysis method is chosen | The method cannot be chosen without data, and the contract produces the data |
-| — | **K.** A directional note inside ADR-0016 | A storage purpose, a requirement on an actuator specification, a mechanical assembly and a commissioning step exceed a direction |
-| 1 | **A.** The camera as a Cyphal node | ADR-0014 d9 places it outside the taxonomy, and its payload is incommensurate with classic CAN (ADR-0002) |
+| — | Defer the channel until an analysis method is chosen | The method cannot be chosen without data, and the contract produces the data |
+| — | A directional note inside ADR-0016 | A storage purpose, a requirement on an actuator specification, a mechanical assembly and a commissioning step exceed a direction |
+| 1 | The camera as a Cyphal node | ADR-0014 d9 places it outside the taxonomy, and its payload is incommensurate with classic CAN (ADR-0002) |
 | 2 | Thermal frame under the capture state | Canopy temperature under a synthetic illuminant characterises the apparatus, not the plant |
-| 3 | **D.** Capture under the active recipe's spectrum | The illuminant co-varies with a profile-controlled factor, and three broad colour planes cannot invert a spectral change |
-| 3 | **F.** A dedicated imaging illuminator | Not adopted: a second heat source in the housing and a second thing to calibrate and age; reopens if the far-red channel proves insufficient (`O-122`) |
-| 4 | **E.** Capture in the dark period | A photoperiodic intervention whose tolerability rests on a cultivar property |
+| 3 | Capture under the active recipe's spectrum | The illuminant co-varies with a profile-controlled factor, and three broad colour planes cannot invert a spectral change |
+| 3 | A dedicated imaging illuminator | Not adopted: a second heat source in the housing and a second thing to calibrate and age; reopens if the far-red channel proves insufficient (`O-122`) |
+| 4 | Capture in the dark period | A photoperiodic intervention whose tolerability rests on a cultivar property |
 | 6 | Reference surface away from the canopy plane | It is not lit like the subject it normalises |
 | 6 | Calibration once at installation only | Cannot observe luminaire and optical-path degradation over a cycle |
 | 6 | One neutral reference patch | Fixes per-channel gains only, a white balance, not a colorimetric render |
 | 10 | Mask computed per narrowband frame | A mask under one narrowband channel is undefined, and geometry is constant within an event |
-| 10 | **H.** Derived features only, frames discarded | Freezes the segmentation method, since a superseded method cannot be re-run on discarded data |
-| 11 | **B.** The camera on the `E0005` PCB | No observable registration gain; adds a heat source `spec/E0005` T2 forbids, a periodic disturbance to T3's settled conditions, a CSI link the ADR-0014 d5 header lacks, a populate variant (ADR-0017 d4) and two obsolescence horizons on one revision |
-| 11 | **C.** Two independently mounted instruments | The baseline becomes an installation property, re-established per installation and after any service |
+| 10 | Derived features only, frames discarded | Freezes the segmentation method, since a superseded method cannot be re-run on discarded data |
+| 11 | The camera on the `E0005` PCB | No observable registration gain; adds a heat source `spec/E0005` T2 forbids, a periodic disturbance to T3's settled conditions, a CSI link the ADR-0014 d5 header lacks, a populate variant (ADR-0017 d4) and two obsolescence horizons on one revision |
+| 11 | Two independently mounted instruments | The baseline becomes an installation property, re-established per installation and after any service |
 | 12 | Printed registration pattern | Black and white ink differ negligibly in emissivity, so the imager cannot see it |
 | 12 | Plain chessboard or a second physical target for the camera | A plain chessboard loses partly occluded views across R2's pose range; a second target adds a part and a session |
 | 12 | Pattern on a sheet adhered to the baseplate | Reintroduces the measurement the part drawing exists to avoid |
 | 12 | Re-registration on a fixed schedule | The in-frame fiducial reports drift continuously; a residual past tolerance calls for a repeat |
-| 15 | **G.** Compressed storage | Chroma subsampling and lossy coding destroy the measured statistic and prevent re-segmentation |
-| 18 | **J.** A sensor with an infrared-cut filter | Removes the far-red channel (ADR-0003 d11) on the red edge, foliage's strongest feature; preferable only without decision 3's sequencing |
-| 18 | **L.** Ultraviolet-A as an imaging or fluorescence band | Not adopted: a non-destructive proxy for the traits the UV trace targets, but fluorescence under a trace dose is not established as measurable, a higher dose is a photobiological intervention, and an invisible light leak swamps it (`O-118`); reopens on a measurability result |
+| 15 | Compressed storage | Chroma subsampling and lossy coding destroy the measured statistic and prevent re-segmentation |
+| 18 | A sensor with an infrared-cut filter | Removes the far-red channel (ADR-0003 d11) on the red edge, foliage's strongest feature; preferable only without decision 3's sequencing |
+| 18 | Ultraviolet-A as an imaging or fluorescence band | Not adopted: a non-destructive proxy for the traits the UV trace targets, but fluorescence under a trace dose is not established as measurable, a higher dose is a photobiological intervention, and an invisible light leak swamps it (`O-118`); reopens on a measurability result |
 | 19 | Monochrome detector | Cannot reconstruct colour under a luminaire with no green or blue channel |
 
 ## Consequences
@@ -113,7 +113,7 @@ Out of scope: replacing or validating away any environmental sensor (a correlati
 | Housing windows, thermal break, condensation handling (`spec/E0005` `O-90`), M1 clearance, and the reference surface's form, patch count, reflectances and stability (`O-119`) | Housing design |
 | Registration tolerance over R6's features and the operator response when exceeded (`O-120`) | ADR-0028 commissioning step |
 | Method and interval for characterising scene illumination non-uniformity (`O-121`) | First installation |
-| Whether far-red gives enough red-edge contrast without a true near-infrared band (`O-122`) | Survey data; decides whether alternative F reopens |
+| Whether far-red gives enough red-edge contrast without a true near-infrared band (`O-122`) | Survey data; decides whether a dec 3 alternative reopens |
 | Retention bound and export path for raw frames (`O-123`) | Gateway implementation |
 | Projected area saturates at canopy closure, in the fruiting phase; a second visible instrument on a known baseline would give height and volume (`O-125`) | Survey data |
 | A cultivation-run entity, on which comparability across runs rests | Data model owner |

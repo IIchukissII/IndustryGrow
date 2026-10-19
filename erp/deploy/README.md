@@ -14,7 +14,7 @@ d2).
 serves — a spare box, a NAS, an existing service host. **Not a gateway**: the
 gateway is the stateless replaceable edge (ADR-0004; ADR-0020 d5), so a system of
 record there turns a gateway swap into a data-loss event (ADR-0021
-decision 1, alternative L).
+decision 1 and its alternatives).
 
 On top of that architectural rule there is a practical one worth checking before
 you pick a small ARM host: recent MongoDB server builds require **ARMv8.2-A**,

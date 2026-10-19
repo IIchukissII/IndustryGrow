@@ -6,9 +6,9 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0031 — Actuator node taxonomy
 
 - **Status:** Accepted
-- **Date:** accepted 2026-09-07; changed 2026-10-19
-- **Parent:** ADR-0001
-- **Related:** ADR-0014 (sensor partition mirrored here; header contract and class-ID space), ADR-0015 (cascaded control, demand form, interlock independence), ADR-0016 (identification needs unconfounded inputs), ADR-0017 (identifiers assigned at commit), ADR-0018 (switching at the actuator, energy metering, the over-temperature trip, M05 sense-only), ADR-0005 (wire types for demand and actuator state), ADR-0028 (custody of node-local constants), ADR-0032 (how A01-CLIMATE conditions the air)
+- **Date:** 2026-09-07; changed 2026-10-19
+- **Parent:** [ADR-0001](ADR-0001-industrygrow-framing.md)
+- **Related:** [ADR-0014](ADR-0014-sensor-node-taxonomy.md) (sensor partition mirrored here; header contract and class-ID space), [ADR-0015](ADR-0015-gateway-profile-and-control-loops.md) (cascaded control, demand form, interlock independence), [ADR-0016](ADR-0016-empirical-survey-and-state-space-modeling.md) (identification needs unconfounded inputs), [ADR-0017](ADR-0017-component-document-and-instance-identification.md) (identifiers assigned at commit), [ADR-0018](ADR-0018-power-distribution-and-rail-monitoring.md) (switching at the actuator, energy metering, the over-temperature trip, M05 sense-only), [ADR-0005](ADR-0005-dsdl-foundation.md) (wire types for demand and actuator state), [ADR-0028](ADR-0028-commissioning-sequence-and-trim-custody.md) (custody of node-local constants), [ADR-0032](ADR-0032-grow-box-climate-conditioning.md) (how A01-CLIMATE conditions the air)
 
 ## Context
 
@@ -43,18 +43,18 @@ ADR-0014 groups sensor classes by the medium a module serves. At deployment scal
 
 | Dec | Rejected alternative | Why rejected |
 |---|---|---|
-| 1 | **A.** Extend the `M0n` sensor namespace to actuators | The sensor number equals its ID; continuing past M07 collides with the sensor range |
-| 1 | **B.** Hex class ID alone, no name form | Every artifact class carries a readable identifier (ADR-0017); a bare ID is unusable in a BOM or registry row |
-| 2 | **C.** One class per device rather than per medium | Classes multiply with each hardware change; the medium is stable across device choices |
-| 2 | **H.** One class per regulated variable (temperature, vapour, CO₂, dosing, irrigation) | A different rule from the sensor partition; three classes on one air volume share one rejection loop; splits one air-handling unit across nodes at scale |
-| 2 | **D.** A single generic class parameterised by EEPROM contents | Safe output, interlock set and demand range are safety-relevant and would become runtime data |
-| 2 | **G.** Pre-reserve the actuator ID range against a planned class list | ADR-0017 d5 assigns at commit; reservation invites renumbering |
+| 1 | Extend the `M0n` sensor namespace to actuators | The sensor number equals its ID; continuing past M07 collides with the sensor range |
+| 1 | Hex class ID alone, no name form | Every artifact class carries a readable identifier (ADR-0017); a bare ID is unusable in a BOM or registry row |
+| 2 | One class per device rather than per medium | Classes multiply with each hardware change; the medium is stable across device choices |
+| 2 | One class per regulated variable (temperature, vapour, CO₂, dosing, irrigation) | A different rule from the sensor partition; three classes on one air volume share one rejection loop; splits one air-handling unit across nodes at scale |
+| 2 | A single generic class parameterised by EEPROM contents | Safe output, interlock set and demand range are safety-relevant and would become runtime data |
+| 2 | Pre-reserve the actuator ID range against a planned class list | ADR-0017 d5 assigns at commit; reservation invites renumbering |
 | 2 | A separate environmental-actuator record with humidification by vapour injection | Injection opposes a cooler surface below dew point (ADR-0032 d4); its CO₂ content belongs to `A01-CLIMATE` |
 | 6 | Safe output per class | The element is the commanded unit, and elements in one class fail safe differently |
-| 7 | **E.** Interlocks in firmware with a hardware watchdog | ADR-0015 d11 requires MCU independence |
-| 8 | **F.** Publish process variables from the actuator that drives them | A second source for a sensor class's quantity (ADR-0000 d3), coupling feedback to the controlled element |
-| 11 | **I.** Widen the header to carry every actuator line directly | The header is common to every class and carrier revision, for lines that need only bus rate |
-| 11 | **J.** An MCU on the actuator module as a smart peripheral | A second firmware image, toolchain and update path in answer to a pin count |
+| 7 | Interlocks in firmware with a hardware watchdog | ADR-0015 d11 requires MCU independence |
+| 8 | Publish process variables from the actuator that drives them | A second source for a sensor class's quantity (ADR-0000 d3), coupling feedback to the controlled element |
+| 11 | Widen the header to carry every actuator line directly | The header is common to every class and carrier revision, for lines that need only bus rate |
+| 11 | An MCU on the actuator module as a smart peripheral | A second firmware image, toolchain and update path in answer to a pin count |
 
 ## Consequences
 

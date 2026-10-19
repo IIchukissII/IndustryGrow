@@ -6,9 +6,9 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0005 — DSDL foundation: type vocabulary, standard-type reuse, port-ID allocation
 
 - **Status:** Accepted
-- **Date:** accepted 2026-06-17; changed 2026-10-19
-- **Parent:** ADR-0001
-- **Related:** ADR-0002 (the Cyphal bus and gateway-side mapping this vocabulary serves), ADR-0014 (module classes, gateway role/zone tagging, presence probing), ADR-0015 (control over the normal command path; profiles are JSON, not DSDL), ADR-0018 (M05 sense-only; door and leak are report/alert), ADR-0020 (gateway-side cost of decision 12), ADR-0027 (implements decision 6), ADR-0029 (firmware-update service binding by reuse), ADR-0031 (actuator types minted under decision 2)
+- **Date:** 2026-06-17; changed 2026-10-19
+- **Parent:** [ADR-0001](ADR-0001-industrygrow-framing.md)
+- **Related:** [ADR-0002](ADR-0002-field-bus-architecture.md) (the Cyphal bus and gateway-side mapping this vocabulary serves), [ADR-0014](ADR-0014-sensor-node-taxonomy.md) (module classes, gateway role/zone tagging, presence probing), [ADR-0015](ADR-0015-gateway-profile-and-control-loops.md) (control over the normal command path; profiles are JSON, not DSDL), [ADR-0018](ADR-0018-power-distribution-and-rail-monitoring.md) (M05 sense-only; door and leak are report/alert), [ADR-0020](ADR-0020-gateway-persistence-model.md) (gateway-side cost of decision 12), [ADR-0027](ADR-0027-node-identity-model.md) (implements decision 6), [ADR-0029](ADR-0029-node-firmware-update-and-bootloader.md) (firmware-update service binding by reuse), [ADR-0031](ADR-0031-actuator-node-taxonomy.md) (actuator types minted under decision 2)
 
 ## Context
 
@@ -35,16 +35,16 @@ The record decides the shape of the vocabulary: root namespace, reuse versus min
 
 | Dec | Rejected alternative | Why rejected |
 |---|---|---|
-| — | **F.** A second protocol or IDL (DroneCAN, CANopen PDOs, ad-hoc structs) | Settled by ADR-0002 dec 1; not reopened |
-| 1 | **C.** Role or zone encoded in the type or the frame | Contradicts ADR-0014 dec 7 and ADR-0002 dec 9; forces per-deployment type or frame variants |
-| 2 | **A.** All-custom vocabulary ignoring the standard namespace | Re-mints settled types, maximises owned surface, forfeits standard Cyphal tooling |
-| 3 | **H.** Accumulated energy in watt-hours as a project type | Wh is cosmetic: the scaling is a constant either way and float32 precision is unit-independent; it costs a minted type where a standard one fits |
+| — | A second protocol or IDL (DroneCAN, CANopen PDOs, ad-hoc structs) | Settled by ADR-0002 dec 1; not reopened |
+| 1 | Role or zone encoded in the type or the frame | Contradicts ADR-0014 dec 7 and ADR-0002 dec 9; forces per-deployment type or frame variants |
+| 2 | All-custom vocabulary ignoring the standard namespace | Re-mints settled types, maximises owned surface, forfeits standard Cyphal tooling |
+| 3 | Accumulated energy in watt-hours as a project type | Wh is cosmetic: the scaling is a constant either way and float32 precision is unit-independent; it costs a minted type where a standard one fits |
 | 4 | Door and leak as the standard single-bit primitive | Strips signal identity and the validity flag an alerting gateway needs |
-| 6 | **E.** Plug-and-play Node-ID allocation from the start | Adds an allocator and boot-time non-determinism a closed handful-of-nodes bus does not need |
-| 7 | **B.** Hard-wired subject-IDs, no register interface | Reflash-coupled, collides with multi-instance deployments and the gateway-owned mapping; defaults are kept, fixed bindings are not |
+| 6 | Plug-and-play Node-ID allocation from the start | Adds an allocator and boot-time non-determinism a closed handful-of-nodes bus does not need |
+| 7 | Hard-wired subject-IDs, no register interface | Reflash-coupled, collides with multi-instance deployments and the gateway-owned mapping; defaults are kept, fixed bindings are not |
 | 7 | Fixed port-IDs registered with OpenCyphal | Freezes one numeric assignment into firmware; the gateway owns the live map |
-| 8 | **D.** Bundled per-node telemetry records (all quantities in one type) | A struct cannot be partly absent, couples unrelated measurements, duplicates SI semantics; aggregates are reserved for atomicity (decision 11) |
-| 10 | **G.** Commit the generated sources | A second, drift-prone copy of the vocabulary |
+| 8 | Bundled per-node telemetry records (all quantities in one type) | A struct cannot be partly absent, couples unrelated measurements, duplicates SI semantics; aggregates are reserved for atomicity (decision 11) |
+| 10 | Commit the generated sources | A second, drift-prone copy of the vocabulary |
 | 11 | Summary statistics as separate SI subjects | They describe one frame; split, they describe no frame in particular |
 | 11 | A minted type for the full frame | Pixel data carries no semantics a type would add |
 | 11 | Gateway polls for frame availability | Availability is a field of the summary record; reading on change costs no poll traffic |

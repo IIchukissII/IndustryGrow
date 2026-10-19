@@ -6,9 +6,9 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0018 — Cabinet power distribution and consumption metering
 
 - **Status:** Proposed
-- **Date:** proposed 2026-06-03; changed 2026-10-19
-- **Parent:** ADR-0001
-- **Related:** ADR-0002 (per-node regulation and linear bus this board feeds), ADR-0014 (M05-SAFETY, the module class this board realises), ADR-0015 (actuator commands and the hardware interlock rule), ADR-0017 (E-module identification of the board), ADR-0031 (actuator switching, isolation and interlocks)
+- **Date:** 2026-06-03; changed 2026-10-19
+- **Parent:** [ADR-0001](ADR-0001-industrygrow-framing.md)
+- **Related:** [ADR-0002](ADR-0002-field-bus-architecture.md) (per-node regulation and linear bus this board feeds), [ADR-0014](ADR-0014-sensor-node-taxonomy.md) (M05-SAFETY, the module class this board realises), [ADR-0015](ADR-0015-gateway-profile-and-control-loops.md) (actuator commands and the hardware interlock rule), [ADR-0017](ADR-0017-component-document-and-instance-identification.md) (E-module identification of the board), [ADR-0031](ADR-0031-actuator-node-taxonomy.md) (actuator switching, isolation and interlocks)
 
 ## Context
 
@@ -46,15 +46,15 @@ Actuator loads run at 12 V, 24 V or mains. A single board that both distributes 
 
 | Dec | Rejected alternative | Why rejected |
 |---|---|---|
-| 1 | **A.** One universal central board distributing and switching every actuator voltage, with isolation | Spans SELV and mains on one board, with creepage, isolated gate drive and multiple ground domains beside the MCU and analog sensing |
-| 2 | **E.** No central board; a fused `+12 V` rail daisy-chained to the nodes | Loses central power accounting and cabinet distribution, which a small board provides cheaply |
+| 1 | One universal central board distributing and switching every actuator voltage, with isolation | Spans SELV and mains on one board, with creepage, isolated gate drive and multiple ground domains beside the MCU and analog sensing |
+| 2 | No central board; a fused `+12 V` rail daisy-chained to the nodes | Loses central power accounting and cabinet distribution, which a small board provides cheaply |
 | 5 | Three-way DC current split: total, sensor section, DC actuator aggregate | The `+12 V` board carries sensors only, so total and sensor section are one measurement |
 | 5 | An INA226 on the DC actuator aggregate | The DIN meter captures all actuator energy; a second monitor adds hardware for no information |
-| 5 | **F.** Actuator AC energy via a metering IC on the project's own board | Puts a mains-referenced domain, creepage and isolation on project PCB; a COTS meter meters internally and outputs an isolated pulse |
-| 5 | **G.** Actuator metering over Modbus or M-Bus by default | Modbus reintroduces RS-485 and the polling protocol ADR-0002 rejects; M-Bus adds a bus and master. Kept as opt-in |
-| 7 | **B.** Two galvanically isolated domains on the board, with optocouplers and an isolated I²C | Isolation drivers exist only if the board switches; it switches nothing |
-| 8 | **C.** Per-load metering at every sensor and actuator node | Heartbeat covers sensor-node health and per-node power forces star power; aggregate energy plus command state localises actuator anomalies |
-| 9 | **D.** M05 as the per-zone module with per-load INA226s and terminal blocks | Needs Kelvin wiring to scattered loads on a small board; power originates at the cabinet |
+| 5 | Actuator AC energy via a metering IC on the project's own board | Puts a mains-referenced domain, creepage and isolation on project PCB; a COTS meter meters internally and outputs an isolated pulse |
+| 5 | Actuator metering over Modbus or M-Bus by default | Modbus reintroduces RS-485 and the polling protocol ADR-0002 rejects; M-Bus adds a bus and master. Kept as opt-in |
+| 7 | Two galvanically isolated domains on the board, with optocouplers and an isolated I²C | Isolation drivers exist only if the board switches; it switches nothing |
+| 8 | Per-load metering at every sensor and actuator node | Heartbeat covers sensor-node health and per-node power forces star power; aggregate energy plus command state localises actuator anomalies |
+| 9 | M05 as the per-zone module with per-load INA226s and terminal blocks | Needs Kelvin wiring to scattered loads on a small board; power originates at the cabinet |
 | 9 | M05 framed as an inverted mezzanine with architectural significance | Board stacking is a layout detail; M05 is an ordinary carrier-plus-module node |
 | 10 | The over-temperature trip on M05 | The trip is a switching function and belongs with the element it cuts; M05 is sense-only |
 

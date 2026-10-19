@@ -6,9 +6,9 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0014 — Sensor node taxonomy and module decomposition
 
 - **Status:** Accepted
-- **Date:** accepted 2026-05-16; changed 2026-10-19
-- **Parent:** ADR-0001
-- **Related:** ADR-0002 (carrier and core board every node is built from), ADR-0003 (the quantities the profile requires measured), ADR-0016 (soft sensors, apparatus subspace, survey density), ADR-0017 (E-numbers, per-carrier firmware, instance identity), ADR-0018 (M05 realised as the cabinet distribution and monitoring board), ADR-0019 (SP numbers for purchased wind instruments), ADR-0027 (carrier Node-ID store inside the reserved identification block), ADR-0031 (actuator classes in the same class-ID space)
+- **Date:** 2026-05-16; changed 2026-10-19
+- **Parent:** [ADR-0001](ADR-0001-industrygrow-framing.md)
+- **Related:** [ADR-0002](ADR-0002-field-bus-architecture.md) (carrier and core board every node is built from), [ADR-0003](ADR-0003-strawberry-day-neutral-profile.md) (the quantities the profile requires measured), [ADR-0016](ADR-0016-empirical-survey-and-state-space-modeling.md) (soft sensors, apparatus subspace, survey density), [ADR-0017](ADR-0017-component-document-and-instance-identification.md) (E-numbers, per-carrier firmware, instance identity), [ADR-0018](ADR-0018-power-distribution-and-rail-monitoring.md) (M05 realised as the cabinet distribution and monitoring board), [ADR-0019](ADR-0019-purchased-part-%28SP%29-identification.md) (SP numbers for purchased wind instruments), [ADR-0027](ADR-0027-node-identity-model.md) (carrier Node-ID store inside the reserved identification block), [ADR-0031](ADR-0031-actuator-node-taxonomy.md) (actuator classes in the same class-ID space)
 
 ## Context
 
@@ -45,39 +45,39 @@ Within a zone, one accurate sensor with a dense time series and a model outperfo
 
 | Dec | Rejected alternative | Why rejected |
 |---|---|---|
-| 1 | **A.** One module carrying every sensor | Poor fault isolation, a large board, and against ADR-0001's subsystem decomposition |
-| 1 | **B.** One module per individual sensor | Mostly empty boards; NRE dominates across 15–20 designs |
-| 1 | **C.** Group sensors by interface type, not function | Against the subsystem decomposition; loses fault isolation |
-| 1 | **E.** Delegate pH/EC to external transmitters over RS-485 / Modbus | A second, vendor-specific protocol; no raw electrode signal; fragmented supply chain |
-| 1 | **G.** Sensor proliferation for redundancy within a zone | A model on one dense time series outperforms co-located copies; shared sensor types across M01, M06 and M07 measure different quantities at non-interchangeable locations and are not redundancy |
-| 2 | **D.** Split each subsystem into several PCB designs | Multiplies design effort; the partial BOM meets the same need |
-| 3 | **F.** One PCB per subsystem with every sensor at one point | Climate and safety sensors have incompatible spatial requirements |
+| 1 | One module carrying every sensor | Poor fault isolation, a large board, and against ADR-0001's subsystem decomposition |
+| 1 | One module per individual sensor | Mostly empty boards; NRE dominates across 15–20 designs |
+| 1 | Group sensors by interface type, not function | Against the subsystem decomposition; loses fault isolation |
+| 1 | Delegate pH/EC to external transmitters over RS-485 / Modbus | A second, vendor-specific protocol; no raw electrode signal; fragmented supply chain |
+| 1 | Sensor proliferation for redundancy within a zone | A model on one dense time series outperforms co-located copies; shared sensor types across M01, M06 and M07 measure different quantities at non-interchangeable locations and are not redundancy |
+| 2 | Split each subsystem into several PCB designs | Multiplies design effort; the partial BOM meets the same need |
+| 3 | One PCB per subsystem with every sensor at one point | Climate and safety sensors have incompatible spatial requirements |
 | 4 | Airflow sensor on M01-CLIMATE | Air transport and air state have different valid locations; one module holds both only with a displaced sensor |
-| 4 | **Q.** AS7341 on M02, far-red reported unverified or inferred from command | Its bands are blind at the commanded far-red; inferring a channel from its own command is not a measurement |
-| 4 | **R.** LTR390 for UV-A | Response peaks below the commanded band; its fixed address sits in the reserved identification block |
-| 4 | **R.** VEML6075 for UV-A/UV-B | Terminated by the manufacturer; no successor measures UV-A and UV-B separately |
-| 4 | **S.** Discrete far-red photodiode with interference filter | Adds an analog chain and ADC channel for one band a spectral part carries, and a second calibration path; reopens mixed-signal content outside M03 |
-| 4 | **T.** AS7331, waiting for supply | Not procurable on any surveyed channel; its two ordering codes differ only in reel size |
-| 4 | **U.** Another integrated UV part | Every surveyed alternative is withdrawn or unprocurable |
-| 4 | **V.** Discrete GaN or SiC UV photodiodes with an analog front end | Surviving parts are expensive, unstocked raw diodes; sub-nanoamp currents need a guarded transimpedance stage and own calibration, mixed-signal content on the simplest module |
-| 4 | **W.** Move the AS7343 off the shared address | Its address is fixed, and it is the only spectral part meeting ADR-0003 d11 with distributor stock |
-| 4 | **X.** Separate the two sensors with the level translator's enable | A pass-FET pair cannot separate two devices on one address in both directions; a second translator spends header GPIO |
+| 4 | AS7341 on M02, far-red reported unverified or inferred from command | Its bands are blind at the commanded far-red; inferring a channel from its own command is not a measurement |
+| 4 | LTR390 for UV-A | Response peaks below the commanded band; its fixed address sits in the reserved identification block |
+| 4 | VEML6075 for UV-A/UV-B | Terminated by the manufacturer; no successor measures UV-A and UV-B separately |
+| 4 | Discrete far-red photodiode with interference filter | Adds an analog chain and ADC channel for one band a spectral part carries, and a second calibration path; reopens mixed-signal content outside M03 |
+| 4 | AS7331, waiting for supply | Not procurable on any surveyed channel; its two ordering codes differ only in reel size |
+| 4 | Another integrated UV part | Every surveyed alternative is withdrawn or unprocurable |
+| 4 | Discrete GaN or SiC UV photodiodes with an analog front end | Surviving parts are expensive, unstocked raw diodes; sub-nanoamp currents need a guarded transimpedance stage and own calibration, mixed-signal content on the simplest module |
+| 4 | Move the AS7343 off the shared address | Its address is fixed, and it is the only spectral part meeting ADR-0003 d11 with distributor stock |
+| 4 | Separate the two sensors with the level translator's enable | A pass-FET pair cannot separate two devices on one address in both directions; a second translator spends header GPIO |
 | 4 | Per-leaf leaf VPD from raw thermal frames as a delivered capability | Needs canopy segmentation; raw-frame accuracy does not support it |
 | 4 | Per-load INA226 monitoring with terminal blocks on the zone module | Replaced by source-side metering at the cabinet (ADR-0018 d5) |
 | 4 | TMP117 on M05 as the over-temperature cutoff | The trip must be MCU-independent and sit with the element it cuts (ADR-0018 d10) |
-| 4 | **H.** Calibrated restriction as M06's primary flow element | Inserts a constriction into the air path being measured; remains usable only as a commissioning reference |
-| 4 | **I.** Envelope leakage as supply flow minus exhaust flow | A small difference of large numbers; the error exceeds the estimate |
-| 4 | **J.** Parallel Gray code from the vane direct to GPIO | Encoder resolution would enter the header contract, which carries named interfaces, not line counts |
-| 4 | **J.** I²C for the vane link | Open-drain and capacitance-bound over a cable |
-| 4 | **K.** Sensors on M07's rotating vane | Needs slip rings or wireless power; a thermal anemometer saturates silently, reading a gale as calm |
-| 4 | **L.** Ultrasonic or analog-output wind instruments | Higher cost; a pulse output fits the existing S0 counting path. Reconsidered if bearing wear limits |
-| 4 | **Y.** Condensate rate on M04-PLANT as a transpiration measurement | The transducer is in the apparatus drain; transpiration follows only through a conversion with an unobserved loss term |
-| 4 | **Z.** Condensate rate published by A01-CLIMATE | An actuator publishes no process variable (ADR-0031 d8) |
-| 4 | **AA.** Level sensor in the condensate vessel | Gives volume not rate, is lost on emptying or overflow, and is dominated by meniscus and tilt in a small vessel |
-| 6 | **M.** Widen the parallel strap to four or eight pins | Four is one growth step from exhaustion; eight spends header pins and resistors on a value fixed at manufacture |
-| 6 | **N.** I²C port expander with strap resistors | Keeps identity as wiring and adds parts against one EEPROM, at the same address cost |
-| 6 | **O.** SPI shift register | Spends a chip select M03 and M07 contend for; a class never changes, unlike the vane value |
-| 6 | **P.** Resistor ladder into an ADC pin | 256 codes need ratiometric accuracy a divider cannot deliver |
+| 4 | Calibrated restriction as M06's primary flow element | Inserts a constriction into the air path being measured; remains usable only as a commissioning reference |
+| 4 | Envelope leakage as supply flow minus exhaust flow | A small difference of large numbers; the error exceeds the estimate |
+| 4 | Parallel Gray code from the vane direct to GPIO | Encoder resolution would enter the header contract, which carries named interfaces, not line counts |
+| 4 | I²C for the vane link | Open-drain and capacitance-bound over a cable |
+| 4 | Sensors on M07's rotating vane | Needs slip rings or wireless power; a thermal anemometer saturates silently, reading a gale as calm |
+| 4 | Ultrasonic or analog-output wind instruments | Higher cost; a pulse output fits the existing S0 counting path. Reconsidered if bearing wear limits |
+| 4 | Condensate rate on M04-PLANT as a transpiration measurement | The transducer is in the apparatus drain; transpiration follows only through a conversion with an unobserved loss term |
+| 4 | Condensate rate published by A01-CLIMATE | An actuator publishes no process variable (ADR-0031 d8) |
+| 4 | Level sensor in the condensate vessel | Gives volume not rate, is lost on emptying or overflow, and is dominated by meniscus and tilt in a small vessel |
+| 6 | Widen the parallel strap to four or eight pins | Four is one growth step from exhaustion; eight spends header pins and resistors on a value fixed at manufacture |
+| 6 | I²C port expander with strap resistors | Keeps identity as wiring and adds parts against one EEPROM, at the same address cost |
+| 6 | SPI shift register | Spends a chip select M03 and M07 contend for; a class never changes, unlike the vane value |
+| 6 | Resistor ladder into an ADC pin | 256 codes need ratiometric accuracy a divider cannot deliver |
 | 6 | A physically separate strap field for actuator modules | No such field exists on the carrier; a namespace in the same field needs no pins |
 
 ## Consequences

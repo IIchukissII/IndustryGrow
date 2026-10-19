@@ -653,7 +653,7 @@ async def bind_machine_provisioning(
     Separate from the E-instance route because a gateway has no
     `Exxxx-VVVVVV-NNNNNN` serial — it is SP0004 identified as a machine, and
     minting it a synthetic instance id to reuse that route would corrupt the
-    ADR-0017 grammar to reach a database row (ADR-0021 alternative M).
+    ADR-0017 grammar to reach a database row (ADR-0021 dec 17 alternatives).
 
     Upsert, not insert: certificates are short-lived and auto-renewed
     (ADR-0007 d7), so re-certification calls this again with a new serial and

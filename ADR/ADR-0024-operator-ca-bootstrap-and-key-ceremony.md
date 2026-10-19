@@ -6,9 +6,9 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0024 — Operator CA bootstrap and the root-key ceremony
 
 - **Status:** Accepted
-- **Date:** accepted 2026-07-24; changed 2026-10-19
-- **Parent:** ADR-0007
-- **Related:** ADR-0001 (the self-build path decisions 5 and 7 keep completable), ADR-0004 (the firmware-signing key decision 14 takes into custody), ADR-0015 (the profile channel decision 10 declines to reuse), ADR-0017 (the `-PR` record issued leaves are bound in), ADR-0020 (decision 5's permitted gateway state, which decision 4 extends), ADR-0021 (the operator-private data that keeps the ERP a relying party), ADR-0022 (the gateway client certificate this CA issues), ADR-0029 (the bootloader that verifies against the firmware-signing key)
+- **Date:** 2026-07-24; changed 2026-10-19
+- **Parent:** [ADR-0007](ADR-0007-pki-and-secure-element-identity.md)
+- **Related:** [ADR-0001](ADR-0001-industrygrow-framing.md) (the self-build path decisions 5 and 7 keep completable), [ADR-0004](ADR-0004-gateway-host-hardening.md) (the firmware-signing key decision 14 takes into custody), [ADR-0015](ADR-0015-gateway-profile-and-control-loops.md) (the profile channel decision 10 declines to reuse), [ADR-0017](ADR-0017-component-document-and-instance-identification.md) (the `-PR` record issued leaves are bound in), [ADR-0020](ADR-0020-gateway-persistence-model.md) (decision 5's permitted gateway state, which decision 4 extends), [ADR-0021](ADR-0021-instance-and-integration-erp.md) (the operator-private data that keeps the ERP a relying party), [ADR-0022](ADR-0022-instance-integration-erp-api.md) (the gateway client certificate this CA issues), [ADR-0029](ADR-0029-node-firmware-update-and-bootloader.md) (the bootloader that verifies against the firmware-signing key)
 
 ## Context
 
@@ -39,14 +39,14 @@ A ceremony too heavy for a one-person deployment is skipped, and a skipped cerem
 
 | Dec | Rejected alternative | Why rejected |
 |---|---|---|
-| 1 | **A.** One tier: the root issues leaves directly | Short-lived leaves put the issuing key online, so the root goes online, and issuing-key and root compromise become one event |
-| 1 | **B.** Three tiers: root, policy CA, issuing CA | A middle tier separates issuance domains or policies a single-estate operator does not have, at the cost of another key, lifetime and rotation |
-| 1 | **E.** An ACME issuance service (e.g. step-ca) as the operator CA | A running service that still needs a root and this ceremony; more machinery than a small estate's renewal cadence justifies. It can take the intermediate's place later without changing the root or any anchor |
+| 1 | One tier: the root issues leaves directly | Short-lived leaves put the issuing key online, so the root goes online, and issuing-key and root compromise become one event |
+| 1 | Three tiers: root, policy CA, issuing CA | A middle tier separates issuance domains or policies a single-estate operator does not have, at the cost of another key, lifetime and rotation |
+| 1 | An ACME issuance service (e.g. step-ca) as the operator CA | A running service that still needs a root and this ceremony; more machinery than a small estate's renewal cadence justifies. It can take the intermediate's place later without changing the root or any anchor |
 | 5 | Offline by procedure: the operator disconnects the network before generating | Cannot be re-run, tested or verified afterwards |
-| 6 | **C.** Root split across custodians by Shamir / M-of-N | Presumes a quorum a one-person deployment lacks, turns one lost medium into an unrecoverable loss, and reassembles the key on one machine anyway |
-| 7 | **D.** Require a hardware token for the root | Makes a hardware purchase a precondition of self-hosting (ADR-0001 decision 6) and adds PKCS#11 to the bare-machine procedure |
-| 10 | **F.** Distribute a rotated root through the profile channel | Puts trust material on the single mutation interface for a rare, planned, hands-on event |
-| 13 | **G.** Harden the test-CA fixture into the bootstrap procedure | A fixture's purpose is disposable, unencrypted keys; grown into a ceremony it is neither a good fixture nor a trustworthy ceremony. It mirrors the two-tier shape instead |
+| 6 | Root split across custodians by Shamir / M-of-N | Presumes a quorum a one-person deployment lacks, turns one lost medium into an unrecoverable loss, and reassembles the key on one machine anyway |
+| 7 | Require a hardware token for the root | Makes a hardware purchase a precondition of self-hosting (ADR-0001 decision 6) and adds PKCS#11 to the bare-machine procedure |
+| 10 | Distribute a rotated root through the profile channel | Puts trust material on the single mutation interface for a rare, planned, hands-on event |
+| 13 | Harden the test-CA fixture into the bootstrap procedure | A fixture's purpose is disposable, unencrypted keys; grown into a ceremony it is neither a good fixture nor a trustworthy ceremony. It mirrors the two-tier shape instead |
 | 14 | Firmware-signing key as a CA issuing signing certificates | The bootloader verifies each image directly against one public key and does no path validation |
 
 ## Consequences

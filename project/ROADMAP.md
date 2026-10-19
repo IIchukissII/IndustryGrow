@@ -82,7 +82,7 @@ revisited after modeling. The natural dependency order is
 emits bulk, high-rate data, but the cloud only arrives at stage 11 — so for stages
 1–10 the gateway is necessarily the primary durable sink; the survey cannot run
 with no store. ADR-0020 resolves this: it supersedes ADR-0004's rejection of
-a local buffer (decisions 8–11, alternative D) on the endurance axis — an external
+a local buffer (decisions 8–11 and the dec 9 alternatives) on the endurance axis — an external
 SSD/NVMe medium retires that constraint — and defines a time-boxed survey-capture
 path plus a bounded store-and-forward buffer. The local store is the primary record
 pre-cloud and demotes to a best-effort buffer once IndustryFlow exists (stage 11+);

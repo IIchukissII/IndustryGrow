@@ -6,9 +6,9 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0023 — The type registry as a machine-readable interface
 
 - **Status:** Accepted
-- **Date:** accepted 2026-07-21; changed 2026-10-19
-- **Parent:** ADR-0017
-- **Related:** ADR-0019 (the SP section and its `Instance-tracked?` column), ADR-0021 (decision 11: the ERP references type meaning and never holds it), ADR-0022 (decision 9: no type-meaning writes; this record is its read side), ADR-0000 (decision 3: the duplication this removes)
+- **Date:** 2026-07-21; changed 2026-10-19
+- **Parent:** [ADR-0017](ADR-0017-component-document-and-instance-identification.md)
+- **Related:** [ADR-0019](ADR-0019-purchased-part-%28SP%29-identification.md) (the SP section and its `Instance-tracked?` column), [ADR-0021](ADR-0021-instance-and-integration-erp.md) (decision 11: the ERP references type meaning and never holds it), [ADR-0022](ADR-0022-instance-integration-erp-api.md) (decision 9: no type-meaning writes; this record is its read side)
 
 ## Context
 
@@ -35,13 +35,13 @@ A consumer that reads the registry directly makes it an interface, and an interf
 
 | Dec | Rejected alternative | Why rejected |
 |---|---|---|
-| 1 | **A.** A table in each consumer, labelled display-only | A second source of truth; copies drift with no signal |
-| 1 | **B.** A structured file (TOML or JSON) authoritative, Markdown generated from it | The document contributors read and review becomes a build artifact; needs a generator and a drift check to protect what the CI check of decision 7 protects |
-| 2 | **E.** Parse the document as it is, without deciding a form | The form exists anyway as an undocumented parser assumption; a reformatted table breaks consumers with no rule to consult |
-| 4 | **C.** Cache the parsed catalog in the ERP's database, refreshed on change | A synchronised copy survives a registry correction and puts type meaning in the store ADR-0021 decision 11 keeps it out of |
-| 4 | **D.** Sync the registry into the object-store warehouse and read it from there | The warehouse is identifier-keyed (ADR-0017 decision 15) and the registry is not; adds a network fetch for a file that ships with the repository |
+| 1 | A table in each consumer, labelled display-only | A second source of truth; copies drift with no signal |
+| 1 | A structured file (TOML or JSON) authoritative, Markdown generated from it | The document contributors read and review becomes a build artifact; needs a generator and a drift check to protect what the CI check of decision 7 protects |
+| 2 | Parse the document as it is, without deciding a form | The form exists anyway as an undocumented parser assumption; a reformatted table breaks consumers with no rule to consult |
+| 4 | Cache the parsed catalog in the ERP's database, refreshed on change | A synchronised copy survives a registry correction and puts type meaning in the store ADR-0021 decision 11 keeps it out of |
+| 4 | Sync the registry into the object-store warehouse and read it from there | The warehouse is identifier-keyed (ADR-0017 decision 15) and the registry is not; adds a network fetch for a file that ships with the repository |
 | 5 | Fall back to a built-in table or derive a label from the number | Reintroduces the duplicate as error handling |
-| 6 | **F.** Put consumer colours in the registry | The registry is meaning, not appearance; one UI concern admits the rest |
+| 6 | Put consumer colours in the registry | The registry is meaning, not appearance; one UI concern admits the rest |
 
 ## Consequences
 

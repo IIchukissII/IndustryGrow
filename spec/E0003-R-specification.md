@@ -532,7 +532,7 @@ collision with M06's O-42.
 |----|------|--------|
 | O-52 | PPFD reconstruction coefficients `c_i`: identification procedure, reference instrument, and per-phase-spectrum validity. The project owns no reference quantum sensor | PPFD accuracy, deployment profile, V1 |
 | ~~O-53~~ | ~~U3's fixed `0x53` inside the reserved `0x50`–`0x57` block~~ — closed 2026-08-13 by ADR-0014. Still closed after ADR-0014: U3 is now the TSL2585 at `0x39` and U1 sits at `0x70`, so no device on this module occupies the block | — |
-| ~~O-54~~ | ~~ADR-0014 d4's alternative UV part, the Vishay VEML6075, was terminated in 2019~~ — closed 2026-08-13 by ADR-0014, which removes it and the LTR390 from d4 | — |
+| ~~O-54~~ | ~~ADR-0014 d4's second-source UV part, the Vishay VEML6075, was terminated in 2019~~ — closed 2026-08-13 by ADR-0014, which removes it and the LTR390 from d4 | — |
 | ~~O-55~~ | ~~730 nm far-red unobservable, and the UV-A band on the shoulder of the UV sensor's response~~ — closed 2026-08-13 by ADR-0014: F8 at 745 nm covers 730 nm (§6.3) and the AS7331's UV-A channel is centred at 360 nm (§6.4) | — |
 | ~~O-56~~ | ~~U4's digital pins operated at 3.3 V, above V_DD, inside the 3.6 V absolute maximum but against the device pin description~~ — closed 2026-08-19 by fitting U1 in `store/E0003-000001.kicad_sch`: U4 sits on its own 1.8 V segment with its own pull-ups (§5.1, §5.2). The part at U1 became the `TCA9543A` on 2026-08-23 (ADR-0014); the item stays closed, since the translation it required is still performed | — |
 | O-57 | Condensation on excursions places U4 outside its 5–85 %RH non-condensing operating conditions. Post-excursion validity and recovery undefined, as for O-47 | Excursion handling, data validity |

@@ -6,8 +6,8 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0001 — IndustryGrow as an open-core cultivation platform on IndustryFlow
 
 - **Status:** Accepted
-- **Date:** accepted 2026-05-16; changed 2026-10-19
-- **Related:** ADR-0002 (realises decision 8), ADR-0003 (the seed profile of decision 5), ADR-0006 (cabinet form for decision 6), ADR-0021 (core-plus-layer integration of decision 7)
+- **Date:** 2026-05-16; changed 2026-10-19
+- **Related:** [ADR-0002](ADR-0002-field-bus-architecture.md) (realises decision 8), [ADR-0003](ADR-0003-strawberry-day-neutral-profile.md) (the seed profile of decision 5), [ADR-0006](ADR-0006-cabinet-decomposition-and-hydroponic-topology.md) (cabinet form for decision 6), [ADR-0021](ADR-0021-instance-and-integration-erp.md) (core-plus-layer integration of decision 7)
 
 ## Context
 
@@ -30,11 +30,11 @@ Every downstream choice — protocol, hardware, security, repository structure, 
 
 | Dec | Rejected alternative | Why rejected |
 |---|---|---|
-| — | **A.** Personal or decorative cabinet with no platform ambition | The architecture already exceeds personal scope, validating IndustryFlow needs a generalisable shape, and a second cabinet is planned regardless |
-| — | **B.** Pure closed-source product | No community contribution path, harder adoption, and conflicts with the open IndustryFlow foundation; closed-only platforms in the domain have not produced network effects |
-| — | **C.** Pure open source, no commercial layer | No sustainable funding; open-source-only agtech platforms struggle to sustain development pace |
-| — | **E.** Commercial first, source released later | Makes community contribution a token and starts the project on the wrong foundation |
-| 1 | **D.** Business Source License instead of AGPL | More enterprise-friendly but less open; AGPL is the more established, less contested pattern among developers. Migration remains possible if AGPL proves too restrictive |
+| — | Personal or decorative cabinet with no platform ambition | The architecture already exceeds personal scope, validating IndustryFlow needs a generalisable shape, and a second cabinet is planned regardless |
+| — | Pure closed-source product | No community contribution path, harder adoption, and conflicts with the open IndustryFlow foundation; closed-only platforms in the domain have not produced network effects |
+| — | Pure open source, no commercial layer | No sustainable funding; open-source-only agtech platforms struggle to sustain development pace |
+| — | Commercial first, source released later | Makes community contribution a token and starts the project on the wrong foundation |
+| 1 | Business Source License instead of AGPL | More enterprise-friendly but less open; AGPL is the more established, less contested pattern among developers. Migration remains possible if AGPL proves too restrictive |
 | 8 | Two hardware tiers: prototype-grade carriers for self-builders, production-grade boards for commercial deployments, one DSDL | Two carriers double engineering and documentation, mixed-grade buses impose lowest-common-denominator caveats, and clone-board supply is a long-tail risk (ADR-0002) |
 
 ## Consequences

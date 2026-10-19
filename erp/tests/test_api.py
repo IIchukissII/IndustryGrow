@@ -621,7 +621,7 @@ def _machine_binding(**over) -> dict:
 
 def test_a_machine_carries_its_own_provisioning_binding(client):
     # ADR-0022 d12: a gateway is SP0004 with no Exxxx-VVVVVV-NNNNNN serial,
-    # so it cannot use the E-instance binding route (ADR-0021 alternative M rejects minting
+    # so it cannot use the E-instance binding route (ADR-0021 dec 17 alternatives reject minting
     # it a synthetic instance id to reach that row).
     r = client.post(
         "/api/v1/machines/GBOX_0001/provisioning", json=_machine_binding(), headers=AUTH

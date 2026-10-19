@@ -6,9 +6,9 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0022 — Machine- and operator-facing API of the instance-and-integration ERP
 
 - **Status:** Accepted
-- **Date:** accepted 2026-07-21; changed 2026-10-19
-- **Parent:** ADR-0021
-- **Related:** ADR-0004 (platform-side audit and the stage-11 auth model), ADR-0007 (operator PKI the gateway channel authenticates against), ADR-0015 (single mutation channel the profile routes preserve), ADR-0016 (profile as one artifact), ADR-0017 (identifier grammar parsed here; lifecycle suffixes), ADR-0019 (SP identity and type-layer document kinds), ADR-0020 (operational buffer that stays on the gateway), ADR-0023 (type registry served read-through), ADR-0025 (signed profiles the pull carries), ADR-0026 (backup that inverts decision 7's write order), ADR-0029 (firmware path decision 14 serves), ADR-IF-0001 (planned `production_unit` API the `[F]` operations align to)
+- **Date:** 2026-07-21; changed 2026-10-19
+- **Parent:** [ADR-0021](ADR-0021-instance-and-integration-erp.md)
+- **Related:** [ADR-0004](ADR-0004-gateway-host-hardening.md) (platform-side audit and the stage-11 auth model), [ADR-0007](ADR-0007-pki-and-secure-element-identity.md) (operator PKI the gateway channel authenticates against), [ADR-0015](ADR-0015-gateway-profile-and-control-loops.md) (single mutation channel the profile routes preserve), [ADR-0016](ADR-0016-empirical-survey-and-state-space-modeling.md) (profile as one artifact), [ADR-0017](ADR-0017-component-document-and-instance-identification.md) (identifier grammar parsed here; lifecycle suffixes), [ADR-0019](ADR-0019-purchased-part-%28SP%29-identification.md) (SP identity and type-layer document kinds), [ADR-0020](ADR-0020-gateway-persistence-model.md) (operational buffer that stays on the gateway), [ADR-0023](ADR-0023-machine-readable-type-registry.md) (type registry served read-through), [ADR-0025](ADR-0025-cultivation-profile-signing.md) (signed profiles the pull carries), [ADR-0026](ADR-0026-erp-backup-and-restore.md) (backup that inverts decision 7's write order), [ADR-0029](ADR-0029-node-firmware-update-and-bootloader.md) (firmware path decision 14 serves), ADR-IF-0001 (planned `production_unit` API the `[F]` operations align to)
 
 ## Context
 
@@ -83,22 +83,22 @@ A boundary that exists only as a missing route is undocumented, not enforced. Th
 
 | Dec | Rejected alternative | Why rejected |
 |---|---|---|
-| — | **A.** Amend ADR-0021 instead of a new record | An API contract is a decision surface with its own auth model, alternatives and stage-11 lifecycle |
+| — | Amend ADR-0021 instead of a new record | An API contract is a decision surface with its own auth model, alternatives and stage-11 lifecycle |
 | 1 | Deny every read of type meaning and type-layer documents | Pushes callers into keeping their own tables and copies, the dispersion ADR-0000 dec 3 prevents |
 | 1 | Limit type-layer reads to the repository's released-artifact directory | Specifications are repository-owned documents in the same keyspace (ADR-0017) |
-| 2 | **B.** One shared static bearer token for all callers, gateways included | Fuses machine and human auth, loses the gateway identity the deployment record depends on, and is copyable |
-| 2 | **C.** Defer gateway mTLS; use a token now and migrate later | The PKI exists; deferring costs a migration at stage 11 for no gain |
-| 4 | **G.** Accept client-supplied serials | Cannot be guaranteed gap-free and forfeits the allocation authority |
-| 7 | **E.** Accept any document for an instance, with a blocklist | New type-level kinds would silently route through the ERP as the type layer grows |
-| 7 | **O.** Return only a key or time-limited URL, and require a CORS policy on the bucket | A deployment's bucket credentials may not grant that policy; a read-through duplicates nothing |
-| 8 | **D.** A profile deploy, push or gateway-activate endpoint | A second mutation channel (ADR-0015 dec 1, 13) |
-| 8 | **F.** Store model parameters separately from setpoints | A profile version is one atomically versioned artifact (ADR-0016; ADR-0021 dec 13) |
-| 8 | **M.** Record the gateway's pull as a last-pulled timestamp | Operational intake from a machine, turning the timer-driven read into a write; monitoring is platform-side |
+| 2 | One shared static bearer token for all callers, gateways included | Fuses machine and human auth, loses the gateway identity the deployment record depends on, and is copyable |
+| 2 | Defer gateway mTLS; use a token now and migrate later | The PKI exists; deferring costs a migration at stage 11 for no gain |
+| 4 | Accept client-supplied serials | Cannot be guaranteed gap-free and forfeits the allocation authority |
+| 7 | Accept any document for an instance, with a blocklist | New type-level kinds would silently route through the ERP as the type layer grows |
+| 7 | Return only a key or time-limited URL, and require a CORS policy on the bucket | A deployment's bucket credentials may not grant that policy; a read-through duplicates nothing |
+| 8 | A profile deploy, push or gateway-activate endpoint | A second mutation channel (ADR-0015 dec 1, 13) |
+| 8 | Store model parameters separately from setpoints | A profile version is one atomically versioned artifact (ADR-0016; ADR-0021 dec 13) |
+| 8 | Record the gateway's pull as a last-pulled timestamp | Operational intake from a machine, turning the timer-driven read into a write; monitoring is platform-side |
 | 12 | Append a history of machine bindings | A record of what a certificate used to be is the audit trail decision 9 excludes |
-| 13 | **P.** Return identifiers as strings for each consumer to parse | The parse is positional and fails silently; every consumer becomes a separate implementation of the grammar |
+| 13 | Return identifiers as strings for each consumer to parse | The parse is positional and fails silently; every consumer becomes a separate implementation of the grammar |
 | 14 | Validate a firmware selection against a repository checkout | Accepts releases the gateway cannot fetch whenever mirror and bucket diverge, and makes a repository mount a precondition |
 | 14 | Let the gateway fetch firmware from the public repository | Puts the gateway in a trust relationship with an unauthenticated source for the artifact whose substitution matters most |
-| 14 | **Q.** Let the gateway report which nodes took the release | A machine's account of what happened; it opens the only machine-write surface decision 9 keeps closed |
+| 14 | Let the gateway report which nodes took the release | A machine's account of what happened; it opens the only machine-write surface decision 9 keeps closed |
 
 ## Consequences
 

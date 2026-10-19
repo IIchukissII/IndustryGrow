@@ -6,9 +6,9 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0025 — Deployment-profile signing and gateway verification
 
 - **Status:** Accepted
-- **Date:** accepted 2026-07-26; changed 2026-10-19
-- **Parent:** ADR-0015
-- **Related:** ADR-0001 (the community-contributed template model whose signing stays outside this record), ADR-0004 (outbound-only firewall; the firmware-signing root kept separate), ADR-0007 (P-256; distinct trust roots; the CN identity and replaceable-anchor shape), ADR-0020 (decision 5's permitted gateway state, which decision 10 extends), ADR-0021 (the template / instance / cache split; the ERP as store), ADR-0022 (the pull channel and the gateway's certificate identity), ADR-0024 (the ERP as relying party; the custody model decision 5 does not require)
+- **Date:** 2026-07-26; changed 2026-10-19
+- **Parent:** [ADR-0015](ADR-0015-gateway-profile-and-control-loops.md)
+- **Related:** [ADR-0001](ADR-0001-industrygrow-framing.md) (the community-contributed template model whose signing stays outside this record), [ADR-0004](ADR-0004-gateway-host-hardening.md) (outbound-only firewall; the firmware-signing root kept separate), [ADR-0007](ADR-0007-pki-and-secure-element-identity.md) (P-256; distinct trust roots; the CN identity and replaceable-anchor shape), [ADR-0020](ADR-0020-gateway-persistence-model.md) (decision 5's permitted gateway state, which decision 10 extends), [ADR-0021](ADR-0021-instance-and-integration-erp.md) (the template / instance / cache split; the ERP as store), [ADR-0022](ADR-0022-instance-integration-erp-api.md) (the pull channel and the gateway's certificate identity), [ADR-0024](ADR-0024-operator-ca-bootstrap-and-key-ceremony.md) (the ERP as relying party; the custody model decision 5 does not require)
 
 ## Context
 
@@ -38,15 +38,15 @@ The ERP is a relying party, never an authority (ADR-0024 decision 13), and holds
 | Dec | Rejected alternative | Why rejected |
 |---|---|---|
 | 1 | Instance and template signing in one record (ADR-0009) | Makes an operator's private control channel depend on the design of a public registry |
-| 3 | **A.** The ERP signs profiles on the operator's behalf | Puts the cabinet-control key in a networked container holding production data, and an ERP compromise becomes a cultivation-control compromise |
-| 4 | **B.** Sign profiles with the firmware-signing key | Routine authoring brings the release-only offline key online and dissolves the separation ADR-0007 decision 8 records |
-| 4 | **C.** Sign profiles with the operator CA key | Conflates who a unit is with what it should do; every issuance uses a key that can retune a cabinet, and rotating one forces rotating the other |
+| 3 | The ERP signs profiles on the operator's behalf | Puts the cabinet-control key in a networked container holding production data, and an ERP compromise becomes a cultivation-control compromise |
+| 4 | Sign profiles with the firmware-signing key | Routine authoring brings the release-only offline key online and dissolves the separation ADR-0007 decision 8 records |
+| 4 | Sign profiles with the operator CA key | Conflates who a unit is with what it should do; every issuance uses a key that can retune a cabinet, and rotating one forces rotating the other |
 | 5 | Require the ADR-0024 root-key ceremony for the profile key | A ceremony per setpoint change is routed around, and a bypassed signature is worth less than a proportionate one |
-| 6 | **D.** Canonical JSON (e.g. JCS / RFC 8785) with re-serialisation at each hop | Verification depends on every implementation agreeing on key order, number format and escaping; failures are silent and far from their cause |
-| 6 | **E.** Publish a hash and have the gateway compare digests | A hash proves integrity, not authorisation; whoever substitutes the document substitutes the digest |
-| 7 | **F.** Sign a constructed pre-image such as machine, version and payload digest | A second byte format both ends must agree on, and a field left out of it is silently unprotected |
+| 6 | Canonical JSON (e.g. JCS / RFC 8785) with re-serialisation at each hop | Verification depends on every implementation agreeing on key order, number format and escaping; failures are silent and far from their cause |
+| 6 | Publish a hash and have the gateway compare digests | A hash proves integrity, not authorisation; whoever substitutes the document substitutes the digest |
+| 7 | Sign a constructed pre-image such as machine, version and payload digest | A second byte format both ends must agree on, and a field left out of it is silently unprotected |
 | 7 | One signature any cabinet accepts | Theft of one signed artifact becomes a fleet-wide event |
-| 8 | **G.** Strict monotonicity with no rollback path | A bad profile becomes unrecoverable except by re-provisioning |
+| 8 | Strict monotonicity with no rollback path | A bad profile becomes unrecoverable except by re-provisioning |
 | 9 | A second asymmetric algorithm family | Adds library footprint and audit surface to a gateway that already has P-256 |
 | 10 | Verification key compiled into the gateway software or image | Key rotation becomes a reinstall or hardware event |
 | 12 | Sign the fallback with an operator key | The operator key does not exist when the gateway software is built |

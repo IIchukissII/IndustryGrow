@@ -45,7 +45,7 @@ voids the run. Uptime in the heartbeat is the check.
 | Source | Role | Basis |
 |---|---|---|
 | **U1 SHT45, subject 4112** | **The reference** | §10 makes U1 the board's only primary T. It sits in the same air as U3, and its sustained self-heating is 0.004 K (§8.1) |
-| M05 TMP117, subject 4099 | Ambient hold only | ADR-0014 alternative G — the TMP117 measures the cabinet, a different volume. It confirms the ambient held; it does not determine a trim |
+| M05 TMP117, subject 4099 | Ambient hold only | ADR-0014 dec 1 alternatives — the TMP117 measures the cabinet, a different volume. It confirms the ambient held; it does not determine a trim |
 | U2 BME68x, subject 4118 | Neither | Its own hotplate moves it during a gas scan, and §4 does not admit it for VPD |
 
 The determination is differential and needs no absolute reference. Its dominant uncertainty is

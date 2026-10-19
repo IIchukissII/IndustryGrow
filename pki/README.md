@@ -208,7 +208,7 @@ Rare, planned, and it touches every unit (d10).
    root and retire it.
 
 Distribution is the **provisioning path** — the same hands-on route by which a unit
-got its identity — deliberately not the profile channel (d10, alternative F). A
+got its identity — deliberately not the profile channel (ADR-0024 dec 10 alternatives). A
 gateway that stays offline across the whole window is stranded and needs
 re-provisioning by hand.
 
@@ -229,7 +229,7 @@ intermediate, re-provision the estate.
   are long-lived, which sits awkwardly with decision 8's containment rule; open
   until node provisioning exists.
 - **Automate renewal.** At fleet scale an ACME issuer would take the intermediate's
-  place without the root or any trust anchor changing (ADR-0024 alternative E).
+  place without the root or any trust anchor changing (ADR-0024 dec 1 alternatives).
 
 ## Not to be confused with
 

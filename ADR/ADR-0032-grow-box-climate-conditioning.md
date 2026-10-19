@@ -6,9 +6,9 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0032 — Grow-box climate conditioning
 
 - **Status:** Accepted
-- **Date:** accepted 2026-09-08; changed 2026-10-19
-- **Parent:** ADR-0001
-- **Related:** ADR-0003 (setpoints, VPD band, CO₂ as a variant), ADR-0015 (cascaded control and demand form, hardware interlocks), ADR-0016 (condensation in the apparatus subspace; actuator cycling as disturbance), ADR-0017 (identification at commit), ADR-0018 (rails and sections), ADR-0019 (single-parent parts on the parent's root), ADR-0031 (`A01-CLIMATE` class, element commands, signed demand, safe output, publication rule)
+- **Date:** 2026-09-08; changed 2026-10-19
+- **Parent:** [ADR-0001](ADR-0001-industrygrow-framing.md)
+- **Related:** [ADR-0003](ADR-0003-strawberry-day-neutral-profile.md) (setpoints, VPD band, CO₂ as a variant), [ADR-0015](ADR-0015-gateway-profile-and-control-loops.md) (cascaded control and demand form, hardware interlocks), [ADR-0016](ADR-0016-empirical-survey-and-state-space-modeling.md) (condensation in the apparatus subspace; actuator cycling as disturbance), [ADR-0017](ADR-0017-component-document-and-instance-identification.md) (identification at commit), [ADR-0018](ADR-0018-power-distribution-and-rail-monitoring.md) (rails and sections), [ADR-0019](ADR-0019-purchased-part-%28SP%29-identification.md) (single-parent parts on the parent's root), [ADR-0031](ADR-0031-actuator-node-taxonomy.md) (`A01-CLIMATE` class, element commands, signed demand, safe output, publication rule)
 
 ## Context
 
@@ -45,18 +45,18 @@ The product is built in series, so a per-unit refrigerant charge, evacuation or 
 
 | Dec | Rejected alternative | Why rejected |
 |---|---|---|
-| 2 | **A.** Vapour-compression cycle inside the cabinet | Minimum capacity above the load, so it only cycles; per-unit charge and leak testing; not bidirectional without a reversing valve. Admitted behind the loop at deployment scale |
-| 2 | **B.** Resistive heating with passive or ambient cooling | Both air setpoints are below room temperature |
-| 3 | **C.** Hot side rejected directly into room air at the module | Hot-face temperature rises with dissipation, ΔT grows, COP falls; fixes the cold source to the room |
-| 4 | **D.** Humidification by injection (atomising, ultrasonic, evaporative) | Runs against the pinned surface for as long as the cooler runs; needs feed-water treatment and a wetted surface; ultrasonic aerosolises dissolved solids |
-| 4 | **E.** Humidity or VPD setpoint commanded to the node | A sensor-class quantity in the actuator's loop (ADR-0031 d8); binds accuracy to a drifting hygrometric element |
-| 4 | **F.** Desiccant dehumidification | Regeneration heat returns to the apparatus, its cycle is a disturbance, and it adds a consumable |
-| 5 | **G.** One air tract for both duties | One coil has one temperature; the humidity duty needs a surface below dew point, forbidden on the surface exchanging with the whole volume |
-| 6 | **H.** Thermoelectric elements near `Imax` to minimise module count | The Joule term dominates at the operating ΔT |
-| 7 | **I.** Resistive reheater | Makes heat the plate already holds a few kelvin away at COP 1, and charges its draw twice, to the supply and to the rejection duty |
-| 7 | **J.** Coolant branch through the reheat exchanger | Cheapest thermodynamically, but a second wet branch and leak path inside the enclosure, and its reheat follows the loop rather than a command |
-| 8 | **K.** Tract bore matched to the air mover's throat | Contracts and re-accelerates air at the fin-stack exit, raises friction so run and bends reach the fan, and moves the expansion to the discharge where a sudden step costs most |
-| 8 | **L.** One housing drawn per tract, with no interface | Each change of run, bend or termination redraws the part, and the tracts share nothing |
+| 2 | Vapour-compression cycle inside the cabinet | Minimum capacity above the load, so it only cycles; per-unit charge and leak testing; not bidirectional without a reversing valve. Admitted behind the loop at deployment scale |
+| 2 | Resistive heating with passive or ambient cooling | Both air setpoints are below room temperature |
+| 3 | Hot side rejected directly into room air at the module | Hot-face temperature rises with dissipation, ΔT grows, COP falls; fixes the cold source to the room |
+| 4 | Humidification by injection (atomising, ultrasonic, evaporative) | Runs against the pinned surface for as long as the cooler runs; needs feed-water treatment and a wetted surface; ultrasonic aerosolises dissolved solids |
+| 4 | Humidity or VPD setpoint commanded to the node | A sensor-class quantity in the actuator's loop (ADR-0031 d8); binds accuracy to a drifting hygrometric element |
+| 4 | Desiccant dehumidification | Regeneration heat returns to the apparatus, its cycle is a disturbance, and it adds a consumable |
+| 5 | One air tract for both duties | One coil has one temperature; the humidity duty needs a surface below dew point, forbidden on the surface exchanging with the whole volume |
+| 6 | Thermoelectric elements near `Imax` to minimise module count | The Joule term dominates at the operating ΔT |
+| 7 | Resistive reheater | Makes heat the plate already holds a few kelvin away at COP 1, and charges its draw twice, to the supply and to the rejection duty |
+| 7 | Coolant branch through the reheat exchanger | Cheapest thermodynamically, but a second wet branch and leak path inside the enclosure, and its reheat follows the loop rather than a command |
+| 8 | Tract bore matched to the air mover's throat | Contracts and re-accelerates air at the fin-stack exit, raises friction so run and bends reach the fan, and moves the expansion to the discharge where a sudden step costs most |
+| 8 | One housing drawn per tract, with no interface | Each change of run, bend or termination redraws the part, and the tracts share nothing |
 
 ## Consequences
 

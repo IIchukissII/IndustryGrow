@@ -6,9 +6,9 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0016 — Empirical survey, state-space modeling and sensor density management
 
 - **Status:** Proposed
-- **Date:** proposed 2026-05-17; changed 2026-10-19
-- **Parent:** ADR-0001
-- **Related:** ADR-0014 (sensor classes multiplied by instance, which decision 8 moves between deployments; condensate input decision 20 reads), ADR-0015 (single mutation channel decision 6 uses; gateway control loops decision 4 extends), ADR-0020 (local store the survey phase requires), ADR-0033 (imaging channel that observes leaf area)
+- **Date:** 2026-05-17; changed 2026-10-19
+- **Parent:** [ADR-0001](ADR-0001-industrygrow-framing.md)
+- **Related:** [ADR-0014](ADR-0014-sensor-node-taxonomy.md) (sensor classes multiplied by instance, which decision 8 moves between deployments; condensate input decision 20 reads), [ADR-0015](ADR-0015-gateway-profile-and-control-loops.md) (single mutation channel decision 6 uses; gateway control loops decision 4 extends), [ADR-0020](ADR-0020-gateway-persistence-model.md) (local store the survey phase requires), [ADR-0033](ADR-0033-canopy-imaging-channel.md) (imaging channel that observes leaf area)
 
 ## Context
 
@@ -47,11 +47,11 @@ State-space identification needs less data than ML, maps states to physical quan
 
 | Dec | Rejected alternative | Why rejected |
 |---|---|---|
-| 2 | **C.** Per-customer custom modeling with no shared framework | Duplicates effort and forfeits a standard identification method the calibration service can be built on |
-| 3 | **A.** Dense sensor coverage permanently installed, no modeling | Contradicts ADR-0014 d1; cost and failure surface grow with sensor count, and temporal change is still unaddressed |
-| 4 | **E.** State estimation in the cloud, estimates sent back for control | Network-dependent control, which ADR-0015 rejects |
-| 6 | **D.** Models in their own platform subsystem with separate versioning | Two audit trails, and a change spanning setpoints and model cannot roll back atomically (ADR-0015 d1) |
-| 11 | **B.** ML-first modeling as the default | Less interpretable, more data-hungry, regulatory friction in food production, costly training, hard to debug; kept as fallback (decision 12) |
+| 2 | Per-customer custom modeling with no shared framework | Duplicates effort and forfeits a standard identification method the calibration service can be built on |
+| 3 | Dense sensor coverage permanently installed, no modeling | Contradicts ADR-0014 d1; cost and failure surface grow with sensor count, and temporal change is still unaddressed |
+| 4 | State estimation in the cloud, estimates sent back for control | Network-dependent control, which ADR-0015 rejects |
+| 6 | Models in their own platform subsystem with separate versioning | Two audit trails, and a change spanning setpoints and model cannot roll back atomically (ADR-0015 d1) |
+| 11 | ML-first modeling as the default | Less interpretable, more data-hungry, regulatory friction in food production, costly training, hard to debug; kept as fallback (decision 12) |
 | 13 | On-gateway online identification | Identification is heavy and infrequent and the gateway class is sized for inference |
 
 ## Consequences

@@ -6,9 +6,9 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0006 — Cabinet decomposition and hydroponic topology
 
 - **Status:** Accepted
-- **Date:** accepted 2026-08-23; changed 2026-10-19
-- **Parent:** ADR-0001
-- **Related:** ADR-0003 (decisions 14–17 drive the topology and loop count; decision 14's topology is settled here), ADR-0014 (decision 4's M03 entry changes with decisions 5, 7 and 8), ADR-0015 (software-mediated leak and pump response, decision 16), ADR-0016 (solution temperature in the apparatus subspace), ADR-0017 (E-number at design commit), ADR-0018 (the distribution volume and the M05 leak lead)
+- **Date:** 2026-08-23; changed 2026-10-19
+- **Parent:** [ADR-0001](ADR-0001-industrygrow-framing.md)
+- **Related:** [ADR-0003](ADR-0003-strawberry-day-neutral-profile.md) (decisions 14–17 drive the topology and loop count; decision 14's topology is settled here), [ADR-0014](ADR-0014-sensor-node-taxonomy.md) (decision 4's M03 entry changes with decisions 5, 7 and 8), [ADR-0015](ADR-0015-gateway-profile-and-control-loops.md) (software-mediated leak and pump response, decision 16), [ADR-0016](ADR-0016-empirical-survey-and-state-space-modeling.md) (solution temperature in the apparatus subspace), [ADR-0017](ADR-0017-component-document-and-instance-identification.md) (E-number at design commit), [ADR-0018](ADR-0018-power-distribution-and-rail-monitoring.md) (the distribution volume and the M05 leak lead)
 
 ## Context
 
@@ -40,13 +40,13 @@ Those values contain a conflict no layout avoids: pre-fruit and fruiting slots r
 
 | Dec | Rejected alternative | Why rejected |
 |---|---|---|
-| 1 | **G.** Dimensions and trade-name materials in this record | Values belong to the specification (ADR-0000 dec 2, 3); a cut list here would be restated or read from an ADR by a builder |
-| 3 | **F.** Rack or industrial form factor | The first deployment is an apartment, where aesthetics are required; not excluded at commercial scale, and nothing in decisions 4–9 depends on decision 3 |
-| 4 | **A.** NFT channels | No root-zone reserve, so pump loss is a minutes-scale crop loss against a slower response path; shared channels mat roots between slots against single-slot turnover. Lower water volume and cost per slot do not outweigh either |
-| 4 | **B.** Substrate beds | Rejected by ADR-0003 dec 14: no EC/pH control signal |
-| 4 | **C.** Deep-water culture | Makes dissolved oxygen a controlled variable on the most complex module, needs a continuously running aeration pump in an apartment, and turns solution temperature into a control problem |
-| 5 | **D.** One shared loop at a compromise EC | ADR-0003 dec 15 becomes undeliverable, since both phases are always present; saves one reservoir, dosing set and M03 at the cost of a profile band the apparatus cannot hold |
-| 5 | **E.** Nine independent loops, one per slot | Nine reservoirs, dosing sets and M03 instances at apartment scale, and nine individually calibrated consumable pH electrodes |
+| 1 | Dimensions and trade-name materials in this record | Values belong to the specification (ADR-0000 dec 2, 3); a cut list here would be restated or read from an ADR by a builder |
+| 3 | Rack or industrial form factor | The first deployment is an apartment, where aesthetics are required; not excluded at commercial scale, and nothing in decisions 4–9 depends on decision 3 |
+| 4 | NFT channels | No root-zone reserve, so pump loss is a minutes-scale crop loss against a slower response path; shared channels mat roots between slots against single-slot turnover. Lower water volume and cost per slot do not outweigh either |
+| 4 | Substrate beds | Rejected by ADR-0003 dec 14: no EC/pH control signal |
+| 4 | Deep-water culture | Makes dissolved oxygen a controlled variable on the most complex module, needs a continuously running aeration pump in an apartment, and turns solution temperature into a control problem |
+| 5 | One shared loop at a compromise EC | ADR-0003 dec 15 becomes undeliverable, since both phases are always present; saves one reservoir, dosing set and M03 at the cost of a profile band the apparatus cannot hold |
+| 5 | Nine independent loops, one per slot | Nine reservoirs, dosing sets and M03 instances at apartment scale, and nine individually calibrated consumable pH electrodes |
 | 6 | A third loop and third M03 for propagation | Propagation needs the vegetative formulation and EC band, which the vegetative loop already delivers |
 
 ## Consequences

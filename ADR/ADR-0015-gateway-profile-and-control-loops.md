@@ -6,9 +6,9 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0015 — Gateway profile caching and local control loops
 
 - **Status:** Accepted
-- **Date:** accepted 2026-05-16; changed 2026-10-19
-- **Parent:** ADR-0001
-- **Related:** ADR-0003 (reference profile content), ADR-0004 (outbound-only firewall decision 5 relies on), ADR-0016 (state estimator and model parameters carried by decisions 6 and 8), ADR-0018 (location of the over-temperature trip of decision 11), ADR-0020 (bounded operational state beside decision 4's configuration state), ADR-0022 (the ERP endpoint decision 5 pulls from), ADR-0025 (the signature scheme decision 7 requires), ADR-0031 (demand form and per-element safe output decision 18 relies on)
+- **Date:** 2026-05-16; changed 2026-10-19
+- **Parent:** [ADR-0001](ADR-0001-industrygrow-framing.md)
+- **Related:** [ADR-0003](ADR-0003-strawberry-day-neutral-profile.md) (reference profile content), [ADR-0004](ADR-0004-gateway-host-hardening.md) (outbound-only firewall decision 5 relies on), [ADR-0016](ADR-0016-empirical-survey-and-state-space-modeling.md) (state estimator and model parameters carried by decisions 6 and 8), [ADR-0018](ADR-0018-power-distribution-and-rail-monitoring.md) (location of the over-temperature trip of decision 11), [ADR-0020](ADR-0020-gateway-persistence-model.md) (bounded operational state beside decision 4's configuration state), [ADR-0022](ADR-0022-instance-integration-erp-api.md) (the ERP endpoint decision 5 pulls from), [ADR-0025](ADR-0025-cultivation-profile-signing.md) (the signature scheme decision 7 requires), [ADR-0031](ADR-0031-actuator-node-taxonomy.md) (demand form and per-element safe output decision 18 relies on)
 
 ## Context
 
@@ -48,11 +48,11 @@ Hardware survival interlocks sit below all software and are not part of control.
 
 | Dec | Rejected alternative | Why rejected |
 |---|---|---|
-| 1 | **B.** Profile for slow changes plus a real-time command API for tuning | Two mutation channels mean two audit trails, two rollback paths and two security models |
-| 4 | **D.** Profile held in RAM only | After a reboot with the cloud unreachable the cabinet would run the fallback profile without cause |
-| 5 | **C.** Server-initiated profile push | Requires inbound connections to the gateway, which ADR-0004 d5 forbids |
-| 8 | **A.** Gateway as passive bridge; the cloud computes control and sends actuator commands | Control fails during outages, a cloud compromise becomes a physical compromise, and cloud reliability couples to cabinet reliability |
-| 8 | **E.** Control loops in node firmware, each node holding the profile | Distributes the profile to every node (more state, sync and attack surface); a node sees only its own data, the gateway sees the whole system |
+| 1 | Profile for slow changes plus a real-time command API for tuning | Two mutation channels mean two audit trails, two rollback paths and two security models |
+| 4 | Profile held in RAM only | After a reboot with the cloud unreachable the cabinet would run the fallback profile without cause |
+| 5 | Server-initiated profile push | Requires inbound connections to the gateway, which ADR-0004 d5 forbids |
+| 8 | Gateway as passive bridge; the cloud computes control and sends actuator commands | Control fails during outages, a cloud compromise becomes a physical compromise, and cloud reliability couples to cabinet reliability |
+| 8 | Control loops in node firmware, each node holding the profile | Distributes the profile to every node (more state, sync and attack surface); a node sees only its own data, the gateway sees the whole system |
 | 18 | Output conditioning computed in the gateway loop and sent as switch states | The bus-rate loop cannot produce the actuator's millisecond timescale, and a lost bus leaves the last switch state latched |
 | 18 | Node fail-safe triggered by a gateway liveness signal | The deadline travelling with each demand makes staleness local to the node with no extra signal |
 

@@ -6,9 +6,9 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0021 — Instance-and-integration ERP as the pre-cloud system of record
 
 - **Status:** Accepted
-- **Date:** accepted 2026-07-09; changed 2026-10-19
-- **Parent:** ADR-0001
-- **Related:** ADR-0004 (stateless edge that excludes the ERP host), ADR-0007 (PKI whose public material the ERP holds), ADR-0015 (single mutation channel the profile store leaves intact), ADR-0016 (profile as one artifact; inventory mobility), ADR-0017 (identity grammar; instance layer hosted here, d21), ADR-0019 (SP spec and vendor-serial identity), ADR-0020 (lifecycle-staged persistence; operational buffer), ADR-0022 (the API that exposes these entities), ADR-0023 (type registry read through, never copied), ADR-0024 (operator CA that issues and keeps no record), ADR-0026 (backup and restore of this store), ADR-0029 (firmware path that needs decision 18), ADR-IF-0001 (planned `production_unit` core the `[F]` part aligns to)
+- **Date:** 2026-07-09; changed 2026-10-19
+- **Parent:** [ADR-0001](ADR-0001-industrygrow-framing.md)
+- **Related:** [ADR-0004](ADR-0004-gateway-host-hardening.md) (stateless edge that excludes the ERP host), [ADR-0007](ADR-0007-pki-and-secure-element-identity.md) (PKI whose public material the ERP holds), [ADR-0015](ADR-0015-gateway-profile-and-control-loops.md) (single mutation channel the profile store leaves intact), [ADR-0016](ADR-0016-empirical-survey-and-state-space-modeling.md) (profile as one artifact; inventory mobility), [ADR-0017](ADR-0017-component-document-and-instance-identification.md) (identity grammar; instance layer hosted here, d21), [ADR-0019](ADR-0019-purchased-part-%28SP%29-identification.md) (SP spec and vendor-serial identity), [ADR-0020](ADR-0020-gateway-persistence-model.md) (lifecycle-staged persistence; operational buffer), [ADR-0022](ADR-0022-instance-integration-erp-api.md) (the API that exposes these entities), [ADR-0023](ADR-0023-machine-readable-type-registry.md) (type registry read through, never copied), [ADR-0024](ADR-0024-operator-ca-bootstrap-and-key-ceremony.md) (operator CA that issues and keeps no record), [ADR-0026](ADR-0026-erp-backup-and-restore.md) (backup and restore of this store), [ADR-0029](ADR-0029-node-firmware-update-and-bootloader.md) (firmware path that needs decision 18), ADR-IF-0001 (planned `production_unit` core the `[F]` part aligns to)
 
 ## Context
 
@@ -69,22 +69,22 @@ The integration end-state is core plus layer: IndustryFlow is the independent mu
 
 | Dec | Rejected alternative | Why rejected |
 |---|---|---|
-| — | **A.** Build no ERP; wait for IndustryFlow at stage 11 | Serials, bindings and integration records are produced during stages 1–10 with no cloud present |
-| — | **B.** Stand up full IndustryFlow now | The platform does not exist end-to-end; a compact store for the instance subset migrates into it later |
-| — | **C.** Track instances in the type registry or in spreadsheets | The registry is type-level, public and PR-gated; spreadsheets give no allocation authority, no integrity and no history |
-| 1 | **L.** Run the ERP on the gateway host | The gateway's persistent state is enumerated (ADR-0020 dec 5) and excludes a system of record; a swap would lose serial, binding and integration state |
-| 2 | **J.** Stage 11 as IndustryFlow absorbing and retiring the ERP | Erases the core-plus-layer architecture; the `[D]` layer remains over the core |
-| 3 | **G.** A bespoke instance schema unaligned with `production_unit` | Forces a rewrite at stage 11, when the data is most valuable |
-| 9 | **F.** ERP as source of truth for SP specs, SKUs or prices | The spec is the registry's (ADR-0019) and the price the BOM's (ADR-0000); the ERP owns only stock and placement |
-| 10 | **D.** Let the ERP hold operational telemetry or an audit trail | A second forensic record of the same events (ADR-0004 dec 10; ADR-0020 dec 9; ADR-0017) |
-| 13 | **E.** Profiles as a separate subsystem, or model parameters split from setpoints | Rejected by ADR-0016; breaks atomic rollback and adds a second mutation path |
+| — | Build no ERP; wait for IndustryFlow at stage 11 | Serials, bindings and integration records are produced during stages 1–10 with no cloud present |
+| — | Stand up full IndustryFlow now | The platform does not exist end-to-end; a compact store for the instance subset migrates into it later |
+| — | Track instances in the type registry or in spreadsheets | The registry is type-level, public and PR-gated; spreadsheets give no allocation authority, no integrity and no history |
+| 1 | Run the ERP on the gateway host | The gateway's persistent state is enumerated (ADR-0020 dec 5) and excludes a system of record; a swap would lose serial, binding and integration state |
+| 2 | Stage 11 as IndustryFlow absorbing and retiring the ERP | Erases the core-plus-layer architecture; the `[D]` layer remains over the core |
+| 3 | A bespoke instance schema unaligned with `production_unit` | Forces a rewrite at stage 11, when the data is most valuable |
+| 9 | ERP as source of truth for SP specs, SKUs or prices | The spec is the registry's (ADR-0019) and the price the BOM's (ADR-0000); the ERP owns only stock and placement |
+| 10 | Let the ERP hold operational telemetry or an audit trail | A second forensic record of the same events (ADR-0004 dec 10; ADR-0020 dec 9; ADR-0017) |
+| 13 | Profiles as a separate subsystem, or model parameters split from setpoints | Rejected by ADR-0016; breaks atomic rollback and adds a second mutation path |
 | 15 | A relational store with history as the store class | Couples the `[D]` layer to the core's paradigm; the layer is an index over an object store keyed by identifier |
-| 15 | **H.** A full enterprise ERP with finance, HR and procurement | Contradicts the compact, self-hostable positioning and buys modules the project does not need |
-| 16 | **I.** Build multitenant operation into the ERP now | Unused with one operator, and runtime tenancy is a core `[F]` concern the layer would duplicate |
-| 16 | **K.** A schema with no tenant dimension | Forces a remodel at stage 11 |
-| 17 | **M.** Give the gateway a synthetic E-instance serial and record it under decision 5 | Puts a value in the identity grammar that names nothing the project manufactures; every consumer learns an exception |
-| 18 | **N.** Carry the intended firmware release inside the cultivation profile | The two version on unrelated clocks; a firmware selection would mint profile versions and a profile rollback would revert firmware |
-| 18 | **O.** Record against each node what it runs, to report update progress | Operational intake excluded by decision 10 and ADR-0022 dec 9; filled only by a machine write, unfilled it is a column that lies |
+| 15 | A full enterprise ERP with finance, HR and procurement | Contradicts the compact, self-hostable positioning and buys modules the project does not need |
+| 16 | Build multitenant operation into the ERP now | Unused with one operator, and runtime tenancy is a core `[F]` concern the layer would duplicate |
+| 16 | A schema with no tenant dimension | Forces a remodel at stage 11 |
+| 17 | Give the gateway a synthetic E-instance serial and record it under decision 5 | Puts a value in the identity grammar that names nothing the project manufactures; every consumer learns an exception |
+| 18 | Carry the intended firmware release inside the cultivation profile | The two version on unrelated clocks; a firmware selection would mint profile versions and a profile rollback would revert firmware |
+| 18 | Record against each node what it runs, to report update progress | Operational intake excluded by decision 10 and ADR-0022 dec 9; filled only by a machine write, unfilled it is a column that lies |
 
 ## Consequences
 

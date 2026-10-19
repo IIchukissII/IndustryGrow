@@ -6,9 +6,9 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0028 — Commissioning sequence and calibration-trim custody
 
 - **Status:** Accepted
-- **Date:** accepted 2026-08-28; changed 2026-10-19
-- **Parent:** ADR-0017
-- **Related:** ADR-0027 (Node-ID store and provisioning write; this realizes its provisioning tool), ADR-0014 (decision 6: the module EEPROM and its reserved address block), ADR-0021 (decision 7: the lifecycle-document index records are filed to), ADR-0029 (an update is not a commissioning event and preserves trims and Node-ID), ADR-0030 (the service tool that executes the protocol steps), ADR-0007 (secure-element scope)
+- **Date:** 2026-08-28; changed 2026-10-19
+- **Parent:** [ADR-0017](ADR-0017-component-document-and-instance-identification.md)
+- **Related:** [ADR-0027](ADR-0027-node-identity-model.md) (Node-ID store and provisioning write; this realizes its provisioning tool), [ADR-0014](ADR-0014-sensor-node-taxonomy.md) (decision 6: the module EEPROM and its reserved address block), [ADR-0021](ADR-0021-instance-and-integration-erp.md) (decision 7: the lifecycle-document index records are filed to), [ADR-0029](ADR-0029-node-firmware-update-and-bootloader.md) (an update is not a commissioning event and preserves trims and Node-ID), [ADR-0030](ADR-0030-local-operator-and-service-interface.md) (the service tool that executes the protocol steps), [ADR-0007](ADR-0007-pki-and-secure-element-identity.md) (secure-element scope)
 
 ## Context
 
@@ -53,13 +53,13 @@ A trim describes the module, while the ADR-0027 store describes the carrier (ADR
 
 | Dec | Rejected alternative | Why rejected |
 |---|---|---|
-| 2 | **A.** Hold trims in the ADR-0027 carrier store | Lifecycle mismatch: the store follows the carrier and a trim describes the module; a swapped module is silently corrected by another board's value |
-| 2 | **C.** Hold the trim only in the ERP and apply it at each boot | Published values would depend on gateway reachability at boot; by P2 the device holds a copy regardless |
-| 2 | **D.** Correct downstream, in the gateway | P2: only correction upstream of the device's RH derivation reaches both quantities |
-| 4 | **B.** Supply the trim at flash time from a build-time table | P1: the value does not exist before the assembled board is at equilibrium; spends a write cycle per flash, against decision 6 |
-| 7 | **E.** Re-determine at every commissioning, with no restore path | Charges a full determination to a routine reflash; the `-CC` already carries the conditions under which a value stays valid |
+| 2 | Hold trims in the ADR-0027 carrier store | Lifecycle mismatch: the store follows the carrier and a trim describes the module; a swapped module is silently corrected by another board's value |
+| 2 | Hold the trim only in the ERP and apply it at each boot | Published values would depend on gateway reachability at boot; by P2 the device holds a copy regardless |
+| 2 | Correct downstream, in the gateway | P2: only correction upstream of the device's RH derivation reaches both quantities |
+| 4 | Supply the trim at flash time from a build-time table | P1: the value does not exist before the assembled board is at equilibrium; spends a write cycle per flash, against decision 6 |
+| 7 | Re-determine at every commissioning, with no restore path | Charges a full determination to a routine reflash; the `-CC` already carries the conditions under which a value stays valid |
 | 7 | A validity period as the only voiding criterion | Suits a probe that drifts on a schedule; a fixed offset is voided by a change in its measurement conditions |
-| 10 | **F.** For a device with no store, hold the trim at the gateway and correct there | Published values would depend on which gateway the module is attached to and the node's own statistics stay uncorrected; the correction stops travelling with the module |
+| 10 | For a device with no store, hold the trim at the gateway and correct there | Published values would depend on which gateway the module is attached to and the node's own statistics stay uncorrected; the correction stops travelling with the module |
 
 ## Consequences
 

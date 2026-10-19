@@ -6,9 +6,9 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0004 — Gateway host hardening, firmware signing and stateless-edge operation
 
 - **Status:** Accepted
-- **Date:** accepted 2026-05-16; changed 2026-10-19
-- **Parent:** ADR-0001
-- **Related:** ADR-0002 (places the security boundary at the gateway; the bus time base decision 18 reads), ADR-0005 (the wire types decision 18 stamps), ADR-0007 (who the gateway is; this record is how it behaves), ADR-0015 (the profile pull and the photoperiod decision 19 names), ADR-0020 (the local store that bounds decisions 8–9), ADR-0022 (the ERP endpoint decision 19 adds to egress), ADR-0024 (custody of the firmware-signing key), ADR-0029 (the node update path that realises decisions 12–16)
+- **Date:** 2026-05-16; changed 2026-10-19
+- **Parent:** [ADR-0001](ADR-0001-industrygrow-framing.md)
+- **Related:** [ADR-0002](ADR-0002-field-bus-architecture.md) (places the security boundary at the gateway; the bus time base decision 18 reads), [ADR-0005](ADR-0005-dsdl-foundation.md) (the wire types decision 18 stamps), [ADR-0007](ADR-0007-pki-and-secure-element-identity.md) (who the gateway is; this record is how it behaves), [ADR-0015](ADR-0015-gateway-profile-and-control-loops.md) (the profile pull and the photoperiod decision 19 names), [ADR-0020](ADR-0020-gateway-persistence-model.md) (the local store that bounds decisions 8–9), [ADR-0022](ADR-0022-instance-integration-erp-api.md) (the ERP endpoint decision 19 adds to egress), [ADR-0024](ADR-0024-operator-ca-bootstrap-and-key-ceremony.md) (custody of the firmware-signing key), [ADR-0029](ADR-0029-node-firmware-update-and-bootloader.md) (the node update path that realises decisions 12–16)
 
 ## Context
 
@@ -52,16 +52,16 @@ The gateway is a stateless edge: a replaceable bridge whose persistent state is 
 
 | Dec | Rejected alternative | Why rejected |
 |---|---|---|
-| 2 | **B.** SSH always on with key authentication | Disabling it by default removes an attack surface for a small operational cost |
+| 2 | SSH always on with key authentication | Disabling it by default removes an attack surface for a small operational cost |
 | 3 | Strict thresholds for every source, the management LAN included | A few mistyped key attempts ban the operator's workstation for hours across reboots, indistinguishable from dead hardware, and buy nothing against a key-only sshd |
 | 5 | SSH bound to the one interface that carried the default route at provisioning | Locks the operator out when the box is later reached over another management NIC |
 | 5 | Egress to IndustryFlow only | The gateway pulls profiles and firmware from the operator ERP, a second named endpoint |
-| 6 | **C.** Inbound services on the LAN (debug dashboard, local Grafana) | Turns the gateway into a server and adds attack surface and state; loopback binding plus port-forwarding gives the same access |
-| 8 | **A.** Local tamper-evident hash-chained audit log of every frame and upload, with 30–90 day retention and rotation | A compromised gateway already streams false data live, so local tamper-evidence adds no protection; forensics belong where the record is queryable. An endurance-rich medium does not change this (ADR-0020 decision 9) |
-| 9 | **D.** Guaranteed crash-safe persistent local buffer | A guarantee turns a failed gateway into a data-recovery exercise, against replaceability; a best-effort persistent buffer is ADR-0020's |
-| 12 | **E.** Unsigned firmware updates, trusting the gateway | Gateway compromise becomes compromise of every node; signing moves the trust boundary to an offline key |
+| 6 | Inbound services on the LAN (debug dashboard, local Grafana) | Turns the gateway into a server and adds attack surface and state; loopback binding plus port-forwarding gives the same access |
+| 8 | Local tamper-evident hash-chained audit log of every frame and upload, with 30–90 day retention and rotation | A compromised gateway already streams false data live, so local tamper-evidence adds no protection; forensics belong where the record is queryable. An endurance-rich medium does not change this (ADR-0020 decision 9) |
+| 9 | Guaranteed crash-safe persistent local buffer | A guarantee turns a failed gateway into a data-recovery exercise, against replaceability; a best-effort persistent buffer is ADR-0020's |
+| 12 | Unsigned firmware updates, trusting the gateway | Gateway compromise becomes compromise of every node; signing moves the trust boundary to an offline key |
 | 15 | Bootloader signed by a separate, stronger, rarely-rotated key | Nothing on the node verifies a bootloader; SWD-only replacement makes physical access the control |
-| 17 | **F.** Per-node authentication or payload encryption on CAN | A signature consumes most of an 8-byte classic-CAN payload; the cost is disproportionate to a physical-access threat |
+| 17 | Per-node authentication or payload encryption on CAN | A signature consumes most of an 8-byte classic-CAN payload; the cost is disproportionate to a physical-access threat |
 | 18 | Substitute `t_rx` for an unsynchronized node's `t_acq` | The acquisition-to-receipt difference then reads zero permanently |
 | 21 | Record the latency as zero or clamp it while the clock is unsettled | A clock correction reads as latency never incurred; an absent value is detectable, a clamped one is not |
 

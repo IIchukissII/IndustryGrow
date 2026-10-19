@@ -54,7 +54,7 @@ def test_dated_recalibration_keys_are_backed_up():
 
 
 def test_the_repository_mirror_is_not_backed_up():
-    # Excluded deliberately: store_sync restores it from git (ADR-0026 d1, alt B).
+    # Excluded deliberately: store_sync restores it from git (ADR-0026 dec 1 alternatives).
     # Including it would inflate every archive with the part of it least at risk.
     for key in (
         "E0001-000002-D-fab.zip",

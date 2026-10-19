@@ -6,9 +6,9 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0003 — Strawberry day-neutral reference cultivation profile
 
 - **Status:** Proposed
-- **Date:** proposed 2026-05-16; changed 2026-10-19
-- **Parent:** ADR-0001
-- **Related:** ADR-0006 (hydroponic topology and loop count for decisions 14–17), ADR-0009 (profile schema and registry this instance anticipates), ADR-0014 (sensing that enforces these targets), ADR-0015 (the gateway that executes the profile), ADR-0016 (biological and apparatus subspaces), ADR-0032 (climate apparatus that holds decisions 6–8)
+- **Date:** 2026-05-16; changed 2026-10-19
+- **Parent:** [ADR-0001](ADR-0001-industrygrow-framing.md)
+- **Related:** [ADR-0006](ADR-0006-cabinet-decomposition-and-hydroponic-topology.md) (hydroponic topology and loop count for decisions 14–17), ADR-0009 (profile schema and registry this instance anticipates), [ADR-0014](ADR-0014-sensor-node-taxonomy.md) (sensing that enforces these targets), [ADR-0015](ADR-0015-gateway-profile-and-control-loops.md) (the gateway that executes the profile), [ADR-0016](ADR-0016-empirical-survey-and-state-space-modeling.md) (biological and apparatus subspaces), [ADR-0032](ADR-0032-grow-box-climate-conditioning.md) (climate apparatus that holds decisions 6–8)
 
 ## Context
 
@@ -42,14 +42,14 @@ The constraints: a two-week harvest cadence; a closed indoor volume with no poll
 
 | Dec | Rejected alternative | Why rejected |
 |---|---|---|
-| 1 | **A.** June-bearing varieties | One flush per season is incompatible with a continuous cadence |
-| 6 | **B.** Constant temperature, no day/night differential | The night drop is required for sugar accumulation |
-| 7 | **C.** RH-based humidity control | RH does not capture the moisture-driving pressure |
-| 8 | **G.** CO₂ enrichment to 800–1200 ppm from the start | Adds tank, regulator, monitoring and leak safety outside the initial build's scope; a candidate profile variant |
-| 9 | **D.** 12/12 photoperiod | Not required by day-neutral varieties; caps DLI with no benefit |
-| 13 | **E.** Manual brush pollination | Needs daily presence, fails on absence, contradicts autonomy |
+| 1 | June-bearing varieties | One flush per season is incompatible with a continuous cadence |
+| 6 | Constant temperature, no day/night differential | The night drop is required for sugar accumulation |
+| 7 | RH-based humidity control | RH does not capture the moisture-driving pressure |
+| 8 | CO₂ enrichment to 800–1200 ppm from the start | Adds tank, regulator, monitoring and leak safety outside the initial build's scope; a candidate profile variant |
+| 9 | 12/12 photoperiod | Not required by day-neutral varieties; caps DLI with no benefit |
+| 13 | Manual brush pollination | Needs daily presence, fails on absence, contradicts autonomy |
 | 13 | Insect pollinators | The closed indoor volume has none, and introducing them conflicts with an apartment cabinet |
-| 14 | **F.** Substrate (coco coir, peat) | Quieter and lower-maintenance but gives no EC/pH signal to control; remains a candidate separate profile |
+| 14 | Substrate (coco coir, peat) | Quieter and lower-maintenance but gives no EC/pH signal to control; remains a candidate separate profile |
 
 ## Consequences
 

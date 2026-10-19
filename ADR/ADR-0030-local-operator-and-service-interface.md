@@ -6,9 +6,9 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0030 — Local operator and service interface
 
 - **Status:** Proposed
-- **Date:** proposed 2026-08-31; changed 2026-10-19
-- **Parent:** ADR-0015
-- **Related:** ADR-0002 (trusted CAN domain bounded at the gateway), ADR-0007 (gateway identity as the site credential), ADR-0016 (survey phase, offline identification, survey kits), ADR-0018 (hardware over-temperature trip), ADR-0020 (gateway persistence), ADR-0022 (ERP takes operator decisions, not machine observations), ADR-0025 (signed profiles a courier may carry), ADR-0027 (Node-ID allocation), ADR-0028 (commissioning sequence and the authoritative `-CC`), ADR-0029 (signed firmware a courier may carry), ADR-0031 (actuator demand surface decision 7 constrains)
+- **Date:** 2026-08-31; changed 2026-10-19
+- **Parent:** [ADR-0015](ADR-0015-gateway-profile-and-control-loops.md)
+- **Related:** [ADR-0002](ADR-0002-field-bus-architecture.md) (trusted CAN domain bounded at the gateway), [ADR-0007](ADR-0007-pki-and-secure-element-identity.md) (gateway identity as the site credential), [ADR-0016](ADR-0016-empirical-survey-and-state-space-modeling.md) (survey phase, offline identification, survey kits), [ADR-0018](ADR-0018-power-distribution-and-rail-monitoring.md) (hardware over-temperature trip), [ADR-0020](ADR-0020-gateway-persistence-model.md) (gateway persistence), [ADR-0022](ADR-0022-instance-integration-erp-api.md) (ERP takes operator decisions, not machine observations), [ADR-0025](ADR-0025-cultivation-profile-signing.md) (signed profiles a courier may carry), [ADR-0027](ADR-0027-node-identity-model.md) (Node-ID allocation), [ADR-0028](ADR-0028-commissioning-sequence-and-trim-custody.md) (commissioning sequence and the authoritative `-CC`), [ADR-0029](ADR-0029-node-firmware-update-and-bootloader.md) (signed firmware a courier may carry), [ADR-0031](ADR-0031-actuator-node-taxonomy.md) (actuator demand surface decision 7 constrains)
 
 ## Context
 
@@ -43,12 +43,12 @@ The `-M-` protocol documents say how a bring-up or calibration is performed, and
 
 | Dec | Rejected alternative | Why rejected |
 |---|---|---|
-| 2 | **C.** Local telemetry logging | P2: a third copy beside the gateway buffer and the ERP, with no retention rule, carried by media around the gateway boundary (ADR-0002 dec 7) |
-| 2 | **D.** The interface as an ERP client | ADR-0022 dec 9, and it duplicates the gateway identity ADR-0007 dec 11 makes the site credential |
-| 4 | **B.** The interface runs control loops when the gateway is absent | ADR-0015 dec 8 gives the loops to the gateway; two controllers contend, and the removable one must not be one |
-| 6 | **E.** A local setpoint channel for a running cultivation | ADR-0015 dec 1; decision 6 grants excitation without opening that channel |
-| 10 | **F.** An engineering mode with unrecorded full access | P4, and an unrecorded change is the silent override ADR-0000 dec 4 forbids |
-| 12 | **A.** A panel-specific record | Forecloses the gateway-served page; the constraints are identical and hardware is not this record's subject |
+| 2 | Local telemetry logging | P2: a third copy beside the gateway buffer and the ERP, with no retention rule, carried by media around the gateway boundary (ADR-0002 dec 7) |
+| 2 | The interface as an ERP client | ADR-0022 dec 9, and it duplicates the gateway identity ADR-0007 dec 11 makes the site credential |
+| 4 | The interface runs control loops when the gateway is absent | ADR-0015 dec 8 gives the loops to the gateway; two controllers contend, and the removable one must not be one |
+| 6 | A local setpoint channel for a running cultivation | ADR-0015 dec 1; decision 6 grants excitation without opening that channel |
+| 10 | An engineering mode with unrecorded full access | P4, and an unrecorded change is the silent override ADR-0000 dec 4 forbids |
+| 12 | A panel-specific record | Forecloses the gateway-served page; the constraints are identical and hardware is not this record's subject |
 
 ## Consequences
 

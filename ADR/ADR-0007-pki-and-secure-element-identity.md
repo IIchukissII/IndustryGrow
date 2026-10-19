@@ -6,9 +6,9 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0007 — PKI, hardware identity and provisioning
 
 - **Status:** Accepted
-- **Date:** accepted 2026-06-19; changed 2026-10-19
-- **Parent:** ADR-0001
-- **Related:** ADR-0002 (fits the secure element to every designed board; places the security boundary at the gateway), ADR-0004 (consumes the gateway identity over mTLS; keeps the CAN domain trusted and firmware signing separate), ADR-0017 (the serial ↔ identity binding and the `-PR` record), ADR-0019 (the gateway is a purchased part), ADR-0021 (the single-tenant ERP that relies on the self-hosted leaf), ADR-0022 (the ERP authenticates gateways by certificate), ADR-0024 (stands up the per-operator CA this record roots trust in), ADR-IF-0007 (IndustryFlow device CA whose SAN-URI identity the stage-11 leaf conforms to)
+- **Date:** 2026-06-19; changed 2026-10-19
+- **Parent:** [ADR-0001](ADR-0001-industrygrow-framing.md)
+- **Related:** [ADR-0002](ADR-0002-field-bus-architecture.md) (fits the secure element to every designed board; places the security boundary at the gateway), [ADR-0004](ADR-0004-gateway-host-hardening.md) (consumes the gateway identity over mTLS; keeps the CAN domain trusted and firmware signing separate), [ADR-0017](ADR-0017-component-document-and-instance-identification.md) (the serial ↔ identity binding and the `-PR` record), [ADR-0019](ADR-0019-purchased-part-%28SP%29-identification.md) (the gateway is a purchased part), [ADR-0021](ADR-0021-instance-and-integration-erp.md) (the single-tenant ERP that relies on the self-hosted leaf), [ADR-0022](ADR-0022-instance-integration-erp-api.md) (the ERP authenticates gateways by certificate), [ADR-0024](ADR-0024-operator-ca-bootstrap-and-key-ceremony.md) (stands up the per-operator CA this record roots trust in), ADR-IF-0007 (IndustryFlow device CA whose SAN-URI identity the stage-11 leaf conforms to)
 
 ## Context
 
@@ -40,19 +40,19 @@ The two relying parties of a gateway read its identity from different certificat
 
 | Dec | Rejected alternative | Why rejected |
 |---|---|---|
-| — | **F.** Continue deferring this record and build the secure-element firmware seam ad hoc | Several accepted records depend on it, and code would invent the PKI, which ADR-0000 decision 1 forbids |
-| 1 | **D.** Software-stored keys on nodes and on any board that carries a secure element | A key copied off a stolen card or dumped from flash defeats hardware identity, the reason the part is fitted |
-| 3 | **A.** A single global IndustryGrow root with per-operator intermediates | Couples every deployment, self-hosters included, to one root key and one revocation authority |
+| — | Continue deferring this record and build the secure-element firmware seam ad hoc | Several accepted records depend on it, and code would invent the PKI, which ADR-0000 decision 1 forbids |
+| 1 | Software-stored keys on nodes and on any board that carries a secure element | A key copied off a stolen card or dumped from flash defeats hardware identity, the reason the part is fitted |
+| 3 | A single global IndustryGrow root with per-operator intermediates | Couples every deployment, self-hosters included, to one root key and one revocation authority |
 | 3 | Concurrent trust of two operators' roots during a migration | Relaxes "no other"; a design that needs it requires its own ADR first |
-| 5 | **B.** Per-node runtime authentication on the CAN bus with the node secure element | Contradicts the trusted-CAN decision (ADR-0004 decision 17); a signature consumes most of an 8-byte frame |
-| 5 | **E.** No node identity, gateway-only PKI | Strands the serial ↔ identity binding of ADR-0017 and forfeits provenance and anti-counterfeit |
-| 7 | **C.** Long-lived gateway certificates with CRL/OCSP revocation | Needs revocation distribution and gateway-side checking, state and network dependencies that fight the stateless edge |
-| 10 | **G.** One leaf carrying both the CN and the tenant SAN URI | The tenant does not exist pre-cloud, and one leaf chains to one root while the two relying parties anchor on two |
-| 10 | **H.** Re-key at migration with a fresh device keypair | Severs the binding the `-PR` records and forces physical re-provisioning for an operator change |
+| 5 | Per-node runtime authentication on the CAN bus with the node secure element | Contradicts the trusted-CAN decision (ADR-0004 decision 17); a signature consumes most of an 8-byte frame |
+| 5 | No node identity, gateway-only PKI | Strands the serial ↔ identity binding of ADR-0017 and forfeits provenance and anti-counterfeit |
+| 7 | Long-lived gateway certificates with CRL/OCSP revocation | Needs revocation distribution and gateway-side checking, state and network dependencies that fight the stateless edge |
+| 10 | One leaf carrying both the CN and the tenant SAN URI | The tenant does not exist pre-cloud, and one leaf chains to one root while the two relying parties anchor on two |
+| 10 | Re-key at migration with a fresh device keypair | Severs the binding the `-PR` records and forces physical re-provisioning for an operator change |
 | 10 | Cross-sign the self-hosted leaf under the managed root | Produces no SAN URI and removes the root independence decision 3 keeps |
-| 10 | **I.** Machine identifier in the CN of the IndustryFlow leaf too | ADR-IF-0007 decision 3 deprecates CN-as-identity; forcing it would fork the core platform |
-| 11 | **J.** Fit a secure element to the gateway as a precondition | Puts a hardware purchase on the critical path of the self-build route (ADR-0001 decision 6) for a part whose form the project does not control |
-| 11 | **K.** Keep the gateway certificate described as secure-element-bound and treat the software key as an undocumented exception | Leaves the record asserting hardware that is not fitted, so every claim resting on it is unverifiable (ADR-0000 decision 3) |
+| 10 | Machine identifier in the CN of the IndustryFlow leaf too | ADR-IF-0007 decision 3 deprecates CN-as-identity; forcing it would fork the core platform |
+| 11 | Fit a secure element to the gateway as a precondition | Puts a hardware purchase on the critical path of the self-build route (ADR-0001 decision 6) for a part whose form the project does not control |
+| 11 | Keep the gateway certificate described as secure-element-bound and treat the software key as an undocumented exception | Leaves the record asserting hardware that is not fitted, so every claim resting on it is unverifiable (ADR-0000 decision 3) |
 
 ## Consequences
 

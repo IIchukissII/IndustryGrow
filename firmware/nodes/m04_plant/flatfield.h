@@ -20,7 +20,7 @@
  * corrections (ADR-0028 d10), and it is BOUND to U1's 48-bit device ID: a trim
  * describes the module it was determined on, and a field whose ID does not
  * match the imager in the socket is refused rather than applied to another
- * part's non-uniformity. That is the module-swap failure ADR-0028 alternative A
+ * part's non-uniformity. That is the module-swap failure ADR-0028 dec 2 alternatives
  * names, closed by construction.
  *
  * A missing, corrupt or foreign field is REPORTED and publication continues

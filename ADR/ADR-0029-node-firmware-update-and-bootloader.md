@@ -6,9 +6,9 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0029 — Node firmware update and bootloader
 
 - **Status:** Accepted
-- **Date:** accepted 2026-08-28; changed 2026-10-19
-- **Parent:** ADR-0004
-- **Related:** ADR-0002 (bus rate; firmware distribution below telemetry priority), ADR-0005 (pinned regulated DSDL set; the update service binding it defers here), ADR-0007 (P-256; firmware root separate from identity), ADR-0015 (fail-closed precedent for decision 17), ADR-0017 (firmware identity follows the carrier), ADR-0020 (operational stream reaches a record at stage 11), ADR-0021 (intended-release entity), ADR-0022 (intent routes; exclusion of firmware-flash intake), ADR-0024 (bootloader-signing key custody), ADR-0025 (P-256 / SHA-256 signing), ADR-0027 (Node-ID store an update preserves), ADR-0028 (commissioning interaction it defers here)
+- **Date:** 2026-08-28; changed 2026-10-19
+- **Parent:** [ADR-0004](ADR-0004-gateway-host-hardening.md)
+- **Related:** [ADR-0002](ADR-0002-field-bus-architecture.md) (bus rate; firmware distribution below telemetry priority), [ADR-0005](ADR-0005-dsdl-foundation.md) (pinned regulated DSDL set; the update service binding it defers here), [ADR-0007](ADR-0007-pki-and-secure-element-identity.md) (P-256; firmware root separate from identity), [ADR-0015](ADR-0015-gateway-profile-and-control-loops.md) (fail-closed precedent for decision 17), [ADR-0017](ADR-0017-component-document-and-instance-identification.md) (firmware identity follows the carrier), [ADR-0020](ADR-0020-gateway-persistence-model.md) (operational stream reaches a record at stage 11), [ADR-0021](ADR-0021-instance-and-integration-erp.md) (intended-release entity), [ADR-0022](ADR-0022-instance-integration-erp-api.md) (intent routes; exclusion of firmware-flash intake), [ADR-0024](ADR-0024-operator-ca-bootstrap-and-key-ceremony.md) (bootloader-signing key custody), [ADR-0025](ADR-0025-cultivation-profile-signing.md) (P-256 / SHA-256 signing), [ADR-0027](ADR-0027-node-identity-model.md) (Node-ID store an update preserves), [ADR-0028](ADR-0028-commissioning-sequence-and-trim-custody.md) (commissioning interaction it defers here)
 
 ## Context
 
@@ -58,12 +58,12 @@ P1 excludes in-place rewrite of the running image, P2 puts partition boundaries 
 
 | Dec | Rejected alternative | Why rejected |
 |---|---|---|
-| 1 | **F.** Update state in the identity sector | P3 |
-| 2 | **A.** One slot, updated in place | P1: an interrupted write leaves no bootable image |
-| 3 | **B.** Application self-update executing from RAM | Unrecoverable on power loss mid-erase |
-| 4 | **C.** The MCU's ROM system bootloader over CAN | Bound to CAN pins the carrier does not route to the bus (AN2606), and cannot verify a signature (ADR-0004 dec 14) |
-| 4 | **D.** USB DFU per node | Physical access per node; retained as a recovery path |
-| 6 | **E.** Unsigned images under ADR-0004 dec 17 | dec 17 covers wire injection, not a corrupted or substituted artifact |
+| 1 | Update state in the identity sector | P3 |
+| 2 | One slot, updated in place | P1: an interrupted write leaves no bootable image |
+| 3 | Application self-update executing from RAM | Unrecoverable on power loss mid-erase |
+| 4 | The MCU's ROM system bootloader over CAN | Bound to CAN pins the carrier does not route to the bus (AN2606), and cannot verify a signature (ADR-0004 dec 14) |
+| 4 | USB DFU per node | Physical access per node; retained as a recovery path |
+| 6 | Unsigned images under ADR-0004 dec 17 | dec 17 covers wire injection, not a corrupted or substituted artifact |
 | 15 | Infer a node's version from the last command sent | A reverted trial, an SWD flash and a failed download all leave a node running something else |
 | 15 | Report the observed version to the ERP for recording | Operational intake, excluded by ADR-0022 dec 9 |
 | 16 | Push from a system that cannot see the node | The component that owns the bus is the one that can compare and pace the transfer |

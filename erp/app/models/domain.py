@@ -36,7 +36,7 @@ class ProfileVersion(_Base):
 
     ``document_b64`` holds setpoints + state-space matrices + Kalman gains +
     identification metadata together; model parameters are never split into a
-    parallel subsystem (ADR-0016 alt D). Storing a version here does NOT deploy
+    parallel subsystem (ADR-0016 dec 6 alternatives). Storing a version here does NOT deploy
     it — the gateway's single mutation channel does (decision 12).
 
     It is held as opaque base64 rather than a parsed document because the
