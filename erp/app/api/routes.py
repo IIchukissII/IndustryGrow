@@ -648,17 +648,17 @@ async def bind_machine_provisioning(
     db: AsyncIOMotorDatabase = Depends(get_db),
     _role: str = Depends(require_provisioning),
 ):
-    """Bind a machine to its ATECC608 certificate (ADR-0022 rev 1 d12).
+    """Bind a machine to its ATECC608 certificate (ADR-0022 d12).
 
     Separate from the E-instance route because a gateway has no
     `Exxxx-VVVVVV-NNNNNN` serial — it is SP0004 identified as a machine, and
     minting it a synthetic instance id to reuse that route would corrupt the
-    ADR-0017 grammar to reach a database row (alternative N).
+    ADR-0017 grammar to reach a database row (ADR-0021 dec 17 alternatives).
 
     Upsert, not insert: certificates are short-lived and auto-renewed
     (ADR-0007 d7), so re-certification calls this again with a new serial and
     validity. The stable anchors — the machine identifier and the public-key
-    fingerprint — do not change across renewal (ADR-0007 rev 1 d10d).
+    fingerprint — do not change across renewal (ADR-0007 d10d).
     """
     if not identifiers.MACHINE_RE.match(gbox):
         raise HTTPException(
@@ -696,7 +696,7 @@ async def gateway_channel(
     """Everything the ERP owns about one machine's gateway channel (card 15).
 
     Note what is absent: whether the gateway has actually pulled. That is
-    operational and stays out of the ERP (ADR-0022 d9; d8 rev 1) — the console
+    operational and stays out of the ERP (ADR-0022 d9; d8 — the console
     shows it as a gap rather than this route inventing an answer.
     """
     identity = await db[FOUNDATION["machine_identity"]].find_one({"_id": gbox})
@@ -929,7 +929,7 @@ def _store_doc(path: Path) -> schemas.StoreDocOut:
 async def _read_through(warehouse: Warehouse, object_key: str) -> StreamingResponse:
     """Stream one object from the store to the caller, holding none of it.
 
-    ADR-0022 rev 2 d7's third form. The ERP keeps no copy — chunks pass through —
+    ADR-0022 d7's third form. The ERP keeps no copy — chunks pass through —
     so ADR-0021 d7's "does not duplicate blob content" still holds. This exists
     because a presigned URL is only spendable by a browser the object store has
     been configured to accept, and an operator handed a grant they cannot spend
@@ -1043,7 +1043,7 @@ async def store_document_content(
     warehouse: Warehouse = Depends(get_warehouse),
     _role: str = Depends(require_read),
 ):
-    """Read one repository document through (ADR-0022 rev 2 d7).
+    """Read one repository document through (ADR-0022 d7).
 
     Guarded exactly as the URL route above is: the key must name a file in the
     repository's `store/`, resolved against it rather than joined onto it.
@@ -1122,7 +1122,7 @@ async def document_content(
     warehouse: Warehouse = Depends(get_warehouse),
     _role: str = Depends(require_read),
 ):
-    """Read one indexed document through (ADR-0022 rev 2 d7).
+    """Read one indexed document through (ADR-0022 d7).
 
     Same index guard as the URL route: the key must be one this instance has
     indexed, so this serves the ERP's own record rather than the bucket.

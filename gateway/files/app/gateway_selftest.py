@@ -7,12 +7,12 @@ A manual check, run by hand. `gateway-pycyphal.service` runs gateway_telemetry.p
 this stays because it isolates the environment from the application, proving:
 
   1. the venv and `pycyphal` import work under the unprivileged `gateway` user;
-  2. the least-privilege sandbox (ADR-0004 rev 1 d7) does not block what the
+  2. the least-privilege sandbox (ADR-0004 d7) does not block what the
      service legitimately needs;
   3. SocketCAN is reachable via an AF_CAN socket on the configured interface —
      the access path the sandbox grants through RestrictAddressFamilies=AF_CAN
      (NOT a /dev node / DeviceAllow=). On vcan0 this is a pure software loopback
-     (ADR-0002 rev 3: validate before physical hardware).
+     (ADR-0002: validate before physical hardware).
 
 Run modes:
   (default)  run the checks once and exit 0/1.

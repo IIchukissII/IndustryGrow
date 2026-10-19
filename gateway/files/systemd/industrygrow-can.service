@@ -4,7 +4,7 @@
 # SocketCAN interface bring-up. Brings up the interface named in
 # /etc/industrygrow/gateway.env (IGROW_CAN_IFACE): a virtual vcan0 for bring-up
 # validation (no bit rate), or a physical canN at the fixed 500 kbit/s classic-CAN
-# rate (IGROW_CAN_BITRATE; ADR-0002 rev 3 d8). The bit rate lives in one place
+# rate (IGROW_CAN_BITRATE; ADR-0002 d8). The bit rate lives in one place
 # (gateway.env) and is applied here — never hardcoded per interface.
 #
 # Bring vcan0 up FIRST; the physical can0 path is the OPTIONAL later step (the

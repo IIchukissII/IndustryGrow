@@ -3,441 +3,86 @@ SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
-# ADR-0024: Operator CA bootstrap and the root-key ceremony
+# ADR-0024 — Operator CA bootstrap and the root-key ceremony
 
-- **ID:** ADR-0024
 - **Status:** Accepted
-- **Date:** 2026-07-24
-- **Project:** IndustryGrow
-- **Parent:** ADR-0007
-- **Companions:** ADR-0001, ADR-0004 (rev 1), ADR-0015, ADR-0017 (rev 2), ADR-0022
-- **Amends:** ADR-0020 decision 5 (permitted gateway persistent state — adds the operator trust anchor)
-- **Realizes:** ADR-0007 deferred decisions *"Self-hoster CA bootstrap tooling and documentation"* and *"Operator root-key ceremony"*
+- **Date:** 2026-07-24; changed 2026-10-19
+- **Parent:** [ADR-0007](ADR-0007-pki-and-secure-element-identity.md)
+- **Related:** [ADR-0001](ADR-0001-industrygrow-framing.md) (the self-build path decisions 5 and 7 keep completable), [ADR-0004](ADR-0004-gateway-host-hardening.md) (the firmware-signing key decision 14 takes into custody), [ADR-0015](ADR-0015-gateway-profile-and-control-loops.md) (the profile channel decision 10 declines to reuse), [ADR-0017](ADR-0017-component-document-and-instance-identification.md) (the `-PR` record issued leaves are bound in), [ADR-0020](ADR-0020-gateway-persistence-model.md) (decision 5's permitted gateway state, which decision 4 extends), [ADR-0021](ADR-0021-instance-and-integration-erp.md) (the operator-private data that keeps the ERP a relying party), [ADR-0022](ADR-0022-instance-integration-erp-api.md) (the gateway client certificate this CA issues), [ADR-0029](ADR-0029-node-firmware-update-and-bootloader.md) (the bootloader that verifies against the firmware-signing key)
 
-## Revision history
+## Context
 
-- **Amendment** — decision 5 (2026-08-30): how the offline property is obtained and
-  that it is obtained by tooling rather than by procedure. Bounds decision 5; changes
-  nothing it decided.
-- **Amendment** — decision 14 (2026-08-30): the firmware signing key as a second root,
-  discharging ADR-0029's deferred custody item.
+ADR-0007 roots trust per operator (decision 3), with P-256 keys and X.509 certificates (decisions 1–2), and makes gateway certificates short-lived and auto-renewed with revocation by cease-renewal and deny-list, not CRL/OCSP (decision 7). A certificate issued under the operator root is the only machine credential the ERP accepts (ADR-0022 decision 2), so a self-hosted deployment needs a real operator CA before any gateway certificate, gateway client or `-PR` record can be built against it.
 
-## Context and problem
+A key's exposure must be proportional to its blast radius. Compromise of an issuing key is recovered by re-issuing under the root; compromise of the root is not recoverable, because every certificate in the estate descends from it. Short-lived leaves force an online issuer, so a design that renews leaves with the root makes the root an online key.
 
-ADR-0007 decided that trust is rooted **per operator** (decision 3) and then left the
-question of how an operator actually stands one up to two deferred decisions — the
-self-hoster bootstrap tooling, and the ceremony around generating, holding, backing
-up, and rotating the root key.
-
-That gap is now load-bearing. ADR-0022 decision 2 makes a certificate issued under
-the operator root the **only** machine credential the ERP accepts, and the mTLS
-termination that enforces it is built: the proxy verifies the chain, and the
-application derives `GBOX_NNNN` from the verified DN rather than from any request
-parameter. So there is a working channel whose entire premise is *"issued under the
-operator root"* — and no operator root. The only CA in the repository is
-`erp/deploy/mtls/make-test-ca.sh`, which states accurately that it is a throwaway
-fixture and **not** a bootstrap procedure.
-
-Three pieces of pending work block on the same missing thing: a real gateway
-certificate, the gateway-side client that authenticates with it, and the `-PR`
-provisioning record that binds it to a serial. None can be built against a CA that
-does not exist, and building any of them against the test fixture would bake a
-disposable trust root into the parts of the system hardest to re-provision.
-
-The surrounding records have already fixed this one's boundaries. They are
-inherited here, not re-opened:
-
-- **Trust is rooted per operator; there is no global IndustryGrow root** (ADR-0007
-  decision 3). This ADR decides how *an* operator root is stood up, never whether
-  it is shared.
-- **P-256 keys, X.509 certificates, ECDSA signatures** (ADR-0007 decisions 1–2).
-- **Gateway certificates are short-lived and auto-renewed; revocation is cease-renewal
-  plus a platform-side deny-list, not CRL/OCSP** (ADR-0007 decision 7).
-- **A private key is generated where it will live and does not move** — on-chip for
-  device identity (ADR-0007 decision 1). The same principle governs the CA keys here.
-- **Identity PKI and firmware-signing PKI are distinct trust roots** (ADR-0007
-  decision 8; ADR-0004 rev 1 decisions 12–16). Nothing here touches firmware signing.
-- **The gateway is a stateless, replaceable edge** whose permitted persistent state is
-  enumerated in ADR-0020 decision 5.
-- **The self-build path must be completable from open artifacts** (ADR-0001 decision 6).
-
-What remains genuinely open — and is decided below — is the shape of the chain
-between root and leaf, what the root key physically is and who holds it, what
-happens when it is backed up, lost, rotated, or compromised, and where the
-bootstrap tooling is allowed to run.
-
-## Decision drivers
-
-- **A key's exposure should be proportional to its blast radius.** Compromise of an
-  issuing key is recoverable — re-issue under the root. Compromise of the operator
-  root is not: every certificate in the estate descends from it, and recovery means
-  re-provisioning every unit. These two very different risks must not sit on the
-  same key.
-- **Short-lived leaves force an online issuer.** ADR-0007 decision 7 requires gateway
-  certificates to be short-lived and auto-renewed, which makes whatever signs them an
-  effectively-online key. Any design that satisfies the renewal cadence *with the root*
-  has silently made the root an online key without ever deciding to.
-- **A ceremony that is too heavy is a ceremony that is skipped.** ADR-0007's own
-  negative consequence asks tooling to *lower* the self-hoster's CA burden, not remove
-  it. A procedure demanding dedicated hardware, a second site, and a quorum of
-  custodians will be quietly abandoned by a one-person deployment, and a skipped
-  ceremony protects nothing.
-- **Recoverability, because the failure is silent.** A lost root key announces itself
-  not at the moment of loss but at the next issuance, potentially months later. The
-  custody model must survive one destroyed copy without ceremony of its own.
-- **Both deployment models keep the same topology** (ADR-0001, ADR-0007 decision 3).
-  Self-hosted and commercial operators differ in who performs the ceremony and under
-  what controls, not in the shape of the chain their gateways verify.
-- **Standards over bespoke crypto** (inherited from ADR-0007): ordinary X.509 path
-  validation, nothing a TLS stack cannot check against an RFC.
+A ceremony too heavy for a one-person deployment is skipped, and a skipped ceremony protects nothing. A lost root key is noticed only at the next issuance, so custody must survive one destroyed copy. Self-hosted and commercial operators differ in who performs the ceremony, not in the chain their gateways verify, and the self-build path must stay completable from open artifacts (ADR-0001 decision 6).
 
 ## Decision
 
-### Chain shape
+1. **The chain has two tiers: the offline operator root signs one issuing intermediate, and the intermediate issues every leaf.** The intermediate absorbs the online exposure a short renewal cadence demands, and the root signs about once per intermediate lifetime, so an intermediate compromise is recovered by re-issue and a root compromise stays the rare event decision 11 describes. The leaf classes are the gateway client certificate (ADR-0022 decision 2), the ERP server certificate the gateway validates, and the node provenance certificate ADR-0007 decision 5 permits.
+2. **The root signs certificate authorities only, and the intermediate is constrained to issue end-entity certificates only.** The constraint is in the certificates, so an issuance mistake fails path validation instead of widening the CA.
+3. **Relying parties anchor on the root, not the intermediate; the intermediate travels in each peer's presented chain.** There are two relying parties — the gateway, validating the ERP's server certificate, and the ERP's terminating proxy, validating gateway client certificates — and both hold the same anchor. Replacing the intermediate therefore redistributes nothing, and changing the anchor (decision 10) changes it in both places or breaks the channel in one direction.
+4. **The operator trust anchor is gateway configuration state, permitted persistent state under ADR-0020 decision 5.** A static anchor the unit is provisioned with is configuration of a kind with the identity certificate beside it (ADR-0015 decision 4). Gateway-side revocation machinery stays excluded (ADR-0007 decision 7).
+5. **The root key is generated on a host with no network path, stored passphrase-encrypted, and never present on a networked host.** The offline property is obtained by tooling: the generating process runs in an isolated network namespace that is checked to have no routes before a key is written, which is reproducible and verifiable where an operator unplugging a cable is not. The host itself may stay connected; a dedicated offline machine runs the same tooling, with the namespace then redundant.
+6. **Custody is two encrypted copies on separate removable media in separate physical locations, with the passphrase held apart from both.** One copy makes media failure an estate-wide event, co-located copies share a fire, and media travelling with the passphrase is one theft, not two. This is redundancy, not a threshold scheme.
+7. **A hardware token holding a non-exportable root key is a supported alternative, not a migration target.** It is not the default because it puts a hardware purchase on the self-build path and a PKCS#11 dependency into the one procedure that runs on a bare machine. Both paths are permanently supported and documented.
+8. **Lifetimes satisfy root ≫ intermediate ≫ leaf, and each tier's validity strictly contains everything it issues plus a renewal margin.** The values live in the CA runbook (ADR-0000 decision 2), and the tooling refuses an issuance that breaks the relation, because a leaf that outlives its issuer fails validation for a reason no log states. The relation binds certificates checked by path validation at connect time; the long-lived node provenance certificate is validated against the `-PR` instead (ADR-0007 decision 7).
+9. **Intermediate rotation is routine and invisible to relying parties.** The root comes out of custody, signs a successor and returns; because relying parties anchor on the root, no unit is touched.
+10. **Root rotation is a planned overlap distributed out-of-band over the provisioning path, never the profile channel.** The successor root enters every gateway's and the ERP proxy's trust set before the outgoing root stops issuing, and the outgoing root retires once every unit carries the new anchor; both roots belong to the same operator, so ADR-0007 decision 3 holds. Carrying trust material on the single mutation interface (ADR-0015 decisions 1, 4) would widen a channel kept to one purpose for a rare, already hands-on event.
+11. **Compromise of the operator root is a re-provisioning event, not a rotation.** With no CRL/OCSP path (ADR-0007 decision 7) a compromised root cannot be disowned in the field, so every certificate beneath it is treated as forged and the estate is re-provisioned under a new root. This consequence is what justifies decisions 1, 5 and 6.
+12. **This record governs the self-hosted operator root; the IndustryFlow-managed CA adopts the same chain shape, validity relation and rotation ordering.** A gateway cannot tell which kind of operator certified it. The managed CA's custody, staffing and audit obligations are commercial-operations concerns not decided here.
+13. **The bootstrap tooling lives outside the ERP and never runs inside it.** The ERP is a networked service holding operator-private data (ADR-0021 decision 14), the host decision 5 keeps the root away from, and it is a relying party on this PKI, never an authority within it.
+14. **The firmware-signing key is a second root under this ceremony: a bare P-256 keypair, not a CA, kept separate from the operator root (ADR-0007 decision 8).** The bootloader holds its public half and verifies each image directly (ADR-0029 decision 6), so decisions 5 and 6 apply unchanged and rotation additionally re-flashes every bootloader over SWD (ADR-0029 decision 10). Development keys are outside this decision — marked where created, not custodied, not deployed — and a bootloader built with one refuses production images and the reverse; single-copy custody is a deployment choice whose loss leaves the estate accepting no further signed image until every bootloader is re-flashed by hand.
 
-1. **Two tiers: the offline operator root signs exactly one issuing intermediate CA,
-   and every leaf is issued by that intermediate — never by the root.** This is what
-   makes ADR-0007 decision 7 and an offline root compatible: the intermediate absorbs
-   the online exposure that a short renewal cadence demands, and the root signs on the
-   order of once per intermediate lifetime. A compromised intermediate is recovered by
-   re-issuing under the root and redistributing nothing; a compromised root is the
-   unrecoverable event decision 11 describes. Collapsing the tiers would trade that
-   asymmetry away for a shorter chain.
+## Alternatives
 
-    ![The ceremony: passphrases resolved online, keys generated inside a network namespace, verification, then physical custody gating every issuance](./figures/adr0024-ceremony.svg)
-
-   The leaf classes are named, because "all leaves" has hidden one before: the **gateway
-   client certificate** (ADR-0022 decision 2), the **ERP server certificate** the gateway
-   validates that channel against, and — when node provisioning is built — the **node
-   provenance certificate** ADR-0007 decision 5 permits. The first two are short-lived
-   and renewed; the third is not, and decision 8 says why that is not a contradiction.
-
-2. **The root signs certificate authorities only — the intermediate, and at rotation
-   its successor.** The intermediate is constrained so it cannot mint further
-   authorities: it is the terminal CA in the path, and every certificate below it is
-   an end-entity certificate. This is enforced in the certificates themselves rather
-   than by procedure, so a mistake at issuance time fails path validation instead of
-   silently widening the CA.
-
-3. **The trust anchor distributed to relying parties is the root, not the
-   intermediate.** The intermediate travels in the chain each peer presents, as
-   ordinary X.509 path building expects. Consequently, replacing the intermediate —
-   routine, and the whole point of tier separation — requires no trust distribution to
-   anyone at all.
-
-   There are **two** relying parties, not one: the **gateway**, which validates the ERP's
-   server certificate, and the **ERP's terminating proxy**, which validates gateway
-   client certificates (ADR-0022 decision 2). Both hold the same anchor, and anything
-   that changes it — decision 10 — changes it in both places, or breaks the channel in
-   one direction only.
-
-4. **The operator trust anchor is gateway configuration state, and this ADR adds it to
-   the enumeration in ADR-0020 decision 5.** That decision lists what may persist on the
-   gateway — `active-profile.json`, the batch sequence number, firmware artifacts, the
-   ATECC-bound identity — and names no trust anchor, because the PKI that would need one
-   had not been stood up. It is added here, and ADR-0020 decision 5 carries the inline
-   note pointing at this decision, so the enumeration keeps one authoritative home
-   (ADR-0000 decision 3) rather than being restated in two records.
-
-   The anchor is trust *configuration*, of a kind with the identity certificate beside
-   it. ADR-0015 decision 4 drew the configuration/operational line for
-   `active-profile.json`, and ADR-0020 has since relaxed that line's *operational* half —
-   a bounded operational buffer is now permitted. The half this rests on is untouched:
-   configuration state on the gateway is allowed, and a static anchor the unit is
-   provisioned with is configuration. What the stateless-edge model still excludes is
-   gateway-side *revocation machinery* — CRL fetching, OCSP lookups, a store that grows
-   with fleet history — all of which ADR-0007 decision 7 already declined.
-
-### The root key and its custody
-
-5. **The operator root key is generated on an offline machine, is stored
-   passphrase-encrypted, and is never present on a networked host.** It is generated
-   where it will live and does not move — the same principle ADR-0007 decision 1
-   applies to device keys, applied to the key that certifies them. "Offline" is a
-   property of the machine at generation time, not a promise about the medium.
-
-    > **How "offline" is obtained (added 2026-08-30).** By tooling, not by procedure:
-    > `pki/ceremony.sh` generates inside a network namespace and asserts it has no
-    > routes before writing a key. An operator disconnecting an interface cannot be
-    > re-run, tested, or verified afterwards; this can.
-    >
-    > **What that claims, and does not.** The host stays connected — what is
-    > guaranteed is that the *generating process* had no path off it. Weaker than a
-    > machine with no network hardware, stronger than recollection, and reproducible
-    > by a self-hoster (ADR-0001 d6). A dedicated offline machine runs the same
-    > script, and the namespace is then redundant rather than load-bearing.
-
-6. **Custody is two encrypted copies on separate removable media, stored in separate
-   physical locations, with the passphrase held apart from both.** Two copies because a
-   single copy makes ordinary media failure an estate-wide event; separate locations
-   because co-located copies share a fire; the passphrase apart because media and
-   secret travelling together is one theft, not two. This is redundancy, deliberately
-   not a threshold scheme (alternative C).
-
-7. **A hardware token is a supported alternative for the root, not a migration target
-   the file-based path is waiting on.** A PIV-style token holding a non-exportable root
-   key is stronger custody, and is the natural match for a project whose device identity
-   rests on exactly that property. It is not the default because it would put a hardware
-   purchase on the critical path of the self-build path ADR-0001 decision 6 requires to
-   be completable from open artifacts, and would add a PKCS#11 dependency to the one
-   procedure that must run on an otherwise-bare offline machine. Both paths are
-   permanently supported and the runbook documents both; an operator on the file path is
-   not carrying deferred work.
-
-### Validity relation
-
-8. **This ADR fixes the *relation* between tier lifetimes, not the values: root ≫
-   intermediate ≫ leaf, and each tier's validity must strictly contain the validity of
-   everything it issues, plus a renewal margin.** The concrete windows are values, and
-   values live in the document whose job they are (ADR-0000 decision 2) — here the
-   bootstrap runbook, alongside the numbers ADR-0007 already deferred for leaf lifetime
-   and renewal cadence. What belongs on the record is the invariant: a leaf that
-   outlives its issuer is a certificate that stops validating for a reason no log will
-   explain clearly.
-
-   The invariant binds certificates that are checked by **path validation at connect
-   time** — the gateway client and ERP server certificates. It does not bind the
-   long-lived node provenance certificate of ADR-0007 decision 5, which that ADR's
-   decision 7 already exempts from freshness: it is validated against the `-PR` record,
-   as a statement about a unit's origin, not as a live credential. How such a
-   certificate is issued without either shortening its life or outliving its issuer is
-   left open below, because node provisioning does not exist yet and guessing at it here
-   would fix a shape nothing has tested.
-
-### Rotation and compromise
-
-9. **Intermediate rotation is routine and invisible to relying parties.** The root comes
-   out of custody, signs a successor intermediate, and returns. Because both relying
-   parties anchor on the root (decision 3), nothing is redistributed and no unit is
-   touched.
-
-10. **Root rotation is a planned overlap, not a cutover, and it is distributed
-    out-of-band.** The successor root is placed in each relying party's trust set —
-    every gateway *and* the ERP's proxy (decision 3) — *before* the outgoing root stops
-    issuing, and the outgoing root is retired only once every unit is confirmed to carry
-    the new anchor. During the overlap a gateway trusts two roots; both are roots of the
-    **same operator**, so ADR-0007 decision 3's "the root of its own operator and no
-    other" is satisfied, not bent.
-
-    Distribution is the operator provisioning path — the same hands-on route by which a
-    unit gets its identity in the first place — and explicitly **not** the profile
-    channel. Routing trust material through the single mutation interface of ADR-0015
-    decisions 1 and 4 would make the control-plane path a trust-distribution path, and
-    the verification that
-    would have to secure it is itself unwritten (the profile signature scheme is
-    deferred). Root rotation is rare, planned, and already touches every unit; it does
-    not justify widening the one channel ADR-0015 deliberately kept narrow.
-
-11. **Compromise of the operator root is a re-provisioning event, not a rotation.**
-    ADR-0007 decision 7 deliberately provides no CRL/OCSP path, so there is no
-    mechanism by which a compromised root is disowned in the field; every certificate
-    beneath it must be treated as forged. The honest response is a new root and a
-    re-provisioned estate. Recording this plainly is the point: it is the consequence
-    that justifies decisions 1, 5, and 6, and an operator who does not know it will
-    under-invest in exactly those.
-
-### Scope and trust boundary of the tooling
-
-12. **This ADR governs the self-hosted operator root.** The IndustryFlow-managed CA of
-    ADR-0007 decision 3 adopts the same chain shape, validity relation, and rotation
-    ordering — a gateway must not be able to tell which kind of operator certified it —
-    but its custody controls, staffing, and audit obligations are commercial-operations
-    concerns this ADR does not decide. They are listed as deferred below rather than
-    assigned to a record that does not exist, so the gap stays visible if that record is
-    never written.
-
-13. **The bootstrap tooling lives outside the ERP and never runs inside it.** The root
-    ceremony runs on an offline machine with no application runtime, and the ERP is a
-    networked service holding operator-private production data (ADR-0021 decision 14) —
-    precisely the host decision 5 keeps the root away from. Shipping CA tooling inside
-    the ERP would place the bootstrap procedure in the artifact least entitled to
-    perform it, and would suggest a trust relationship the chain does not have: the ERP
-    is a *relying party* on this PKI, never an authority within it.
-
-14. **The firmware signing key is a second root under this ceremony** (added
-    2026-08-30). A bare P-256 keypair, not a CA: the bootloader holds its public half
-    and verifies each image directly (ADR-0029 d6), and it is separate from the operator
-    root (ADR-0007 d8). Discharges ADR-0029's deferred custody item.
-
-    Decisions 5 and 6 apply unchanged. Rotation additionally requires re-flashing every
-    bootloader over SWD (ADR-0029 d10): an operator leaf is re-issued over the wire,
-    this key is not.
-
-    **Development keys are outside this decision,** as `deploy/mtls/make-test-ca.sh` is
-    outside the operator root. Marked where created, not custodied, not deployed. A
-    bootloader built with one refuses production images and the reverse.
-
-    **Single-copy custody is a deployment choice.** The reference deployment holds one.
-    Its cost: the estate accepts no further signed image until every bootloader is
-    re-flashed by hand.
-
-## Alternatives considered
-
-**A. One tier — the operator root issues leaves directly.** The shortest chain and the
-least tooling. *Rejected:* ADR-0007 decision 7 requires short-lived, auto-renewed
-gateway certificates, so the issuing key must be reachable on the renewal cadence. A
-one-tier CA therefore puts the operator root online — the single outcome the entire
-custody model exists to prevent — and does so as a side effect of a lifetime decision
-rather than as a decision anyone made. It also makes issuing-key compromise and
-root compromise the same event, discarding the recoverability asymmetry of decision 1.
-
-**B. Three tiers — root, policy CA, issuing CA.** The conventional enterprise layout.
-*Rejected:* the middle tier earns its keep where there are multiple issuing domains,
-delegated issuance, or distinct certificate policies to separate. A self-hosted
-operator has one estate and one issuance policy, so the third tier adds a key to
-protect, a lifetime to track, and a rotation to perform, in exchange for a separation
-nothing in the deployment uses.
-
-**C. Split the root key across custodians with a Shamir / M-of-N scheme.** The textbook
-answer for high-value root custody. *Rejected:* a threshold scheme presumes a quorum of
-custodians exists, and the self-hosted deployment ADR-0007 targets is frequently one
-person. It converts a recoverable loss (one medium destroyed, the second copy intact)
-into an unrecoverable one (shares below quorum), and reconstruction gathers the full key
-onto one machine anyway — the moment of peak exposure — for a threat model that plain
-redundancy plus a separately-held passphrase (decision 6) already addresses.
-
-**D. Require a hardware token for the root.** *Rejected as the default, adopted as a
-supported alternative (decision 7):* requiring it makes a hardware purchase a
-precondition for standing up an open-core self-hosted deployment, which contradicts
-ADR-0001 decision 6, and adds a PKCS#11 dependency to a procedure whose defining
-constraint is that it runs on a machine with nothing installed on it. The custody *goal*
-— a non-exportable root — is right; mandating the mechanism is what fails the deployment
-model.
-
-**E. Run an ACME issuance service (e.g. step-ca) as the operator CA.** Automates
-issuance and renewal end to end. *Rejected for the bootstrap:* it is a service — a
-running process, a database, an operational surface — and it does not remove the
-problem this ADR exists to solve, it relocates it, because such a service still needs a
-root and that root still needs this ceremony. For an estate of one to a handful of
-gateways it is more machinery than the renewal cadence justifies, and ADR-0007 decision
-7's revocation model needs none of what ACME provides. It remains the natural upgrade
-once fleet size makes manual issuance the bottleneck, and decisions 1–3 leave room for
-it: an ACME issuer would take the intermediate's place without the root or any relying
-party's trust anchor changing.
-
-**F. Distribute a rotated root through the profile channel.** Reuses the one path that
-already reaches every gateway. *Rejected (decision 10):* it makes the single mutation
-interface of ADR-0015 decisions 1 and 4 carry trust material, and the signature scheme that would
-have to authenticate such a delivery is itself unwritten — so the mechanism would rest on
-a verification step that does not exist. The bootstrapping objection is not fatal (the
-firmware-signing key is a separate root, ADR-0007 decision 8, so it *could* verify a
-bundle), but a rare, planned, already-hands-on event is a poor reason to widen a channel
-ADR-0015 deliberately kept to one purpose.
-
-**G. Treat the test fixture as the bootstrap procedure — harden `make-test-ca.sh` in
-place.** *Rejected:* its purpose is to be disposable so that the proxy configuration and
-the identity-extraction seam can be exercised offline, and that purpose is served by
-unencrypted keys. Growing custody, encryption, and rotation into it would produce a
-script that is neither a good fixture nor a trustworthy ceremony, and would leave the
-tests depending on the real procedure's tooling. It does, however, now have to mirror
-the real chain's *shape* — a fixture that issues from a flat root would no longer be
-exercising what deployments run.
+| Dec | Rejected alternative | Why rejected |
+|---|---|---|
+| 1 | One tier: the root issues leaves directly | Short-lived leaves put the issuing key online, so the root goes online, and issuing-key and root compromise become one event |
+| 1 | Three tiers: root, policy CA, issuing CA | A middle tier separates issuance domains or policies a single-estate operator does not have, at the cost of another key, lifetime and rotation |
+| 1 | An ACME issuance service (e.g. step-ca) as the operator CA | A running service that still needs a root and this ceremony; more machinery than a small estate's renewal cadence justifies. It can take the intermediate's place later without changing the root or any anchor |
+| 5 | Offline by procedure: the operator disconnects the network before generating | Cannot be re-run, tested or verified afterwards |
+| 6 | Root split across custodians by Shamir / M-of-N | Presumes a quorum a one-person deployment lacks, turns one lost medium into an unrecoverable loss, and reassembles the key on one machine anyway |
+| 7 | Require a hardware token for the root | Makes a hardware purchase a precondition of self-hosting (ADR-0001 decision 6) and adds PKCS#11 to the bare-machine procedure |
+| 10 | Distribute a rotated root through the profile channel | Puts trust material on the single mutation interface for a rare, planned, hands-on event |
+| 13 | Harden the test-CA fixture into the bootstrap procedure | A fixture's purpose is disposable, unencrypted keys; grown into a ceremony it is neither a good fixture nor a trustworthy ceremony. It mirrors the two-tier shape instead |
+| 14 | Firmware-signing key as a CA issuing signing certificates | The bootloader verifies each image directly against one public key and does no path validation |
 
 ## Consequences
 
-### Positive
+**Positive**
 
-- The operator root can be genuinely offline while ADR-0007 decision 7's short renewal
-  cadence is still met, because the two roles sit on different keys.
-- Intermediate rotation and issuing-key compromise both become recoverable without
-  touching a single deployed gateway (decisions 3, 9).
-- ADR-0022's mTLS channel gains the trust root it has been assuming since the day it was
-  built, and the pending gateway-certificate, profile-pull, and `-PR` work stops being
-  blocked on a CA that does not exist.
-- The gateway's trust anchor is now named persistent state (decision 4) rather than an
-  unrecorded assumption, closing a gap between ADR-0020's enumeration and what the PKI
-  has always required.
-- The self-build path stays completable from open artifacts and a machine the builder
-  already owns (decision 7).
-- The commercial and self-hosted paths remain indistinguishable to a gateway (decision
-  12), so the migration ADR-0007 defers stays a change of operator, not of architecture.
+- The operator root stays offline while ADR-0007 decision 7's renewal cadence is met, because the two roles sit on different keys.
+- Intermediate rotation and issuing-key compromise are recovered without touching a deployed gateway.
+- The ERP's mTLS channel has a real trust root, and the gateway-certificate, profile-pull and `-PR` work builds on it.
+- The gateway trust anchor is named persistent state rather than an unrecorded assumption.
+- The self-build path stays completable from open artifacts and a machine the builder already owns.
+- Self-hosted and commercial chains look identical to a gateway, so an operator change is not an architecture change.
 
-### Negative
+**Negative**
 
-- **The operator now runs a two-key PKI.** Two keys to protect, two lifetimes to track,
-  and a rotation procedure per tier — more than the one-tier alternative, and the cost
-  of the recoverability decision 1 buys.
-- **Root compromise remains unrecoverable** (decision 11). This ADR bounds how likely it
-  is; it cannot bound the consequence, because ADR-0007 decision 7 deliberately declined
-  the revocation infrastructure that would.
-- **The ceremony depends on the operator's discipline, not on enforcement.** Nothing in
-  the tooling can verify that the second copy really went to a second location, or that
-  the passphrase is not on the same USB stick. The file-based default (decision 7)
-  accepts this in exchange for a procedure that gets performed at all.
-- **Root rotation requires reaching every unit during the overlap window** (decision 10),
-  by hand, because the delivery path is deliberately the provisioning path. A gateway
-  offline across the whole window is stranded and must be re-provisioned — the
-  replaceability path ADR-0004 already assumes, but a path someone has to walk.
-- **A second offline secret joins the firmware-signing key** (ADR-0004 rev 1 decision
-  12). The two are deliberately separate trust roots (ADR-0007 decision 8), so the
-  operator now has two independent custody obligations rather than one.
-- **The existing mTLS deployment material describes a flat chain.**
-  `erp/deploy/mtls/` and its test fixture were written against a single root issuing
-  leaves directly; both must be brought to the two-tier shape, or the configuration
-  shipped to operators will not match the CA they were told to build.
+- The operator runs a two-key PKI: two keys to protect, two lifetimes to track, a rotation per tier.
+- Root compromise stays unrecoverable without re-provisioning the estate.
+- Custody depends on the operator's discipline; no tooling verifies that the second copy reached a second location or that the passphrase is held apart.
+- Root rotation must reach every unit by hand within the overlap window, and a gateway offline throughout is re-provisioned.
+- The issuing-CA key lives on a networked host named in the runbook, exposure decision 1 accepts as recoverable.
+- The operator holds the firmware-signing key as a second, independent custody obligation.
 
-## Deferred decisions
+## Deferred
 
-- **Concrete validity windows and renewal cadence.** ADR-0007 already defers these;
-  decision 8 fixes only the ordering they must satisfy. The numbers are settled in the
-  bootstrap runbook and with the gateway-certificate work.
-- **Node provenance certificate issuance** (decision 8). ADR-0007 decision 5 permits a
-  long-lived node leaf while decision 8 here requires an issuer to outlive what it
-  issues. Whether such certificates come from the same intermediate, a longer-lived
-  sibling under the same root, or the root itself as a narrow exception is open until
-  node provisioning is built.
-- **The revocation deny-list key.** ADR-0007 defers the platform-side mechanics, but the
-  short-lived-leaf model makes one constraint concrete: the deny-list must key on
-  something **stable across renewal** — the hardware's public-key fingerprint or its
-  `GBOX_NNNN` — because a list keyed on leaf certificate serial would need re-entering
-  every time the revoked unit's certificate rolled over.
-- **What the self-hosted provisioning pipeline must not hard-code.** ADR-0007 defers
-  self-hosted ↔ commercial migration and cross-signing. Decision 12 keeps the topologies
-  identical, which is a precondition for that migration but not a design for it; the
-  constraint on what the pipeline may bake in (a specific root identity in the `-PR`, a
-  single-anchor trust store) has to be fixed before the pipeline is written, or the
-  migration path closes quietly.
-  > **Decided by ADR-0007 rev 1 (decision 10d):** the constraint is now settled — the
-  > `-PR` keys on `GBOX_NNNN` and the hardware public-key fingerprint (never a leaf's CN
-  > or serial), the gateway trust anchor must be **replaceable** (re-anchorable when the
-  > operator changes, not one value compiled in for the life of the part — *not* a mandate
-  > to trust two operators at once), and no tenant or CN-versus-SAN assumption is baked
-  > into anything a migration cannot rewrite. Recorded there rather than restated here, so
-  > the constraint keeps one authoritative home (ADR-0000 decision 3).
-- **Commercial-operator CA custody, staffing, and audit obligations** (decision 12).
-  Named here rather than assigned, because the record that would own them does not exist.
-- **Automated issuance.** If fleet size makes manual issuance the bottleneck, an ACME
-  issuer in the intermediate's position (alternative E) is the intended path; the
-  trigger and the choice of implementation are open.
-- **Where the intermediate key lives operationally** — which host holds it, under what
-  file ownership and disk protection — is a deployment concern, settled with the
-  single-tenant container deployment.
-- **The `-PR` provisioning record's certificate fields.** ADR-0007 defers the record
-  format; this ADR supplies the issuing chain it will reference but does not fix its
-  schema.
+| Open question | Settled by |
+|---|---|
+| How a long-lived node provenance certificate is issued without outliving its issuer: same intermediate, a longer-lived sibling, or the root as a narrow exception | Node provisioning, when it is built |
+| The deny-list key, which must be stable across renewal (device public-key fingerprint or `GBOX_NNNN`), not a leaf serial | ADR-0007's deny-list mechanics |
+| Commercial-operator CA custody, staffing and audit obligations | The record that owns the IndustryFlow-managed CA |
+| Trigger and implementation for automated issuance in the intermediate's position | Fleet size making manual issuance the bottleneck |
+| The certificate fields of the `-PR` record | ADR-0007's `-PR` schema |
 
 ## References
 
-- ADR-0000 (rev 1): Decision records — the why/what split that keeps validity *values*
-  out of decision 8.
-- ADR-0001: IndustryGrow framing — the two deployment models, and the self-build path
-  that decision 7 protects.
-- ADR-0004 (rev 1): Gateway host hardening — the stateless edge, and the separate
-  offline firmware-signing key that stays out of this PKI.
-- ADR-0007: PKI, hardware identity, and provisioning — the parent record; per-operator
-  rooting (d3), P-256/X.509 (d1–2), the node provenance certificate (d5), short-lived
-  auto-renewed leaves and no CRL/OCSP (d7), and the two deferred decisions this ADR
-  realizes.
-- ADR-0015: Gateway profile and control loops — the single mutation interface
-  (decisions 1, 4) that decision 10 declines to reuse, and decision 4's
-  configuration-vs-operational state line that decision 4 here relies on.
-- ADR-0017 (rev 2): Component, document, and instance identification — the serial ↔
-  certificate binding and the `-PR` record the issued leaves will be recorded in.
-- ADR-0020: Gateway persistence model — decision 5's enumeration of permitted persistent
-  state, which decision 4 adds the trust anchor to.
-- ADR-0021: Instance-and-integration ERP — the operator-private production data (its
-  decision 14) that makes the ERP a relying party rather than an authority (decision 13
-  here).
-- ADR-0022: ERP API — decision 2's gateway client certificate, the credential this CA
-  exists to issue.
+- ADR-0001, ADR-0004, ADR-0007, ADR-0015, ADR-0017, ADR-0020, ADR-0021, ADR-0022, ADR-0029.
+- `pki/README.md` — the ceremony runbook and the lifetime values; `pki/` — the ceremony tooling.
+- `erp/deploy/mtls/make-test-ca.sh` — the two-tier test fixture, not a bootstrap procedure.
+- `figures/adr0024-ceremony.svg` — the ceremony sequence.
 - RFC 5280 (X.509 / PKIX): path validation, basic constraints, key usage.

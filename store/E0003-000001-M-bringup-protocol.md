@@ -19,7 +19,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 | Item | Requirement | Source |
 |---|---|---|
 | Board under test | One `E0003-000001`, assembled | — |
-| Carrier | One `E0001` instance with a WeAct STM32F405RGT6 core board, **STRAP_1 wired through** | ADR-0002 rev 3, gotcha 1 |
+| Carrier | One `E0001` instance with a WeAct STM32F405RGT6 core board, **STRAP_1 wired through** | ADR-0002, gotcha 1 |
 | Gateway | `SP0004` on `can0` at 500 kbit/s, terminated | `SP0004-M-gateway-bringup` |
 | Supply | `+12 V` SELV | ADR-0018 |
 | Programmer | ST-Link V3 over SWD | — |
@@ -251,9 +251,9 @@ See `spec/E0003-R-specification.md` §11.
 | ADR-0017 d9 | Document layers, `M` = Manual |
 | ADR-0017 d10 | `-QP` / `-QR` definition |
 | ADR-0017 d16 | One image, personality selected by the module-ID strap |
-| ADR-0017, *Registry and store location* | The instance layer lives platform-side, off this repo |
+| ADR-0017 d21 | The instance layer lives platform-side, off this repo |
 | ADR-0021 d4, d7 | ERP as serial authority; lifecycle-document index over the warehouse |
-| ADR-0014 rev 6 | Sensor-node taxonomy, module-ID strap, sensor complement, presence probing |
+| ADR-0014 | Sensor-node taxonomy, module-ID strap, sensor complement, presence probing |
 | ADR-0029 d1, d6 | Bootloader and application in separate sectors; image signing |
 | `spec/E0003-R-specification.md` | Module specification — expected ranges (§3), acquisition (§6.1), PPFD (§6.2), optical requirements (§9), firmware (§10), verification (§11) |
 | `store/E0001-000003-D-pinmap.md` | Carrier side of the header contract, and `STRAP_1` |

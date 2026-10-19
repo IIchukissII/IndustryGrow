@@ -9,7 +9,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Date:** 2026-09-02
 - **Identifier:** `E0010` (REGISTRY.md); realization open (`O-76`)
 - **Governing ADRs:** ADR-0030, ADR-0015, ADR-0016, ADR-0028
-- **Companions:** ADR-0002 (rev 3), ADR-0005, ADR-0017 (rev 2), ADR-0020, ADR-0022, ADR-0027
+- **Companions:** ADR-0002, ADR-0005, ADR-0017, ADR-0020, ADR-0022, ADR-0027
 
 Rationale for the role, its bounds and the rejected alternatives is in the governing ADRs and is
 not restated. Values marked `verify` are not confirmed against a measurement or a datasheet.
@@ -33,7 +33,7 @@ protocol; the `QP` / `CP` / `CC` schemas (ADR-0022); the cultivation profile (AD
 | Tool identity in an emitted record | the board's own serial | S28 |
 
 A realization is a design and takes a version. A populated variant of one design takes its own
-E-number, not a version (ADR-0017 rev 2 d4).
+E-number, not a version (ADR-0017 d4).
 
 ### 2.1 Bench realizations
 
@@ -45,7 +45,7 @@ E-number, not a version (ADR-0017 rev 2 d4).
 Both reach the cabinet bus on FDCAN1 PA11/PA12 with JP1 and JP2 fitted. R1 is verified under V10; R2 predates R1 and is verified in `service-tool/BENCH.md`.
 
 Two realizations, not two populated variants of one: neither takes an E-number of its own
-(ADR-0017 d5, rev 2 d4). Neither is assigned a version while `O-76` is open (section 9).
+(ADR-0017 d5 d4). Neither is assigned a version while `O-76` is open (section 9).
 
 Neither host is a project design; both are STMicroelectronics evaluation hardware.
 

@@ -8,7 +8,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Status:** Fabricated, partially verified. `E0003-000001` exists and runs; §11 is mostly unexecuted and the schematic-frozen gate is still open (§13)
 - **Date:** 2026-09-08
 - **E-number:** `E0003` · module-ID strap `0b010`
-- **Governing ADRs:** ADR-0014 (rev 6), ADR-0002 (rev 3), ADR-0003, ADR-0005 (rev 1), ADR-0016, ADR-0017 (rev 2)
+- **Governing ADRs:** ADR-0014, ADR-0002, ADR-0003, ADR-0005, ADR-0016, ADR-0017
 - **Companions:** `E0002-R-specification.md`, `E0005-R-specification.md`, `E0006-R-specification.md`, `E0008-R-specification.md`, `E0009-R-specification.md`
 
 Rationale for the decisions applied here is in the governing ADRs and is not restated.
@@ -30,7 +30,7 @@ driver (no actuator module exists), gateway-side handling of published subjects 
 | Module class | M02-LIGHT |
 | Module-ID strap | `0b010` — STRAP_0 low, STRAP_1 high, STRAP_2 low |
 | E-number | `E0003` — fully-populated assembly |
-| Bare design | One layout; each standard populated configuration takes its own assembly E-number (ADR-0017 rev 2 d4) |
+| Bare design | One layout; each standard populated configuration takes its own assembly E-number (ADR-0017 d4) |
 | Carrier | `E0001`, sensor-module header pair 2×12 + 2×8 (ADR-0014 d5) |
 
 ## 3. Function
@@ -98,7 +98,7 @@ board. U3 shall not sit in the I²C pull-up path or in the sense path of any oth
 U2 are not optional: U1 carries U4's bus segment (§5.2) and U2 carries the rail both sensors run
 on (§7.3), so neither may be depopulated with U3.
 
-A partially populated configuration takes its own assembly E-number (ADR-0017 rev 2 d4) and
+A partially populated configuration takes its own assembly E-number (ADR-0017 d4) and
 requires no firmware change; the boot probe registers responders only (§10).
 
 The U4-only population is the expected variant wherever the fixture carries no UV-A channel.
@@ -111,10 +111,10 @@ A population without U4 has no function and is not a defined configuration.
 | U4 | ams OSRAM AS7343 | `AS7343-DLGM` | 11 filtered bands 405…855 nm, clear, flicker | **1.8 V** | `0x39` | Fixed |
 | U3 | ams OSRAM TSL2585 | `TSL25853PM` | UV-A 315…400 nm, photopic, IR, flicker | **1.8 V** | `0x39` | Fixed |
 
-Both parts are named by ADR-0014 d4 as revised in rev 6. Neither address is selectable, and they
+Both parts are named by ADR-0014 d4. Neither address is selectable, and they
 are the same address: **U3 and U4 collide, and are separated onto two channels of U1** (§5.2).
 
-Neither device occupies the `0x50`–`0x57` block ADR-0014 rev 4 d6 reserves for the module-ID
+Neither device occupies the `0x50`–`0x57` block ADR-0014 d6 reserves for the module-ID
 EEPROM; U1 sits at `0x70` (§4.2). M02 identifies by strap (§5) and carries no EEPROM.
 
 U3 requires no external reference component. O-63.
@@ -309,7 +309,7 @@ Every channel of ADR-0003 d11 is observable by the populated module.
 | Responsivity | 82.8 counts/(µW·cm⁻²) at 365 nm, ALS gain 1024×. **Typical only — the datasheet states neither minimum nor maximum**, so this is a nominal scale factor, not a guaranteed accuracy |
 | Visible rejection | UV-to-photopic channel ratio 0.0 % under a 2700 K white source; UV-to-IR ratio 0.2 % under a 940 nm source. The luminaire's visible and far-red output does not enter the UV reading |
 | Published | UV-A as one subject (§10.1), scaled by the nominal responsivity above |
-| UV-B, UV-C | **Not measured** (ADR-0014 rev 6). ADR-0003 d11 commands a UV-A trace only. M02 carries no out-of-band emission check |
+| UV-B, UV-C | **Not measured** (ADR-0014). ADR-0003 d11 commands a UV-A trace only. M02 carries no out-of-band emission check |
 
 ## 7. Power
 
@@ -482,8 +482,8 @@ register entries. M05 holds 4096–4102; M01 holds 4112–4121.
 | 4129 | PPFD | derived, §6.2 | `industryflow.greenhouse.light.PhotonFluxDensity` (mol·m⁻²·s⁻¹) |
 | 4130 | Flicker flags | U4 | `industryflow.greenhouse.light.FlickerStatus` |
 | 4131 | UV-A irradiance | U3 | `industryflow.greenhouse.light.Irradiance` (W·m⁻²) |
-| ~~4132~~ | ~~UV-B irradiance~~ — retired 2026-08-23 by ADR-0014 rev 6; U3 has no UV-B channel | — | — |
-| ~~4133~~ | ~~UV-C irradiance~~ — retired 2026-08-23 by ADR-0014 rev 6; U3 has no UV-C channel | — | — |
+| ~~4132~~ | ~~UV-B irradiance~~ — retired 2026-08-23 by ADR-0014; U3 has no UV-B channel | — | — |
+| ~~4133~~ | ~~UV-C irradiance~~ — retired 2026-08-23 by ADR-0014; U3 has no UV-C channel | — | — |
 
 Four subjects, not one record: a partial population must be able to omit U3's one
 (ADR-0005 d8). U4's channels are one device read in one acquisition and are not separable, so
@@ -499,7 +499,7 @@ states the limit and V4 measures it.
 
 The `light` sub-namespace is named by ADR-0005 d1. All four types are
 minted because the standard set carries no spectral, photon-flux, irradiance or flicker sample
-type (ADR-0005 d2). All are unscaled SI — mol·m⁻²·s⁻¹, W·m⁻² — for the reason ADR-0005 rev 1
+type (ADR-0005 d2). All are unscaled SI — mol·m⁻²·s⁻¹, W·m⁻² — for the reason ADR-0005
 gave for joule over watt-hour: µmol and lux are display conventions, and display is the
 gateway's concern.
 
@@ -531,10 +531,10 @@ collision with M06's O-42.
 | ID | Item | Blocks |
 |----|------|--------|
 | O-52 | PPFD reconstruction coefficients `c_i`: identification procedure, reference instrument, and per-phase-spectrum validity. The project owns no reference quantum sensor | PPFD accuracy, deployment profile, V1 |
-| ~~O-53~~ | ~~U3's fixed `0x53` inside the reserved `0x50`–`0x57` block~~ — closed 2026-08-13 by ADR-0014 rev 5. Still closed after ADR-0014 rev 6: U3 is now the TSL2585 at `0x39` and U1 sits at `0x70`, so no device on this module occupies the block | — |
-| ~~O-54~~ | ~~ADR-0014 d4's alternative UV part, the Vishay VEML6075, was terminated in 2019~~ — closed 2026-08-13 by ADR-0014 rev 5, which removes it and the LTR390 from d4 | — |
-| ~~O-55~~ | ~~730 nm far-red unobservable, and the UV-A band on the shoulder of the UV sensor's response~~ — closed 2026-08-13 by ADR-0014 rev 5: F8 at 745 nm covers 730 nm (§6.3) and the AS7331's UV-A channel is centred at 360 nm (§6.4) | — |
-| ~~O-56~~ | ~~U4's digital pins operated at 3.3 V, above V_DD, inside the 3.6 V absolute maximum but against the device pin description~~ — closed 2026-08-19 by fitting U1 in `store/E0003-000001.kicad_sch`: U4 sits on its own 1.8 V segment with its own pull-ups (§5.1, §5.2). The part at U1 became the `TCA9543A` on 2026-08-23 (ADR-0014 rev 6); the item stays closed, since the translation it required is still performed | — |
+| ~~O-53~~ | ~~U3's fixed `0x53` inside the reserved `0x50`–`0x57` block~~ — closed 2026-08-13 by ADR-0014. Still closed after ADR-0014: U3 is now the TSL2585 at `0x39` and U1 sits at `0x70`, so no device on this module occupies the block | — |
+| ~~O-54~~ | ~~ADR-0014 d4's second-source UV part, the Vishay VEML6075, was terminated in 2019~~ — closed 2026-08-13 by ADR-0014, which removes it and the LTR390 from d4 | — |
+| ~~O-55~~ | ~~730 nm far-red unobservable, and the UV-A band on the shoulder of the UV sensor's response~~ — closed 2026-08-13 by ADR-0014: F8 at 745 nm covers 730 nm (§6.3) and the AS7331's UV-A channel is centred at 360 nm (§6.4) | — |
+| ~~O-56~~ | ~~U4's digital pins operated at 3.3 V, above V_DD, inside the 3.6 V absolute maximum but against the device pin description~~ — closed 2026-08-19 by fitting U1 in `store/E0003-000001.kicad_sch`: U4 sits on its own 1.8 V segment with its own pull-ups (§5.1, §5.2). The part at U1 became the `TCA9543A` on 2026-08-23 (ADR-0014); the item stays closed, since the translation it required is still performed | — |
 | O-57 | Condensation on excursions places U4 outside its 5–85 %RH non-condensing operating conditions. Post-excursion validity and recovery undefined, as for O-47 | Excursion handling, data validity |
 | O-58 | DLI is integrated at the gateway (§3.2). Restart and gap policy across a gateway restart or a telemetry outage is unspecified | Gateway control loop, ADR-0015 |
 | O-59 | Node power unmeasured | Distribution-board sizing, O-31 |
@@ -563,7 +563,7 @@ what that rung asks for, and neither is discharged.
 
 | Rung | Content | Reached when |
 |------|---------|--------------|
-| **Pre-schematic** | Complement and requirements fixed; values estimated or `verify` | ADR-0014 rev 6 fixes both parts ✔ |
+| **Pre-schematic** | Complement and requirements fixed; values estimated or `verify` | ADR-0014 fixes both parts ✔ |
 | **Schematic and layout captured** | Parts fixed to ordering part numbers; schematic and board exist; component values determined | U3 ordering part resolved ✔ (`TSL25853PM`); U1 resolved ✔ (`TCA9543APWR`); `E0003-000001-S-src.zip` ✔; `E0003-000001-D-src.zip` ✔ |
 | **Schematic-frozen** | Remaining `verify` resolved, footprints checked against physical parts. `L` releases here | O-60, O-61, O-62, O-64, O-66, O-71 and O-72 closed ✔; **O-70 open; V6 not executed** |
 | **As-built** ← here, incompletely | Estimates replaced by measured values; verification §11 executed | `E0003` fabricated ✔; three devices answer and all four subjects publish ✔; V4's UV-A channel measured ✔; **O-59 not measured; V1, V2, V3, V5, V7–V12 not executed** |

@@ -3,374 +3,137 @@ SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
-# ADR-0017 (rev 3): Component, document, and instance identification scheme
+# ADR-0017 — Component, document and instance identification
 
-- **ID:** ADR-0017 (rev 3)
 - **Status:** Accepted
-- **Date:** 2026-06-19 (rev 2: 2026-08-03; rev 3: 2026-08-30)
-- **Project:** IndustryGrow
-- **Parent:** ADR-0001
-- **Companions:** ADR-0002 (rev 3), ADR-0004 (rev 1), ADR-0007, ADR-0014 (rev 3), ADR-0015, ADR-0016
-- **Supersedes:** ADR-0017 rev 2 (2026-08-03), and through it rev 1 (2026-06-19) and the initial record (2026-05-31)
+- **Date:** 2026-05-31; changed 2026-10-19
+- **Parent:** [ADR-0001](ADR-0001-industrygrow-framing.md)
+- **Related:** [ADR-0002](ADR-0002-field-bus-architecture.md) (carrier and module classes are E-modules; the `I` layer carries its Cyphal/DSDL definitions), [ADR-0004](ADR-0004-gateway-host-hardening.md) (the operational audit log this scheme does not duplicate), [ADR-0007](ADR-0007-pki-and-secure-element-identity.md) (secure-element identity bound to the serial; the `-PR` record), [ADR-0014](ADR-0014-sensor-node-taxonomy.md) (module-class vocabulary; partial-BOM populations; gateway role and zone tagging), [ADR-0015](ADR-0015-gateway-profile-and-control-loops.md) (deployment profiles are profile-versioned, not suffix-addressed), [ADR-0016](ADR-0016-empirical-survey-and-state-space-modeling.md) (instance mobility between deployments), [ADR-0019](ADR-0019-purchased-part-%28SP%29-identification.md) (the purchased-part `SP` root on the same identity axis), [ADR-0021](ADR-0021-instance-and-integration-erp.md) (hosts the instance and integration layer), [ADR-0022](ADR-0022-instance-integration-erp-api.md) (the one place the grammar is parsed), [ADR-0023](ADR-0023-machine-readable-type-registry.md) (how the type registry is consumed), ADR-0008 (planned; a position root above the machine), ADR-IF-0001 (planned; `production_unit`, the platform counterpart of the depth code)
 
-## Revision history
+## Context
 
-- **Amendments** — decision 20 (2026-09-08): the specification document layer `R`, rooted on the E-number and carrying no version. Extends decision 9's layer set as decision 16 did for `F`; reverses nothing.
-- **rev 3 (2026-08-30)** — Editorial. **No decision changes and none is renumbered**;
-  the record is cited by decision number across the corpus.
+IndustryGrow produces a small set of reusable designs — the carrier and the module classes of ADR-0014 — instantiated many times, and instances move between positions and deployments as inventory (ADR-0016). Procurement, QC, calibration and provisioning records need a canonical key, and an instance's history must follow it across re-installations.
 
-  Removed duplication: the serial's no-overflow rule, argued in decisions 1 and 8 and
-  again in alternative D, now stands once in alternative D, where a rejected option
-  belongs. Decision 15's block quotes summarising decisions 17–19 now defer to them —
-  a summary of a rule goes stale when the rule is amended, which is what ADR-0022
-  rev 2 had to correct in its own decision 1. Three paragraphs recording that
-  decisions 17–19 were in-place amendments duplicated this revision history. The
-  ADR-owns-why / registry-owns-what division, stated four times, is stated once at
-  the head of the decision. Decision 4's M07 case is two bullets rather than four.
+Three things must stay apart: the **type** (a design and its version), the **instance** (a serial), and the **position** in a machine. An identifier that fused type with position, or instance with position, breaks multi-instance scaling and instance mobility. The secure element on every carrier (ADR-0007) already provides a hardware identity, and IndustryFlow already holds firmware events, telemetry and forensic history (ADR-0004); the scheme binds to the first and does not duplicate the second.
 
-  Structural: `## Decision` was empty and the numbered decisions sat under
-  `## Conceptual model`, which does not contain them.
-
-- **rev 1 (2026-06-19)** — Adopts the firmware document layer `F` into the scheme
-  (previously a maintainer-call extension recorded only in `REGISTRY.md`) and
-  **roots it on the carrier `E0001`, not the node module**. The firmware is one
-  codebase shared by every node type (ADR-0002 d5), selected at runtime by the
-  module-ID strap; its version tracks that single carrier-level codebase, so
-  filing it per-module (the prior `E0006-…-F` convention) would force one shared
-  code change to bump the `F` version of every module — a count-into-identity
-  leak. Adds decision 16 and alternative G. Also refreshes companion references:
-  ADR-0005 and ADR-0007 are now Accepted (were "planned").
-- **rev 2 (2026-08-03)** — Extends the type vocabulary from `M01–M05` to `M01–M07`
-  following ADR-0014 rev 2, which adds M06-VENTILATION and M07-AMBIENT. No
-  identifier format changes and no decision is reversed; the scheme absorbed two
-  new module classes exactly as designed. Decision 4 gains the case ADR-0014 rev 2
-  created and this ADR had already answered in principle: M07's indoor and outdoor
-  deployment variants are **one bare design and two assembly E-numbers**, because a
-  wind group fitted or omitted at build is a real populate variant, unlike the
-  carrier's install-time jumper. Also records a gap this revision cannot close —
-  the position axis roots every node in a `GBOX_NNNN` cabinet, and an outdoor
-  M07 sits in no cabinet while serving several; the missing piece is an entity
-  above the machine, which belongs to ADR-0008.
-
-**Amendments** (bounded in-place additions under ADR-0000 decision 9 — each adds a
-numbered decision, reverses nothing, and qualifies decision 15):
-
-- **decision 17 (2026-06-21)** — A withdrawn design artifact set is archived as one
-  object whose key names its status, `BLOCKED` or `SUPERSEDED`.
-- **decision 18 (2026-07-18)** — The live fabrication package (gerber layer set plus
-  drill files) is one object, `Exxxx-VVVVVV-D-fab.zip`.
-- **decision 19 (2026-08-22)** — The editable design sources of a board version are
-  packaged by document layer, `Exxxx-VVVVVV-S-src.zip` and `Exxxx-VVVVVV-D-src.zip`,
-  closing the gap that had them stored with no layer letter at all.
-
-## Context and problem
-
-IndustryGrow produces physical artifacts and documentation across a lifecycle (design → production/QC → integration → operation) and across deployment scales (apartment cabinet to commercial greenhouse). The architecture already commits to a strong shape: a small set of reusable PCB designs (carrier, M01–M07 per ADR-0014 rev 2), instantiated many times, with instances that **move between deployments** as inventory (ADR-0016). What it has not committed to is how those artifacts and their documents are **identified**.
-
-The existing ADRs supply a taxonomy — module classes M01–M07, module-ID straps, the carrier as a distinct host board — but not material numbers, serial numbers, document identifiers, or a way to address per-instance lifecycle documents (test data, calibration, provisioning). Without a scheme, traceability is ad-hoc, procurement and QC records have no canonical key, and the inventory/mobility model of ADR-0016 has nowhere to hang an instance's history.
-
-This ADR specifies a hierarchical identification scheme for IndustryGrow. Its organizing principle is the separation of three things the project needs kept apart: the **type** (a module designation plus a version), the **instance** (a serial number), and the **position in the machine** (a hierarchical depth code). The scheme uses phase-specific identifier formats so that an artifact's identifier reflects where it is in its lifecycle, and it reserves a suffix slot for per-instance lifecycle documents.
-
-The separation is load-bearing for two reasons specific to IndustryGrow. ADR-0014 requires that one design be instantiated many times (designs few, instances many); ADR-0016 requires that an individual instance physically move between positions and deployments while keeping its identity and history. An identifier that fused type with position, or instance with position, would break both. This ADR also fixes the bindings that connect the scheme to the rest of the architecture: the instance serial to the ATECC608 hardware identity (ADR-0007), the document interface layer to Cyphal/DSDL (ADR-0002/0005), the integration-phase depth code to the gateway's runtime position tagging (ADR-0014 decision 7), and the suffix set to IndustryGrow's actual per-instance documents — together with the boundary between those documents and IndustryFlow's operational audit log (ADR-0004 rev 1). Rev 1 adds one further binding: the firmware document layer to the single shared codebase that runs on the carrier, so firmware identity follows the carrier (`E0001`), not the node personality (decision 16).
-
-## Decision drivers
-
-- **Reuse the existing taxonomy; do not reinvent it.** M01–M07 and the module-ID straps (ADR-0014 rev 2) are already a stable type vocabulary. The identifier scheme must encode that vocabulary, not run parallel to it.
-- **Separate type, instance, and position.** Load-bearing because of ADR-0014 (one design, many instances at many positions) and ADR-0016 (an instance physically moves between positions and deployments over its life).
-- **Reuse hardware identity already present.** Every carrier carries an ATECC608 (ADR-0002 rev 3 decision 3). Instance identity should bind to it rather than to a second, invented serial authority.
-- **One scheme across disciplines.** Electrical, mechanical, and pneumatic/fluidic parts of IndustryGrow should share one identification scheme, not fork per discipline.
-- **Do not duplicate the operational audit trail.** IndustryFlow already holds firmware events, telemetry, and forensic history (ADR-0004 rev 1). The document store must not become a second, divergent record of the same things.
-- **Lifecycle documents belong to the instance, not the position.** A board's test, calibration, and provisioning history must follow its serial across re-installations.
-
-## Decision
-
-### Conceptual model (governing invariant)
-
-Identity has two orthogonal axes that never fuse:
-
-- **Identity axis** — *what a thing is, and which copy.* Rooted at the
-  E-module: `Exxxx → VVVVVV → NNNNNN`. Assigned at design / production.
-  Position-free.
-- **Position axis** — *where a thing physically sits.* Rooted at the machine:
-  `GBOX_NNNN → DDDDDD`. Assigned at integration. Identity-free.
-
-The axes meet only in the integration identifier
-`GBOX_NNNN-DDDDDD-Exxxx-VVVVVV-NNNNNN`, a *mutable cross-reference* re-assigned
-whenever an instance is moved, removed, or replaced. A serial never encodes
-position; a position never encodes identity.
-
-A third notion — the **document layer** (`S/D/L/P/M/I`, plus `F` for firmware,
-decision 16, and `R` for a specification, decision 20) — is not an axis but a
-classifier on the identity axis (which artifact about a given identity); it never
-denotes nesting.
-
-Every numbered decision below is a consequence of this invariant. The rejected
-alternatives (flat hierarchical serial; position baked into serial) are exactly
-the collapse of these two axes into one, which the invariant forbids because
-instances are mobile and interchangeable (ADR-0014, ADR-0016).
-
-> Terminology for this ADR is governed by `GLOSSARY.md`.
-
-This record holds the *why* and the form of every identifier below. The *what* —
-which concrete object exists under which key, each withdrawal's file boundary,
-each package's member list — is `REGISTRY.md`'s (ADR-0000 d2). Procedures are
-`CONTRIBUTING.md`'s. Neither is restated here.
+Identity has two orthogonal axes that never fuse. The **identity axis** — what a thing is and which copy — is rooted at the E-module, `Exxxx → VVVVVV → NNNNNN`, assigned at design and production, and position-free. The **position axis** — where a thing sits — is rooted at the machine, `GBOX_NNNN → DDDDDD`, assigned at integration, and identity-free. They meet only in the integration identifier, a mutable cross-reference. The **document layer** is a classifier on the identity axis, not an axis. Terms are governed by `GLOSSARY.md`. This record holds the form and the why of every identifier; which concrete object exists under which key is `REGISTRY.md`'s (ADR-0000 decision 2).
 
 ![Two identity trees joined at integration](./figures/adr0017-identity-trees.svg)
 
-### Identifier formats
+## Decision
 
-1. **Three phase-specific identifier formats.**
-   - Documentation (design artifacts, type-level): `Exxxx-VVVVVV-L`
-   - Production & QC (a manufactured instance): `Exxxx-VVVVVV-NNNNNN[-suffix]`
+1. **Three phase-specific identifier formats.** Documents are stored flat with the hierarchy carried in the identifier, so the store is filtered by identifier pattern.
+   - Documentation (type-level): `Exxxx-VVVVVV-L`
+   - Production and QC (one manufactured instance): `Exxxx-VVVVVV-NNNNNN[-suffix]`
    - Integration (an instance installed in a machine): `GBOX_NNNN-DDDDDD-Exxxx-VVVVVV-NNNNNN`
-
-   Decoded:
-
-   ```
-   Documentation  (type-level)
-   Exxxx-VVVVVV-L
-   │     │      │
-   │     │      └─ document layer (S, D, L, P, M, I, F)
-   │     └─ version, 6 digits (major.minor.patch)
-   └─ module, E + 4 digits
-
-   Production & QC  (one manufactured instance)
-   Exxxx-VVVVVV-NNNNNN-XX
-   │     │      │      │
-   │     │      │      └─ lifecycle suffix (QP, QR, CP, CC, PR)
-   │     │      └─ serial, 6 digits (per module + version)
-   │     └─ version, 6 digits
-   └─ module, E + 4 digits
-
-   Integration  (instance installed in a machine)
-   GBOX_NNNN-DDDDDD-Exxxx-VVVVVV-NNNNNN
-   │         │      │     │      │
-   │         │      │     │      └─ serial (from production)
-   │         │      │     └─ version, 6 digits
-   │         │      └─ module, E + 4 digits
-   │         └─ depth, 6 digits (position in machine)
-   └─ machine, GBOX + 4 digits
-
-   Two encoded fields carry sub-structure:
-   VVVVVV  =  major.minor.patch   (2 digits each)        e.g. v2.1.3 = 020103
-   DDDDDD  =  main.sub-L1.sub-L2  (2 digits each, main 01–99)
-              e.g. climate node at position 1.1 = 010100
-   ```
-
-   Field definitions:
-   - **Module** `Exxxx` — `E` plus four digits; identifies a buildable/documentable assembly (decision 3). An opaque key; meaning is held in the registry.
-   - **Version** `VVVVVV` — six digits encoding semantic version `major.minor.patch`, two digits each (`1.0.0` → `010000`, `2.1.3` → `020103`). This is the version of the *design*, not of a populated configuration (see alternative D).
-   - **Serial** `NNNNNN` — six digits, unique per module+version (`000001`–`999999`). Assigned in Production. The width is sized to the largest declared deployment's lifetime install base of a single design+version — most acutely the universal carrier, which has one near-static version and therefore accumulates the most serials. A full range is widened, never overflowed into the version (alternative D).
-   - **Depth** `DDDDDD` — six digits in three two-digit levels (main / sub-position 1 / sub-position 2), encoding the position within the machine hierarchy. Position only; assigned at integration, never present in the production identifier (decision 7).
-   - **Document layer** `L` — a single letter naming the document type (decision 9, extended by decision 16).
-   - **Suffix** — a per-instance lifecycle-document tag appended in the production identifier (decisions 10–14).
-
-   Documents are stored flat, the hierarchy carried entirely in the identifier, so the store is filtered by identifier pattern — all documents of one module, all reports, all instances at a given position. Decision 15 fixes the backend this implies.
-
-2. **Two distinct instance histories, one of which this ADR governs.** Static, per-instance *documents* (test data, calibration, provisioning records) live in the document store and are addressable by suffix. *Operational/runtime events* (firmware-flash events, telemetry, control-decision audit, hash-chain) live in IndustryFlow's audit log per ADR-0004 rev 1 decisions 10 and 16. The two are not merged and not duplicated. Suffixes (decisions 10–14) address only the former.
-
-### Code legend
-
-The single key to every code that can occupy the trailing slot of an identifier: the **document-layer** letter in the type-level form `Exxxx-VVVVVV-L` (e.g. the `D` in `E0001-000001-D.png`, the `L` in `E0001-000001-L.csv`), the **lifecycle suffix** in the instance form `Exxxx-VVVVVV-NNNNNN-XX`, the **status token** of a withdrawn artifact set (decision 17), and the **package descriptor** of a document-layer object that collapses a set into one file (decision 18). This table is the one place the codes are expanded; the cited decisions hold the definitions and rules, not a second copy of the mapping. The sets are extensible — add a code by appending a row here. Suffix codes are two uppercase letters and must not collide with the document-layer letters; status tokens are full uppercase words, so they can collide with neither.
-
-| Code | Meaning | Field | Defined in |
-|------|---------|-------|------------|
-| `S`   | Schema | document layer | decision 9 |
-| `D`   | Drawing | document layer | decision 9 |
-| `L`   | List / BOM | document layer | decision 9 |
-| `P`   | Protocol | document layer | decision 9 |
-| `M`   | Manual | document layer | decision 9 |
-| `I`   | Interface | document layer | decision 9 |
-| `F`   | Firmware (built image + source snapshot) | document layer | decision 16 |
-| `R`   | Requirements (specification) | document layer | decision 20 |
-| `-QP` | Quality Protocol | lifecycle suffix | decision 10 |
-| `-QR` | Quality Report | lifecycle suffix | decision 10 |
-| `-CP` | Calibration Protocol | lifecycle suffix | decision 11 |
-| `-CC` | Calibration Certificate | lifecycle suffix | decision 11 |
-| `-PR` | Provisioning Record | lifecycle suffix | decision 12 |
-| `BLOCKED` | Withdrawn artifact set — defective, never to be fabricated or relied on | status token | decision 17 |
-| `SUPERSEDED` | Withdrawn artifact set — replaced, no defect | status token | decision 17 |
-| `-fab` | Fabrication package: the gerber layer set plus drill files, one object | `D`-layer package descriptor | decision 18 |
-| `-src` | Design-source package: the editable CAD files of one document layer, one object | `S`- / `D`-layer package descriptor | decision 19 |
-
-### Module designation (E-numbers)
-
-3. **An E-number identifies a buildable/documentable assembly.** The existing taxonomy maps directly: the carrier and each of M01–M07 are buildable assemblies and each receives an E-number. A **functional subsystem** (climate, lighting, irrigation, plant monitoring, pollination, power/safety per ADR-0001 decision 7) is *not* an E-number — it is a **position** in the machine, expressed as a depth code (decision 7). The WeAct STM32F4 core board is a purchased sub-component identified by an `SP` number, not an E-number (ADR-0019). One further bounded carve-out: a *designed* accessory that has no existence apart from one specific part (a printed case, a bracket, a mount) does **not** take its own E-number — it rolls up under the served part's root as a `D`-layer document (ADR-0019 decision 9); a designed assembly that stands alone or is serialized still does (decision 4, decision 5).
-
-4. **Bare-PCB design and populated assembly are distinguished.** One PCB *layout* is one bare-board design artifact; each standard *populated configuration* of that layout is an assembly E-number that references the shared bare design. This resolves the partial-BOM mechanism of ADR-0014 decision 2 without adding a variant field to the scheme:
-   - **Carrier:** one bare design and effectively one assembly. Termination is jumper-selected and the power-input set is the only populate option, so the carrier is treated as a single assembly E-number — one type, one version, many serials, appearing at many depth positions. (This was the original motivating case: the carrier is universal precisely because it has no real variant.)
-   - **M01–M07:** one bare design each, and one fully-populated assembly E-number each as first assigned — which is what the Phase-1 set M01–M05 carries today. Zone-specific partial populations (ADR-0014 decision 2) receive **additional assembly E-numbers referencing the same bare design** — no new layout, no version churn.
-   - **M07's indoor and outdoor variants are two assembly E-numbers, not one** *(rev 2)*. ADR-0014 rev 2 gives M07 two deployment variants sharing one layout, one module-ID strap and one firmware image, differing only in populated BOM and housing. That is precisely the case this decision resolves, so it resolves it the same way: **one bare design, two standard populated configurations, therefore two assembly E-numbers.** The outdoor variant populates a wind group — pulse conditioning, shift-register interface, heading reference — that the indoor variant leaves as bare footprints. Two boards you order, stock, build and serialize differently are two things on the identity axis, whatever they share on the design axis.
-     - **The carrier's single-assembly treatment does not extend to M07.** The carrier is one assembly because its only populate option is a jumper set at install time; a wind group fitted or omitted at build is a real variant.
-     - **One module class, two assembly numbers is not a contradiction.** ADR-0014 rev 2 is right that M07 is not two module *classes* — one strap value, one image, because a node identifies its class and the boot probe finds what is fitted (ADR-0014 d8). Class and assembly are questions on different axes. The second number is assigned at design commit, not reserved now (decision 5).
-
-5. **Discipline (electrical / mechanical / pneumatic / fluidic) is a property of the E-module, not a field in the identifier.** It is expressed through decomposition — each discipline-specific buildable unit is its own E-number at its own depth sub-position — and recorded as registry metadata. The identifier stays opaque, with meaning held in the registry. Encoding discipline by partitioning the E-number range (e.g. reserving leading digits per discipline) is **reserved as an option** for the case where pattern-filtering by discipline across the document store becomes necessary; it is not the default.
-
-### Machine designation and position
-
-6. **The cabinet machine (ADR-0001 decision 7) is designated `GBOX_NNNN`** (Grow Box). The machine designation has the general form `<prefix>_NNNN` — four digits, enumerating grow-cabinets across the product (a deployment-scaling field, sized like the serial against the largest declared deployment rather than a single apartment cabinet). The `GBOX` prefix is specific to IndustryGrow grow-cabinet machines, leaving room for other machine families under their own prefixes should the scheme be reused elsewhere.
-
-7. **The integration-phase depth code is the static twin of gateway-side position tagging.** The depth code encodes the same information the gateway resolves at runtime as `(module_class, node_role, zone)` and `production_unit` (ADR-0014 decision 7; ADR-IF-0001, planned). Position is assigned at integration and **never** appears in the production identifier. This preserves instance interchangeability (ADR-0014) and instance mobility between deployments (ADR-0016): the same `Exxxx-VVVVVV-NNNNNN` can be installed at many different depth positions over its life. The depth code's two-digit-per-level width (main `01`–`99`) is intentionally *not* widened with the serial and machine fields: depth is intra-machine, bounded by one cabinet's physical decomposition (~6 functional subsystems per ADR-0001 decision 7), not by deployment size. Scaling a commercial facility means more serials and more `GBOX` machines, each carrying its own depth space — never a deeper hierarchy inside one box. The sizing principle across the scheme is "size to the largest declared deployment," and for depth the largest single machine is already covered with wide margin.
-
-### Instance identity
-
-8. **The serial number is the logistics instance key; the ATECC608 is the cryptographic instance identity.** The serial (decision 1) is the human- and store-facing instance key. The durable cryptographic identity is the ATECC608 plus its provisioned certificate (ADR-0007). The two are bound to each other in the provisioning record (decision 12); no separate serial authority is invented. Serials are assigned in Production (Phase 2).
-
-### Document layers
-
-9. **Document-layer set `S` / `D` / `L` / `P` / `M` / `I`** — expanded in the code legend above. Two IndustryGrow-specific bindings: the **`I` (Interface)** document layer carries Cyphal subject-ID assignments and DSDL `industryflow.greenhouse.*` type definitions (ADR-0002 rev 3 decision 1; ADR-0005); the **`L` (List)** document layer carries the per-module BOMs already drafted in the procurement and sensor-module documents. **Rev 1** extends the set with **`F` (Firmware)** — the built node image and its source snapshot — whose carrier-rooted addressing is decision 16.
-
-### Suffixes (per-instance lifecycle documents)
-
-10. **`-QP` / `-QR`.** `-QP` (Quality Protocol) is the raw bring-up and functional-test data for an instance (DFU flash, bxCAN init, Cyphal heartbeat, sensor-presence I²C probing, functional run against bench stimuli). `-QR` (Quality Report) is the evaluated result and acceptance. Discipline-specific test content (dimensional inspection for mechanical, leak/pressure test for pneumatic) lives *inside* the QP document; the suffix code stays generic. No `QP`-electrical / `QP`-pneumatic proliferation.
-
-11. **`-CP` / `-CC`, mirroring the protocol/report pattern.** `-CP` (Calibration Protocol) holds the raw calibration points; `-CC` (Calibration Certificate) holds the resulting coefficients and validity period. Primary driver is M03-ANALYTICS (pH against buffers 4/7/10, EC against 1413 µS/cm) plus any sensor offset trims. Unlike QC, **calibration recurs** (probe drift, scheduled recalibration), so calibration suffixes are dated or sequenced — `-CC-YYYYMMDD` or `-CCnnn` — so a later calibration does not overwrite an earlier record. Deployment-level model calibration (ADR-0016 state-space identification) is explicitly *not* a calibration suffix; it is profile-versioned per ADR-0015 (see decision 13 and the alternatives).
-
-12. **`-PR` (Provisioning Record).** Binds the ATECC608 to its issued certificate and holds the certificate metadata (ADR-0007) — the instance's "birth certificate." It contains the public material only; the private key never leaves the ATECC608. Restricted to engineering/quality access.
-
-13. **Suffixes attach to the instance identifier, never to the integration identifier.** Lifecycle documents key off `Exxxx-VVVVVV-NNNNNN`, which is stable; the integration identifier merely records where the instance currently sits and changes when the instance is moved. This is mandatory under ADR-0016's inventory model: when a board is redeployed, its QP/QR/CP/CC/PR history follows its serial, and a recalibration at the new deployment adds a new dated `-CC` to the same serial — not a record on the new position.
-
-14. **M03 probes are their own instances.** The pH electrode and EC cell are replaceable consumables with independent drift and replacement life, so each is its own E-number with its own serial and its own calibration history. The M03 board's calibration record references the paired probe serial, so the board+probe pairing and the probe's standalone history are both reconstructible.
-
-### Storage backend and object-store mapping
-
-15. **The document store is an object store; identifiers are object keys.** The flat layout (decision 1) is chosen for object storage (S3-compatible buckets), not a hierarchical filesystem. Each artifact is a single object whose key *is* its identifier (`E0001-000001-L.csv`, `E0001-000001-D-Top_Layer.gtl`, a `-CC-YYYYMMDD` calibration certificate, and so on); there are no container objects and no real directories. The identifier-pattern filtering of decision 1 *is* the bucket's prefix listing (`ListObjectsV2(Prefix=…)`), executed server-side with no separate index to maintain. The object-store mechanics this enables — on-demand hierarchy synthesis via a delimiter, write-once / versioning for the immutable QC and provisioning records, and prefix-scoped retention and access policy — are deployment specifics (see Deferred decisions); a git checkout renders the same flat keyspace as a flat directory, which is incidental.
-
-    > **Bounded exceptions.** Three sets collapse to one object each, and each states its own scope and reason: withdrawn artifact sets (decision 17), the fabrication package (decision 18), and the design-source packages (decision 19). One-object-per-identifier holds for everything else. Those decisions are not summarised here — a summary of a rule goes stale when the rule is amended, and this is the decision the summary would contradict.
-
-### Firmware document layer
-
-16. **The firmware document layer `F` roots on the carrier (`E0001`), not the node module.** The node firmware is a single codebase (`firmware/`) shared by every node type — `common/` is the carrier support, `nodes/<type>/` are personalities selected at runtime by the module-ID strap (decision 7; ADR-0014 d6). The personality is a hardware/runtime attribute, not a separate codebase, so the firmware's `F` version tracks the one carrier-level codebase: `E0001-VVVVVV-F[.hex|-src.zip]`. `VVVVVV` is the firmware (codebase) version, independent of the `E0001` *board* design version — a firmware release bumps `F` without re-spinning the carrier PCB. Filing the firmware per-module (e.g. `E0006-…-F`) would make a single change to shared code bump the `F` version of every module that runs it, leaking a code-change count into N module identities — the same corruption decision 8 and alternative D forbid for serial-into-version. If per-type binaries are ever built from this one codebase they are build *variants* of the same versioned source (`E0001-VVVVVV-F-<type>`), not separate `F` roots. The `F` artifacts are reference firmware licensed AGPL-3.0-or-later (ADR-0002 d5), overriding the CERN-OHL-S `store/**` hardware default (`REUSE.toml`).
-
-### Withdrawn design versions (blocked / superseded)
-
-17. **A withdrawn design artifact set is archived as one object, and its status is named in that object's key.** Design artifacts of a version (`Exxxx-VVVVVV`) are withdrawn from use for two reasons: they are **blocked** — defective, and must never be fabricated or relied on — or **superseded** — replaced, with no defect. The withdrawn artifacts are bundled into one archive object and their loose per-file objects removed:
-
-    ```
-    Exxxx-VVVVVV-BLOCKED.zip       defective artifacts, withdrawn   (e.g. E0001-000001-BLOCKED.zip)
-    Exxxx-VVVVVV-SUPERSEDED.zip    non-defective artifacts, replaced
-    ```
-
-    - **Withdrawal is scoped to the defect, not blindly to the whole version.** A defect is often localized to one production stage. The motivating case — `E0001-000001`, the carrier v0.0.1 — has a defect *in the layout only*: the PCB **mirrors the WeAct core-board socket footprint**, reversing the pin order on the sockets so every WeAct signal lands on the wrong net (the board as laid out is unbuildable), while the **schematic is correct**. So the block archives the defective **layout source and every fabrication output derived from it** (gerbers, drills, placement, render), and the still-valid **schematic** (`S`), its **BOM** (`L`), and the **pin map** stay loose — they are the live basis for the corrected relayout (a new version). A version with no salvageable artifact (a full supersession) archives all of them.
-    - **Supersession reissues the full face set.** A successor version reissues the *complete* face set under its own identifier — schematic, BOM, pin map, layout, and fabrication outputs — even for faces byte-identical to the prior version (only the embedded version field differs). Each artifact's object key *is* its full identifier (decision 15), so versions never share a face by reference; the predecessor's now-stale loose faces are then archived as a `SUPERSEDED` set. (Example: `E0001-000002` reissues `-L.csv` and `-D-pinmap.md` byte-for-byte from `000001`, whose loose faces move into `E0001-000001-SUPERSEDED.zip`.)
-    - **Status token in the key.** `BLOCKED` / `SUPERSEDED` sit in the trailing slot a document-layer letter would occupy, but are full uppercase words — deliberately neither the single document-layer letters (`S/D/L/P/M/I/F`, decision 9/16) nor the two-letter lifecycle suffixes (`-QP/-QR/…`, decisions 10–14), so a status token can never be mistaken for either. The token *is* the machine-readable status.
-    - **Identity axis only; firmware is never swept in.** The firmware document layer `F` is independently versioned and rooted on the carrier (decision 16) — a blocked *board* design does not block the firmware *codebase*, so `Exxxx-VVVVVV-F.*` objects are **never** bundled into a board-design archive even when they share the `Exxxx-VVVVVV` prefix.
-    - **One immutable archive per withdrawal.** This collapses the dead artifacts to a single object, the bounded exception noted on decision 15. The one-object-per-identifier rule continues to hold for every live object.
-
-    **The status token is a property of the archive, not of the version.** One version may carry more than one archive when withdrawal is scoped to a defect: `E0001-000001` holds both a `BLOCKED` set (the defective layout and its fabrication outputs) and, once `E0001-000002` released, a `SUPERSEDED` set (the schematic, BOM and pin map that had stayed loose as the basis for the relayout).
-
-### Live fabrication package
-
-18. **The live fabrication package is one zip object, `Exxxx-VVVVVV-D-fab.zip`, not loose per-file gerber/drill objects.** A board version's fabrication outputs are the gerber layer set (copper, silkscreen, soldermask, paste, edge cut) plus the drill files (PTH / NPTH, and any drill-map). These are stored as a **single** `D`-layer object — `E0006-000001-D-fab.zip` — rather than one object per gerber. This is a bounded exception to decision 15's one-object-per-file rule, mirroring the packaging move of decision 17 but for a *live* artifact.
-
-    - **Why one object.** The gerber/drill set is one indivisible manufacturing deliverable. No individual gerber has a lifecycle of its own — the copper layer is never fetched, versioned, or superseded apart from the set; a fab house (JLCPCB) and every CAM tool consume and re-spin the whole package as a unit, and upload it as a single archive. The set's *identity* is the package, so the package is the object and its key is `-D-fab` (the identifier of decision 1 is satisfied by the package, not by each plotted file). The loose-per-file alternative gave the store ~11 objects that only ever move together — clutter with no addressing benefit, since no query ever wants one gerber alone.
-
-    - **Scope — only the gerber/drill set collapses.** The other `D`-layer faces stay loose, because each *is* separately consumed and separately addressable: the placement/centroid `-D-pos.csv` (the CPL — uploaded to assembly as its own file), the render `-D.png` and the pin map `-D-pinmap.md` (human documents). The BOM `-L.csv` is a different document layer entirely and likewise stays loose. This split is exactly the fab house's own upload flow: one gerber zip **+** a separate CPL **+** a separate BOM. So `E0006-000001` carries `-D-fab.zip`, `-D-pos.csv`, `-D.png`, and `-L.csv` as four objects, not fourteen.
-
-    - **Internal members follow one consistent structure, itself not registered.** Every `-D-fab.zip` names its members on one scheme, so two boards' packages are structured alike and the members are self-describing. The concrete layer vocabulary is a manual, not a decision.
-
-    - **Supersedes the prior flat listing; applied retroactively.** This overrides the earlier "fabrication outputs are filed flat, one object per file, no live `.zip`" rule recorded in `REGISTRY.md`. The one already-released board stored the old way — the carrier `E0001-000002` — has its loose gerbers/drills bundled into `E0001-000002-D-fab.zip` and the loose objects removed, so the store is uniform (alternative H). Licensing is unchanged: the `.zip` is hardware design content under the `store/**` CERN-OHL-S default (`REUSE.toml`), not the `-F-src.zip` AGPL override.
-
-### Design-source package
-
-19. **The editable design sources of a board version are packaged by document layer: `Exxxx-VVVVVV-S-src.zip` and `Exxxx-VVVVVV-D-src.zip`.** A board is drawn in a CAD project whose files are not independently openable — a schematic without its project settings has no netclasses or symbol library table, a layout without its board rules gives a DRC result the board does not have. The set per layer is what is usable, so the set per layer is the object.
-
-    - **This closes a gap, not a new category.** The sources were stored as `E0003-000001.kicad_sch`, `E0003-000001.kicad_pcb` — the one artifact class carrying no document-layer letter, against the `Exxxx-VVVVVV-L` form of decision 1 and decision 15's own example `E0001-000001-D-Top_Layer.gtl`. An omission, never a decision. The letter was always applicable: the layer classifies which artifact about an identity, and a schematic is `S`, a layout is `D`.
-
-    - **The split is by layer.** `S` takes the schematic; `D` takes the layout and the board's design rules, which set what its DRC result means. Project settings belong to neither alone and are carried in both, so each package opens standalone. One archive for the whole project would have no correct key — either letter misfiles the other half.
-
-    - **Members keep the bare identifier stem**, as decision 18 requires of gerber members, and here also because the CAD tool resolves a project by shared file stem: a member renamed to carry the infix would not open.
-
-    - **The loose per-file objects are removed** — keeping both would put identical content under two keys with nothing holding them equal. Applied retroactively to `E0001-000003`, `E0002-000001`, `E0003-000001` and `E0006-000001`, as decision 18 was applied to `E0001-000002`.
-
-20. **The specification document layer `R` roots on the E-number and carries no version.** *(amendment, 2026-09-08)*
-
-    A specification is a document layer alongside decision 9's set: `R` for Requirements — the numbered-requirement document stating what a design must do and how each requirement is verified. Its key is `Exxxx-R-<slug>`: an E root, a layer letter, a slug, and **no version field**.
-
-    - **No version, because a specification tracks the class and not a build.** It is edited in place from project stage to as-built — one file, one E-number, no second identifier for having been built — while `-S-`, `-D-` and `-L-` are the artifacts of one board version and move with it. A version field on a specification would name a board revision the document does not belong to.
-
-    - **The grammar already admits the form.** An SP document has carried root-layer-slug with no version since ADR-0019 decision 2, because the supplier owns an SP part's versioning; a specification reaches the same shape from the other direction, by describing a class rather than a build.
-
-    - **`R` is a new letter, not decision 9's `P`.** `P` is Protocol, and the documents that are actually protocols — bring-up, calibration — are filed under `M`. Giving `P` a second meaning would leave that misfiling in place and make the letter ambiguous.
-
-    - **Decision 15 applies unchanged**: the key is the object key, and the document is mirrored into the object store and served from it like every other type-level document. The file stays in `spec/` rather than `store/`, which changes nothing here — a directory is not an identifier, and decision 15 binds the key.
-
-## Alternatives considered
-
-**A. A flat identifier — a single serial namespace that does not separate type, instance, and position.** *Rejected:* cannot express that one design has many instances (ADR-0014) or that an instance moves between positions and deployments (ADR-0016) without overloading a single number, and loses the ability to address type-level documents and per-instance documents distinctly. The type/instance/position split is the whole point.
-
-**B. Encode discipline in the identifier by default** (range partition or a dedicated field). *Rejected as default:* the identifier is opaque with meaning in a registry; discipline-via-decomposition-plus-metadata is consistent with that and avoids rigid range allocation. Range-partitioning is retained as an option (decision 5) for the day discipline pattern-filtering is actually needed.
-
-**C. Bake position (zone/role/slot) into the part or serial number.** *Rejected:* breaks instance interchangeability (ADR-0014) and instance mobility (ADR-0016). Position belongs in the integration identifier / gateway tagging and is assigned at integration.
-
-**D. Treat each populated-BOM variant as a new Version.** *Rejected:* Version is semantic versioning of the *design*; folding a populate-variant into it corrupts version semantics and the rollback story. A distinct assembly E-number referencing the shared bare design (decision 4) is the correct home. The same reasoning forbids an overflow-into-version mechanism on the serial (decision 1, decision 8): a two-digit patch over 999 serials addresses only ~10⁵ instances before the overflow climbs into the minor and major version, whereas a six-digit serial addresses ~10⁶ honestly and never touches the version. The serial is widened, not overflowed.
-
-**E. Record firmware/telemetry history as document-store suffixes.** *Rejected:* ADR-0004 rev 1 decisions 10 and 16 already route these to IndustryFlow's audit log. A parallel document record creates two sources of truth for the same events.
-
-**F. Issue a fresh serial when a board moves to a new deployment.** *Rejected:* the serial is the durable instance key bound to the ATECC608; mobility (ADR-0016) must preserve instance history. A move produces a new integration record and (typically) a new dated calibration record on the *same* serial.
-
-**G. File firmware per node module (`E000x-F`), under the module whose personality it runs.** The initial convention (a maintainer call recorded in `REGISTRY.md`, 2026-06-17): the M05 image filed under `E0006`. *Rejected on rev 1:* it conflates the built binary with the codebase. The firmware is one shared tree (`firmware/`) selected at runtime by the module-ID strap, so rooting `F` per-module means a single change to shared code bumps the `F` version of every module that embeds it — the same count-into-identity leak that decision 8 and alternative D reject for serial-into-version. The carrier (`E0001`) is the single codebase's hardware home and the constant across node types, so `F` roots there (decision 16); per-type images, if ever built, are version *variants* of that one root, not new roots.
-
-**H. Keep the fabrication outputs as loose per-file objects** (one object per gerber and drill, the store's original rule). *Rejected on the decision-18 amendment:* the gerber/drill set is one indivisible manufacturing deliverable with no per-file lifecycle — the ~11 objects only ever move, version, and re-spin together, so per-file addressing carries clutter without a single query that benefits from it. A gerber is never fetched, superseded, or licensed apart from its set. The set's identity is the package, so the package is the object (decision 18). The genuinely separable faces — placement, render, pin map, BOM — are *not* swept into the zip precisely because they *are* separately consumed (alternative retained only for those). This is the same bounded packaging move decision 17 makes for withdrawn sets, applied to a live one.
-
-**I. Keep the design sources loose, with no document-layer letter** (the store's state before decision 19). *Rejected on the amendment:* the one artifact class outside decision 1's `Exxxx-VVVVVV-L` form, and nothing on record chose it — the files never received a letter. The variant that letters them and keeps them loose (`Exxxx-VVVVVV-S.kicad_sch`, `Exxxx-VVVVVV-D.kicad_pcb`) satisfies the form but makes objects of project settings and board rules, which open nothing alone; the usable unit is the set per layer, so that is the object. This alternative's one real merit is kept on record as a negative consequence: loose text files diff in review, a package does not.
+   - `Exxxx` — `E` plus four digits; an opaque key for a buildable or documentable assembly (decision 3); meaning is in the registry.
+   - `VVVVVV` — the design's semantic version, two digits each for major, minor, patch (`2.1.3` → `020103`); not a populated configuration (decision 4).
+   - `NNNNNN` — six-digit serial, unique per module and version, assigned in Production; sized to the largest declared deployment's lifetime install base of one design version. A full range is widened, never overflowed into the version.
+   - `DDDDDD` — position in the machine, three two-digit levels (main `01`–`99`, sub-position 1, sub-position 2); assigned at integration only (decision 7).
+   - `L` — a document-layer letter (decisions 9, 16, 20); suffix — a lifecycle-document code (decisions 10–14).
+
+   **Code legend.** The one expansion of every code that occupies the trailing slot of an identifier; the cited decisions hold the rules. A code is added by appending a row. Suffix codes are two uppercase letters that do not collide with layer letters; status tokens are full uppercase words, so they collide with neither.
+
+   | Code | Meaning | Field | Defined in |
+   |---|---|---|---|
+   | `S` | Schema | document layer | decision 9 |
+   | `D` | Drawing | document layer | decision 9 |
+   | `L` | List / BOM | document layer | decision 9 |
+   | `P` | Protocol | document layer | decision 9 |
+   | `M` | Manual | document layer | decision 9 |
+   | `I` | Interface | document layer | decision 9 |
+   | `F` | Firmware (built image and source snapshot) | document layer | decision 16 |
+   | `R` | Requirements (specification) | document layer | decision 20 |
+   | `-QP` | Quality Protocol | lifecycle suffix | decision 10 |
+   | `-QR` | Quality Report | lifecycle suffix | decision 10 |
+   | `-CP` | Calibration Protocol | lifecycle suffix | decision 11 |
+   | `-CC` | Calibration Certificate | lifecycle suffix | decision 11 |
+   | `-PR` | Provisioning Record | lifecycle suffix | decision 12 |
+   | `BLOCKED` | Withdrawn artifact set — defective, never fabricated or relied on | status token | decision 17 |
+   | `SUPERSEDED` | Withdrawn artifact set — replaced, no defect | status token | decision 17 |
+   | `-fab` | Fabrication package: gerber layer set plus drill files | `D`-layer package descriptor | decision 18 |
+   | `-src` | Design-source package: the editable CAD files of one layer | `S`- / `D`-layer package descriptor | decision 19 |
+
+2. **Static per-instance documents and operational events are two histories, and this scheme governs only the first.** Test, calibration and provisioning documents live in the document store under suffixes; firmware events, telemetry and control audit live in IndustryFlow's audit log (ADR-0004 decisions 10, 16). Neither is copied into the other.
+3. **An E-number identifies a buildable or documentable assembly.** The carrier and each module class receive one; a functional subsystem (ADR-0001 decision 7) is a position, not an E-number. A purchased part takes an `SP` number (ADR-0019), and a designed accessory with no existence apart from one part rolls up under that part's root (ADR-0019 decision 9).
+4. **One PCB layout is one bare design; each standard populated configuration of it is an assembly E-number.** Zone-specific partial populations (ADR-0014 decision 2) take additional assembly E-numbers over the same bare design, with no new layout and no version change. The carrier is one assembly, because its only variant is an install-time jumper; a group of parts fitted or omitted at build, such as M07's outdoor wind group, is a real variant and takes its own assembly E-number, assigned at design commit, while module class (ADR-0014) stays one.
+5. **Discipline (electrical, mechanical, pneumatic, fluidic) is registry metadata of the E-module, not an identifier field.** Each discipline-specific buildable unit is its own E-number at its own sub-position. Partitioning the E-number range by discipline is reserved for when pattern-filtering by discipline becomes necessary.
+6. **A grow-cabinet machine is designated `GBOX_NNNN`.** The general form `<prefix>_NNNN` leaves room for other machine families under their own prefixes. Four digits are sized against the largest declared deployment.
+7. **The depth code is the static twin of the gateway's runtime position tagging, and never appears in a production identifier.** It encodes what the gateway resolves as `(module_class, node_role, zone)` and `production_unit` (ADR-0014 decision 7; ADR-IF-0001), so one instance can occupy many positions over its life. Its width is bounded by one cabinet's decomposition, not by deployment size: scale adds serials and machines, never depth.
+8. **The serial is the logistics instance key; the secure element and its certificate are the cryptographic instance identity.** The two are bound in the provisioning record (decision 12); no separate serial authority exists.
+9. **The document layers are `S`, `D`, `L`, `P`, `M`, `I`.** `I` carries Cyphal subject-ID assignments and DSDL type definitions (ADR-0002 decision 1; ADR-0005); `L` carries per-module BOMs.
+10. **`-QP` holds an instance's raw bring-up and functional-test data; `-QR` holds the evaluated result and acceptance.** Discipline-specific test content lives inside the `-QP`; the code stays generic.
+11. **`-CP` holds raw calibration points; `-CC` holds the resulting coefficients and validity. Both are stamped `-CC-YYYYMMDDThhmmss`, with a `-n` sequence appended only on collision.** Calibration recurs, and recalibrating twice in one day is ordinary, so a day stamp would overwrite the earlier record. Deployment-level model calibration (ADR-0016) is profile-versioned (ADR-0015), not a calibration suffix.
+12. **`-PR` binds the secure element to its issued certificate and holds the public certificate metadata.** The private key never leaves the secure element (ADR-0007); access is restricted to engineering and quality.
+13. **Suffixes attach to the instance identifier, never to the integration identifier.** A redeployed board keeps its QP/QR/CP/CC/PR history on its serial; a recalibration at the new deployment adds a new `-CC` to the same serial.
+14. **pH electrodes and EC cells are instances of their own E-numbers.** They are consumables with independent drift and replacement life; the M03 board's calibration record references the paired probe serial.
+15. **The document store is an object store and an identifier is an object key.** Each artifact is one object with no container objects; identifier-pattern filtering is the bucket's server-side prefix listing, with no separate index. The exceptions are decisions 17, 18 and 19, which state their own scope.
+16. **The node-firmware document layer `F` roots on the carrier `E0001`, not on a node module.** Node firmware is one codebase for every module class, the personality selected at runtime by the class ID (ADR-0014 decision 6), so filing it per module would leak one shared code change into the version of every module. `VVVVVV` is the codebase version, independent of the carrier's board version; build variants of one release carry a descriptor after the layer letter (`E0001-VVVVVV-F-<variant>`). `F` artifacts are reference firmware under AGPL-3.0-or-later (ADR-0002 decision 5), overriding the store's hardware licence default.
+17. **A withdrawn design artifact set is archived as one object whose key names its status: `Exxxx-VVVVVV-BLOCKED` or `Exxxx-VVVVVV-SUPERSEDED`.** Blocked is defective; superseded is replaced without defect.
+    - Withdrawal is scoped to the defect: artifacts still valid stay loose as the basis of the successor, and a version may hold both a blocked and a superseded archive.
+    - A successor reissues the complete face set under its own identifier, including faces byte-identical to its predecessor, because a key is a full identifier and versions never share a face by reference.
+    - `F` objects are never swept into a board-design archive (decision 16).
+18. **The live fabrication package is one object, `Exxxx-VVVVVV-D-fab.zip`.** The gerber and drill set is one manufacturing deliverable with no per-file lifecycle. Placement, render, pin map and BOM stay separate objects, because each is consumed on its own; members follow one naming structure, held in a manual.
+19. **The editable design sources of a board version are packaged by layer: `Exxxx-VVVVVV-S-src.zip` and `Exxxx-VVVVVV-D-src.zip`.** CAD files are usable only as a set per layer; `S` holds the schematic, `D` the layout and its design rules, and project settings are carried in both so each opens standalone. Members keep the bare identifier stem, because the CAD tool resolves a project by shared stem.
+20. **The specification document layer `R` roots on the E-number and carries no version: `Exxxx-R-<slug>`.** A specification describes the class and is edited in place from project stage to as-built, so a version field would name a board revision it does not belong to. Decision 15 applies; the directory a specification is kept in is not part of its identifier.
+21. **The type registry and type-level documents are repo-side and public; the instance and integration layer is platform-side production data.** Serials, secure-element bindings, lifecycle records and integration identifiers are created at assembly and are operator-private. The ERP hosts that layer before IndustryFlow (ADR-0021 decision 1); ADR-0023 decides how the registry is consumed.
+
+## Alternatives
+
+| Dec | Rejected alternative | Why rejected |
+|---|---|---|
+| — | A flat identifier: one serial namespace not separating type, instance and position | Cannot express one design with many instances or an instance moving between positions; type-level and per-instance documents become indistinguishable |
+| 1 | Overflow a full serial range into the version's patch field | Addresses fewer instances than a six-digit serial and corrupts the version; the serial is widened instead |
+| 2 | Record firmware and telemetry history as document-store suffixes | ADR-0004 routes these to IndustryFlow's audit log; a parallel record is a second source of truth |
+| 4 | Treat each populated-BOM variant as a new version | Version is the design's semantic version; a populate variant in it corrupts version semantics and rollback |
+| 4 | Treat M07's indoor and outdoor variants as one assembly, as the carrier is | A group fitted or omitted at build is ordered, stocked and serialized differently; the carrier's variant is an install-time jumper |
+| 5 | Encode discipline in the identifier by default (range partition or dedicated field) | The identifier is opaque with meaning in the registry; range-partitioning stays available under decision 5 |
+| 7 | Bake position (zone, role, slot) into the part or serial number | Breaks instance interchangeability and mobility; position is assigned at integration |
+| 7 | Widen the depth code with the serial and machine fields | Depth is bounded by one cabinet's decomposition, not deployment size |
+| 8 | Issue a fresh serial when a board moves to a new deployment | The serial is the durable key bound to the secure element; mobility must preserve history |
+| 11 | Stamp calibration records to the day | Two calibrations in one session share a key and the second overwrites the first's raw points |
+| 16 | File firmware per node module (`E000x-F`), under the module whose personality it runs | Conflates the binary with the shared codebase; one code change would bump the `F` version of every module |
+| 18 | Keep fabrication outputs as loose per-file objects | The set only moves, versions and re-spins together; per-file keys add objects no query uses |
+| 19 | Keep design sources loose with no document-layer letter | The one artifact class outside decision 1's form; nothing chose it |
+| 19 | Letter design sources and keep them loose (`Exxxx-VVVVVV-S.kicad_sch`) | Makes objects of project settings and board rules that open nothing alone |
+| 19 | One source archive for the whole CAD project | No correct key: either layer letter misfiles the other half |
+| 20 | Give a specification a version field | It tracks the class, not a build; the field would name a board revision it does not belong to |
+| 20 | File specifications under `P` | `P` is Protocol; a second meaning makes the letter ambiguous |
 
 ## Consequences
 
-### Positive
+**Positive**
 
-- One identification scheme spanning IndustryGrow's disciplines — uniform tooling, training, and document store.
-- Type, instance, and position are cleanly separated, so ADR-0014's multi-instance scaling and ADR-0016's inventory mobility are supported natively rather than bolted on.
-- Instance identity reuses hardware already populated on every carrier (ATECC608); no parallel serial-number authority to operate.
-- Per-instance lifecycle documents follow the instance — calibration and provisioning history survive redeployment, which is precisely what the inventory model needs.
-- Clean boundary with IndustryFlow: the document store holds static documents, the platform holds operational events, with no duplicated forensic trail.
-- Cyphal/DSDL definitions fall naturally into the `I` document layer; module BOMs into the `L` document layer — no new artifact categories invented.
-- Flat storage with identifier-pattern filtering works directly on IndustryGrow artifacts, and maps onto object storage natively — identifiers are object keys and pattern filters are prefix lists (decision 15), so the store needs neither a real hierarchy nor a separate index.
+- One identification scheme spans IndustryGrow's disciplines, with one tooling and one document store.
+- Multi-instance scaling and inventory mobility are native to the scheme.
+- Instance identity reuses the secure element already on every carrier; no parallel serial authority runs.
+- Calibration and provisioning history survive redeployment.
+- The document store holds static documents and the platform holds operational events, with no duplicated forensic trail.
+- Identifiers are object keys and pattern filters are prefix listings, so the store needs neither a hierarchy nor an index.
 
-### Negative
+**Negative**
 
-- **The registry becomes a critical asset.** Because identifiers are opaque, the `Exxxx → meaning / discipline / bare-design` mapping must be maintained and backed up; losing it makes identifiers hard to interpret.
-- **This ADR and the registry are the canonical definition of the scheme** — there is no separate specification document. Validation and parsing tooling (identifier regexes, encoders) must be implemented directly from the field formats given here.
-- **The assembly E-catalog grows with zone-specific populations** at medium and large scale (one assembly E per standard population). Manageable, but a real catalog-management surface — most acute exactly where ADR-0014's partial-BOM mechanism is most used.
-- **Calibration requires dating/sequencing discipline in the suffix** (decision 11) — a process requirement, not just a format choice, with a validity-period policy still to set.
-- **Treating M03 probes as their own instances** adds traceability bookkeeping for consumables; justified by their independent calibration and replacement life, but it is extra records.
-- **The integration identifier has no suffix slot by design.** Operators must understand that the durable document key is the instance (`Exxxx-VVVVVV-NNNNNN`), not the current position — counterintuitive for anyone used to position-centric records.
-- **Packaging the design sources (decision 19) ends line-by-line diffing of schematic and layout changes.** The CAD files are text and diffed in a pull request; inside `-S-src.zip` / `-D-src.zip` a change is one binary object. Design review moves to the CAD tool's own comparison, and the commit message carries what the diff no longer shows.
+- Identifiers are opaque, so the registry is a critical asset that must be maintained and backed up.
+- The scheme has no specification beyond this record and the registry; parsing tooling is implemented from the field formats here.
+- The assembly E-catalog grows with zone-specific populations at medium and large scale.
+- Treating probes as instances adds bookkeeping for consumables.
+- The durable document key is the instance, not the current position, which runs against position-centric record habits.
+- A source package ends line-by-line diffing of schematic and layout in review; the CAD tool's comparison and the commit message carry the change.
+- An outdoor M07 sits in no cabinet and has no integration identifier until a root above the machine exists; assigning it to an arbitrary `GBOX_NNNN` would assert a false membership.
 
-## Relationship to other ADRs
+## Deferred
 
-- **ADR-0001** (machine/module data model) — the cabinet `machine` is the machine designation; functional subsystems are depth positions, not E-numbers.
-- **ADR-0002 (rev 3)** — carrier and M01–M07 are E-modules; the `I` document layer carries the Cyphal/DSDL definitions named there.
-- **ADR-0004 (rev 1)** — fixes the document-store / audit-log boundary; firmware and telemetry events stay platform-side and are not suffixes.
-- **ADR-0007** — ATECC608 binding and certificate issuance are the `-PR` provisioning record and the cryptographic instance identity behind the serial.
-- **ADR-0014** — taxonomy reused as the E-vocabulary; partial-BOM realized as distinct assembly E-numbers over a shared bare design; gateway `(module_class, node_role, zone)` tagging is the integration-phase depth code.
-- **ADR-0015** — the deployment profile is not a stored document under this scheme; profile content (including model parameters) is profile-versioned, not suffix-addressed.
-- **ADR-0016** — inventory mobility is the reason suffixes are instance-keyed not position-keyed; deployment-level model calibration is profile-versioned, distinct from the `-CP`/`-CC` per-instance sensor calibration.
-- **ADR-IF-0001 (planned)** — the platform-side `production_unit` / `zone` representation is the data-model counterpart of the integration-phase depth code.
-
-## Deferred decisions
-
-- **Calibration recurrence encoding — resolved 2026-08-30 as `-CC-YYYYMMDDThhmmss`, sequenced only on collision.** Decision 11 requires that a later calibration not overwrite an earlier record, and offered dated or sequenced without choosing. Dated to the *day* does not meet the requirement: recalibrating a probe twice in one bring-up session is ordinary, and both runs shared a key, so the second overwrote the first — destroying the `-CP` raw points while leaving its index row in place. The stamp therefore carries the time of filing as well as the day, and a `-n` sequence is appended only when even that collides (two uploads inside one second, or a clock that stepped backwards). Both encodings decision 11 named, each where it works. The calibration validity-period and re-calibration-interval policy remains deferred.
-- **Registry and store location.** The scheme lives in two homes joined only at integration. The **type registry** (`Exxxx → meaning / discipline / bare-design`) and the type-level design documents are repo-side, public for open-core designs. The **instance and integration layer** — serials, ATECC bindings, the `-QP/-QR/-CP/-CC/-PR` records, and the integration identifier `GBOX_NNNN-DDDDDD-Exxxx-VVVVVV-NNNNNN` that joins the two trees — is production data created at assembly and lives platform-side (IndustryFlow / `production_unit`, ADR-IF-0001), off the public repo. The precise platform host and the type-registry tooling remain deferred to ADR-IF-0001 and Phase 2.
-- **Bare-PCB design artifact identification.** Whether the shared bare layout gets its own E-number or is tracked as a hardware-repo artifact under CERN-OHL-S. Decision 4's M07 case makes this less theoretical: two assembly E-numbers now reference a bare design that has no identifier of its own.
-- **The position axis has no root for a node that sits inside no machine** *(raised in rev 2)*. Decision 6 makes `GBOX_NNNN` — one cabinet — the root of the position axis, and decision 7 bounds the depth code to one cabinet's physical decomposition, explicitly refusing a deeper hierarchy inside a box and directing facility scale into *more* machines instead. An outdoor M07-AMBIENT (ADR-0014 rev 2) fits neither half: it is mast-mounted outside the building, it is in no cabinet's decomposition, and one instance measures the boundary conditions of every cabinet on the site at once. The integration identifier `GBOX_NNNN-DDDDDD-…` requires a machine root that does not honestly exist for it.
-  - **This is not repairable inside this ADR**, because what is missing is an entity, not a format: the data model has nothing above the cabinet (ADR-0001 decision 7 — *machine = cabinet*). Decision 6 already anticipated other machine families under their own prefixes, so the identifier half is a small change once there is something to name.
-  - **Owner: ADR-0008** (deployment topology and operational scale, ADR-0001's own deferred list). Once it defines a site- or facility-level entity, this ADR registers the prefix and the meaning of depth within it, and ADR-0001 decision 7 takes an inline amendment.
-  - **Do not assign an outdoor M07 to an arbitrary `GBOX_NNNN` as an interim measure.** The depth code would then assert membership in one cabinet's decomposition, which is false, and integration records written under that fiction are the hardest kind to unwind later. An indoor M07, which does sit within one cabinet's deployment, raises none of this.
-- **Identifier validation and parsing tooling.** Regexes and encoders implemented from the field formats in this ADR, including the full suffix set. *Where it lives is now settled:* ADR-0022 decision 13 puts the parse in one server-side implementation and has the API return identifiers already read into their fields, so no consumer re-derives them. What stays open is coverage — the calibration suffix's dated/sequenced form is unresolved (above) and therefore unparsed, and no encoder exists for the compact binary form (below).
-- **Optional compact binary encoding** of identifiers for embedded/indexing use — out of scope now.
-- **Object-store deployment specifics (decision 15).** Bucket topology (single vs. per-deployment / per-tenant), region and replication, how object versioning interacts with the dated calibration suffix and the write-once QC/provisioning records, and prefix-scoped access-control granularity.
-- **Mechanical / pneumatic / fluidic module catalog.** E-numbers for enclosures, trays, plumbing, and actuator hardware are assigned when those modules are designed (ADR-0006 is now written and Accepted; the actuator taxonomy remains deferred per ADR-0014).
+| Open question | Settled by |
+|---|---|
+| Calibration validity-period and re-calibration-interval policy | Each class's calibration protocol, starting with M03 |
+| Whether the shared bare layout takes its own identifier or is tracked as a hardware-repository artifact | Maintainers, when a second assembly E-number references one bare design |
+| A position root for a node in no machine (outdoor M07): the entity above the cabinet, its prefix and the meaning of depth within it | ADR-0008 (deployment topology and operational scale) |
+| A compact binary encoding of identifiers for embedded or indexing use | Maintainers, when an embedded consumer needs one |
+| Object-store deployment specifics: bucket topology, replication, versioning against write-once records, prefix-scoped access granularity | Deployment documentation, at multi-deployment scale |
 
 ## References
 
-- ADR-0001: IndustryGrow framing — machine/module data model.
-- ADR-0002 (rev 3): Field bus architecture — carrier, M01–M07, ATECC608, Cyphal/DSDL.
-- ADR-0004 (rev 1): Gateway host hardening and stateless-edge operation — IndustryFlow audit log, firmware events.
-- ADR-0007: PKI, hardware identity, provisioning — ATECC608 binding, certificate provisioning.
-- ADR-0014: Sensor node taxonomy — module classes, module-ID straps, partial-BOM, gateway role/zone tagging.
-- ADR-0015: Gateway profile caching and local control loops — profile as single mutation channel.
-- ADR-0016: Empirical survey and state-space modeling — sensor-instance inventory and mobility.
-- ADR-IF-0001 (planned): `production_unit` entity on the IndustryFlow side.
-- Microchip ATECC608 datasheet.
+- `REGISTRY.md` — the concrete identifiers, withdrawals and packages.
+- `GLOSSARY.md` — the identification terms.
+- ADR-0021, ADR-0022 — the instance-layer host and the identifier parser.
+- ADR-0019 — the `SP` root.

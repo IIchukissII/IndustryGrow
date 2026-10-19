@@ -64,8 +64,8 @@ project, in *its* repository and number space (e.g. `ADR-IF-0001`, the
 `production_unit` entity). Distinct from a bare **`ADR-NNNN`**, which is an
 **IndustryGrow** record in *this* repository. The two projects never share a
 number: a decision is filed under the project that owns it — foundational/core →
-`ADR-IF-`, domain/layer → `ADR-`. Origin of the rule: ADR-0000 (rev 1,
-decision 8). ADR-0001 introduces `ADR-IF-0001` and the core/layer split the
+`ADR-IF-`, domain/layer → `ADR-`. Origin of the rule: ADR-0000
+decision 8. ADR-0001 introduces `ADR-IF-0001` and the core/layer split the
 namespace expresses; the rule is first applied to a new record in ADR-0021.
 
 **Axis** `[F]` — one of the two orthogonal dimensions of identity: the

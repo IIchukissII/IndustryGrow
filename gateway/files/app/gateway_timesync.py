@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""IndustryGrow gateway time-synchronization master (ADR-0002 rev 3 d11).
+"""IndustryGrow gateway time-synchronization master (ADR-0002 d11).
 
 Publishes `uavcan.time.Synchronization` (fixed subject 7168) at `PUBLICATION_PERIOD` so every
 node on the bus shares one time base. Without it each node stamps its telemetry

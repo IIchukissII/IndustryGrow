@@ -6,7 +6,7 @@
 # (ADR-0005 d2).
 #
 # An NDIR instrument measures a mole fraction; ppm IS that fraction scaled by
-# 1e6. The scaling is dropped on the wire for the reason ADR-0005 rev 1 gave for
+# 1e6. The scaling is dropped on the wire for the reason ADR-0005 gave for
 # joule over watt-hour -- the node would multiply a raw count by a constant
 # either way, and float32 relative precision is unaffected. The 400 ppm ambient
 # baseline of M01 spec 6.3 is 400e-6 here.

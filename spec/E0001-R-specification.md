@@ -8,7 +8,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Status:** `E0001-000003` fabricated and in service; `E0001-000100` ordered, not received
 - **Date:** 2026-10-06
 - **E-number:** `E0001` · no class ID — the carrier is not a module
-- **Governing ADRs:** ADR-0002 (rev 3), ADR-0007 (rev 1), ADR-0014 (rev 4), ADR-0017 (rev 2), ADR-0018, ADR-0027, ADR-0029, ADR-0031 (rev 1)
+- **Governing ADRs:** ADR-0002, ADR-0007, ADR-0014, ADR-0017, ADR-0018, ADR-0027, ADR-0029, ADR-0031
 - **Companions:** every module specification in `spec/`; `store/E0001-000003-D-pinmap.md` for the fabricated revision
 - **Supersedes:** nothing
 
@@ -27,8 +27,8 @@ Not specified here:
 |---|---|
 | What any module does with a header signal | that module's specification |
 | Core-board design | `SP0005`, vendor document in `store/SP0005-D-coreboard-snapshot.zip` |
-| Field-bus protocol, bit rate and topology | ADR-0002 rev 3 |
-| Node identity, keys and certificates | ADR-0007 rev 1 |
+| Field-bus protocol, bit rate and topology | ADR-0002 |
+| Node identity, keys and certificates | ADR-0007 |
 | Cabinet power distribution upstream of the bus connector | ADR-0018 |
 | Layout, fabrication outputs and the bill of materials | `store/E0001-VVVVVV-D-*`, `-L.csv` |
 
@@ -38,7 +38,7 @@ Not specified here:
 |---|---|
 | E-number | `E0001` — one bare design per revision, one assembly (ADR-0017 d4) |
 | Class ID | None. The carrier is the parent of a node and carries no module class |
-| Node identity | ATECC608 on the carrier, not on the module (ADR-0007 rev 1) |
+| Node identity | ATECC608 on the carrier, not on the module (ADR-0007) |
 | Node-ID store | Flash record at `E0001-000003`; the carrier EEPROM U4 at `E0001-000100` (ADR-0027 d2, d11) |
 | Serialized | Yes, per assembly |
 
@@ -46,8 +46,8 @@ Not specified here:
 
 | Revision | Module identification | Header B | State |
 |---|---|---|---|
-| `E0001-000003` | 3-bit strap pattern on Header B positions 3–5 (ADR-0014 rev 4 d6) | 2×8 | Fabricated, in service |
-| `E0001-000100` | 8-bit class ID read from the module's EEPROM over the header I²C at `0x50` (ADR-0014 rev 4 d6) | 2×10 | Ordered, not received (`O-100`) |
+| `E0001-000003` | 3-bit strap pattern on Header B positions 3–5 (ADR-0014 d6) | 2×8 | Fabricated, in service |
+| `E0001-000100` | 8-bit class ID read from the module's EEPROM over the header I²C at `0x50` (ADR-0014 d6) | 2×10 | Ordered, not received (`O-100`) |
 
 Neither supersedes the other. Each carries its own firmware image. An actuator module runs only
 on `E0001-000100` (ADR-0031 d10).
@@ -80,14 +80,14 @@ on `E0001-000100` (ADR-0031 d10).
 |---|---|---|---|
 | U1 | TI TPS54302, SOT-23-6 | 3.3 V buck from the `+12 V` bus, with L1 10 µH | `+12 V` |
 | U2 | TI SN65HVD230, SOIC-8 | CAN transceiver on CAN1 | 3V3 |
-| U3 | Microchip ATECC608B-SSHDA, SOIC-8 | Secure element on I²C2, node identity (ADR-0007 rev 1) | 3V3 |
+| U3 | Microchip ATECC608B-SSHDA, SOIC-8 | Secure element on I²C2, node identity (ADR-0007) | 3V3 |
 | U4 | ST M24C64-RMN6TP, 64 kbit, SO8 | Node-ID store on the header I²C at `0x57`: `E0`–`E2` to 3V3, `WC` to GND. Fitted at `E0001-000100` only, decoupled by C10 100 nF (ADR-0027 d11) | 3V3 |
 | F2 | PTC resettable fuse, 0.5 A hold, 16 V, 0805. `E0001-000003` is fitted with 0.35 A hold | Bus-input protection | `+12 V` |
 | D4 | SK26AH Schottky | Reverse-polarity protection on the bus input | `+12 V` |
 | D5 | SMBJ16A | Transient suppressor on the bus input | `+12 V` |
 | FB1 | BLM21P ferrite | Bus-input filter | `+12 V` |
 | D3 | PESD1CAN | Transient suppressor on CANH and CANL | — |
-| R7, JP1 | 120 Ω across the bus pair, solder jumper | Bus termination, fitted only at the two ends of the run (ADR-0002 rev 3) | — |
+| R7, JP1 | 120 Ω across the bus pair, solder jumper | Bus termination, fitted only at the two ends of the run (ADR-0002) | — |
 | D6–D9 | Indicators: `+12 V`, 3V3, CAN activity, node status | §3 | — |
 | J1, J2 | Molex Micro-Fit 3.0, 2×2, horizontal | Field bus and `+12 V`, in and out (ADR-0018 d13) | — |
 | J3, J4 | 2×15 sockets, 2.54 mm | Core-board interface (§5.4) | — |
@@ -222,16 +222,16 @@ Unassigned processor pins:
 | `I4` | Header B positions 7 and 14 stay unconnected until a revision assigns them | §5.1 |
 | `I5` | Header A position 2 is present and unconnected; no revision fits a 5 V rail without its own specification change | §4 |
 | `I6` | Every analog input on Header B is flanked by ground, and no switching signal shares Header B | ADR-0014 d5 |
-| `I7` | Bus termination is fitted by `JP1` only at the two ends of the run | ADR-0002 rev 3 |
+| `I7` | Bus termination is fitted by `JP1` only at the two ends of the run | ADR-0002 |
 | `I8` | SWD reaches the processor on the core board's own debug header; the carrier routes neither line | §5.2 |
-| `I9` | U4 answers at `0x57` and a fitted module's class-ID EEPROM at `0x50`, both on the header I²C. No module places another device inside `0x50`–`0x57` | ADR-0027 d11, ADR-0014 rev 4 d6 |
+| `I9` | U4 answers at `0x57` and a fitted module's class-ID EEPROM at `0x50`, both on the header I²C. No module places another device inside `0x50`–`0x57` | ADR-0027 d11, ADR-0014 d6 |
 
 ## 6. Power
 
 | ID | Requirement | Reference |
 |---|---|---|
 | `P1` | Input is the `+12 V` SELV bus, fused at 0.5 A, reverse-protected, transient-suppressed and filtered before the buck | ADR-0018 d3 |
-| `P2` | The carrier derives 3.3 V locally and is the only source of the module rail. No module derives its own | ADR-0002 rev 3 |
+| `P2` | The carrier derives 3.3 V locally and is the only source of the module rail. No module derives its own | ADR-0002 |
 | `P3` | 3.3 V reaches the core board through the power rungs of J3, and reaches each module at both header position 1 | §5.4 |
 | `P4` | The core board is powered from the carrier **or** from its own USB, never both | `SP0005` |
 | `P5` | Carrier and module current on the 3.3 V rail is bounded by the buck's rating (`verify` against the fitted inductor and thermal design) | `O-132` |
@@ -242,8 +242,8 @@ Unassigned processor pins:
 | ID | Requirement | Reference |
 |---|---|---|
 | `F1` | Each revision runs its own image; an image identifies the revision it was built for | §2.1 |
-| `F2` | On `E0001-000100`, probe the module EEPROM at `0x50` first. A module that answers is identified by byte 0 and its `GPIO_5`–`GPIO_7` are never read as an identity | ADR-0014 rev 4 d6 |
-| `F3` | `0x00` and `0xFF` are *unidentified*, never a class | ADR-0014 rev 4 d6 |
+| `F2` | On `E0001-000100`, probe the module EEPROM at `0x50` first. A module that answers is identified by byte 0 and its `GPIO_5`–`GPIO_7` are never read as an identity | ADR-0014 d6 |
+| `F3` | `0x00` and `0xFF` are *unidentified*, never a class | ADR-0014 d6 |
 | `F4` | On `E0001-000100`, a module that does not answer at `0x50` may be identified by the legacy strap pattern on `GPIO_5`–`GPIO_7` | §2.1 |
 | `F5` | `GPIO_5`–`GPIO_7` are configured as inputs at reset and driven only after identification, because a module may hold them against a rail | `F4` |
 | `F6` | The node publishes its heartbeat and health over the field bus; the carrier publishes no measured quantity | §3.1 |

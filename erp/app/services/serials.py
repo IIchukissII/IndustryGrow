@@ -8,7 +8,7 @@ collide and never leave gaps — the ADR-0017 d8 requirement, without a separate
 serial authority.
 
 There is deliberately no overflow-into-version: at 999999 the serial field is
-widened, never carried into the version (ADR-0017 d1, alt D).
+widened, never carried into the version (ADR-0017 dec 1 alternatives).
 """
 
 from __future__ import annotations

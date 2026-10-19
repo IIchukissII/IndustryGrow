@@ -10,7 +10,7 @@
 /* DIN energy-meter S0 pulse input on GPIO_4 = PB12 (pin map; E0006: S0 -> GPIO_4).
  * Opto-isolated open-collector output, counted as falling edges via EXTI.
  * Energy [J] = pulses * 3 600 000 / (meter pulse constant imp/kWh) — published
- * in joule, base SI (ADR-0005 rev 1 d3). The constant is a per-deployment value
+ * in joule, base SI (ADR-0005 d3). The constant is a per-deployment value
  * (ADR-0018) — a register default for now (ADR-0005 d7). */
 void s0_init(void);
 uint32_t s0_pulses(void);

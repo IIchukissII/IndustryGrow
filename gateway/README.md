@@ -20,7 +20,7 @@ before a CA exists, and the gateway cannot pull before the channel verifies it.
 A node's key is generated inside its ATECC608 and never leaves the part
 (ADR-0007 d1). **A gateway's is not**: the reference gateway is a stock
 single-board computer bought as SP0004 and carries no secure element, so its key
-is generated on the gateway and protected by the host (ADR-0007 rev 2 d11).
+is generated on the gateway and protected by the host (ADR-0007 d11).
 
 **Root on the gateway is the private key.** The host hardening of ADR-0004 is
 therefore load-bearing for identity, not only for availability, and a stolen

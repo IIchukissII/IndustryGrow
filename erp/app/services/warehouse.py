@@ -6,7 +6,7 @@ The ERP is the queryable index *over* this store; it records object keys, never
 blob bytes (ADR-0021 d7, d11). Identifiers are the object keys — the flat
 keyspace of ADR-0017 d15, so listing is a prefix scan with no separate index.
 
-Referential-integrity rule (ADR-0021 deferred "ERP <-> object store"): write the
+Referential-integrity rule (ADR-0022 d7): write the
 blob to the warehouse *first*, then record its key in Mongo. A recorded key
 therefore always resolves; a crash between the two leaves an orphan blob (a
 prefix-scan cleanup finds it), never a dangling index row.
@@ -106,7 +106,7 @@ class Warehouse:
         """An open body for `key`, with its content type and length.
 
         Returned rather than read so the caller can stream it through without the
-        whole object landing in memory — the read-through of ADR-0022 rev 2 d7 has
+        whole object landing in memory — the read-through of ADR-0022 d7 has
         to work for a 1.6 MB fab archive as well as for an 11 kB manual.
         """
 

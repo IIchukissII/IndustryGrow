@@ -6,7 +6,7 @@
 #
 # Applied value and state are one record because they describe one element at
 # one instant: published apart, a zero applied value could not be told from a
-# trip, a derate or a stale demand (ADR-0005, alternative D's atomicity case).
+# trip, a derate or a stale demand (ADR-0005 dec 8 alternatives, the atomicity case).
 #
 # Report only. Nothing here is a command, and a consumer cannot re-arm a trip
 # through it (ADR-0015 d11).

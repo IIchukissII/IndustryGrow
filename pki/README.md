@@ -10,7 +10,7 @@ shape of this CA and why. This file is the *procedure* and the *numbers* — the
 `what` to that record's `why`, per [ADR-0000](../ADR/ADR-0000-decision-records-and-source-of-truth.md)
 decision 2.
 
-[ADR-0007](../ADR/ADR-0007-pki-and-secure-element-identity-rev1.md) decision 3 roots
+[ADR-0007](../ADR/ADR-0007-pki-and-secure-element-identity.md) decision 3 roots
 trust **per operator**: there is no IndustryGrow root CA, and nobody can issue
 into your deployment but you. That independence is the point, and the price of it
 is this procedure.
@@ -29,7 +29,7 @@ is this procedure.
 
 The gateway leaf's `clientAuth` and cert-derived identity are ADR-0022 decision 2;
 that the identity rides the **CN** specifically is pinned by the deployment, not the
-ADR — see [`erp/deploy/mtls/README.md`](../erp/deploy/mtls/README.md) (ADR-0007 rev 1
+ADR — see [`erp/deploy/mtls/README.md`](../erp/deploy/mtls/README.md) (ADR-0007
 decision 10b keeps `GBOX_NNNN` stable across that CN and, at stage 11, IndustryFlow's
 SAN device segment).
 
@@ -208,7 +208,7 @@ Rare, planned, and it touches every unit (d10).
    root and retire it.
 
 Distribution is the **provisioning path** — the same hands-on route by which a unit
-got its identity — deliberately not the profile channel (d10, alternative F). A
+got its identity — deliberately not the profile channel (ADR-0024 dec 10 alternatives). A
 gateway that stays offline across the whole window is stranded and needs
 re-provisioning by hand.
 
@@ -229,7 +229,7 @@ intermediate, re-provision the estate.
   are long-lived, which sits awkwardly with decision 8's containment rule; open
   until node provisioning exists.
 - **Automate renewal.** At fleet scale an ACME issuer would take the intermediate's
-  place without the root or any trust anchor changing (ADR-0024 alternative E).
+  place without the root or any trust anchor changing (ADR-0024 dec 1 alternatives).
 
 ## Not to be confused with
 

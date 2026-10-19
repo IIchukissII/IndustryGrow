@@ -13,7 +13,7 @@ what it is running, and update the ones that are not running it.
     firmware_client.py serve   # poll on an interval, for a host without timers
 
 WHAT THIS DOES NOT DO. It reports nothing back to the ERP. There is no route to
-report to and that is deliberate (ADR-0022 d9, alternative Q): what a node runs
+report to and that is deliberate (ADR-0022 d9; dec 14 alternatives): what a node runs
 is operational, it is observed here, and it stays here. The ERP holds the
 operator's intent; the journal below holds what came of it.
 
@@ -560,7 +560,7 @@ async def pass_once(config: Config, dry_run: bool = False) -> int:
         updated = 0
         for plan in todo:
             # One node at a time. A transfer is a gateway-paced burst on a 500
-            # kbit/s bus (ADR-0002 rev 3) and two at once would contend for it;
+            # kbit/s bus (ADR-0002) and two at once would contend for it;
             # fleet-wide ordering and concurrency are ADR-0029's deferred item, so
             # this does the one thing that cannot contradict whatever it decides.
             if await update_node(bus, plan):

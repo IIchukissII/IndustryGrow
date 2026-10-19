@@ -2,18 +2,18 @@
 # SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 # SPDX-License-Identifier: CC-BY-SA-4.0
 #
-# Gateway firewall — ADR-0004 rev 1 decisions 5 and 6.
+# Gateway firewall — ADR-0004 decisions 5 and 6.
 # Rendered by provision.sh (the two `define` lines below are substituted from
 # /etc/industrygrow/gateway.env) and installed as /etc/nftables.conf.
 #
 # INBOUND: default-deny, except SSH on the LAN-facing management interfaces. The
-#   gateway is not a server to the LAN (ADR-0004 rev 1 decision 6: no service
+#   gateway is not a server to the LAN (ADR-0004 decision 6: no service
 #   exposed to the LAN). SSH is allowed on every management NIC the box may be
 #   reached over — Wi-Fi and wired alike — not one baked interface, so moving the
 #   cable or falling back to Wi-Fi never locks the operator out (ADR-0004 d5, as
 #   amended). The CAN interfaces (can*/vcan*) are deliberately NOT in the set.
 #
-# OUTBOUND: OPEN at bring-up, per ADR-0004 rev 1 decision 19, which records that
+# OUTBOUND: OPEN at bring-up, per ADR-0004 decision 19, which records that
 #   decision 5's outbound half binds only from roadmap stage 11. IndustryFlow does
 #   not exist yet (ADR-0020 context) and apt/pip need egress to provision. The
 #   production target is two named destinations, not one: the IndustryFlow endpoint
@@ -52,7 +52,7 @@ table inet industrygrow {
         # BRING-UP: egress open (apt/pip/DNS/NTP need it).
         type filter hook output priority 0; policy accept;
 
-        # ===== PRODUCTION TARGET (ADR-0004 rev 1 decisions 5 and 19) =====
+        # ===== PRODUCTION TARGET (ADR-0004 decisions 5 and 19) =====
         # When IndustryFlow exists, flip `policy accept` -> `policy drop` and allow
         # only the minimum egress, e.g.:
         #     ct state established,related accept

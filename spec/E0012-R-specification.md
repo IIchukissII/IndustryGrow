@@ -8,7 +8,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Status:** Working specification, pre-build. `E0012` not built; the housing bottom half and the duct set are in development and unidentified (§2)
 - **Date:** 2026-09-12
 - **E-number:** `E0012` · discipline mechanical · no module class, no strap
-- **Governing ADRs:** ADR-0032, ADR-0031 (rev 1), ADR-0017 (rev 3), ADR-0016, ADR-0003
+- **Governing ADRs:** ADR-0032, ADR-0031, ADR-0017, ADR-0016, ADR-0003
 - **Companions:** `E0011-R-specification.md`
 
 Rationale for the decisions applied here is in the governing ADRs and is not restated.
@@ -38,7 +38,7 @@ Not specified here:
 | E-number | `E0012` — first assembly (ADR-0017 d3) |
 | Discipline | Mechanical, registry metadata rather than a field in the identifier (ADR-0017 d5) |
 | Module class | None. The unit carries no node, no MCU and no class ID |
-| Class membership | A01-CLIMATE, whose class is the apparatus and spans both E-numbers (ADR-0031 rev 1 d2) |
+| Class membership | A01-CLIMATE, whose class is the apparatus and spans both E-numbers (ADR-0031 d2) |
 | Commanded by | `E0011` over the §5 harness. The unit accepts no command of its own |
 | Serialized | Yes. `-QP` carries dimensional and clamping-force inspection (ADR-0017 d10) |
 | Position | Assigned at integration, never present in the identifier (ADR-0017 d7) |
@@ -88,7 +88,7 @@ Deliberately absent:
 
 | Not fitted | Reference |
 |---|---|
-| Any electronics. No MCU, no driver, no comparator, no class-ID EEPROM | ADR-0031 rev 1 d2, §2 |
+| Any electronics. No MCU, no driver, no comparator, no class-ID EEPROM | ADR-0031 d2, §2 |
 | Any sensing of grow-volume air state | M01-CLIMATE, `E0011-R-specification.md` §3.3 |
 | Coolant pump and flow switch. SF1 belongs to the loop | ADR-0032, deferred |
 | Condensate collection. HX1 forms none | `T2` |

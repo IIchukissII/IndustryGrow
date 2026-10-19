@@ -71,7 +71,7 @@ signer = _load("sign_profile", REPO / "signing" / "sign_profile.py")
 def load_client(config_dir: Path):
     """The gateway client, with its config directory pointed at a tmp_path.
 
-    Re-imported per test because the paths ADR-0015 d4 fixes are module-level
+    Re-imported per test because the paths profile_client.py sets (ADR-0015 d4) are module-level
     constants read from the environment at import — which is what the real unit
     does, once, at start.
     """

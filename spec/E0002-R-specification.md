@@ -7,7 +7,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 - **Date:** 2026-08-24
 - **E-number:** `E0002` · module-ID strap `0b001`
-- **Governing ADRs:** ADR-0014 (rev 3), ADR-0002 (rev 3), ADR-0003, ADR-0016, ADR-0017 (rev 2), ADR-0018
+- **Governing ADRs:** ADR-0014, ADR-0002, ADR-0003, ADR-0016, ADR-0017, ADR-0018
 - **Companions:** `E0003-R-specification.md`, `E0005-R-specification.md`, `E0006-R-specification.md`, `E0008-R-specification.md`, `E0009-R-specification.md`
 - **Supersedes:** the M01 sections of `M01-M06-air-nodes-specification.md` (2026-08-03), split into this document and `E0008-R-specification.md` on 2026-08-04
 
@@ -30,7 +30,7 @@ Not specified here: carrier design (`store/E0001-000003-D-pinmap.md`), cultivati
 | Module-ID strap | `0b001` |
 | E-number | `E0002` — fully-populated Phase-1 assembly |
 | Design version | `E0002-000001` |
-| Bare design | One layout; each standard populated configuration takes its own assembly E-number (ADR-0017 rev 2 d4) |
+| Bare design | One layout; each standard populated configuration takes its own assembly E-number (ADR-0017 d4) |
 | Carrier | `E0001`, sensor-module header pair 2×12 + 2×8 (ADR-0014 d5) |
 
 ## 3. Function
@@ -95,7 +95,7 @@ M01 carries no light sensor, no inertial or magnetic sensor, and no air-velocity
 Optional parts shall be footprints that can be left unpopulated with no other change to the
 board. U3 shall not sit in the I²C pull-up path or in the sense path of any other part.
 
-A partially populated configuration takes its own assembly E-number (ADR-0017 rev 2 d4) and
+A partially populated configuration takes its own assembly E-number (ADR-0017 d4) and
 requires no firmware change; the boot probe registers responders only (§10).
 
 Two parts exist solely to serve U3 — U5 and FB1 (§7.4). A population without U3 leaves all
@@ -562,7 +562,7 @@ O-52 to O-62 are M02's.
 | ~~O-33~~ | ~~T2 value and V1 method not confirmed~~ — closed 2026-08-06: T2 fixed at 0.1 K per §6.2; V1 fixed as a four-state differential measurement | — |
 | ~~O-34~~ | ~~Pressure source for CO₂ compensation: U2 or M07~~ — closed 2026-08-05 by §6.3 in favour of U2. Unpopulated-U2 residue moved to O-48 | — |
 | ~~O-35~~ | ~~Node power unmeasured~~ — closed 2026-08-26 by V3: §7.1 carries the measured figures, and M05's §6.4 states what they do to its ceilings | — |
-| ~~O-36~~ | ~~ADR-0014 d2's partial-BOM example cites M01's airflow sensor, moved to M06 in rev 2~~ — closed 2026-08-04 by ADR-0014 rev 3 | — |
+| ~~O-36~~ | ~~ADR-0014 d2's partial-BOM example cites M01's airflow sensor, moved to M06 in rev 2~~ — closed 2026-08-04 by ADR-0014 | — |
 | O-37 | Boot probe does not distinguish *not fitted*, *failed* and *unpowered*; all three read as the same observation. Health now degrades when a device that probed present stops answering (§10), so a bus fault is no longer silent, but absence and failure remain indistinguishable at boot | Gateway fault handling |
 | O-38 | T1 fixed as a requirement in §8. Residue: no enclosure design realizes the shading, α and h are unfixed (from O-32), and V2 is not executed | Enclosure design, V2 |
 | O-39 | Neither ADR-0003 d7 nor the profile instance states a VPD uncertainty limit; §6.1 gives ±1.3…±2.9 % in band, ±6.7 % on humid excursion | Profile validity, U1 part grade |

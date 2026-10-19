@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     operator_uuid: str = Field(default="00000000-0000-0000-0000-000000000001")
     operator_name: str = Field(default="OP-STRAWBERRY-01")
 
-    # MongoDB — the document metadata store (ADR-0021 d15, rev 1).
+    # MongoDB — the document metadata store (ADR-0021 d15.
     mongo_uri: str = Field(default="mongodb://localhost:27017")
     mongo_db: str = Field(default="industrygrow_erp")
 

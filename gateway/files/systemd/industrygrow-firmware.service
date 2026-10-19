@@ -39,7 +39,7 @@ StateDirectoryMode=0750
 Environment=PYTHONPATH=/opt/industrygrow/dsdl
 ExecStart=/opt/industrygrow/venv/bin/python /opt/industrygrow/firmware_client.py once
 
-# --- Least-privilege hardening (ADR-0004 rev 1 decision 7) ---
+# --- Least-privilege hardening (ADR-0004 decision 7) ---
 # /etc/industrygrow read-only: this unit reads the identity chain and the trust
 # anchor and writes nothing there. Its one writable path is the StateDirectory.
 NoNewPrivileges=yes

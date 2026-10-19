@@ -5,7 +5,7 @@
 # humidity sample type -- relative humidity is dimensionless, so it falls
 # outside uavcan.si.sample.* entirely (ADR-0005 d2: mint only for a real gap).
 #
-# Dimensionless and unscaled, for the reason ADR-0005 rev 1 gave for joule over
+# Dimensionless and unscaled, for the reason ADR-0005 gave for joule over
 # watt-hour: a scaled unit on the wire is a display convention, and display is
 # the gateway's concern. 0.658 here is the 65.8 %RH of M01 spec 6.1.
 #

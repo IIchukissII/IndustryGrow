@@ -187,7 +187,7 @@ def test_a_public_key_of_the_wrong_size_is_refused():
 
 
 def test_the_fingerprint_is_over_the_public_key_not_the_certificate(signer):
-    # ADR-0007 rev 1 d10d: the anchor has to survive renewal and re-certification
+    # ADR-0007 d10d: the anchor has to survive renewal and re-certification
     # under another operator, so it keys on the key, which never changes, rather
     # than on a certificate serial, which changes every 90 days.
     once = tool.public_key_fingerprint(signer.public_key())
@@ -537,7 +537,7 @@ def test_the_binding_carries_the_stable_anchors_and_no_secret(provisioned, tmp_p
     )
 
     record = json.loads(out.read_text())
-    # Shaped as the ERP's machine-binding request body (ADR-0022 rev 1 d12), so
+    # Shaped as the ERP's machine-binding request body (ADR-0022 d12), so
     # the file submits as-is. test_api.py::test_a_machine_carries_its_own_...
     # covers the receiving end; this covers that the two agree on names.
     assert record["machine_id"] == "GBOX_0001"
@@ -556,7 +556,7 @@ def test_the_binding_carries_the_stable_anchors_and_no_secret(provisioned, tmp_p
 
 def test_the_binding_file_is_what_the_erp_route_accepts(provisioned, tmp_path):
     # The claim the tool's output makes is that it can be POSTed as-is
-    # (ADR-0022 rev 1 d12). Validating it against the request model the route
+    # (ADR-0022 d12). Validating it against the request model the route
     # actually uses is what keeps that true when either side is edited — the two
     # live in different trees and nothing else couples them.
     from app.api.schemas import MachineProvisionRequest

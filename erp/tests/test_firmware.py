@@ -5,7 +5,7 @@
 What is asserted here is as much what the API refuses as what it records: the
 selection is a record and not an update, the gateway's routes write nothing, and
 there is no way to ask this API what a node is running (ADR-0029 d15;
-ADR-0022 d9, alternative Q).
+ADR-0022 d9; dec 14 alternatives).
 
 The release used throughout is the one the repository actually publishes, read
 from `store/`, because that is what makes a release selectable (ADR-0029 d13).
@@ -241,7 +241,7 @@ def _endpoints(app):
 
 
 def test_there_is_no_route_that_records_what_a_node_runs(client):
-    """ADR-0022 d9 and alternative Q, as an absence the test suite defends.
+    """ADR-0022 d9 and the dec 14 alternatives, as an absence the test suite defends.
 
     The firmware channel is the one place a machine-written 'we updated' would be
     most tempting. If a future route adds it, this fails.

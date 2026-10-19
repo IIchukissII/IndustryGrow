@@ -55,7 +55,7 @@ set(IGROW_SLOT_B_BASE 0x08080000)
 # versioned separately -- the two are built, signed and flashed apart.
 # One image per carrier revision (E0001 spec F1). 000003 identifies a module by
 # its 3-bit strap; 000100 reads the 8-bit class ID from the module EEPROM, which
-# is the only transport an actuator class reaches (ADR-0014 rev 4 d6). Both
+# is the only transport an actuator class reaches (ADR-0014 d6). Both
 # images carry every personality.
 set(IGROW_CARRIER_REV "000003" CACHE STRING "Carrier revision the image is built for: 000003 or 000100")
 set_property(CACHE IGROW_CARRIER_REV PROPERTY STRINGS 000003 000100)

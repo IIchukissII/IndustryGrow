@@ -8,7 +8,7 @@
 #include <stdint.h>
 
 /* NXP PCA9685 16-channel 12-bit PWM generator, A01's module-local drive
- * expansion (U9, ADR-0031 rev 1 d11). I2C1, address 0x40, internal 25 MHz
+ * expansion (U9, ADR-0031 d11). I2C1, address 0x40, internal 25 MHz
  * oscillator, totem-pole outputs.
  *
  * Every output is LOW after power-on reset (all LEDn_OFF_H full-off bits set)

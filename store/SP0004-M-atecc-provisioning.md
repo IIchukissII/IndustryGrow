@@ -44,9 +44,9 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 |-------|------|--------|
 | **Key = on-chip, non-exportable** | The device keypair is generated inside the ATECC608 in a non-exportable slot; the private key never leaves the part. Only the public key and the chip serial are exported. | ADR-0007 d1 |
 | **Curve = NIST P-256** | secp256r1, the part's native ECC curve and the basis of the serial↔crypto binding. | ADR-0007 d1; ADR-0017 d8 |
-| **Identity = `GBOX_NNNN` in the CSR CN** | The CSR's Common Name is the ADR-0017 machine identifier verbatim — `GBOX_0001`, no prefix, no vendor form. This is *not* the ATECC die serial (§7). The ERP derives the caller's identity from this exact string. | ADR-0022 d2; `erp/deploy/mtls/`; ADR-0007 rev 1 d10b |
-| **One key, re-certified per operator** | Migration between operators is re-certification of this same key, never a new key. `GBOX_NNNN` stays stable across the self-hosted CN and, at stage 11, IndustryFlow's SAN device segment. | ADR-0007 rev 1 d10 |
-| **Key material = per-instance, off-repo** | No key, CSR, or issued cert is committed. Public material is recorded in the gateway's provisioning binding (§8); the private key is on the chip and nowhere else. | ADR-0017 (two-homes); ADR-0019 d2 |
+| **Identity = `GBOX_NNNN` in the CSR CN** | The CSR's Common Name is the ADR-0017 machine identifier verbatim — `GBOX_0001`, no prefix, no vendor form. This is *not* the ATECC die serial (§7). The ERP derives the caller's identity from this exact string. | ADR-0022 d2; `erp/deploy/mtls/`; ADR-0007 d10b |
+| **One key, re-certified per operator** | Migration between operators is re-certification of this same key, never a new key. `GBOX_NNNN` stays stable across the self-hosted CN and, at stage 11, IndustryFlow's SAN device segment. | ADR-0007 d10 |
+| **Key material = per-instance, off-repo** | No key, CSR, or issued cert is committed. Public material is recorded in the gateway's provisioning binding (§8); the private key is on the chip and nowhere else. | ADR-0017 d21; ADR-0019 d2 |
 
 ---
 
@@ -181,7 +181,7 @@ atcab_init(&cfg);
 ```
 
 The CSR subject is `CN=GBOX_NNNN` (§1) and no SAN — `sign-csr.sh --profile gateway`
-rejects any other CN and issues `clientAuth` (ADR-0007 rev 1 d10b; the field choice
+rejects any other CN and issues `clientAuth` (ADR-0007 d10b; the field choice
 is the deployment's, not an ADR's). The operator name may ride the subject `O=` for
 estate consistency (`pki/` bootstrap `--operator`), but the ERP reads only the CN.
 
@@ -237,7 +237,7 @@ Two different identifiers, deliberately not conflated:
   chip (fixed markers `01 23 …` and `… EE`). It is the *hardware* anchor, recorded in
   the gateway's provisioning binding (§8), never placed in the CN. Its public-key
   fingerprint is what the binding and any revocation deny-list key on, because it is
-  stable across renewal and re-certification (ADR-0007 rev 1 d10d; ADR-0024 deferred
+  stable across renewal and re-certification (ADR-0007 d10d; ADR-0024 deferred
   deny-list note).
 
 ---
@@ -247,7 +247,7 @@ Two different identifiers, deliberately not conflated:
 Provisioning ends by recording the gateway's "birth certificate" — the
 machine ↔ ATECC ↔ certificate binding, **public material only** (ADR-0007 d6;
 ADR-0017 d12). `provision_identity.py binding` writes that as a JSON file shaped as
-the ERP's machine-binding request body (ADR-0022 rev 1 d12), so it is submitted
+the ERP's machine-binding request body (ADR-0022 d12), so it is submitted
 as-is:
 
 ```bash
@@ -263,8 +263,8 @@ certificate-metadata inputs ADR-0022 d5 names** — public-key fingerprint, cert
 serial, validity, never a private key — referenced here rather than restated
 (ADR-0000 d3).
 
-**Where the binding goes.** **ADR-0021 rev 3 d17** gives the ERP ownership of a *machine*
-identity binding; **ADR-0022 rev 1 d12** gives it its own machine-scoped route. This step
+**Where the binding goes.** **ADR-0021 d17** gives the ERP ownership of a *machine*
+identity binding; **ADR-0022 d12** gives it its own machine-scoped route. This step
 ends by submitting the binding to that route, and the tool emits exactly its request body —
 no hand-translation. Deferred: the `-PR` *document blob* format, and whether a machine gets a
 lifecycle document at all (d12's own scope note; board card 17's tail).
@@ -280,10 +280,10 @@ serial and the ATECC-bound certificate (ADR-0019 d2); the `-PR` lifecycle-docume
 suffix proper is defined on E-instances `Exxxx-VVVVVV-NNNNNN` (ADR-0022 d7), which a
 gateway is not. So the local values this step captures are `GBOX_NNNN`, the SP0004
 **vendor serial**, and the ATECC die serial + public-key fingerprint — the stable
-anchor a renewal or migration re-certification does not disturb (ADR-0007 rev 1 d10d;
-ADR-0024 deferred deny-list note). Those are the values ADR-0022 rev 1 d12's
+anchor a renewal or migration re-certification does not disturb (ADR-0007 d10d;
+ADR-0024 deferred deny-list note). Those are the values ADR-0022 d12's
 machine-scoped binding takes; the E-instance `-PR` record shape is not reused, and
-ADR-0021 rev 3 alternative M records why a synthetic serial was rejected.
+ADR-0021 dec 17 alternatives record why a synthetic serial was rejected.
 
 ---
 
@@ -299,7 +299,7 @@ ADR-0021 rev 3 alternative M records why a synthetic serial was rejected.
   IndustryFlow's managed CA, whose leaf carries the identity in a **SAN URI**
   (`industryflow:tenant/<uuid>/device/GBOX_NNNN`) rather than the CN, and the
   gateway's trust anchor is swapped from the self-hosted root to the managed one — a
-  **clean sequential swap**, one operator's root trusted at a time (ADR-0007 rev 1
+  **clean sequential swap**, one operator's root trusted at a time (ADR-0007
   d10, d3). The migration *procedure* itself, and IndustryFlow's tenant assignment,
   are ADR-deferred — do not build them here.
 
@@ -328,11 +328,11 @@ ADR-0021 rev 3 alternative M records why a synthetic serial was rejected.
 
 ## References
 
-- ADR-0007 (rev 1): PKI, hardware identity, and provisioning — on-chip non-exportable
+- ADR-0007: PKI, hardware identity, and provisioning — on-chip non-exportable
   P-256 key (d1), the slot-map/lock-sequence delegation to this document (d9), and
   identity across operators (d10) — one key re-certified per operator, `GBOX_NNNN`
   stable across CN and SAN, the `-PR`/anchor bound to stable facts.
-- ADR-0017 (rev 1): identification scheme — `GBOX_NNNN` machine identifier, the
+- ADR-0017: identification scheme — `GBOX_NNNN` machine identifier, the
   serial↔ATECC↔certificate binding, and the `-PR` provisioning record (d12).
 - ADR-0021 / ADR-0022: the ERP as serial-allocation authority and the API the `-PR`
   binding is submitted through; the CN-derived caller identity (ADR-0022 d2).
