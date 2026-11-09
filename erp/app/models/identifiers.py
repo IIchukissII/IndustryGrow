@@ -39,6 +39,20 @@ DEPTH_RE = re.compile(rf"^{DEPTH}$")
 DOCUMENT_LAYERS = frozenset("SDLPMIFR")
 LIFECYCLE_SUFFIXES = frozenset({"QP", "QR", "CP", "CC", "PR"})
 
+# A lifecycle object key (ADR-0017 d11/d15; ADR-0022 d7): an instance identifier
+# and a suffix, then what the writers append. The upload route stamps CP and CC
+# (`-YYYYMMDDThhmmss`; keys written before that carry the day alone) and adds `-n`
+# on collision; a reissue archives the previous issue under
+# `-superseded-YYYYMMDDThhmmss`, with `-n` on collision. Every such object exists
+# only in the warehouse, so anything that selects lifecycle objects selects them
+# by this grammar and not by a suffix test of its own.
+LIFECYCLE_KEY_RE = re.compile(
+    rf"^(?P<instance>{E_MODULE}-{VERSION}-{SERIAL})"
+    rf"-(?P<suffix>{'|'.join(sorted(LIFECYCLE_SUFFIXES))})"
+    r"(?:-(?P<stamp>\d{8}(?:T\d{6})?))?(?:-\d+)?"
+    r"(?:-superseded-\d{8}T\d{6}(?:-\d+)?)?$"
+)
+
 # Withdrawal status tokens (ADR-0017 d17). Full uppercase words, deliberately
 # neither a layer letter nor a lifecycle suffix, so they can never be mistaken
 # for one — which is what makes the token itself the machine-readable status.
@@ -112,6 +126,11 @@ def parse_instance(key: str) -> dict[str, str]:
     if not m:
         raise ValueError(f"not an instance identifier: {key!r}")
     return {"e_number": m["e"], "version": m["v"], "serial": m["n"]}
+
+
+def is_lifecycle_key(key: str) -> bool:
+    """True for a per-instance lifecycle object key, in any form a writer produces."""
+    return LIFECYCLE_KEY_RE.match(key) is not None
 
 
 # --- type-layer object keys -------------------------------------------------

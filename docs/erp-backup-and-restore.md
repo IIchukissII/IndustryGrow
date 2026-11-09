@@ -9,26 +9,25 @@ The manual of [ADR-0026](../ADR/ADR-0026-erp-backup-and-restore-across-two-store
 
 ## ADR-0026 dec 1
 
-The backup covers every ERP collection and the warehouse objects whose key ends in a lifecycle suffix. Every other warehouse key, the `store/` mirror among them, is skipped; the manifest names what is excluded.
+The backup covers every ERP collection and the warehouse objects whose key is a lifecycle key. Every other warehouse key, the `store/` mirror among them, is skipped; the manifest names what is excluded.
 
 | Code | Role |
 |---|---|
 | `erp/app/backup.py::BACKED_UP_COLLECTIONS` | Every `foundation.*` and `domain.*` collection the ERP defines |
-| `erp/app/backup.py::is_backed_up_object` | Selects the warehouse keys to copy, by lifecycle suffix |
+| `erp/app/backup.py::is_backed_up_object` | Selects the warehouse keys to copy, by the lifecycle-key grammar |
+| `erp/app/models/identifiers.py::LIFECYCLE_KEY_RE` | The lifecycle-key grammar, in every form a writer produces |
 | `erp/app/backup.py::save` | Writes the manifest, the dump and the selected objects into one archive |
-| `erp/tests/test_backup.py` | Asserts the suffix selection, the mirror exclusion and the collection allowlist |
+| `erp/tests/test_backup.py` | Asserts each key form, the near misses, the mirror exclusion and the collection allowlist |
+| `erp/tests/test_api.py::test_every_key_the_upload_writes_is_backed_up` | Uploads through the API and asserts every written and every indexed key is selected |
 
 ### Selection by key
 
 | Key form | Selected |
 |---|---|
 | `<instance>-QP`, `-QR`, `-CP`, `-CC`, `-PR` | yes |
-| `<instance>-CC-YYYYMMDD` | yes |
-| `<instance>-CP-…` or `-CC-…` with a time stamp or a sequence number | no |
-| `<key>-superseded-<stamp>` | no |
+| `<instance>-CP-` or `-CC-` with `YYYYMMDD` or `YYYYMMDDThhmmss`, optionally `-n` | yes |
+| `<instance>-<suffix>-superseded-YYYYMMDDThhmmss`, optionally `-n` | yes |
 | any other key | no |
-
-The upload route stamps every `CP` and `CC` key to the second and archives a re-issued `QP`, `QR` or `PR` under `-superseded-<stamp>`; the selection does not match these forms.
 
 ## ADR-0026 dec 2
 

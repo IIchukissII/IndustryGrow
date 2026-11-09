@@ -541,6 +541,56 @@ def test_calibration_key_carries_its_date_and_is_queryable(client, warehouse):
     assert sum(1 for d in listed if d["doc_type"] == "CP") == 2
 
 
+def test_every_key_the_upload_writes_is_backed_up(client, warehouse, monkeypatch):
+    """ADR-0026 d1/d3 — the backup selects what the writers actually produce.
+
+    The selection once matched `-CC-YYYYMMDD` only. The upload route stamps CP and
+    CC to the second, sequences a collision and archives a reissue under
+    `-superseded-<stamp>`, so those objects fell outside the archive and `save`
+    refused on the indexed keys it had not copied.
+    """
+    from datetime import datetime as real_datetime
+
+    from app.api import routes
+    from app.backup import is_backed_up_object
+
+    class FrozenDatetime(real_datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return real_datetime(2026, 7, 22, 12, 0, 0, tzinfo=tz)
+
+    monkeypatch.setattr(routes, "datetime", FrozenDatetime)
+    inst = _one_instance(client)
+    uploads = [
+        ("CC", b"cert"),
+        ("CP", b"points one"),
+        ("CP", b"points two"),
+        ("QP", b"first issue"),
+        ("QP", b"second issue"),
+        ("PR", b"binding"),
+    ]
+    for doc_type, body in uploads:
+        r = client.post(
+            f"/api/v1/instances/{inst}/documents",
+            data={"doc_type": doc_type, "doc_date": "2026-07-22"},
+            files={"file": ("f.pdf", b"%PDF-1.7 " + body, "application/pdf")},
+            headers=AUTH,
+        )
+        assert r.status_code == 200, r.text
+
+    keys = set(warehouse.objects)
+    # The forms this test exists for are present, so the assertion below sees them.
+    assert f"{inst}-CP-20260722T120000-2" in keys
+    assert any("-QP-superseded-" in k for k in keys)
+
+    indexed = {
+        d["object_key"]
+        for d in client.get(f"/api/v1/instances/{inst}/documents", headers=AUTH).json()
+    }
+    assert indexed == keys
+    assert [k for k in keys if not is_backed_up_object(k)] == []
+
+
 def test_two_calibrations_on_one_day_do_not_overwrite(client, warehouse):
     """ADR-0017 d11 — the case a date-only key got wrong.
 
