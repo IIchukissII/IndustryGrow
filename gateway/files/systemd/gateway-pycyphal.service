@@ -28,9 +28,8 @@ User=gateway
 Group=gateway
 
 EnvironmentFile=-/etc/industrygrow/gateway.env
-# /var/lib/industrygrow — created and owned by the service user. Holds the
-# monotonic batch sequence number (ADR-0004 d10) and, only on an SSD/NVMe
-# medium, the bounded store-and-forward buffer (ADR-0020 d2/d10) as
+# /var/lib/industrygrow — created and owned by the service user. Holds, only on
+# an SSD/NVMe medium, the bounded store-and-forward buffer (ADR-0020 d2/d10) as
 # telemetry.sqlite3. On the SD bring-up card the buffer stays disabled
 # (IGROW_PERSISTENT_BUFFER=off; ADR-0020 d10; ADR-0004 d8-9 RAM-only), and the
 # consumer then keeps only the live working set (ADR-0020 d6).

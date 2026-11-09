@@ -78,7 +78,7 @@ Not yet realised. The gateway forwards nothing: no code uploads telemetry, so no
 
 ## ADR-0004 dec 10
 
-Not yet realised. No gateway code computes a batch hash or keeps a batch sequence number; the comment in `gateway/files/systemd/gateway-pycyphal.service` naming a sequence number in the state directory has no code behind it.
+Not yet realised. No gateway code computes a batch hash or keeps a batch sequence number.
 
 ## ADR-0004 dec 11
 

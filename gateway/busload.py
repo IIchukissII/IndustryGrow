@@ -19,6 +19,7 @@ one 1 Hz two-frame telemetry subject costs about 0.054 % at 500 kbit/s.
 
 from __future__ import annotations
 
+import os
 import socket
 import struct
 import sys
@@ -34,7 +35,7 @@ FLAG_SERVICE_NOT_MESSAGE = 1 << 25
 NODE_ID_MASK = 0x7F
 SUBJECT_ID_MASK = 0x1FFF
 
-BITRATE = 500_000  # ADR-0002 decision 8; a single fixed rate, no negotiation.
+BITRATE = int(os.environ.get("IGROW_CAN_BITRATE", "500000"))  # ADR-0002 d8; gateway.env
 CRC15_POLY = 0x4599
 
 # Bits that follow the CRC sequence and are never stuffed:

@@ -14,7 +14,7 @@
 /* Module class ID for M01-CLIMATE (ADR-0014 d6: 0x01).
  *
  * The identifier is 8-bit; its TRANSPORT depends on the carrier revision. On
- * E0001-000002 and earlier that transport is the 3-bit strap field, which
+ * E0001-000003 and earlier that transport is the 3-bit strap field, which
  * carries 0x01..0x07 and no more -- enough for every sensor class defined
  * today, and the reason M01 can keep identifying by strap while actuator
  * classes (0x80 and up) cannot. E0001-000100 moves identity to a module EEPROM;

@@ -87,7 +87,7 @@ The bus carries no authentication (ADR-0004 dec 17). The boundary is the gateway
 
 ## ADR-0002 dec 8
 
-The bit rate has one home on the gateway, `IGROW_CAN_BITRATE` in `gateway.env`; `can-up.sh` applies it to a physical interface and sets none on a virtual one. The node bit timing is fixed in the CAN driver. `busload.py` measures the bus load by exact bit accounting against the same rate. Termination, shield and the separate field-rail conductors are carrier hardware (dec 3 files).
+The bit rate has one home on the gateway, `IGROW_CAN_BITRATE` in `gateway.env`; `can-up.sh` applies it to a physical interface and sets none on a virtual one. The node bit timing is fixed in the CAN driver. `busload.py` measures the bus load by exact bit accounting against `IGROW_CAN_BITRATE`. Termination, shield and the separate field-rail conductors are carrier hardware (dec 3 files).
 
 | Code | Role |
 |---|---|

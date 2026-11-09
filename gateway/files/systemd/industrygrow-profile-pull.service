@@ -33,7 +33,8 @@ ExecStart=/opt/industrygrow/venv/bin/python /opt/industrygrow/profile_client.py 
 
 # --- Least-privilege hardening (ADR-0004 decision 7) ---
 # Same posture as gateway-pycyphal.service, with one deliberate difference: this
-# unit may write the profile directory, and only that.
+# unit may write /etc/industrygrow, the directory the active profile is renamed
+# into (ADR-0004 d20).
 NoNewPrivileges=yes
 ProtectSystem=strict
 ProtectHome=yes
