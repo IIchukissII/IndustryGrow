@@ -11,7 +11,7 @@ self-hostable, single-container application: the queryable **metadata layer** ov
 the flat object-store **warehouse**.
 
 - **meta** → **MongoDB** (this app's document store)
-- **warehouse** → S3-compatible object store (the blobs; identifiers *are* keys, ADR-0017 d15)
+- **warehouse** → S3-compatible object store (the blobs; identifiers *are* keys, [ADR-0017](../docs/component-and-instance-identification.md#adr-0017-dec-15))
 - **app** → FastAPI + a Vite/TypeScript console, one container
 - **types** → `REGISTRY.md`, read (never copied), ADR-0023
 
@@ -35,14 +35,14 @@ core; the `domain.*` `[D]` collections stay the IndustryGrow layer.
 
 These are deliberate *absences*. Each would create a second source of truth:
 
-- **No telemetry / operational / forensic trail** — stays platform-side (ADR-0004 d10; ADR-0021 d10).
-- **No type meaning** — `Exxxx`/`SPxxxx` meaning lives in `REGISTRY.md` (ADR-0021 d11); the ERP references it.
-- **No SKU / price / supplier** — those live in the BOM (ADR-0000; ADR-0021 d9, d11).
-- **No blobs** — the warehouse holds them; the ERP holds keys only (ADR-0021 d7).
-- **No community profile *templates*** — those live in the public registry (ADR-0001 d5); the ERP stores deployment-specific *instance* versions.
-- **No "deploy profile" action** — the gateway's pull into `active-profile.json` is the single mutation channel (ADR-0015 d1; ADR-0021 d12). This app is a *store*, not a deploy path.
-- **No firmware update action, and no record of what a node runs** — the ERP holds the release an operator *intends* (ADR-0021 d18) and serves its images from the warehouse; the gateway compares that against what it observes on the bus and performs the transfer (ADR-0029 d15-17). There is no flash endpoint and no route a machine may write.
-- **No tenancy machinery** — single-tenant now; multitenancy is IndustryFlow's `[F]` concern (ADR-0021 d16).
+- **No telemetry / operational / forensic trail** — stays platform-side ([ADR-0004](../docs/gateway-host-hardening.md#adr-0004-dec-10); [ADR-0021](../docs/erp-system-of-record.md#adr-0021-dec-10)).
+- **No type meaning** — `Exxxx`/`SPxxxx` meaning lives in `REGISTRY.md` ([ADR-0021](../docs/erp-system-of-record.md#adr-0021-dec-11)); the ERP references it.
+- **No SKU / price / supplier** — those live in the BOM (ADR-0000; [ADR-0021](../docs/erp-system-of-record.md#adr-0021-dec-9)).
+- **No blobs** — the warehouse holds them; the ERP holds keys only ([ADR-0021](../docs/erp-system-of-record.md#adr-0021-dec-7)).
+- **No community profile *templates*** — those live in the public registry (ADR-0001); the ERP stores deployment-specific *instance* versions.
+- **No "deploy profile" action** — the gateway's pull into `active-profile.json` is the single mutation channel ([ADR-0015](../docs/gateway-profile-and-control.md#adr-0015-dec-1-13-15); [ADR-0021](../docs/erp-system-of-record.md#adr-0021-dec-12)). This app is a *store*, not a deploy path.
+- **No firmware update action, and no record of what a node runs** — the ERP holds the release an operator *intends* ([ADR-0021](../docs/erp-system-of-record.md#adr-0021-dec-18)) and serves its images from the warehouse; the gateway compares that against what it observes on the bus and performs the transfer ([ADR-0029](../docs/node-firmware-update.md#adr-0029-dec-15)). There is no flash endpoint and no route a machine may write.
+- **No tenancy machinery** — single-tenant now; multitenancy is IndustryFlow's `[F]` concern ([ADR-0021](../docs/erp-system-of-record.md#adr-0021-dec-16)).
 
 ## The warehouse (object store)
 
@@ -58,7 +58,7 @@ Migrating between them is a config change, not a code change.
 ### Sync the repo `store/` into the warehouse
 
 `store/` is the public, type-level slice of the object store rendered as a flat
-git keyspace — identifiers *are* the object keys (ADR-0017 d15). Load it into S3:
+git keyspace — identifiers *are* the object keys ([ADR-0017](../docs/component-and-instance-identification.md#adr-0017-dec-15)). Load it into S3:
 
 ```sh
 python -m app.store_sync              # uploads every store/ object under its key
@@ -111,7 +111,7 @@ Compose refuses to start without `ERP_MONGO_USER` and `ERP_MONGO_PASSWORD`, beca
 `mongo:7` runs with authentication disabled unless they are set at first start, and
 they cannot be added afterwards without destroying the data volume. Neither Mongo's
 port nor the app's is published beyond localhost — the app port has no certificate
-verification in front of it (ADR-0022 d2), and the mTLS overlay removes it entirely.
+verification in front of it ([ADR-0022](../docs/erp-api.md#adr-0022-dec-2)), and the mTLS overlay removes it entirely.
 
 **Standalone dev** (adds a local MinIO):
 
@@ -196,12 +196,12 @@ deployment profiles, and SP stock.
 ## The type registry (ADR-0023)
 
 What an `Exxxx` or `SPxxxx` *means* is `REGISTRY.md`'s to say, and the ERP holds no copy
-of it (ADR-0021 d11). It parses the registry and serves it read-through at
+of it ([ADR-0021](../docs/erp-system-of-record.md#adr-0021-dec-11)). It parses the registry and serves it read-through at
 `GET /api/v1/catalog`; the console fetches that at boot and carries no label table. A type
 added to `REGISTRY.md` therefore appears in the console with no code change — and an
 identifier the registry does not carry renders as itself, never as a guess.
 
-Because software now reads it, the registry has a **canonical form** (ADR-0023 d2) checked
+Because software now reads it, the registry has a **canonical form** ([ADR-0023](../docs/type-registry.md#adr-0023-dec-2)) checked
 in CI — run it locally with:
 
 ```sh
@@ -213,6 +213,6 @@ palette by E-number, so meaning and appearance stay in separate homes.
 
 ## Licensing
 
-Application: **AGPL-3.0-or-later** (ADR-0021 d14, open core). The data it holds —
+Application: **AGPL-3.0-or-later** ([ADR-0021](../docs/erp-system-of-record.md#adr-0021-dec-14), open core). The data it holds —
 machines, serials, ATECC bindings, integration history, profiles, SP stock — is
 **operator-private production data** and is never published.

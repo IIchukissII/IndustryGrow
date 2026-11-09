@@ -12,7 +12,7 @@ d2).
 
 **Where it runs.** One host of your choosing that can reach the gateways it
 serves — a spare box, a NAS, an existing service host. **Not a gateway**: the
-gateway is the stateless replaceable edge (ADR-0004; ADR-0020 d5), so a system of
+gateway is the stateless replaceable edge (ADR-0004; [ADR-0020](../../docs/gateway-persistence.md#adr-0020-dec-5)), so a system of
 record there turns a gateway swap into a data-loss event (ADR-0021
 decision 1 and its alternatives).
 
@@ -36,7 +36,7 @@ interesting failures here are the silent ones.
 You need, on the deployment host: Docker with the compose plugin, and a checkout
 of this repository. You need, from elsewhere: the operator CA (`pki/README.md`, ADR-0024),
 because the gateway channel is certificate-verified and the CA is not stood up
-here — the ERP is a relying party, never an authority (ADR-0024 d13).
+here — the ERP is a relying party, never an authority ([ADR-0024](../../docs/operator-ca-ceremony.md#adr-0024-dec-13)).
 
 If the host already runs something else, check what it occupies before you start:
 
@@ -68,7 +68,7 @@ a default password would be worse than no default because it would work.
 > data volume. Adding credentials to a deployment that has already started once
 > without them does nothing — you have to destroy the volume and start over.
 
-`ERP_API_TOKENS` has **no default** either (ADR-0022 d3). Without it the app
+`ERP_API_TOKENS` has **no default** either ([ADR-0022](../../docs/erp-api.md#adr-0022-dec-3)). Without it the app
 starts and every token-authenticated route, the console's API included, answers
 **503**. Set one
 token per caller, each with its role.
@@ -101,13 +101,13 @@ ERP_TLS_DIR=/etc/industrygrow/tls    # in .env
 
 Two things that are easy to get wrong and produce confusing failures:
 
-- **Serve the chain, not the bare leaf.** With the two-tier CA (ADR-0024 d1) a
+- **Serve the chain, not the bare leaf.** With the two-tier CA ([ADR-0024](../../docs/operator-ca-ceremony.md#adr-0024-dec-1)) a
   client anchored on the root cannot build a path unless the server sends its
   intermediate too. The symptom is every gateway failing to verify *the server*.
 - **The anchor is the root, not the intermediate.** Anchoring on the issuing CA
   trusts whatever that CA signs next rather than the root you hold (d3).
 - **Do not copy `operator-root.key` here.** The root key does not belong on an
-  online host (ADR-0024 d5). `verify-deployment.sh` fails if it finds one.
+  online host ([ADR-0024](../../docs/operator-ca-ceremony.md#adr-0024-dec-5)). `verify-deployment.sh` fails if it finds one.
 
 For a laptop trial without a real CA, `deploy/mtls/make-test-ca.sh` produces the
 same three files as throwaway fixtures. They are not a deployment.
@@ -122,11 +122,11 @@ docker compose -f docker-compose.yml -f docker-compose.mtls.yml up -d --build
 ```
 
 The overlay is not optional for anything reachable beyond localhost: it is what
-puts certificate verification in front of the gateway channel (ADR-0022 d2), and
+puts certificate verification in front of the gateway channel ([ADR-0022](../../docs/erp-api.md#adr-0022-dec-2)), and
 it removes the app's published port so nothing can reach the app around the
 proxy. `docker-compose.yml` on its own is a development bring-up.
 
-Mirror the repository `store/` into the warehouse (ADR-0017 d15 object keys):
+Mirror the repository `store/` into the warehouse ([ADR-0017](../../docs/component-and-instance-identification.md#adr-0017-dec-15) object keys):
 
 ```bash
 docker compose exec erp python -m app.store_sync --prune
@@ -152,7 +152,7 @@ docker compose -f docker-compose.yml -f docker-compose.console.yml up -d
 
 That serves the console and token API on `ERP_HTTPS_PORT`, and returns **403** on
 gateway routes — no client certificate is verified there, so no machine identity
-can be established (ADR-0022 d2). The app port stays on localhost.
+can be established ([ADR-0022](../../docs/erp-api.md#adr-0022-dec-2)). The app port stays on localhost.
 
 `make-cert.sh` issues **one self-signed leaf with `CA:FALSE`**. It is not the
 operator CA and cannot become one, and it is not `deploy/mtls/make-test-ca.sh`
@@ -212,14 +212,14 @@ identity, signed profile, atomic apply. Nothing short of it does.
 
 | Symptom | Usually |
 |---------|---------|
-| Gateway routes return **503** | `ERP_GATEWAY_TRUSTED_PROXIES` does not contain the proxy's address on the compose network. The app checks the transport peer, not a header (ADR-0022 d2); fail-closed is the intended default |
+| Gateway routes return **503** | `ERP_GATEWAY_TRUSTED_PROXIES` does not contain the proxy's address on the compose network. The app checks the transport peer, not a header ([ADR-0022](../../docs/erp-api.md#adr-0022-dec-2)); fail-closed is the intended default |
 | Console and token routes return **503** | `ERP_API_TOKENS` is not set; there is no built-in token |
 | Gateway routes return **401/403** | The certificate verified but its CN is not a `GBOX_NNNN` machine identifier |
 | Gateway cannot verify *the server* | The proxy is serving the bare leaf instead of `server-chain.crt` |
 | Every gateway certificate is rejected | `ssl_verify_depth` too low — the chain is root → issuing CA → leaf, so depth 2 is required, not incidental |
 | The app restarts repeatedly at boot | Mongo was not ready; the healthcheck-gated `depends_on` should prevent this, so check the Mongo healthcheck itself |
 | `compose up` fails on `ERP_MONGO_USER` | Working as intended — set it in `.env` |
-| Profile pull returns 404 | No version is recorded active for that machine, or none is signed (ADR-0025 d11) |
+| Profile pull returns 404 | No version is recorded active for that machine, or none is signed ([ADR-0025](../../docs/profile-signing.md#adr-0025-dec-11)) |
 
 ---
 
@@ -230,7 +230,7 @@ holds the reasoning.
 
 ### Why this one matters more than most backups
 
-The ERP is the **serial-allocation authority** (ADR-0021 d4). Losing its counter is
+The ERP is the **serial-allocation authority** ([ADR-0021](../../docs/erp-system-of-record.md#adr-0021-dec-4)). Losing its counter is
 not a loss of history — the next allocation re-issues a number already stamped on a
 board, and two physical parts then claim one identity. Everything else in the store
 could be reconstructed by someone with good notes. That cannot.
@@ -245,7 +245,7 @@ cd erp
 
 It captures **the index first and the blobs second** — the inverse of the write
 order, so the archive can never contain an index naming an object it does not have
-(ADR-0026 d3). It verifies before encrypting, encrypts under your passphrase, and
+([ADR-0026](../../docs/erp-backup-and-restore.md#adr-0026-dec-3)). It verifies before encrypting, encrypts under your passphrase, and
 shreds the plaintext.
 
 Then do the half it cannot do for you: **copy the result somewhere that is neither
@@ -255,13 +255,13 @@ d5–7).
 
 | Value | Setting | Why here |
 |---|---|---|
-| Copies | **2**, separate locations | ADR-0026 d6 |
+| Copies | **2**, separate locations | [ADR-0026](../../docs/erp-backup-and-restore.md#adr-0026-dec-6) |
 | Retention | **7** archives (`--keep 7`) | a runbook value; raise it if you allocate serials rarely |
 | Cadence | **weekly**, and **before any upgrade or restore** | the store is low-churn; the risk is upgrades, not drift |
-| Restore rehearsal | **quarterly**, into a throwaway database | ADR-0026 d10 |
-| Encryption | gpg symmetric, AES-256, passphrase file | ADR-0026 d7 |
+| Restore rehearsal | **quarterly**, into a throwaway database | [ADR-0026](../../docs/erp-backup-and-restore.md#adr-0026-dec-10) |
+| Encryption | gpg symmetric, AES-256, passphrase file | [ADR-0026](../../docs/erp-backup-and-restore.md#adr-0026-dec-7) |
 
-**A forgotten passphrase is an unrecoverable backup** (ADR-0026 d7 accepts this in
+**A forgotten passphrase is an unrecoverable backup** ([ADR-0026](../../docs/erp-backup-and-restore.md#adr-0026-dec-7) accepts this in
 exchange for not adding a fourth long-lived key to custody). Keep the passphrase
 apart from both copies.
 
@@ -270,9 +270,9 @@ apart from both copies.
 In: the Mongo store, and the warehouse objects that exist nowhere else — the
 `-QP/-QR/-CP/-CC/-PR` lifecycle documents.
 
-Not in, each for a reason (ADR-0026 d1): the `store/` warehouse mirror (repository
+Not in, each for a reason ([ADR-0026](../../docs/erp-backup-and-restore.md#adr-0026-dec-1)): the `store/` warehouse mirror (repository
 content — `store_sync` restores it), the operator CA and the profile-signing key
-(their own custody, ADR-0024 d5–7 and ADR-0025 d5), the gateway (stateless; its
+(their own custody, [ADR-0024](../../docs/operator-ca-ceremony.md#adr-0024-dec-5) and [ADR-0025](../../docs/profile-signing.md#adr-0025-dec-5)), the gateway (stateless; its
 `active-profile.json` is a re-pullable cache), and `REGISTRY.md` (git).
 
 ### Restoring: `deploy/restore.sh`
@@ -289,7 +289,7 @@ the script replays the index in the `mongo` container.
 
 Every exit removes the decrypted temp file and the archive copy in the `erp`
 container. A failed step stops the script; re-running it repeats the object pass and
-finishes the index (ADR-0026 d4).
+finishes the index ([ADR-0026](../../docs/erp-backup-and-restore.md#adr-0026-dec-4)).
 
 | Option | Meaning |
 |---|---|
@@ -338,7 +338,7 @@ cd erp
 ```
 
 It writes into the configured database and the configured bucket. Blobs go back
-first, then the index (ADR-0026 d4), so no moment exists where the index references
+first, then the index ([ADR-0026](../../docs/erp-backup-and-restore.md#adr-0026-dec-4)), so no moment exists where the index references
 an object that is not there. `finish` runs `check-live` and the script fails when
 it does not pass.
 
@@ -353,5 +353,5 @@ the ERP cannot tell you, and nothing afterwards can detect the mistake.
 It is not a backup. `backup.sh` discards it rather than encrypting it, and the most
 common cause is worth knowing: `save` refuses when the **live** store has indexed a
 document whose object is missing from the warehouse. That is a fault in the running
-system (ADR-0021 d7 says a recorded key always resolves), not in the backup — run
+system ([ADR-0021](../../docs/erp-system-of-record.md#adr-0021-dec-7) says a recorded key always resolves), not in the backup — run
 `check-live` and investigate before trusting either.

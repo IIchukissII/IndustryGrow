@@ -7,10 +7,9 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 [ADR-0024](../ADR/ADR-0024-operator-ca-bootstrap-and-the-root-key-ceremony.md) decides the
 shape of this CA and why. This file is the *procedure* and the *numbers* — the
-`what` to that record's `why`, per [ADR-0000](../ADR/ADR-0000-decision-records-and-the-single-source-of-truth-discipline.md)
-decision 2.
+`what` to that record's `why`, per [ADR-0000](../ADR/ADR-0000-decision-records-and-the-single-source-of-truth-discipline.md).
 
-[ADR-0007](../ADR/ADR-0007-pki-hardware-identity-and-provisioning.md) decision 3 roots
+[ADR-0007](../docs/gateway-identity-and-provisioning.md#adr-0007-dec-3) roots
 trust **per operator**: there is no IndustryGrow root CA, and nobody can issue
 into your deployment but you. That independence is the point, and the price of it
 is this procedure.
@@ -23,11 +22,11 @@ is this procedure.
         ▼
   issuing CA               on the ERP host; CA:TRUE, pathlen:0     (d1, d2)
         │
-        ├──► gateway leaf  CN = GBOX_NNNN, clientAuth              (clientAuth: ADR-0022 d2)
+        ├──► gateway leaf  CN = GBOX_NNNN, clientAuth              (clientAuth: ADR-0022)
         └──► ERP leaf      SAN required, serverAuth
 ```
 
-The gateway leaf's `clientAuth` and cert-derived identity are ADR-0022 decision 2;
+The gateway leaf's `clientAuth` and cert-derived identity are [ADR-0022](../docs/erp-api.md#adr-0022-dec-2);
 that the identity rides the **CN** specifically is pinned by the deployment, not the
 ADR — see [`erp/deploy/mtls/README.md`](../erp/deploy/mtls/README.md) (ADR-0007
 decision 10b keeps `GBOX_NNNN` stable across that CN and, at stage 11, IndustryFlow's
@@ -43,7 +42,7 @@ deployed unit, and replacing the root touches every one of them.
 |------|----------|---------|
 | operator root | 3650 days (10 y) | rotation only — see below |
 | issuing CA | 1095 days (3 y) | at ~2 y, from the offline root |
-| gateway / ERP leaf | 90 days | routinely, per ADR-0007 d7 |
+| gateway / ERP leaf | 90 days | routinely, per [ADR-0007](../docs/gateway-identity-and-provisioning.md#adr-0007-dec-7) |
 
 These are the values; the *decision* is decision 8's relation — root ≫ intermediate
 ≫ leaf, each issuer outliving what it issues plus a renewal margin. `sign-csr.sh`
@@ -137,7 +136,7 @@ Nothing in the tooling can verify any of this. If the second copy is in the same
 drawer, you have one copy with extra steps.
 
 **Losing every copy, or someone else gaining one, means re-provisioning every unit
-in the estate** (d11). ADR-0007 decision 7 deliberately provides no revocation path
+in the estate** (d11). [ADR-0007](../docs/gateway-identity-and-provisioning.md#adr-0007-dec-7) deliberately provides no revocation path
 that would soften that.
 
 ### If you would rather use a hardware token
@@ -161,8 +160,8 @@ refuses to run beside it.
 
 ```bash
 # a gateway. The CSR comes from the unit — its key is generated on its ATECC608
-# where one is fitted (ADR-0007 d1), otherwise as a software key on the gateway
-# (ADR-0007 d11), and never leaves it, so a CSR is the only thing that travels.
+# where one is fitted (ADR-0007), otherwise as a software key on the gateway
+# (ADR-0007), and never leaves it, so a CSR is the only thing that travels.
 ./sign-csr.sh --dir ./ca --csr GBOX_0001.csr --profile gateway
 
 # the ERP's own certificate
@@ -204,12 +203,12 @@ Rare, planned, and it touches every unit (d10).
 3. Distribute the new root into the trust set of **every gateway *and* the ERP's
    proxy** — both are relying parties (d3), and updating only one breaks the
    channel in one direction. During the overlap each trusts *both* roots; both are
-   yours, so ADR-0007 d3's "the root of its own operator and no other" still holds.
+   yours, so [ADR-0007](../docs/gateway-identity-and-provisioning.md#adr-0007-dec-3)'s "the root of its own operator and no other" still holds.
 4. Only once every unit is confirmed on the new anchor: stop issuing from the old
    root and retire it.
 
 Distribution is the **provisioning path** — the same hands-on route by which a unit
-got its identity — deliberately not the profile channel (ADR-0024 dec 10 alternatives). A
+got its identity — deliberately not the profile channel ([ADR-0024](../docs/operator-ca-ceremony.md#adr-0024-dec-10) alternatives). A
 gateway that stays offline across the whole window is stranded and needs
 re-provisioning by hand.
 
@@ -222,17 +221,17 @@ intermediate, re-provision the estate.
 ## What this does not do
 
 - **Generate device keys.** A gateway's key is generated on the gateway, on its
-  ATECC608 where one is fitted (ADR-0007 d1) and as a software key otherwise
-  (ADR-0007 d11), and never leaves it. Producing that CSR is the gateway
+  ATECC608 where one is fitted ([ADR-0007](../docs/gateway-identity-and-provisioning.md#adr-0007-dec-1)) and as a software key otherwise
+  ([ADR-0007](../docs/gateway-identity-and-provisioning.md#adr-0007-dec-11)), and never leaves it. Producing that CSR is the gateway
   provisioning tool's job.
 - **Write the `-PR` provisioning record.** The serial ↔ certificate binding of
-  ADR-0017 decision 12 has no schema yet; this CA supplies the chain it will
+  [ADR-0017](../docs/component-and-instance-identification.md#adr-0017-dec-10-11-12) has no schema yet; this CA supplies the chain it will
   reference.
-- **Issue node provenance certificates.** ADR-0007 decision 5 permits them and they
+- **Issue node provenance certificates.** [ADR-0007](../docs/gateway-identity-and-provisioning.md#adr-0007-dec-5) permits them and they
   are long-lived, which sits awkwardly with decision 8's containment rule; open
   until node provisioning exists.
 - **Automate renewal.** At fleet scale an ACME issuer would take the intermediate's
-  place without the root or any trust anchor changing (ADR-0024 dec 1 alternatives).
+  place without the root or any trust anchor changing ([ADR-0024](../docs/operator-ca-ceremony.md#adr-0024-dec-1) alternatives).
 
 ## Not to be confused with
 

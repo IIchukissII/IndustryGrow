@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # mTLS termination for gateway callers
 
-[ADR-0022 decision 2](../../../ADR/ADR-0022-machine-and-operator-facing-api-of-the-instance-and-integration-erp.md): a
+[ADR-0022](../../../docs/erp-api.md#adr-0022-dec-2): a
 gateway authenticates to the ERP with the ATECC608-bound client certificate it
 already holds under [ADR-0007](../../../ADR/ADR-0007-pki-hardware-identity-and-provisioning.md),
 and its identity `GBOX_NNNN` is derived **from the verified certificate, never
@@ -100,7 +100,7 @@ curl --cacert deploy/mtls/certs/operator-root.crt \
 ```
 
 `make-test-ca.sh` is **not** a CA bootstrap procedure. A real operator root
-(ADR-0007 d3 — trust is rooted per operator; there is no global IndustryGrow
+([ADR-0007](../../../docs/gateway-identity-and-provisioning.md#adr-0007-dec-3) — trust is rooted per operator; there is no global IndustryGrow
 root) is an offline, encrypted, custody-managed secret; standing one up is the
 ceremony in [`ADR-0024`](../../../ADR/ADR-0024-operator-ca-bootstrap-and-the-root-key-ceremony.md),
 and the tooling and runbook for it live in [`pki/README.md`](../../../pki/README.md).
@@ -108,9 +108,9 @@ and the tooling and runbook for it live in [`pki/README.md`](../../../pki/README
 
 The script makes disposable, unencrypted keys in one unattended pass so this
 contract can be run end to end on a laptop. It follows the real shapes where they
-matter: the **two-tier chain** of ADR-0024 d1 (an operator root that signs only
+matter: the **two-tier chain** of [ADR-0024](../../../docs/operator-ca-ceremony.md#adr-0024-dec-1) (an operator root that signs only
 the issuing CA, which signs every leaf), P-256 keys (the curve the ATECC608 does),
-90-day leaves (ADR-0007 d7, short-lived and renewed), and a same-CN leaf under a
+90-day leaves ([ADR-0007](../../../docs/gateway-identity-and-provisioning.md#adr-0007-dec-7), short-lived and renewed), and a same-CN leaf under a
 *foreign* root so rejection can be tested rather than assumed.
 
 Because the chain has two tiers, a peer presents **`*-chain.crt`** — its leaf plus
