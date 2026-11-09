@@ -90,7 +90,7 @@ The machine pattern is `<uppercase prefix>_NNNN`. A machine is enrolled under an
 
 The depth code exists only on the integration record; the instance has no position field. A position is set by machine and depth path segments, and moving an instance closes one record and opens another.
 
-The position route stores the machine and depth segments as given: it checks neither against the machine and depth patterns, nor that the machine is enrolled.
+The position route refuses a machine or depth segment that does not match its pattern with 422, and a machine that is not enrolled with 404.
 
 | Code | Role |
 |---|---|
@@ -98,8 +98,12 @@ The position route stores the machine and depth segments as given: it checks nei
 | `erp/app/models/foundation.py::ModuleInstance` | Instance row with no depth field |
 | `erp/app/services/integration.py::install` | Opens a placement; one current instance per position |
 | `erp/app/services/integration.py::replace` | Closes the current placement and opens the next |
+| `erp/app/models/identifiers.py::DEPTH_RE` | The anchored depth pattern |
 | `erp/app/api/routes.py::set_position` | `PUT /machines/{gbox}/positions/{depth}` |
+| `erp/app/api/routes.py::_require_machine` | 404 for a machine that is not enrolled |
 | `erp/tests/test_integration.py::test_mobility_serial_moves_and_history_follows` | One serial across positions with its history |
+| `erp/tests/test_api.py::test_set_position_refuses_a_malformed_segment` | Malformed machine or depth refused |
+| `erp/tests/test_api.py::test_set_position_requires_an_enrolled_machine` | Unenrolled machine refused |
 
 ## ADR-0017 dec 8
 

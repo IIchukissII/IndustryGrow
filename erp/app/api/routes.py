@@ -128,6 +128,14 @@ def _integration_out(rec: dict) -> schemas.IntegrationOut:
     )
 
 
+async def _require_machine(db: AsyncIOMotorDatabase, gbox: str) -> dict:
+    """An enrolled machine (ADR-0017 d6), else 404."""
+    doc = await db[FOUNDATION["machine"]].find_one({"_id": gbox})
+    if doc is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"no enrolled machine {gbox}")
+    return doc
+
+
 async def _require_instance(db: AsyncIOMotorDatabase, instance_id: str) -> dict:
     doc = await db[FOUNDATION["module_instance"]].find_one({"_id": instance_id})
     if doc is None:
@@ -462,7 +470,21 @@ async def set_position(
     _role: str = Depends(require_write),
 ):
     """Install (or replace) the instance at a position (ADR-0022 d6). Depth is
-    assigned here at integration; it is never written onto the instance."""
+    assigned here at integration; it is never written onto the instance.
+
+    Both path segments are checked against the grammar (ADR-0017 d6, d7), and the
+    machine must be enrolled."""
+    if not identifiers.MACHINE_RE.match(gbox):
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            f"{gbox} is not an ADR-0017 machine identifier (GBOX_NNNN)",
+        )
+    if not identifiers.DEPTH_RE.match(depth):
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            f"{depth} is not an ADR-0017 depth code (DDDDDD)",
+        )
+    await _require_machine(db, gbox)
     await _require_instance(db, body.instance_id)
     current = await integration.current_at(db, gbox, depth)
     if current and current["instance_id"] == body.instance_id:

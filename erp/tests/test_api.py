@@ -102,6 +102,7 @@ def test_install_move_remove(client):
         headers=AUTH,
     )
     inst = "E0002-020100-000001"
+    client.put("/api/v1/machines/GBOX_0001", json={"notes": None}, headers=AUTH)
     r = client.put(
         "/api/v1/machines/GBOX_0001/positions/010100",
         json={"instance_id": inst},
@@ -119,6 +120,36 @@ def test_install_move_remove(client):
     assert len(history) == 1 and history[0]["removed_at"] is not None
 
 
+@pytest.mark.parametrize(
+    ("gbox", "depth"),
+    [("gbox_0001", "010100"), ("GBOX_1", "010100"), ("GBOX_0001", "0101"), ("GBOX_0001", "01a100")],
+)
+def test_set_position_refuses_a_malformed_segment(client, gbox, depth):
+    """ADR-0017 d6, d7: machine and depth segments are checked against the grammar."""
+    inst = _one_instance(client)
+    r = client.put(
+        f"/api/v1/machines/{gbox}/positions/{depth}", json={"instance_id": inst}, headers=AUTH
+    )
+    assert r.status_code == 422, r.text
+    assert client.get(f"/api/v1/instances/{inst}/history", headers=AUTH).json() == []
+
+
+def test_set_position_requires_an_enrolled_machine(client):
+    inst = _one_instance(client)
+    r = client.put(
+        "/api/v1/machines/GBOX_0002/positions/010100", json={"instance_id": inst}, headers=AUTH
+    )
+    assert r.status_code == 404
+    assert "GBOX_0002" in r.json()["detail"]
+    assert client.get(f"/api/v1/instances/{inst}/history", headers=AUTH).json() == []
+
+    client.put("/api/v1/machines/GBOX_0002", json={"notes": None}, headers=AUTH)
+    r = client.put(
+        "/api/v1/machines/GBOX_0002/positions/010100", json={"instance_id": inst}, headers=AUTH
+    )
+    assert r.status_code == 200
+
+
 def test_both_axes_arrive_read_into_fields(client):
     """ADR-0022 d13: the API speaks the grammar on the instance axis too.
 
@@ -133,6 +164,7 @@ def test_both_axes_arrive_read_into_fields(client):
         headers=AUTH,
     )
     inst = "E0002-020100-000001"
+    client.put("/api/v1/machines/GBOX_0001", json={"notes": None}, headers=AUTH)
     client.put(
         "/api/v1/machines/GBOX_0001/positions/020100",
         json={"instance_id": inst},
