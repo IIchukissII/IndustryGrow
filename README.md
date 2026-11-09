@@ -16,7 +16,7 @@ Open-core field hardware, firmware and edge software for instrumented, profile-d
 cultivation. One architecture, from a cabinet to a several-hundred-square-metre facility. The
 companion platform **IndustryFlow** stores history, runs analytics and distributes profiles.
 
-Scope and rationale: [`MOTIVATION.md`](MOTIVATION.md), [ADR-0001](ADR/ADR-0001-industrygrow-framing.md).
+Scope and rationale: [`MOTIVATION.md`](MOTIVATION.md), [ADR-0001](ADR/ADR-0001-industrygrow-as-an-open-core-cultivation-platform-on-industryflow.md).
 
 ## Architecture constraints
 

@@ -7,7 +7,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 [ADR-0024](../ADR/ADR-0024-operator-ca-bootstrap-and-key-ceremony.md) decides the
 shape of this CA and why. This file is the *procedure* and the *numbers* — the
-`what` to that record's `why`, per [ADR-0000](../ADR/ADR-0000-decision-records-and-source-of-truth.md)
+`what` to that record's `why`, per [ADR-0000](../ADR/ADR-0000-decision-records-and-the-single-source-of-truth-discipline.md)
 decision 2.
 
 [ADR-0007](../ADR/ADR-0007-pki-and-secure-element-identity.md) decision 3 roots
