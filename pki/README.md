@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # The operator CA — bootstrap and ceremony
 
-[ADR-0024](../ADR/ADR-0024-operator-ca-bootstrap-and-key-ceremony.md) decides the
+[ADR-0024](../ADR/ADR-0024-operator-ca-bootstrap-and-the-root-key-ceremony.md) decides the
 shape of this CA and why. This file is the *procedure* and the *numbers* — the
 `what` to that record's `why`, per [ADR-0000](../ADR/ADR-0000-decision-records-and-the-single-source-of-truth-discipline.md)
 decision 2.

@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # mTLS termination for gateway callers
 
-[ADR-0022 decision 2](../../../ADR/ADR-0022-instance-integration-erp-api.md): a
+[ADR-0022 decision 2](../../../ADR/ADR-0022-machine-and-operator-facing-api-of-the-instance-and-integration-erp.md): a
 gateway authenticates to the ERP with the ATECC608-bound client certificate it
 already holds under [ADR-0007](../../../ADR/ADR-0007-pki-hardware-identity-and-provisioning.md),
 and its identity `GBOX_NNNN` is derived **from the verified certificate, never
@@ -102,7 +102,7 @@ curl --cacert deploy/mtls/certs/operator-root.crt \
 `make-test-ca.sh` is **not** a CA bootstrap procedure. A real operator root
 (ADR-0007 d3 — trust is rooted per operator; there is no global IndustryGrow
 root) is an offline, encrypted, custody-managed secret; standing one up is the
-ceremony in [`ADR-0024`](../../../ADR/ADR-0024-operator-ca-bootstrap-and-key-ceremony.md),
+ceremony in [`ADR-0024`](../../../ADR/ADR-0024-operator-ca-bootstrap-and-the-root-key-ceremony.md),
 and the tooling and runbook for it live in [`pki/`](../../../pki/README.md).
 **Use that for a deployment; use this for tests.**
 
