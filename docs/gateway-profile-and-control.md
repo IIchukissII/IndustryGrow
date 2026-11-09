@@ -9,7 +9,7 @@ The manual of [ADR-0015](../ADR/ADR-0015-gateway-profile-caching-and-local-contr
 
 ## ADR-0015 dec 1, 13-15
 
-The profile pull is the gateway's only inbound path for behaviour. The ERP stores profile versions and records which is active; it has no deploy or push function and no route that commands an actuator. The gateway has no listening service and no remote-execution path. `node_command.py` is an operator tool run on the gateway itself; it sends `ExecuteCommand` to a node over the bus, only for the IDs in its allowlist, per node type as GetInfo names it. Any other ID is refused before anything is sent. No vendor command on any node drives an actuator output or demand.
+The profile pull is the gateway's only inbound path for behaviour. The ERP stores profile versions and records which is active; it has no deploy or push function and no route that commands an actuator. The gateway has no listening service and no remote-execution path. `node_command.py` is an operator tool run on the gateway itself; it sends `ExecuteCommand` to a node over the bus, only for the IDs in its allowlist, per node type as GetInfo names it. Any other ID is refused before anything is sent. No vendor command on any node drives an actuator output or demand. The table guards against mistakes on the trusted bus (ADR-0004 dec 17) and is not access control: the node type is the node's own GetInfo name, and `--bench` is an operator's acknowledgement, not a check of the node. The trim commit stays outside `--bench` as ADR-0028 dec 4's commissioning command; when it is written (ADR-0028 dec 6, 7) is the calibration protocol's.
 
 | Class | Commands | Sent |
 |---|---|---|

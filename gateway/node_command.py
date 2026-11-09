@@ -4,20 +4,24 @@
 """Send a node a vendor `uavcan.node.ExecuteCommand` — the bench operations the
 module specifications require to be commanded rather than automatic.
 
-The cultivation profile is the single mutation interface (ADR-0015 d1, d14,
-d15), so this tool sends only the commands in `COMMANDS`, per node type as
+The cultivation profile is the single mutation interface (ADR-0015 d1), so this
+tool sends only the commands in `COMMANDS`, per node type as
 GetInfo names it, and refuses every other ID before the bus sees it:
 
 - `allowed`: the calibration trim commit (ADR-0028 d4), and diagnostics that
   report a value and change nothing the node measures or publishes;
 - `bench`: the specification's bench operations that alter what the node
-  measures or publishes, sent only with `--bench`, to a bench node;
+  measures or publishes, sent only with `--bench`, an operator's acknowledgement
+  and not a check of the node;
 - the standard commands are other tools': begin-software-update is
   `firmware_client.py`'s, which serves the file the node then reads (ADR-0029
   d5), and restart is `provision_node_id.py --restart`'s.
 
 No vendor command on any node drives an actuator output or demand; a demand
-reaches A01 only on its subscribed subjects.
+reaches A01 only on its subscribed subjects. The table guards against mistakes on
+a trusted bus (ADR-0004 d17); it is not access control, since GetInfo names are
+the node's own. The trim commit is ADR-0028 d4's commissioning command and stays
+outside `--bench`; when to write it (ADR-0028 d6, d7) is the calibration protocol's.
 
     node_command.py 97 --list
     node_command.py 97 3 --parameter 425      # write U3's offset, 4.25 C (V7)
@@ -104,7 +108,7 @@ def authorise(node_name: str, command: int, bench: bool) -> str | None:
         return STANDARD[command]
     entry = COMMANDS.get(node_name, {}).get(command)
     if entry is None:
-        return f"command {command} is not allowed to {node_name} (ADR-0015 d1, d14, d15)"
+        return f"command {command} is not allowed to {node_name} (ADR-0015 d1)"
     if entry.kind == BENCH and not bench:
         return f"command {command} ({entry.text}) is a bench operation; give --bench"
     return None
