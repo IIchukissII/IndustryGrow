@@ -9,8 +9,8 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Subject:** the design `E0002-000001` (M01-CLIMATE), on an `E0001` carrier.
 - **Scope:** type-level. One execution against one instance produces that instance's `-CP` (raw
   points) and `-CC` (coefficient and validity), ADR-0017 d11.
-- **Recurrence:** the `-QP` is issued once; `-CP` and `-CC` are dated `-YYYYMMDD`, so a later run
-  does not overwrite an earlier record (ADR-0017 d11). Keyed off the instance identifier, never
+- **Recurrence:** the `-QP` is issued once; `-CP` and `-CC` are stamped `-YYYYMMDDThhmmss`, with
+  `-n` appended on collision, so a later run does not overwrite an earlier record (ADR-0017 d11). Keyed off the instance identifier, never
   the integration identifier (d13).
 - **Results:** to the ERP lifecycle index and the warehouse object (ADR-0021 d7), not this repo.
   Result columns stay blank here.
@@ -214,8 +214,8 @@ the same EEPROM-persistence failure mode the bring-up protocol checks on ASC.
 
 | Object | Holds |
 |---|---|
-| `E0002-000001-NNNNNN-CP-YYYYMMDD` | Raw points: every accepted window with its bounds and mean, every window rejected and by which gate, the six §5 gate values, ambient, and the §4 run conditions as executed |
-| `E0002-000001-NNNNNN-CC-YYYYMMDD` | The coefficient written, its units, the reference used, the ambient it was determined at, and its validity |
+| `E0002-000001-NNNNNN-CP-YYYYMMDDThhmmss` | Raw points: every accepted window with its bounds and mean, every window rejected and by which gate, the six §5 gate values, ambient, and the §4 run conditions as executed |
+| `E0002-000001-NNNNNN-CC-YYYYMMDDThhmmss` | The coefficient written, its units, the reference used, the ambient it was determined at, and its validity |
 
 **Validity.** The offset is a property of this board in these operating conditions, not of the
 device type. It is re-determined after any change to the board's thermal environment — an
