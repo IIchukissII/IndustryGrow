@@ -87,6 +87,7 @@ A trim describes the module, while the ADR-0027 store describes the carrier (ADR
 
 ## References
 
+- [docs/commissioning-and-trim-custody.md](../docs/commissioning-and-trim-custody.md): the manual of this record (decisions 1–10).
 - Store document E0002-000001-M-calibration-protocol — the M01 U3 offset procedure and its records.
 - Module specification E0002-R — §10 and O-45.
 - Module specification E0005-R — the flat-field trim of decision 10, its store, and O-99.
