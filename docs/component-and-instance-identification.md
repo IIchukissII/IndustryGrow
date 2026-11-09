@@ -90,7 +90,7 @@ The machine pattern is `<uppercase prefix>_NNNN`. A machine is enrolled under an
 
 The depth code exists only on the integration record; the instance has no position field. A position is set by machine and depth path segments, and moving an instance closes one record and opens another.
 
-The position route stores the machine and depth segments as given: it checks neither against the machine and depth patterns, nor that the machine is enrolled.
+The position route refuses a machine or depth segment that does not match its pattern with 422, and a machine that is not enrolled with 404.
 
 | Code | Role |
 |---|---|
@@ -98,8 +98,12 @@ The position route stores the machine and depth segments as given: it checks nei
 | `erp/app/models/foundation.py::ModuleInstance` | Instance row with no depth field |
 | `erp/app/services/integration.py::install` | Opens a placement; one current instance per position |
 | `erp/app/services/integration.py::replace` | Closes the current placement and opens the next |
+| `erp/app/models/identifiers.py::DEPTH_RE` | The anchored depth pattern |
 | `erp/app/api/routes.py::set_position` | `PUT /machines/{gbox}/positions/{depth}` |
+| `erp/app/api/routes.py::_require_machine` | 404 for a machine that is not enrolled |
 | `erp/tests/test_integration.py::test_mobility_serial_moves_and_history_follows` | One serial across positions with its history |
+| `erp/tests/test_api.py::test_set_position_refuses_a_malformed_segment` | Malformed machine or depth refused |
+| `erp/tests/test_api.py::test_set_position_requires_an_enrolled_machine` | Unenrolled machine refused |
 
 ## ADR-0017 dec 8
 
@@ -114,9 +118,7 @@ Serials are issued only by the ERP's atomic counter. The provisioning binding st
 
 ## ADR-0017 dec 9
 
-The layer letters are a fixed set in the grammar; a store key's layer is read from the segment after the version. A label for each letter comes from a table in the registry module.
-
-That table labels `P` "procedure" and `I` "instruction", where this decision names them Protocol and Interface; it labels `D` "design" and `S` "schematic".
+The layer letters are a fixed set in the grammar; a store key's layer is read from the segment after the version. The label of each letter is its expansion in the code legend of decision 1, held in a table in the registry module and checked against the legend by a test. The console reads the labels from the API.
 
 | Code | Role |
 |---|---|
@@ -124,13 +126,14 @@ That table labels `P` "procedure" and `I` "instruction", where this decision nam
 | `erp/app/models/identifiers.py::parse_store_key` | Reads the layer by position |
 | `erp/app/services/registry.py::_DOC_LAYERS` | Layer letter to label |
 | `erp/app/services/registry.py::layer_label` | The label of one letter |
+| `erp/tests/test_registry.py::test_layer_labels_are_the_code_legend` | Labels equal the code legend |
 | `erp/tests/test_identifiers.py::test_store_key_fields_are_read_by_position_not_by_search` | `D` after the version is a layer, later a slug word |
 
 ## ADR-0017 dec 10, 11, 12
 
 The ERP accepts exactly the five lifecycle suffixes and refuses type-layer uploads. `-QP`, `-QR` and `-PR` take the bare key. `-CP` and `-CC` take `-YYYYMMDDThhmmss`, the day from `doc_date` when given and the time from the upload, then `-n` while the key is occupied. The grammar still reads a day-only stamp. `-CC` validity is indexed and queried for expiry.
 
-The `-PR` binding route requires the `provisioning` role. No role is named for engineering or quality: a `-PR` blob is read with any token role, `readonly` included.
+The `-PR` binding route requires the `provisioning` or `operator` role. A `-PR` blob, its archives included, is read only with the `operator` or `provisioning` role; the URL, read-through and PDF routes refuse `readonly` with 403. The other suffixes are read with any role.
 
 | Code | Role |
 |---|---|
@@ -140,10 +143,15 @@ The `-PR` binding route requires the `provisioning` role. No role is named for e
 | `erp/app/api/routes.py::ALLOWED_DOC_TYPES` | The upload allowlist |
 | `erp/app/api/routes.py::upload_document` | Stamps `-CP` and `-CC`, sequences on collision |
 | `erp/app/services/docs.py::expiring` | `-CC` rows by validity |
-| `erp/app/api/routes.py::bind_provisioning` | `-PR` binding, `provisioning` role |
-| `erp/app/api/routes.py::document_content` | Reads an indexed blob with any role |
+| `erp/app/api/routes.py::bind_provisioning` | `-PR` binding, `provisioning` or `operator` role |
+| `erp/app/api/deps.py::PR_READ_ROLES` | `operator` and `provisioning` |
+| `erp/app/api/routes.py::_require_doc_access` | 403 on a `-PR` row for any other role |
+| `erp/app/api/routes.py::document_content` | Reads an indexed blob; `-PR` restricted |
+| `erp/app/api/routes.py::document_url` | Presigns an indexed blob; `-PR` restricted |
+| `erp/app/api/routes.py::instance_document_pdf` | Renders an indexed blob; `-PR` restricted |
 | `erp/tests/test_api.py::test_document_allowlist_rejects_type_layer` | Type-layer upload refused |
 | `erp/tests/test_api.py::test_two_calibrations_on_one_day_do_not_overwrite` | Two same-day calibrations keep two keys |
+| `erp/tests/test_api.py::test_a_pr_document_is_read_by_operator_and_provisioning_only` | `readonly` refused on `-PR`, admitted on `-QP` |
 
 ## ADR-0017 dec 13
 
@@ -165,18 +173,20 @@ The warehouse is an S3-compatible bucket with a flat keyspace. The repository's 
 
 `store/` also holds EDA library files that carry no identifier; the key parser returns them with no root, and a footprint library is uploaded under a key that contains its directory name.
 
-`store_sync --prune` deletes every warehouse object absent from `store/` and `spec/`, lifecycle objects and their archive keys included.
+`store_sync --prune` deletes a warehouse object absent from `store/` and `spec/` only when its key reads as type-layer content: an `E` or `SP` root followed by a layer letter or a status token. A lifecycle key, its archive keys and every other key are kept.
 
 | Code | Role |
 |---|---|
 | `erp/app/services/warehouse.py::Warehouse` | The bucket client |
 | `erp/app/services/warehouse.py::Warehouse.list_prefix` | Server-side prefix listing |
 | `erp/app/store_sync.py::sync` | Uploads `store/` and `spec/` by file name; optional prune |
+| `erp/app/store_sync.py::_prunable` | Admits a key to prune only when it reads as type-layer content |
 | `erp/app/models/identifiers.py::parse_store_key` | Reads a type-layer key into its fields; unrecognised keys keep no root |
 | `erp/app/models/identifiers.py::StoreKey` | Parsed fields with `prefix` and `tail` |
 | `erp/app/api/routes.py::list_store_documents` | Repository documents with parsed keys |
 | `erp/tests/test_store_sync.py::test_sync_uploads_by_identifier_key` | Key equals file name |
 | `erp/tests/test_identifiers.py::test_store_key_reports_what_it_cannot_read` | An unidentified key returns no root |
+| `erp/tests/test_store_sync.py::test_prune_never_deletes_lifecycle_or_unread_objects` | Prune keeps lifecycle, archive and unread keys |
 
 ## ADR-0017 dec 16
 

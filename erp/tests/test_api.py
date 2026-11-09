@@ -102,6 +102,7 @@ def test_install_move_remove(client):
         headers=AUTH,
     )
     inst = "E0002-020100-000001"
+    client.put("/api/v1/machines/GBOX_0001", json={"notes": None}, headers=AUTH)
     r = client.put(
         "/api/v1/machines/GBOX_0001/positions/010100",
         json={"instance_id": inst},
@@ -119,6 +120,36 @@ def test_install_move_remove(client):
     assert len(history) == 1 and history[0]["removed_at"] is not None
 
 
+@pytest.mark.parametrize(
+    ("gbox", "depth"),
+    [("gbox_0001", "010100"), ("GBOX_1", "010100"), ("GBOX_0001", "0101"), ("GBOX_0001", "01a100")],
+)
+def test_set_position_refuses_a_malformed_segment(client, gbox, depth):
+    """ADR-0017 d6, d7: machine and depth segments are checked against the grammar."""
+    inst = _one_instance(client)
+    r = client.put(
+        f"/api/v1/machines/{gbox}/positions/{depth}", json={"instance_id": inst}, headers=AUTH
+    )
+    assert r.status_code == 422, r.text
+    assert client.get(f"/api/v1/instances/{inst}/history", headers=AUTH).json() == []
+
+
+def test_set_position_requires_an_enrolled_machine(client):
+    inst = _one_instance(client)
+    r = client.put(
+        "/api/v1/machines/GBOX_0002/positions/010100", json={"instance_id": inst}, headers=AUTH
+    )
+    assert r.status_code == 404
+    assert "GBOX_0002" in r.json()["detail"]
+    assert client.get(f"/api/v1/instances/{inst}/history", headers=AUTH).json() == []
+
+    client.put("/api/v1/machines/GBOX_0002", json={"notes": None}, headers=AUTH)
+    r = client.put(
+        "/api/v1/machines/GBOX_0002/positions/010100", json={"instance_id": inst}, headers=AUTH
+    )
+    assert r.status_code == 200
+
+
 def test_both_axes_arrive_read_into_fields(client):
     """ADR-0022 d13: the API speaks the grammar on the instance axis too.
 
@@ -133,6 +164,7 @@ def test_both_axes_arrive_read_into_fields(client):
         headers=AUTH,
     )
     inst = "E0002-020100-000001"
+    client.put("/api/v1/machines/GBOX_0001", json={"notes": None}, headers=AUTH)
     client.put(
         "/api/v1/machines/GBOX_0001/positions/020100",
         json={"instance_id": inst},
@@ -338,8 +370,8 @@ def test_the_repository_documents_are_listed_by_what_they_are(client):
     docs = client.get("/api/v1/store-documents", headers=AUTH).json()
     by_key = {d["object_key"]: d for d in docs}
     assert "SP0004-M-gateway-bringup.md" in by_key
-    assert by_key["SP0004-M-gateway-bringup.md"]["kind"] == "manual"
-    assert by_key["E0007-000001-S.pdf"]["kind"] == "schematic"
+    assert by_key["SP0004-M-gateway-bringup.md"]["kind"] == "Manual"
+    assert by_key["E0007-000001-S.pdf"]["kind"] == "Schema"
     assert all(d["size_bytes"] > 0 for d in docs)
 
 
@@ -376,7 +408,7 @@ def test_a_listed_document_carries_its_key_read_into_fields(client):
     # withdrawn v0.0.1 set (d16, d17) and its version is the codebase's.
     boot = by_key["E0001-000001-F-boot.hex"]
     assert boot["status"] is None
-    assert boot["layer_label"] == "firmware"
+    assert boot["layer_label"] == "Firmware"
     assert (boot["version"], boot["slug"]) == ("000001", "boot")
     # Three images share one firmware version: bootloader plus one application
     # image per A/B slot (ADR-0029 d1). They are variants of one F root.
@@ -1130,3 +1162,48 @@ def test_every_markdown_document_in_the_store_renders(caplog):
             assert blob.startswith(b"%PDF-"), doc.name
     fallbacks = [r for r in caplog.records if r.name == "app.services.reports"]
     assert not fallbacks, f"fell back to plain text: {[r.getMessage() for r in fallbacks]}"
+
+
+@pytest.mark.parametrize("route", ["url", "content", "pdf"])
+def test_a_pr_document_is_read_by_operator_and_provisioning_only(client, monkeypatch, route):
+    """ADR-0017 d12: `-PR` is restricted; `readonly` reads every other suffix."""
+    monkeypatch.setattr(
+        settings,
+        "api_tokens",
+        {"op": "operator", "pv": "provisioning", "ro": "readonly"},
+    )
+
+    def as_role(token: str) -> dict:
+        return {"Authorization": f"Bearer {token}"}
+
+    inst = _one_instance_as(client, as_role("op"))
+    for doc_type in ("PR", "PR", "QP"):  # the second PR archives the first
+        r = client.post(
+            f"/api/v1/instances/{inst}/documents",
+            data={"doc_type": doc_type},
+            files={"file": ("f.md", b"# record", "text/markdown")},
+            headers=as_role("op"),
+        )
+        assert r.status_code == 200, r.text
+    listed = client.get(f"/api/v1/instances/{inst}/documents", headers=as_role("ro")).json()
+    pr_keys = [d["object_key"] for d in listed if d["doc_type"] == "PR"]
+    assert len(pr_keys) == 2 and any("-superseded-" in k for k in pr_keys)
+
+    def get(key: str, token: str) -> int:
+        url = f"/api/v1/instances/{inst}/documents/{key}/{route}"
+        return client.get(url, headers=as_role(token)).status_code
+
+    for key in pr_keys:
+        assert get(key, "ro") == 403
+        assert get(key, "op") == 200
+        assert get(key, "pv") == 200
+    assert get(f"{inst}-QP", "ro") == 200
+
+
+def _one_instance_as(client, headers: dict) -> str:
+    client.post(
+        "/api/v1/instances",
+        json={"e_number": "E0002", "version": "020100", "quantity": 1},
+        headers=headers,
+    )
+    return "E0002-020100-000001"

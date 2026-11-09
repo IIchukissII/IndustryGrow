@@ -9,6 +9,8 @@ passing while the actual registry rotted.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -103,3 +105,71 @@ async def test_catalog_is_read_through_and_never_stored(client):
     assert client.get("/api/v1/catalog", headers=AUTH).status_code == 200
     names = await client.app.state.db.db.list_collection_names()
     assert not any("catalog" in n or "registry" in n for n in names)
+
+
+def _registry(e_rows: str, sp_rows: str) -> str:
+    return (
+        "## E-numbers\n\n"
+        "| E-number | Designation | Discipline | Notes |\n|-|-|-|-|\n"
+        f"{e_rows}\n"
+        "## SP numbers\n\n"
+        "| SP-number | Role / generic spec (vendor-free) | Instance-tracked? | Notes |\n|-|-|-|-|\n"
+        f"{sp_rows}\n"
+    )
+
+
+_GOOD_E = "| `E0001` | Carrier | electrical | — |\n"
+_GOOD_SP = "| `SP0001` | Meter | no | — |\n"
+
+
+@pytest.mark.parametrize(
+    ("e_rows", "sp_rows", "expected"),
+    [
+        # ADR-0023 d2: column 1 is the bare identifier, no version or prose.
+        (_GOOD_E + "| `E0002-000001` | Sensor | electrical | — |\n", _GOOD_SP, "`E0002-000001`"),
+        (_GOOD_E + "| E0002 | Sensor | electrical | — |\n", _GOOD_SP, "'E0002'"),
+        (_GOOD_E, _GOOD_SP + "| see `SP0002` | Breaker | no | — |\n", "see `SP0002`"),
+        # ADR-0023 d2: `Instance-tracked?` begins with yes or no.
+        (_GOOD_E, _GOOD_SP + "| `SP0002` | Breaker | maybe | — |\n", "begin yes or no"),
+        (_GOOD_E, _GOOD_SP + "| `SP0002` | Breaker | none | — |\n", "begin yes or no"),
+        # Fixed column count.
+        (_GOOD_E + "| `E0002` | Sensor | electrical |\n", _GOOD_SP, "3 cells"),
+    ],
+)
+def test_check_rejects_a_row_that_is_not_an_entry(tmp_path, e_rows, sp_rows, expected):
+    path = tmp_path / "REGISTRY.md"
+    path.write_text(_registry(e_rows, sp_rows))
+    problems = registry.check(path)
+    assert any(expected in p for p in problems), problems
+
+
+def test_check_accepts_entries_and_ignores_subsection_tables(tmp_path):
+    """A `###` subsection's tables are mentions (ADR-0023 d3), not malformed rows."""
+    path = tmp_path / "REGISTRY.md"
+    path.write_text(
+        _registry(_GOOD_E, _GOOD_SP + "| `SP0004` | Gateway | yes (vendor serial) | — |\n")
+        + "\n### Vendor documents\n\n| Object | Serves |\n|-|-|\n"
+        + "| `SP0004-M-guide.md` | `SP0004` |\n"
+    )
+    assert registry.check(path) == []
+    parts = {p.sp_number: p.instance_tracked for p in registry.parse(path.read_text()).parts}
+    assert parts == {"SP0001": False, "SP0004": True}
+
+
+def test_check_rejects_a_second_table_in_a_registry_section(tmp_path):
+    path = tmp_path / "REGISTRY.md"
+    rows = _GOOD_E + "\nprose\n\n| `E0002` | Sensor | electrical | — |\n"
+    path.write_text(_registry(rows, _GOOD_SP))
+    assert any("2 tables" in p for p in registry.check(path))
+
+
+def test_layer_labels_are_the_code_legend():
+    """`layer_label` is a copy of ADR-0017's code legend (dec 1), checked against it."""
+    adr = next((Path(__file__).parents[2] / "ADR").glob("ADR-0017-*.md"))
+    legend = {}
+    for line in adr.read_text(encoding="utf-8").splitlines():
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) == 4 and cells[2] == "document layer":
+            legend[cells[0].strip("`")] = cells[1].split(" (")[0]
+    assert set(legend) == set("SDLPMIFR")
+    assert {letter: registry.layer_label(letter) for letter in legend} == legend

@@ -35,7 +35,7 @@ A reverse proxy terminates TLS, verifies the client certificate against the oper
 
 ## ADR-0022 dec 3
 
-`Authorization: Bearer <token>` or `X-Operator-Token` maps a token to a role from configuration. Roles are `provisioning`, `operator` and `readonly`; write routes require `operator` or `provisioning`, reads accept all three. The map has no default: with no tokens configured every token route answers 503. `ERP_DEV_TOKEN=1` admits one development token with role `operator`, only while no tokens are configured; the test suite sets it.
+`Authorization: Bearer <token>` or `X-Operator-Token` maps a token to a role from configuration. Roles are `provisioning`, `operator` and `readonly`; write routes require `operator` or `provisioning`, reads accept all three, except a `-PR` document's URL, read-through and PDF, which require `operator` or `provisioning`. The map has no default: with no tokens configured every token route answers 503. `ERP_DEV_TOKEN=1` admits one development token with role `operator`, only while no tokens are configured; the test suite sets it.
 
 | Code | Role |
 |---|---|
@@ -71,7 +71,7 @@ The request carries certificate serial, fingerprint, validity and the `-PR` obje
 
 ## ADR-0022 dec 6
 
-`PUT /machines/{gbox}/positions/{depth}` installs, or replaces the current occupant; `DELETE` removes with a reason. A move is a removal at one position and an install at another. The depth code is stored only on the integration record; responses return machine, depth and instance as fields, never a composed integration identifier.
+`PUT /machines/{gbox}/positions/{depth}` installs, or replaces the current occupant, on an enrolled machine and with both segments matching their patterns; `DELETE` removes with a reason. A move is a removal at one position and an install at another. The depth code is stored only on the integration record; responses return machine, depth and instance as fields, never a composed integration identifier.
 
 | Code | Role |
 |---|---|

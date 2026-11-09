@@ -22,6 +22,7 @@ from pymongo.errors import DuplicateKeyError
 
 from app.api import schemas
 from app.api.deps import (
+    PR_READ_ROLES,
     gateway_identity,
     get_db,
     get_warehouse,
@@ -126,6 +127,23 @@ def _integration_out(rec: dict) -> schemas.IntegrationOut:
         version_label=parts.get("version_label"),
         serial=parts.get("serial"),
     )
+
+
+async def _require_machine(db: AsyncIOMotorDatabase, gbox: str) -> dict:
+    """An enrolled machine (ADR-0017 d6), else 404."""
+    doc = await db[FOUNDATION["machine"]].find_one({"_id": gbox})
+    if doc is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"no enrolled machine {gbox}")
+    return doc
+
+
+def _require_doc_access(doc: dict, role: str) -> None:
+    """A `-PR` blob is restricted (ADR-0017 d12): only `PR_READ_ROLES` read it."""
+    if doc.get("doc_type") == "PR" and role not in PR_READ_ROLES:
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            f"role '{role}' may not read a -PR document (ADR-0017 d12)",
+        )
 
 
 async def _require_instance(db: AsyncIOMotorDatabase, instance_id: str) -> dict:
@@ -462,7 +480,21 @@ async def set_position(
     _role: str = Depends(require_write),
 ):
     """Install (or replace) the instance at a position (ADR-0022 d6). Depth is
-    assigned here at integration; it is never written onto the instance."""
+    assigned here at integration; it is never written onto the instance.
+
+    Both path segments are checked against the grammar (ADR-0017 d6, d7), and the
+    machine must be enrolled."""
+    if not identifiers.MACHINE_RE.match(gbox):
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            f"{gbox} is not an ADR-0017 machine identifier (GBOX_NNNN)",
+        )
+    if not identifiers.DEPTH_RE.match(depth):
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            f"{depth} is not an ADR-0017 depth code (DDDDDD)",
+        )
+    await _require_machine(db, gbox)
     await _require_instance(db, body.instance_id)
     current = await integration.current_at(db, gbox, depth)
     if current and current["instance_id"] == body.instance_id:
@@ -1095,7 +1127,7 @@ async def document_url(
     object_key: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
     warehouse: Warehouse = Depends(get_warehouse),
-    _role: str = Depends(require_read),
+    role: str = Depends(require_read),
 ):
     """A time-limited retrieval URL for one indexed document (ADR-0022 d7).
 
@@ -1118,6 +1150,7 @@ async def document_url(
             status.HTTP_404_NOT_FOUND,
             f"{instance_id} has no indexed document {object_key}",
         )
+    _require_doc_access(doc, role)
 
     # A recorded key always resolves (ADR-0021 d7). If it does not, the index and
     # the store have diverged, and saying so beats handing back a URL that 404s
@@ -1143,7 +1176,7 @@ async def document_content(
     object_key: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
     warehouse: Warehouse = Depends(get_warehouse),
-    _role: str = Depends(require_read),
+    role: str = Depends(require_read),
 ):
     """Read one indexed document through (ADR-0022 d7).
 
@@ -1157,6 +1190,7 @@ async def document_content(
         raise HTTPException(
             status.HTTP_404_NOT_FOUND, f"{instance_id} has no indexed document {object_key}"
         )
+    _require_doc_access(doc, role)
     return await _read_through(warehouse, object_key)
 
 
@@ -1295,7 +1329,7 @@ async def instance_document_pdf(
     object_key: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
     warehouse: Warehouse = Depends(get_warehouse),
-    _role: str = Depends(require_read),
+    role: str = Depends(require_read),
 ):
     """One indexed document as a PDF. Same index guard as the read-through."""
     doc = await db[FOUNDATION["lifecycle_doc"]].find_one(
@@ -1305,6 +1339,7 @@ async def instance_document_pdf(
         raise HTTPException(
             status.HTTP_404_NOT_FOUND, f"{instance_id} has no indexed document {object_key}"
         )
+    _require_doc_access(doc, role)
     return await _markdown_pdf(warehouse, object_key, reports.LIFECYCLE_ORIGIN)
 
 

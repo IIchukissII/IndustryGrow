@@ -66,3 +66,28 @@ async def test_no_prune_leaves_remote_untouched(tmp_path, monkeypatch):
     await store_sync.sync(str(tmp_path))  # prune defaults False
 
     assert fake.deletes == []
+
+
+async def test_prune_never_deletes_lifecycle_or_unread_objects(tmp_path, monkeypatch):
+    """Lifecycle objects and their archives exist only in the warehouse (ADR-0017
+    d15, d22; ADR-0021 d7); prune removes stale type-layer objects alone."""
+    (tmp_path / "E0001-000002-D-fab.zip").write_text("current")
+    kept = [
+        "E0002-020100-000001-QP",
+        "E0002-020100-000001-PR",
+        "E0002-020100-000001-QP-superseded-20260722T120000",
+        "E0002-020100-000001-QP-superseded-20260722T120000-2",
+        "E0002-020100-000001-CC-20260722T120000",
+        "E0002-020100-000001-CP-20260722T120000-2",
+        "E0002-020100-000001-CC-20260722",
+        "industrygrow.pretty/weact.kicad_mod",  # no identifier
+        "backups/2026-07-22.tar.gz",  # not repository content
+        "E0002-020100-000001-XX",  # instance-shaped, not lifecycle: unread
+    ]
+    stale = ["E0001-000002-D-Top_Layer.gtl", "SP0004-M-old-guide.md", "E0001-000001-BLOCKED.zip"]
+    fake = _FakeWarehouse(remote=["E0001-000002-D-fab.zip", *kept, *stale])
+    monkeypatch.setattr(store_sync, "Warehouse", lambda: fake)
+
+    await store_sync.sync(str(tmp_path), prune=True)
+
+    assert fake.deletes == stale

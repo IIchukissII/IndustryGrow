@@ -1072,13 +1072,14 @@ const size = (n: number) =>
   n < 1024 ? `${n} B` : n < 1e6 ? `${Math.round(n / 1024)} kB` : `${(n / 1e6).toFixed(1)} MB`;
 
 // The layer letter says what a document is ABOUT; the extension says whether the
-// reader can render it. A design-layer pinmap is still markdown.
+// reader can render it. A drawing-layer pinmap is still markdown.
+// Layer kinds are ADR-0017's code-legend labels, as the API returns them.
 const READABLE_KINDS = new Set([
-  "manual",
+  "Manual",
+  "Protocol",
+  "Interface",
+  "Requirements",
   "document",
-  "procedure",
-  "instruction",
-  "specification",
   "table",
 ]);
 const readable = (d: StoreDoc) =>

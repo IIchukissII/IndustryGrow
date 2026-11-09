@@ -132,6 +132,11 @@ Mirror the repository `store/` into the warehouse (ADR-0017 d15 object keys):
 docker compose exec erp python -m app.store_sync --prune
 ```
 
+`--prune` deletes only type-layer objects (an `E` or `SP` root followed by a layer
+letter or a status token) that are in neither `store/` nor `spec/`. It keeps every
+lifecycle object and its `-superseded-` archive, every key with no identifier, and
+every other key it cannot read as type-layer content; those are removed by hand.
+
 ---
 
 ## 3b. Reaching the console before the CA exists
