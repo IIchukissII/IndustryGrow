@@ -98,7 +98,7 @@ The ERP is profile source only: it stores versions and serves the active one on 
 
 ## ADR-0015 dec 10
 
-Not yet realised. No built-in fallback profile exists in `gateway/`; `gateway/profile_client.py` keeps the previous profile on failure and has no fallback to load.
+Not yet realised. No built-in fallback profile exists in the gateway code; `gateway/profile_client.py` keeps the previous profile on failure and has no fallback to load.
 
 ## ADR-0015 dec 11
 

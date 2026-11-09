@@ -70,7 +70,7 @@ Automated renewal and the platform-side deny-list have no code.
 
 | Code | Role |
 |---|---|
-| `firmware/tools/mkimage.py::new_key` | The firmware-signing key, generated apart from `pki/` and the device key |
+| `firmware/tools/mkimage.py::new_key` | The firmware-signing key, generated apart from the operator CA and the device key |
 | `firmware/boot/verify.c` | The bootloader verification key, compiled in, not the identity key |
 
 ## ADR-0007 dec 9
