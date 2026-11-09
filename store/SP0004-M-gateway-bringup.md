@@ -243,7 +243,9 @@ de-provisions the node (ADR-0027 d4, ADR-0029 d1).
 The module specifications require some operations to be commanded rather than
 automatic — a sensor self-test, a heater pulse, writing a calibration. Each
 specification's section 10 lists its own vendor `uavcan.node.ExecuteCommand` IDs;
-this is how they are sent.
+this is how they are sent. The tool sends only the IDs in its table (`--list`); a
+command that changes what the node measures, such as the self-test or the heater
+pulse, also needs `--bench`.
 
 ```bash
 sudo -u gateway PYTHONPATH=/opt/industrygrow/dsdl      /opt/industrygrow/venv/bin/python /opt/industrygrow/node_command.py 97 --list
