@@ -127,6 +127,6 @@ Within a zone, one accurate sensor with a dense time series and a model outperfo
 
 - Module specifications E0002-R, E0003-R, E0005-R, E0006-R, E0008-R, E0009-R; carrier header and pin maps: carrier specification E0001-R.
 - The type registry (ADR-0023) — E-numbers per module class.
-- Firmware: `firmware/common/node/main.c` (class-ID read), `firmware/nodes/*/sensors.c` (presence probing).
+- [docs/sensor-node-taxonomy.md](../docs/sensor-node-taxonomy.md): the manual of this record (decisions 1–9).
 - ISO 9972 — fan-pressurisation air permeability, applied at cabinet scale for M06.
 - Datasheets: Sensirion SHT45, SCD41, SDP8xx; Bosch BME688, BMP390; Renesas FS3000; ams OSRAM AS7343, TSL2585; TI TCA9543A, LMP7721, INA226, TMP117; Melexis MLX90640; Analog Devices AD5933, ADuM series; ST LSM303AGR.
