@@ -14,7 +14,7 @@ The ERP reads the type registry from a configured path, by default `REGISTRY.md`
 | Code | Role |
 |---|---|
 | `erp/app/config.py::Settings.registry_path` | Path of the type registry |
-| `erp/app/services/registry.py::registry_path` | Resolves a relative path against `erp/` |
+| `erp/app/services/registry.py::registry_path` | Resolves a relative path against the ERP project root |
 | `erp/docker-compose.yml` | `ERP_REGISTRY_PATH` on the repository mount |
 | `erp/Dockerfile` | Copies the type registry into the image |
 
