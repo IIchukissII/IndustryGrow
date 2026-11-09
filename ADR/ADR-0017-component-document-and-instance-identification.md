@@ -24,7 +24,7 @@ Identity has two orthogonal axes that never fuse. The **identity axis** — what
 
 1. **Three phase-specific identifier formats.** Documents are stored flat with the hierarchy carried in the identifier, so the store is filtered by identifier pattern.
    - Documentation (type-level): `Exxxx-VVVVVV-L`
-   - Production and QC (one manufactured instance): `Exxxx-VVVVVV-NNNNNN[-suffix]`
+   - Production and QC (one manufactured instance): `Exxxx-VVVVVV-NNNNNN[-suffix]`, the suffix followed only by the tails of decisions 11 and 22
    - Integration (an instance installed in a machine): `GBOX_NNNN-DDDDDD-Exxxx-VVVVVV-NNNNNN`
    - `Exxxx` — `E` plus four digits; an opaque key for a buildable or documentable assembly (decision 3); meaning is in the registry.
    - `VVVVVV` — the design's semantic version, two digits each for major, minor, patch (`2.1.3` → `020103`); not a populated configuration (decision 4).
@@ -32,7 +32,7 @@ Identity has two orthogonal axes that never fuse. The **identity axis** — what
    - `DDDDDD` — position in the machine, three two-digit levels (main `01`–`99`, sub-position 1, sub-position 2); assigned at integration only (decision 7).
    - `L` — a document-layer letter (decisions 9, 16, 20); suffix — a lifecycle-document code (decisions 10–14).
 
-   **Code legend.** The one expansion of every code that occupies the trailing slot of an identifier; the cited decisions hold the rules. A code is added by appending a row. Suffix codes are two uppercase letters that do not collide with layer letters; status tokens are full uppercase words, so they collide with neither.
+   **Code legend.** The one expansion of every code that occupies the trailing slot of an identifier, and of the lifecycle archive tail; the cited decisions hold the rules. A code is added by appending a row. Suffix codes are two uppercase letters that do not collide with layer letters; status tokens are full uppercase words, so they collide with neither.
 
    | Code | Meaning | Field | Defined in |
    |---|---|---|---|
@@ -49,6 +49,7 @@ Identity has two orthogonal axes that never fuse. The **identity axis** — what
    | `-CP` | Calibration Protocol | lifecycle suffix | decision 11 |
    | `-CC` | Calibration Certificate | lifecycle suffix | decision 11 |
    | `-PR` | Provisioning Record | lifecycle suffix | decision 12 |
+   | `-superseded-` | Archived earlier issue of a once-issued lifecycle record | lifecycle archive tail | decision 22 |
    | `BLOCKED` | Withdrawn artifact set — defective, never fabricated or relied on | status token | decision 17 |
    | `SUPERSEDED` | Withdrawn artifact set — replaced, no defect | status token | decision 17 |
    | `-fab` | Fabrication package: gerber layer set plus drill files | `D`-layer package descriptor | decision 18 |
@@ -63,7 +64,7 @@ Identity has two orthogonal axes that never fuse. The **identity axis** — what
 8. **The serial is the logistics instance key; the secure element and its certificate are the cryptographic instance identity.** The two are bound in the provisioning record (decision 12); no separate serial authority exists.
 9. **The document layers are `S`, `D`, `L`, `P`, `M`, `I`.** `I` carries Cyphal subject-ID assignments and DSDL type definitions (ADR-0002 decision 1; ADR-0005); `L` carries per-module BOMs.
 10. **`-QP` holds an instance's raw bring-up and functional-test data; `-QR` holds the evaluated result and acceptance.** Discipline-specific test content lives inside the `-QP`; the code stays generic.
-11. **`-CP` holds raw calibration points; `-CC` holds the resulting coefficients and validity. Both carry a `-YYYYMMDDThhmmss` stamp after the suffix, with a `-n` sequence appended only on collision.** Calibration recurs, and recalibrating twice in one day is ordinary, so a day stamp would overwrite the earlier record. Deployment-level model calibration (ADR-0016) is profile-versioned (ADR-0015), not a calibration suffix.
+11. **`-CP` holds raw calibration points; `-CC` holds the resulting coefficients and validity. Both carry a `-YYYYMMDDThhmmss` stamp after the suffix, with a `-n` sequence appended only on collision.** Calibration recurs, and recalibrating twice in one day is ordinary, so a day stamp would overwrite the earlier record. A key stamped to the day alone is read and never written. Deployment-level model calibration (ADR-0016) is profile-versioned (ADR-0015), not a calibration suffix.
 12. **`-PR` binds the secure element to its issued certificate and holds the public certificate metadata.** The private key never leaves the secure element (ADR-0007); access is restricted to engineering and quality.
 13. **Suffixes attach to the instance identifier, never to the integration identifier.** A redeployed board keeps its QP/QR/CP/CC/PR history on its serial; a recalibration at the new deployment adds a new `-CC` to the same serial.
 14. **pH electrodes and EC cells are instances of their own E-numbers.** They are consumables with independent drift and replacement life; the M03 board's calibration record references the paired probe serial.
@@ -77,6 +78,7 @@ Identity has two orthogonal axes that never fuse. The **identity axis** — what
 19. **The editable design sources of a board version are packaged by layer: `Exxxx-VVVVVV-S-src.zip` and `Exxxx-VVVVVV-D-src.zip`.** CAD files are usable only as a set per layer; `S` holds the schematic, `D` the layout and its design rules, and project settings are carried in both so each opens standalone. Members keep the bare identifier stem, because the CAD tool resolves a project by shared stem.
 20. **The specification document layer `R` roots on the E-number and carries no version: `Exxxx-R-<slug>`.** A specification describes the class and is edited in place from project stage to as-built, so a version field would name a board revision it does not belong to. Decision 15 applies; the directory a specification is kept in is not part of its identifier.
 21. **The type registry and type-level documents are repo-side and public; the instance and integration layer is platform-side production data.** Serials, secure-element bindings, lifecycle records and integration identifiers are created at assembly and are operator-private. The ERP hosts that layer before IndustryFlow (ADR-0021 decision 1); ADR-0023 decides how the registry is consumed.
+22. **A reissued `-QP`, `-QR` or `-PR` archives its predecessor under `<key>-superseded-YYYYMMDDThhmmss`, with a `-n` sequence appended only on collision; the stable key holds the current issue.** These records take no stamp, so a later issue lands on an occupied key; archiving moves the earlier issue's record to the archive key, so every recorded issue still resolves to its own bytes (ADR-0021 decision 7) and the stable key names the issue in force. The lower-case tail is an instance-layer archive and differs from decision 17's withdrawal tokens, which archive a design artifact set.
 
 ## Alternatives
 
@@ -99,6 +101,9 @@ Identity has two orthogonal axes that never fuse. The **identity axis** — what
 | 19 | One source archive for the whole CAD project | No correct key: either layer letter misfiles the other half |
 | 20 | Give a specification a version field | It tracks the class, not a build; the field would name a board revision it does not belong to |
 | 20 | File specifications under `P` | `P` is Protocol; a second meaning makes the letter ambiguous |
+| 22 | Overwrite the stable key on reissue | Destroys the earlier issue while its index row still names the key |
+| 22 | Stamp `-QP`, `-QR` and `-PR` like calibration records | The bare key would no longer name the current issue, and a once-issued record would read as recurring |
+| 22 | Refuse a reissue | A corrected record has no way in |
 
 ## Consequences
 
@@ -119,6 +124,7 @@ Identity has two orthogonal axes that never fuse. The **identity axis** — what
 - Treating probes as instances adds bookkeeping for consumables.
 - The durable document key is the instance, not the current position, which runs against position-centric record habits.
 - A source package ends line-by-line diffing of schematic and layout in review; the CAD tool's comparison and the commit message carry the change.
+- A reissue leaves its predecessor as a second object on the same instance, which a reader of the instance's history has to tell apart by the tail.
 - An outdoor M07 sits in no cabinet and has no integration identifier until a root above the machine exists; assigning it to an arbitrary `GBOX_NNNN` would assert a false membership.
 
 ## Deferred
