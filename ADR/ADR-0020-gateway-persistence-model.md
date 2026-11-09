@@ -70,6 +70,5 @@ A dead gateway must stay a drop-in swap that loses at most an un-flushed tail, n
 ## References
 
 - ADR-0004 — decisions 8–11 and 13, and the alternatives of decisions 8 and 9.
-- `gateway/files/app/gateway_telemetry.py` — the store, its eviction and its durability settings.
-- `gateway/gateway.env.example` — store switch and retention figure.
+- [docs/gateway-persistence.md](../docs/gateway-persistence.md): the manual of this record (decisions 1–7, 9–12).
 - Store document SP0004-M-gateway-bringup — SD at bring-up, SSD/NVMe in production.

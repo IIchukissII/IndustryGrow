@@ -90,7 +90,7 @@ State-space identification needs less data than ML, maps states to physical quan
 
 - ADR-0014 — sensor classes, condensate input, M04 radiometric path.
 - ADR-0015 — profile as single mutation channel; gateway control loops.
-- `gateway/control_model.py` — supervisory loop with the observer slot this record fills.
+- [docs/state-space-survey-and-estimation.md](../docs/state-space-survey-and-estimation.md): the manual of this record (decisions 1–20).
 - L. Ljung, *System Identification: Theory for the User*.
 - B. D. O. Anderson, J. B. Moore, *Optimal Filtering*.
 - B. H. E. Vanthoor et al., "A methodology for model-based greenhouse design".
