@@ -103,7 +103,7 @@ curl --cacert deploy/mtls/certs/operator-root.crt \
 (ADR-0007 d3 — trust is rooted per operator; there is no global IndustryGrow
 root) is an offline, encrypted, custody-managed secret; standing one up is the
 ceremony in [`ADR-0024`](../../../ADR/ADR-0024-operator-ca-bootstrap-and-the-root-key-ceremony.md),
-and the tooling and runbook for it live in [`pki/`](../../../pki/README.md).
+and the tooling and runbook for it live in [`pki/README.md`](../../../pki/README.md).
 **Use that for a deployment; use this for tests.**
 
 The script makes disposable, unencrypted keys in one unattended pass so this
@@ -129,7 +129,7 @@ exactly as `$ssl_client_s_dn` encodes it — yields `GBOX_0001`.
 caller, failed and missing verification, the fail-closed default, and a query
 parameter failing to override the certificate's identity.
 `erp/tests/test_operator_ca.py` does the same handshake against the **real**
-ADR-0024 ceremony in `pki/`, so the deployment CA and this fixture are both held
+ADR-0024 ceremony in `pki/ceremony.sh`, so the deployment CA and this fixture are both held
 to the two-tier shape.
 
 **`nginx.conf` itself is not executed by the suite** — there is no nginx in CI.

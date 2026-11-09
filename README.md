@@ -22,10 +22,10 @@ Scope and rationale: [`MOTIVATION.md`](MOTIVATION.md), [ADR-0001](ADR/ADR-0001-i
 
 | Constraint | Record |
 |---|---|
-| Scaling multiplies node *instances* across zones. It adds no node classes. | ADR-0014 d2 |
-| A signed, versioned JSON cultivation profile is the only channel that changes deployment behaviour. There is no remote-command API and no real-time tuning channel. | ADR-0015 d1, ADR-0025 |
-| The gateway runs control loops locally against a cached profile. The cloud supplies profiles and observes; it does not command in real time. | ADR-0015 d8, ADR-0004 |
-| The over-temperature trip is analog, MCU- and bus-independent, and sits at the heating actuator. Profiles set operating parameters; hardware sets survival parameters. | ADR-0018 d10 |
+| Scaling multiplies node *instances* across zones. It adds no node classes. | ADR-0014 |
+| A signed, versioned JSON cultivation profile is the only channel that changes deployment behaviour. There is no remote-command API and no real-time tuning channel. | ADR-0015, ADR-0025 |
+| The gateway runs control loops locally against a cached profile. The cloud supplies profiles and observes; it does not command in real time. | ADR-0015, ADR-0004 |
+| The over-temperature trip is analog, MCU- and bus-independent, and sits at the heating actuator. Profiles set operating parameters; hardware sets survival parameters. | ADR-0018 |
 | Sensor density is a deployment phase, not a fixture: dense during the empirical survey, reduced for the operating phase. The profile carries the identified model with the setpoints. | ADR-0016 |
 
 ## Technology
@@ -58,7 +58,7 @@ profile signing).
 Seven sensor-module classes (M01–M07), one functional subsystem each, on the universal carrier
 `E0001`, in the cabinet distribution case `E0007`. Instances of one design are specialized by
 populated BOM, never by new designs; a functional group fitted or omitted at build is a populate
-variant with its own assembly E-number (ADR-0017 d4).
+variant with its own assembly E-number (ADR-0017).
 
 E-numbers, sensor complement, module-ID straps, variant rules and per-design state:
 [`REGISTRY.md`](REGISTRY.md).
