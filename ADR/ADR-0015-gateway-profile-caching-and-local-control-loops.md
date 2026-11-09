@@ -88,5 +88,4 @@ Hardware survival interlocks sit below all software and are not part of control.
 - ADR-0001 — open core and advanced control modules (d4), community profiles (d5).
 - ADR-0025 — instance-profile signing scheme.
 - ADR-0031 — actuator classes, demand form, safe output per element.
-- `gateway/profile_client.py` and `gateway/files/systemd/industrygrow-profile-pull.timer` — the pull, verify and install path and its interval.
-- `gateway/control_model.py` — outer loop and node-side conditioning model.
+- [docs/gateway-profile-and-control.md](../docs/gateway-profile-and-control.md): the manual of this record (decisions 1–18).

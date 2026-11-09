@@ -123,5 +123,4 @@ Out of scope: replacing or validating away any environmental sensor (a correlati
 - `spec/E0005-R-specification.md` — §3.2, §6.3, §6.6, §9 M1, M2, T2, T3, `O-87` to `O-97`, `O-119`.
 - `project/ROADMAP.md` — imaging rollout phases P1–P4.
 - `project/RESEARCH.md` — L5, crop-response identification.
-- `gateway/canopy_capture.py` — P1 capture with pinned exposure, gain, white balance and focus.
-- `profiles/strawberry-day-neutral-v1.json` — luminaire band set.
+- [docs/canopy-imaging.md](../docs/canopy-imaging.md): the manual of this record (decisions 1–19).

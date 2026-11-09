@@ -95,7 +95,6 @@ The gateway is a stateless edge: a replaceable bridge whose persistent state is 
 ## References
 
 - ADR-0002, ADR-0005, ADR-0007, ADR-0015, ADR-0020, ADR-0022, ADR-0024, ADR-0029.
-- `gateway/provision.sh`, `gateway/files/` — the hardening, firewall, journal and unit material that realises decisions 2–7, 11, 19 and 20.
-- `gateway/files/app/gateway_telemetry.py` — the provenance stamps and latency validity of decisions 18 and 21.
-- `firmware/tools/release.sh`, `firmware/README.md` — release signing (decisions 12, 14).
+- `firmware/README.md` — release signing (decisions 12, 14).
+- [docs/gateway-host-hardening.md](../docs/gateway-host-hardening.md): the manual of this record (decisions 1–21).
 - Cyphal file transfer service specification; CIS benchmarks for Debian / Raspberry Pi OS; systemd-journald documentation.
