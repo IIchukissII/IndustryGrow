@@ -4,7 +4,11 @@
 
     python -m app.backup save    --out ./backups
     python -m app.backup verify  --archive ./backups/erp-2026-07-26T14-05-00Z.tar.gz
-    python -m app.backup restore --archive ./backups/erp-…tar.gz
+    python -m app.backup restore --archive ./backups/erp-…tar.gz [--into DB --bucket NAME]
+    python -m app.backup check-live [--into DB --bucket NAME]
+
+On a deployment `erp/deploy/restore.sh` drives the restore in three steps:
+`restore --objects-only`, `mongorestore` in the compose `mongo` service, `finish`.
 
 The ERP's state lives in two stores with an ordering invariant between them, and
 that is what shapes this module. ADR-0022 d7 writes the blob to the warehouse
@@ -311,13 +315,106 @@ def counters_ahead(live: dict[str, int], archived: dict[str, int]) -> dict[str, 
     }
 
 
-async def restore(archive: Path, *, force: bool = False, database_name: str | None = None) -> int:
-    """Replay the archive: blobs first, then the index (ADR-0026 d4)."""
+def target_stores(database_name: str | None, bucket: str | None) -> tuple[str, str | None]:
+    """The database and bucket a restore or a check writes and reads.
+
+    A live restore (no `database_name`) uses the configured database and bucket. A
+    rehearsal (ADR-0026 d10) names a throwaway database and a rehearsal bucket that
+    is not the configured one: `restore` puts the archived objects into the bucket
+    in place, so a rehearsal against the live bucket overwrites a QP, QR or PR
+    re-issued since the backup. Refused here rather than warned about, for the
+    reason ADR-0026 rejects a warning for d8. The configured database is refused
+    as `--into`, because `--into` skips the counter refusal and the replay drops
+    every collection it restores.
+
+    Returns the database name and the bucket to hand `Warehouse` (None: the
+    configured one).
+    """
+    if database_name is None:
+        if bucket and bucket != settings.warehouse_bucket:
+            raise BackupError(
+                f"--bucket {bucket} without --into. A live restore uses the configured "
+                f"bucket ({settings.warehouse_bucket}); --bucket names a rehearsal bucket."
+            )
+        return settings.mongo_db, None
+    if database_name == settings.mongo_db:
+        raise BackupError(
+            f"--into {database_name} is the configured database. --into is for a rehearsal "
+            "into a throwaway database; a live restore omits it and is checked against the "
+            "serial counter (ADR-0026 d8)."
+        )
+    if not bucket:
+        raise BackupError(
+            f"--into {database_name} needs --bucket <rehearsal bucket>. The objects go into "
+            "the bucket in place; without one they would overwrite the live warehouse "
+            f"({settings.warehouse_bucket}) (ADR-0026 d10)."
+        )
+    if bucket == settings.warehouse_bucket:
+        raise BackupError(
+            f"--bucket {bucket} is the configured warehouse bucket. A rehearsal writes into "
+            "a bucket other than the live one (ADR-0026 d10)."
+        )
+    return database_name, bucket
+
+
+def restore_namespaces(manifest: dict[str, Any], target_db: str) -> tuple[str, str]:
+    """The `mongorestore --nsFrom/--nsTo` pair mapping the dump onto `target_db`."""
+    return f"{manifest['database']}.*", f"{target_db}.*"
+
+
+def _mongorestore(dump: Path, manifest: dict[str, Any], target_db: str) -> None:
+    """Replay the index dump into `target_db`, dropping each collection it restores.
+
+    The application image carries no MongoDB Database Tools (see `_mongodump`), so
+    on a deployment `deploy/restore.sh` runs `mongorestore` in the compose `mongo`
+    service between `restore --objects-only` and `finish`. This path serves a host
+    that has the tools.
+    """
+    if not shutil.which("mongorestore"):
+        raise BackupError(
+            "mongorestore is not on PATH. The objects are restored; the index is not.\n"
+            "       This image carries no MongoDB Database Tools: use deploy/restore.sh,\n"
+            "       which replays the index through the compose mongo service. Object\n"
+            "       restoration is idempotent."
+        )
+    ns_from, ns_to = restore_namespaces(manifest, target_db)
+    args = [
+        "mongorestore",
+        f"--uri={settings.mongo_uri}",
+        f"--archive={dump}",
+        f"--nsFrom={ns_from}",
+        f"--nsTo={ns_to}",
+        "--drop",
+    ]
+    done = subprocess.run(args, capture_output=True, check=False)
+    if done.returncode != 0:
+        raise BackupError(
+            f"mongorestore failed: {done.stderr.decode(errors='replace').strip()}\n"
+            "       The objects are restored and the index is not — re-run to finish."
+        )
+
+
+async def restore(
+    archive: Path,
+    *,
+    force: bool = False,
+    database_name: str | None = None,
+    bucket: str | None = None,
+    objects_only: bool = False,
+) -> int:
+    """Replay the archive: blobs first, then the index (ADR-0026 d4).
+
+    The order is: verify the archive, refuse a rehearsal without its own bucket,
+    refuse a live restore over a counter that is ahead (d8), put the objects, replay
+    the index, then `finish` (counter tenant and d9's check). `objects_only` stops
+    after the objects, for a caller that replays the index elsewhere and then runs
+    `finish` — `deploy/restore.sh`.
+    """
     manifest = read_manifest(archive)
     if verify(archive) != 0:
         raise BackupError("refusing to restore an archive that does not verify")
 
-    target_db = database_name or settings.mongo_db
+    target_db, target_bucket = target_stores(database_name, bucket)
 
     # --- d8: the refusal ---------------------------------------------------
     if database_name is None:
@@ -338,7 +435,7 @@ async def restore(archive: Path, *, force: bool = False, database_name: str | No
         if ahead and force:
             log(f"WARNING: --force given; rolling {len(ahead)} serial counter(s) backwards")
 
-    warehouse = Warehouse()
+    warehouse = Warehouse(target_bucket)
 
     with tempfile.TemporaryDirectory() as tmp:
         work = Path(tmp)
@@ -348,58 +445,54 @@ async def restore(archive: Path, *, force: bool = False, database_name: str | No
         # --- the blobs, FIRST (ADR-0026 d4) -------------------------------
         # So that no moment exists where the index references an absent object.
         objects = sorted((work / OBJECTS_DIR).iterdir()) if (work / OBJECTS_DIR).is_dir() else []
-        log(f"restoring {len(objects)} warehouse objects")
+        log(f"restoring {len(objects)} warehouse objects into {target_bucket or 'the warehouse'}")
         await warehouse.ensure_bucket()
         for path in objects:
             await warehouse.put(path.name.replace("%2F", "/"), path.read_bytes())
 
+        if objects_only:
+            log(f"objects restored; the index is not. Replay it into {target_db}, then run")
+            log(f"  python -m app.backup finish{_store_args(database_name, bucket)}")
+            return 0
+
         # --- the index, SECOND --------------------------------------------
         log(f"restoring the index into {target_db}")
-        if not shutil.which("mongorestore"):
-            raise BackupError(
-                "mongorestore is not on PATH. The objects are restored; the index is not.\n"
-                "       Re-run once the MongoDB Database Tools are available — object\n"
-                "       restoration is idempotent."
-            )
-        args = [
-            "mongorestore",
-            f"--uri={settings.mongo_uri}",
-            f"--archive={work / DUMP_NAME}",
-            f"--nsFrom={manifest['database']}.*",
-            f"--nsTo={target_db}.*",
-            "--drop",
-        ]
-        done = subprocess.run(args, capture_output=True, check=False)
-        if done.returncode != 0:
-            raise BackupError(
-                f"mongorestore failed: {done.stderr.decode(errors='replace').strip()}\n"
-                "       The objects are restored and the index is not — re-run to finish."
-            )
+        _mongorestore(work / DUMP_NAME, manifest, target_db)
 
-    # A counter restored from an archive taken before the counter carried the
-    # tenant gets it here, as it would at the next ERP start (ADR-0021 d16).
+    return await finish(database_name, bucket=bucket)
+
+
+def _store_args(database_name: str | None, bucket: str | None) -> str:
+    if database_name is None:
+        return ""
+    return f" --into {database_name} --bucket {bucket}"
+
+
+async def finish(database_name: str | None = None, *, bucket: str | None = None) -> int:
+    """The steps after the index replay: counter tenant, then d9's check.
+
+    A counter restored from an archive taken before the counter carried the tenant
+    gets it here, as it would at the next ERP start (ADR-0021 d16). The restore is
+    done only when `check_live` passes (ADR-0026 d9).
+    """
+    target_db, _ = target_stores(database_name, bucket)
     restored = Database(settings.mongo_uri, target_db, mock=settings.mongo_mock)
     try:
         await migrate_counter_tenant(restored.db)
     finally:
         restored.close()
-
-    into = f" --into {database_name}" if database_name else ""
-    log(f"restored. Verify {target_db} before trusting it:")
-    log(f"  python -m app.backup check-live{into}")
-    return 0
+    return await check_live(database_name, bucket=bucket)
 
 
-async def check_live(database_name: str | None = None) -> int:
+async def check_live(database_name: str | None = None, *, bucket: str | None = None) -> int:
     """ADR-0026 d9 against a store: does every recorded key resolve?
 
-    `database_name` is the database `restore --into` wrote, for the rehearsal of
-    d10; None is the configured one. Keys resolve against the configured
-    warehouse bucket, the same one `restore` writes its objects into.
+    `database_name` and `bucket` are the database and bucket a rehearsal restored
+    into (d10), under the same rule `restore` applies; None is the configured one.
     """
-    target_db = database_name or settings.mongo_db
+    target_db, target_bucket = target_stores(database_name, bucket)
     database = Database(settings.mongo_uri, target_db, mock=settings.mongo_mock)
-    warehouse = Warehouse()
+    warehouse = Warehouse(target_bucket)
     dangling = []
     checked = 0
     async for doc in database.db[FOUNDATION["lifecycle_doc"]].find({}, {"object_key": 1}):
@@ -410,7 +503,8 @@ async def check_live(database_name: str | None = None) -> int:
         if not await warehouse.exists(key):
             dangling.append(key)
 
-    log(f"checked {checked} indexed object key(s) in {target_db}")
+    where = target_bucket or settings.warehouse_bucket
+    log(f"checked {checked} indexed object key(s) in {target_db} against {where}")
     if dangling:
         log(f"  FAIL  {len(dangling)} do not resolve in the warehouse: {dangling[:5]}")
         log("        ADR-0021 d7 requires that a recorded key always resolves.")
@@ -419,9 +513,32 @@ async def check_live(database_name: str | None = None) -> int:
     return 0
 
 
+def namespaces(archive: Path, database_name: str | None = None, bucket: str | None = None) -> int:
+    """Print the `--nsFrom` and `--nsTo` values for replaying `archive`'s dump.
+
+    `deploy/restore.sh` runs `mongorestore` in the mongo service, which knows neither
+    the archive's source database nor the configured one; this prints both.
+    """
+    target_db, _ = target_stores(database_name, bucket)
+    ns_from, ns_to = restore_namespaces(read_manifest(archive), target_db)
+    print(ns_from)
+    print(ns_to)
+    return 0
+
+
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
+
+
+def _add_store_args(p: argparse.ArgumentParser, into_help: str) -> None:
+    p.add_argument("--into", metavar="DB", help=into_help)
+    p.add_argument(
+        "--bucket",
+        metavar="NAME",
+        help="the rehearsal bucket; required with --into and not the configured warehouse "
+        "bucket (ADR-0026 d10)",
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -450,19 +567,34 @@ def build_parser() -> argparse.ArgumentParser:
         help="proceed even though the live store has allocated serials the archive does not "
         "know about — only after reconciling which serials reached hardware",
     )
+    _add_store_args(
+        p,
+        "restore into this throwaway database instead of the configured one, for the "
+        "rehearsal ADR-0026 d10 requires; skips the serial-counter check, since a throwaway "
+        "database has no hardware behind it",
+    )
     p.add_argument(
-        "--into",
-        metavar="DB",
-        help="restore into this database instead of the configured one. Use for the "
-        "restore rehearsal ADR-0026 d10 requires; skips the serial-counter check, since "
-        "a throwaway database has no hardware behind it",
+        "--objects-only",
+        action="store_true",
+        help="stop after the objects; replay the index elsewhere, then run finish "
+        "(deploy/restore.sh does this through the compose mongo service)",
     )
 
+    p = sub.add_parser(
+        "finish", help="after the index replay: set the counter tenant, then check-live"
+    )
+    _add_store_args(p, "the throwaway database a rehearsal restored into")
+
+    p = sub.add_parser(
+        "namespaces", help="print the mongorestore --nsFrom and --nsTo values for an archive"
+    )
+    p.add_argument("--archive", required=True)
+    _add_store_args(p, "the throwaway database a rehearsal restores into")
+
     p = sub.add_parser("check-live", help="verify every recorded key resolves in the warehouse")
-    p.add_argument(
-        "--into",
-        metavar="DB",
-        help="check this database instead of the configured one: the database a rehearsal "
+    _add_store_args(
+        p,
+        "check this database instead of the configured one: the database a rehearsal "
         "restored with restore --into (ADR-0026 d10)",
     )
     return parser
@@ -482,10 +614,20 @@ def main(argv: list[str] | None = None) -> int:
             return verify(Path(args.archive))
         elif args.command == "restore":
             return asyncio.run(
-                restore(Path(args.archive), force=args.force, database_name=args.into)
+                restore(
+                    Path(args.archive),
+                    force=args.force,
+                    database_name=args.into,
+                    bucket=args.bucket,
+                    objects_only=args.objects_only,
+                )
             )
+        elif args.command == "finish":
+            return asyncio.run(finish(args.into, bucket=args.bucket))
+        elif args.command == "namespaces":
+            return namespaces(Path(args.archive), args.into, args.bucket)
         elif args.command == "check-live":
-            return asyncio.run(check_live(args.into))
+            return asyncio.run(check_live(args.into, bucket=args.bucket))
     except BackupError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2

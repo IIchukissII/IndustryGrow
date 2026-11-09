@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0026 — ERP backup and restore across two stores
 
 - **Status:** Accepted
-- **Date:** 2026-07-26; changed 2026-10-19
+- **Date:** 2026-07-26; changed 2026-11-09
 - **Parent:** [ADR-0021](ADR-0021-instance-and-integration-erp-as-the-pre-cloud-system-of-record.md)
 - **Related:** [ADR-0004](ADR-0004-gateway-host-hardening-firmware-signing-and-stateless-edge-operation.md) (stateless gateway, out of scope), [ADR-0017](ADR-0017-component-document-and-instance-identification.md) (identifier as object key, which makes verification a key check), [ADR-0020](ADR-0020-gateway-persistence-model.md) (enumerated gateway state, out of scope), [ADR-0022](ADR-0022-machine-and-operator-facing-api-of-the-instance-and-integration-erp.md) (blob-first write order that decisions 3–4 invert), [ADR-0023](ADR-0023-the-type-registry-as-a-machine-readable-interface.md) (type registry in git; the mirror's restore path), [ADR-0024](ADR-0024-operator-ca-bootstrap-and-the-root-key-ceremony.md) (custody model decision 6 reuses; CA material excluded), [ADR-0025](ADR-0025-deployment-profile-signing-and-gateway-verification.md) (key-proliferation argument decision 7 applies; signing key excluded)
 
@@ -40,7 +40,7 @@ The operator CA and profile-signing key have their own ceremony-based custody (A
 
 8. **A restore onto a store whose serial counter is ahead of the backup's stops and requires explicit operator reconciliation.** Restoring would re-arm serials that may already be stamped on hardware. That failure is undetectable afterwards, so refusing is more useful than completing.
 9. **A restore is verified before it is called done, and the check is the cross-store invariant: every object key the restored index names resolves in the warehouse.** It is the property a two-store restore can break, otherwise discovered only when a document link fails months later.
-10. **An untested backup is not a backup.** The procedure includes restoring into a throwaway database and running decision 9's check against it, at a cadence the runbook sets.
+10. **An untested backup is not a backup.** The procedure includes restoring into a throwaway database and a separate bucket, never the live ones, and running decision 9's check against them, at a cadence the runbook sets.
 
 ## Alternatives
 
@@ -53,6 +53,7 @@ The operator CA and profile-signing key have their own ceremony-based custody (A
 | 7 | Require encryption to a keypair rather than a passphrase | Adds a fourth long-lived secret to custody (ADR-0025 dec 4); permitted as a choice |
 | 7 | No application-level encryption; rely on the target's server-side encryption | The operator holds neither those keys nor that access control |
 | 8 | Let the restore complete and warn about the serial counter | A scrolled-past warning is not a control for a silent, permanent, physical failure |
+| 10 | Rehearse into the live bucket with a throwaway database | Objects are put in place, so a rehearsal overwrites any record reissued since the backup and its current bytes are lost |
 
 ## Consequences
 

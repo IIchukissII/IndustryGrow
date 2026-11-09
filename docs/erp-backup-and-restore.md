@@ -53,21 +53,27 @@ The manifest records the serial counter's high-water mark per module and version
 
 ## ADR-0026 dec 4
 
-`restore` writes every archived object to the warehouse, then replays the dump. A failure after the object pass leaves the objects in place; a second run puts them again and finishes the index. After the replay it sets the operator UUID on any restored counter without a tenant (ADR-0021 dec 16), which changes no counter value.
+`restore` verifies the archive, applies the store rule of dec 10 and the counter refusal of dec 8, writes every archived object to the warehouse, then replays the dump. `--objects-only` stops after the objects. `restore.sh` runs `restore --objects-only` in the `erp` container, replays the dump with `mongorestore --archive --drop` in the `mongo` container, then runs `finish`. `finish` sets the operator UUID on any restored counter without a tenant (ADR-0021 dec 16), which changes no counter value, then runs the check of dec 9. A failure after the object pass leaves the objects in place; a second run puts them again and finishes the index.
 
 | Code | Role |
 |---|---|
-| `erp/app/backup.py::restore` | Blobs first, then `mongorestore --drop` |
+| `erp/app/backup.py::restore` | Verify, refusals, blobs; then the in-process `mongorestore --drop` and `finish`, unless `--objects-only` |
+| `erp/app/backup.py::finish` | Counter tenant, then `check_live` |
+| `erp/app/backup.py::namespaces` | Prints the `--nsFrom`/`--nsTo` pair `restore.sh` hands `mongorestore` |
+| `erp/deploy/restore.sh` | Objects in `erp`, index in `mongo`, then `finish` |
 | `erp/app/db.py::migrate_counter_tenant` | Sets the tenant on restored counters without one |
+| `erp/tests/test_backup.py` | Asserts that a refused restore writes no object, that `--objects-only` writes no index, and that `finish` sets the tenant before the check |
 
 ## ADR-0026 dec 5
 
-The document store is captured with `mongodump --archive` and replayed with `mongorestore`. The application image carries no MongoDB Database Tools; `backup.sh` takes the dump in the `mongo` container and hands it to `save`.
+The document store is captured with `mongodump --archive` and replayed with `mongorestore --archive`. The application image carries no MongoDB Database Tools; `backup.sh` takes the dump in the `mongo` container and hands it to `save`, and `restore.sh` streams the archived dump from the `erp` container into `mongorestore` in the `mongo` container.
 
 | Code | Role |
 |---|---|
 | `erp/app/backup.py::_mongodump` | Runs `mongodump`, or copies a prepared dump |
+| `erp/app/backup.py::_mongorestore` | Runs `mongorestore` where it is on `PATH`; otherwise stops after the objects and names `restore.sh` |
 | `erp/deploy/backup.sh` | Streams the dump from the `mongo` container into the `erp` container |
+| `erp/deploy/restore.sh` | Streams the dump from the `erp` container into the `mongo` container |
 
 ## ADR-0026 dec 6
 
@@ -88,7 +94,7 @@ The script writes one encrypted archive into the output directory and prunes old
 
 ## ADR-0026 dec 8
 
-Before any write, `restore` compares the live counters with the archived ones. A counter the live store has advanced beyond the archive stops the restore with the list of counters; `--force` proceeds after the operator has reconciled. A restore into another database (`--into`) skips the comparison.
+Before any write, `restore` compares the live counters with the archived ones. A counter the live store has advanced beyond the archive stops the restore with the list of counters; `--force` proceeds after the operator has reconciled. A restore into another database (`--into`) skips the comparison; `--into` naming the configured database is refused.
 
 | Code | Role |
 |---|---|
@@ -98,7 +104,7 @@ Before any write, `restore` compares the live counters with the archived ones. A
 
 ## ADR-0026 dec 9
 
-The cross-store check runs at three points: at capture against the copied objects, on an archive before restore, and against a store after restore. `check-live` reads the configured database, or the one `--into` names, and resolves keys in the bucket `ERP_WAREHOUSE_BUCKET` names.
+The cross-store check runs at three points: at capture against the copied objects, on an archive before restore, and against a store after restore. `check-live` reads the configured database and resolves keys in the configured bucket, or reads the database `--into` names and resolves keys in the bucket `--bucket` names, under the rule of dec 10. `finish` runs it after every restore, and `restore.sh` fails when it does not pass.
 
 | Code | Role |
 |---|---|
@@ -109,14 +115,28 @@ The cross-store check runs at three points: at capture against the copied object
 
 ## ADR-0026 dec 10
 
-`backup.sh` verifies each archive before encrypting it and discards one that fails. A rehearsal decrypts an archive, verifies it, restores it with `--into` into a throwaway database and runs `check-live --into` against that database.
+`backup.sh` verifies each archive before encrypting it and discards one that fails. A rehearsal is `restore.sh --into <db> --bucket <bucket>`: it decrypts the archive, verifies it, puts the objects into the rehearsal bucket, replays the index into the throwaway database and runs `check-live` against both.
 
-`--into` redirects the index only. `restore` puts the objects into the configured bucket, overwriting keys in place, so the rehearsal sets `ERP_WAREHOUSE_BUCKET` to a rehearsal bucket on both `restore` and `check-live`; against the live bucket, a QP, QR or PR re-issued since the backup loses its current content.
+`restore`, `finish`, `namespaces` and `check-live` take the database and bucket as one pair. A put overwrites a key in place, so a rehearsal against the live bucket would replace a QP, QR or PR re-issued since the backup with its archived content; the pair is refused unless the rehearsal names its own bucket.
+
+| Input | Result |
+|---|---|
+| neither `--into` nor `--bucket` | the configured database and bucket |
+| `--into <db> --bucket <bucket>` | that database and bucket |
+| `--into` without `--bucket` | refused |
+| `--bucket` equal to `ERP_WAREHOUSE_BUCKET` | refused |
+| `--into` equal to `ERP_MONGO_DB` | refused |
+| `--bucket` other than `ERP_WAREHOUSE_BUCKET` without `--into` | refused |
+
+Every refusal precedes the first write.
 
 | Code | Role |
 |---|---|
 | `erp/deploy/backup.sh` | Verify before encrypt |
-| `erp/app/backup.py::build_parser` | The `save`, `verify`, `restore --into` and `check-live --into` commands |
-| `erp/app/backup.py::restore` | Prints the `check-live` command for the database it restored into |
+| `erp/deploy/restore.sh` | The rehearsal and the restore |
+| `erp/app/backup.py::target_stores` | The database and bucket pair, and its refusals |
+| `erp/app/services/warehouse.py::Warehouse` | Takes the rehearsal bucket in place of the configured one |
+| `erp/app/backup.py::build_parser` | The `save`, `verify`, `restore`, `finish`, `namespaces` and `check-live` commands |
+| `erp/tests/test_backup.py` | Asserts each refusal and that a rehearsal writes only into its bucket |
 
 Links: [erp/deploy/README.md](../erp/deploy/README.md) (taking, rehearsing and restoring a backup; retention, cadence, copies and encryption values).

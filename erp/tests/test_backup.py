@@ -12,7 +12,8 @@ The interesting failures here are not "the dump was empty". They are:
     detects that afterwards, which is why the tooling refuses rather than warns.
 
 So these tests are about the allowlist, the ordering, the archive-consistency
-check, and the refusal. What they do NOT cover is `mongodump`/`mongorestore`
+check, the refusals and the restore steps. What they do NOT cover is
+`mongodump`/`mongorestore`
 themselves: those are external binaries, absent from this environment, and the
 module's own contract is that it shells out to them. The tests exercise everything
 around that boundary and skip the two subcommands that cross it.
@@ -30,12 +31,17 @@ from mongomock_motor import AsyncMongoMockClient
 from app.backup import (
     BACKED_UP_COLLECTIONS,
     LIFECYCLE_SUFFIXES,
+    BackupError,
     _counter_state,
     build_parser,
     check_live,
     counters_ahead,
+    finish,
     is_backed_up_object,
+    namespaces,
     read_manifest,
+    restore,
+    target_stores,
     verify,
 )
 from app.config import settings
@@ -229,6 +235,7 @@ def test_the_manifest_records_what_was_excluded(tmp_path):
 # ---------------------------------------------------------------------------
 
 REHEARSAL_DB = "industrygrow_rehearsal"
+REHEARSAL_BUCKET = "industrygrow-rehearsal"
 
 
 @pytest.fixture
@@ -247,8 +254,18 @@ def stores(monkeypatch, warehouse):
         def __init__(self, uri: str, db_name: str, *, mock: bool = False) -> None:
             self.db = client[db_name]
 
+        def close(self) -> None:
+            return None
+
+    def _warehouse(bucket: str | None = None):
+        # The bucket each step asked for, so a test can tell a rehearsal from the
+        # live warehouse (ADR-0026 d10).
+        warehouse.buckets.append(bucket)
+        return warehouse
+
+    warehouse.buckets = []
     monkeypatch.setattr(backup, "Database", _Database)
-    monkeypatch.setattr(backup, "Warehouse", lambda: warehouse)
+    monkeypatch.setattr(backup, "Warehouse", _warehouse)
     return client, warehouse
 
 
@@ -258,7 +275,7 @@ async def test_check_live_into_a_named_database_passes_when_every_key_resolves(s
     await warehouse.put(key, b"blob")
     await client[REHEARSAL_DB][FOUNDATION["lifecycle_doc"]].insert_one({"object_key": key})
 
-    assert await check_live(REHEARSAL_DB) == 0
+    assert await check_live(REHEARSAL_DB, bucket=REHEARSAL_BUCKET) == 0
     assert f"checked 1 indexed object key(s) in {REHEARSAL_DB}" in capsys.readouterr().out
 
 
@@ -275,10 +292,148 @@ async def test_check_live_into_a_named_database_fails_on_a_dangling_key(stores, 
     await client[settings.mongo_db][lifecycle].insert_one({"object_key": good})
 
     assert await check_live() == 0
-    assert await check_live(REHEARSAL_DB) == 1
+    assert await check_live(REHEARSAL_DB, bucket=REHEARSAL_BUCKET) == 1
     assert dangling in capsys.readouterr().out
 
 
-def test_check_live_takes_the_database_restore_into_wrote():
-    assert build_parser().parse_args(["check-live", "--into", REHEARSAL_DB]).into == REHEARSAL_DB
+def test_check_live_takes_the_database_and_bucket_restore_into_wrote():
+    args = build_parser().parse_args(
+        ["check-live", "--into", REHEARSAL_DB, "--bucket", REHEARSAL_BUCKET]
+    )
+    assert (args.into, args.bucket) == (REHEARSAL_DB, REHEARSAL_BUCKET)
     assert build_parser().parse_args(["check-live"]).into is None
+
+
+# ---------------------------------------------------------------------------
+# The rehearsal bucket (ADR-0026 d10)
+# ---------------------------------------------------------------------------
+
+
+def test_a_rehearsal_without_a_bucket_is_refused():
+    # The objects go into the bucket in place; into the live one, a QP re-issued
+    # since the backup loses its current bytes.
+    with pytest.raises(BackupError, match="needs --bucket"):
+        target_stores(REHEARSAL_DB, None)
+
+
+def test_a_rehearsal_into_the_live_bucket_is_refused():
+    with pytest.raises(BackupError, match="configured warehouse bucket"):
+        target_stores(REHEARSAL_DB, settings.warehouse_bucket)
+
+
+def test_a_rehearsal_into_the_configured_database_is_refused():
+    # --into skips the counter refusal, and the replay drops what it restores.
+    with pytest.raises(BackupError, match="is the configured database"):
+        target_stores(settings.mongo_db, REHEARSAL_BUCKET)
+
+
+def test_a_live_restore_uses_the_configured_stores():
+    assert target_stores(None, None) == (settings.mongo_db, None)
+    with pytest.raises(BackupError, match="without --into"):
+        target_stores(None, REHEARSAL_BUCKET)
+
+
+def test_a_rehearsal_names_its_own_stores():
+    assert target_stores(REHEARSAL_DB, REHEARSAL_BUCKET) == (REHEARSAL_DB, REHEARSAL_BUCKET)
+
+
+async def test_check_live_into_without_a_bucket_is_refused(stores):
+    with pytest.raises(BackupError, match="needs --bucket"):
+        await check_live(REHEARSAL_DB)
+
+
+# ---------------------------------------------------------------------------
+# The restore steps: objects, index elsewhere, finish (ADR-0026 d4, d8, d9)
+# ---------------------------------------------------------------------------
+
+KEY = "E0002-020100-000001-QP"
+
+
+async def test_restore_into_without_a_bucket_writes_nothing(stores, tmp_path):
+    _, warehouse = stores
+    archive = _archive(tmp_path, indexed=[KEY], objects=[KEY])
+    with pytest.raises(BackupError, match="needs --bucket"):
+        await restore(archive, database_name=REHEARSAL_DB, objects_only=True)
+    assert warehouse.objects == {}
+
+
+async def test_a_live_restore_over_an_advanced_counter_writes_nothing(stores, tmp_path):
+    # d8: the archive's counter is 4; the live store has issued 7.
+    client, warehouse = stores
+    await client[settings.mongo_db][FOUNDATION["serial_counter"]].insert_one(
+        {"_id": "E0002-020100", "last_serial": 7}
+    )
+    archive = _archive(tmp_path, indexed=[KEY], objects=[KEY])
+    with pytest.raises(BackupError, match="allocated serials"):
+        await restore(archive, objects_only=True)
+    assert warehouse.objects == {}
+
+
+async def test_an_archive_that_does_not_verify_writes_nothing(stores, tmp_path):
+    _, warehouse = stores
+    archive = _archive(tmp_path, indexed=[KEY], objects=[])
+    with pytest.raises(BackupError, match="does not verify"):
+        await restore(archive, database_name=REHEARSAL_DB, bucket=REHEARSAL_BUCKET)
+    assert warehouse.objects == {}
+
+
+async def test_objects_only_puts_the_objects_into_the_rehearsal_bucket(stores, tmp_path, capsys):
+    client, warehouse = stores
+    archive = _archive(tmp_path, indexed=[KEY], objects=[KEY])
+    restored = await restore(
+        archive, database_name=REHEARSAL_DB, bucket=REHEARSAL_BUCKET, objects_only=True
+    )
+    assert restored == 0
+    assert warehouse.objects == {KEY: b"blob"}
+    assert warehouse.buckets == [REHEARSAL_BUCKET]
+    # The index is replayed by the next step, not this one.
+    assert await client[REHEARSAL_DB].list_collection_names() == []
+    out = capsys.readouterr().out
+    assert f"finish --into {REHEARSAL_DB} --bucket {REHEARSAL_BUCKET}" in out
+
+
+async def test_a_live_restore_puts_the_objects_into_the_configured_bucket(stores, tmp_path):
+    _, warehouse = stores
+    archive = _archive(tmp_path, indexed=[KEY], objects=[KEY])
+    assert await restore(archive, objects_only=True) == 0
+    assert warehouse.buckets == [None]
+    assert KEY in warehouse.objects
+
+
+async def test_restore_without_mongorestore_stops_after_the_objects(stores, tmp_path, monkeypatch):
+    import app.backup as backup
+
+    _, warehouse = stores
+    monkeypatch.setattr(backup.shutil, "which", lambda name: None)
+    archive = _archive(tmp_path, indexed=[KEY], objects=[KEY])
+    with pytest.raises(BackupError, match=r"deploy/restore\.sh"):
+        await restore(archive, database_name=REHEARSAL_DB, bucket=REHEARSAL_BUCKET)
+    assert KEY in warehouse.objects
+
+
+async def test_finish_sets_the_counter_tenant_then_checks(stores):
+    client, warehouse = stores
+    db = client[REHEARSAL_DB]
+    await db[FOUNDATION["serial_counter"]].insert_one({"_id": "E0002-020100", "last_serial": 4})
+    await db[FOUNDATION["lifecycle_doc"]].insert_one({"object_key": KEY})
+
+    # The index names an object the bucket lacks: the restore is not done (d9).
+    assert await finish(REHEARSAL_DB, bucket=REHEARSAL_BUCKET) == 1
+    counter = await db[FOUNDATION["serial_counter"]].find_one({"_id": "E0002-020100"})
+    assert counter["tenant_id"] == settings.operator_uuid
+    assert counter["last_serial"] == 4
+
+    await warehouse.put(KEY, b"blob")
+    assert await finish(REHEARSAL_DB, bucket=REHEARSAL_BUCKET) == 0
+    assert set(warehouse.buckets) == {REHEARSAL_BUCKET}
+
+
+async def test_finish_into_without_a_bucket_is_refused(stores):
+    with pytest.raises(BackupError, match="needs --bucket"):
+        await finish(REHEARSAL_DB)
+
+
+def test_namespaces_map_the_archive_onto_the_target(tmp_path, capsys):
+    archive = _archive(tmp_path, indexed=[], objects=[])
+    assert namespaces(archive, REHEARSAL_DB, REHEARSAL_BUCKET) == 0
+    assert capsys.readouterr().out.split() == ["industrygrow_erp.*", f"{REHEARSAL_DB}.*"]
