@@ -8,6 +8,8 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Status:** Accepted
 - **Date:** 2026-06-12; changed 2026-10-19
 - **Parent:** — (root; governs the form of every other ADR)
+- **Canon:** [IIchukissII/CANON](https://github.com/IIchukissII/CANON), which this record
+  refines for this repository
 - **Related:** [ADR-0001](ADR-0001-industrygrow-framing.md) (origin of the IndustryFlow core / IndustryGrow layer split that decision 8 names)
 
 ## Context
