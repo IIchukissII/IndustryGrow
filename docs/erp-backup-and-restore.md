@@ -98,21 +98,25 @@ Before any write, `restore` compares the live counters with the archived ones. A
 
 ## ADR-0026 dec 9
 
-The cross-store check runs at three points: at capture against the copied objects, on an archive before restore, and against the running store after restore.
+The cross-store check runs at three points: at capture against the copied objects, on an archive before restore, and against a store after restore. `check-live` reads the configured database, or the one `--into` names, and resolves keys in the bucket `ERP_WAREHOUSE_BUCKET` names.
 
 | Code | Role |
 |---|---|
 | `erp/app/backup.py::save` | Aborts when an indexed key was not copied |
 | `erp/app/backup.py::verify` | Every indexed key in the manifest has an object in the archive |
-| `erp/app/backup.py::check_live` | Every `object_key` in `foundation.lifecycle_doc` resolves in the warehouse |
+| `erp/app/backup.py::check_live` | Every `object_key` in the named database's `foundation.lifecycle_doc` resolves in the warehouse |
+| `erp/tests/test_backup.py` | Asserts a named database passes with every key resolving and fails on a dangling key while the configured one passes |
 
 ## ADR-0026 dec 10
 
-`backup.sh` verifies each archive before encrypting it and discards one that fails. A rehearsal decrypts an archive, verifies it and restores it with `--into` into a throwaway database. `check_live` reads the configured database only, so on a rehearsal the cross-store check runs on the archive, not on the restored database.
+`backup.sh` verifies each archive before encrypting it and discards one that fails. A rehearsal decrypts an archive, verifies it, restores it with `--into` into a throwaway database and runs `check-live --into` against that database.
+
+`--into` redirects the index only. `restore` puts the objects into the configured bucket, overwriting keys in place, so the rehearsal sets `ERP_WAREHOUSE_BUCKET` to a rehearsal bucket on both `restore` and `check-live`; against the live bucket, a QP, QR or PR re-issued since the backup loses its current content.
 
 | Code | Role |
 |---|---|
 | `erp/deploy/backup.sh` | Verify before encrypt |
-| `erp/app/backup.py::build_parser` | The `save`, `verify`, `restore --into` and `check-live` commands |
+| `erp/app/backup.py::build_parser` | The `save`, `verify`, `restore --into` and `check-live --into` commands |
+| `erp/app/backup.py::restore` | Prints the `check-live` command for the database it restored into |
 
 Links: [erp/deploy/README.md](../erp/deploy/README.md) (taking, rehearsing and restoring a backup; retention, cadence, copies and encryption values).

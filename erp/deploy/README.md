@@ -279,12 +279,27 @@ gpg --decrypt --passphrase-file ~/.igrow-backup-pass \
     -o /tmp/rehearsal.tar.gz /var/backups/industrygrow/erp-….tar.gz.gpg
 
 docker compose exec -T erp python -m app.backup verify  --archive /tmp/rehearsal.tar.gz
-docker compose exec -T erp python -m app.backup restore --archive /tmp/rehearsal.tar.gz \
-                                                        --into industrygrow_rehearsal
+docker compose exec -T -e ERP_WAREHOUSE_BUCKET=industrygrow-rehearsal erp \
+    python -m app.backup restore --archive /tmp/rehearsal.tar.gz --into industrygrow_rehearsal
+docker compose exec -T -e ERP_WAREHOUSE_BUCKET=industrygrow-rehearsal erp \
+    python -m app.backup check-live --into industrygrow_rehearsal
 ```
 
-`--into` restores to a throwaway database, which also skips the serial-counter
-check below — a rehearsal database has no hardware behind it.
+`--into` restores the index to a throwaway database, which also skips the
+serial-counter check below — a rehearsal database has no hardware behind it.
+
+`--into` does not redirect the objects. `restore` puts every archived object into
+the bucket `ERP_WAREHOUSE_BUCKET` names, and `check-live` resolves keys against
+the same bucket. Without the override that is the live bucket, and the put
+overwrites in place: a QP, QR or PR re-issued since the backup loses its current
+content to the archived one. `ERP_WAREHOUSE_BUCKET` set to a rehearsal bucket on
+both commands keeps the rehearsal off the live bucket. `restore` creates the
+bucket if it is missing; credentials scoped to one bucket cannot, and the
+rehearsal bucket is then created beforehand in the object store.
+
+`check-live --into` passes when every `object_key` in the throwaway database's
+`foundation.lifecycle_doc` resolves in that bucket (ADR-0026 d9). Drop the
+database and empty the bucket afterwards.
 
 ### Restoring for real
 

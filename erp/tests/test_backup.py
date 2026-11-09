@@ -25,16 +25,21 @@ import tarfile
 from pathlib import Path
 
 import pytest
+from mongomock_motor import AsyncMongoMockClient
 
 from app.backup import (
     BACKED_UP_COLLECTIONS,
     LIFECYCLE_SUFFIXES,
     _counter_state,
+    build_parser,
+    check_live,
     counters_ahead,
     is_backed_up_object,
     read_manifest,
     verify,
 )
+from app.config import settings
+from app.db import FOUNDATION
 
 # ---------------------------------------------------------------------------
 # The allowlist (ADR-0026 d1)
@@ -217,3 +222,63 @@ def test_the_manifest_records_what_was_excluded(tmp_path):
     manifest = read_manifest(_archive(tmp_path, indexed=[], objects=[]))
     assert manifest["format"] == 1
     assert "foundation.serial_counter" in manifest["collections"]
+
+
+# ---------------------------------------------------------------------------
+# The cross-store check against a named database (ADR-0026 d9, d10)
+# ---------------------------------------------------------------------------
+
+REHEARSAL_DB = "industrygrow_rehearsal"
+
+
+@pytest.fixture
+def stores(monkeypatch, warehouse):
+    """One in-memory Mongo server holding several databases, and one warehouse.
+
+    `check_live` builds its own `Database` and `Warehouse`; both are replaced so
+    the name it is given selects a database on a shared server, as on the real
+    one `restore --into` writes to.
+    """
+    import app.backup as backup
+
+    client = AsyncMongoMockClient()
+
+    class _Database:
+        def __init__(self, uri: str, db_name: str, *, mock: bool = False) -> None:
+            self.db = client[db_name]
+
+    monkeypatch.setattr(backup, "Database", _Database)
+    monkeypatch.setattr(backup, "Warehouse", lambda: warehouse)
+    return client, warehouse
+
+
+async def test_check_live_into_a_named_database_passes_when_every_key_resolves(stores, capsys):
+    client, warehouse = stores
+    key = "E0002-020100-000001-QP"
+    await warehouse.put(key, b"blob")
+    await client[REHEARSAL_DB][FOUNDATION["lifecycle_doc"]].insert_one({"object_key": key})
+
+    assert await check_live(REHEARSAL_DB) == 0
+    assert f"checked 1 indexed object key(s) in {REHEARSAL_DB}" in capsys.readouterr().out
+
+
+async def test_check_live_into_a_named_database_fails_on_a_dangling_key(stores, capsys):
+    client, warehouse = stores
+    good, dangling = "E0002-020100-000001-QP", "E0002-020100-000002-CC-20260726"
+    await warehouse.put(good, b"blob")
+    lifecycle = FOUNDATION["lifecycle_doc"]
+    await client[REHEARSAL_DB][lifecycle].insert_many(
+        [{"object_key": good}, {"object_key": dangling}]
+    )
+    # The configured database is consistent and only the named one is broken, so
+    # a pass on the named one would mean the check read the configured one.
+    await client[settings.mongo_db][lifecycle].insert_one({"object_key": good})
+
+    assert await check_live() == 0
+    assert await check_live(REHEARSAL_DB) == 1
+    assert dangling in capsys.readouterr().out
+
+
+def test_check_live_takes_the_database_restore_into_wrote():
+    assert build_parser().parse_args(["check-live", "--into", REHEARSAL_DB]).into == REHEARSAL_DB
+    assert build_parser().parse_args(["check-live"]).into is None
