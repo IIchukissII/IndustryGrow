@@ -7,7 +7,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 - **Status:** Accepted
 - **Date:** 2026-07-26; changed 2026-10-19
-- **Parent:** [ADR-0021](ADR-0021-instance-and-integration-erp.md)
+- **Parent:** [ADR-0021](ADR-0021-instance-and-integration-erp-as-the-pre-cloud-system-of-record.md)
 - **Related:** [ADR-0004](ADR-0004-gateway-host-hardening-firmware-signing-and-stateless-edge-operation.md) (stateless gateway, out of scope), [ADR-0017](ADR-0017-component-document-and-instance-identification.md) (identifier as object key, which makes verification a key check), [ADR-0020](ADR-0020-gateway-persistence-model.md) (enumerated gateway state, out of scope), [ADR-0022](ADR-0022-instance-integration-erp-api.md) (blob-first write order that decisions 3–4 invert), [ADR-0023](ADR-0023-machine-readable-type-registry.md) (type registry in git; the mirror's restore path), [ADR-0024](ADR-0024-operator-ca-bootstrap-and-key-ceremony.md) (custody model decision 6 reuses; CA material excluded), [ADR-0025](ADR-0025-cultivation-profile-signing.md) (key-proliferation argument decision 7 applies; signing key excluded)
 
 ## Context

@@ -8,7 +8,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Status:** Accepted
 - **Date:** 2026-07-21; changed 2026-10-19
 - **Parent:** [ADR-0017](ADR-0017-component-document-and-instance-identification.md)
-- **Related:** [ADR-0019](ADR-0019-purchased-part-%28SP%29-identification.md) (the SP section and its `Instance-tracked?` column), [ADR-0021](ADR-0021-instance-and-integration-erp.md) (decision 11: the ERP references type meaning and never holds it), [ADR-0022](ADR-0022-instance-integration-erp-api.md) (decision 9: no type-meaning writes; this record is its read side)
+- **Related:** [ADR-0019](ADR-0019-purchased-part-sp-identification.md) (the SP section and its `Instance-tracked?` column), [ADR-0021](ADR-0021-instance-and-integration-erp-as-the-pre-cloud-system-of-record.md) (decision 11: the ERP references type meaning and never holds it), [ADR-0022](ADR-0022-instance-integration-erp-api.md) (decision 9: no type-meaning writes; this record is its read side)
 
 ## Context
 

@@ -8,7 +8,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Status:** Accepted
 - **Date:** 2026-06-13; changed 2026-10-19
 - **Parent:** [ADR-0001](ADR-0001-industrygrow-as-an-open-core-cultivation-platform-on-industryflow.md)
-- **Related:** [ADR-0017](ADR-0017-component-document-and-instance-identification.md) (the identity axis this adds a second root to; its document layers and E-number rules), [ADR-0018](ADR-0018-power-distribution-and-rail-monitoring.md) (the cabinet parts and the spec-over-SKU pattern of its energy meter), [ADR-0014](ADR-0014-sensor-node-taxonomy-and-module-decomposition.md) (actuator and sensor boards are E-modules), [ADR-0031](ADR-0031-actuator-node-taxonomy.md) (actuator classes whose devices are purchased parts), [ADR-0021](ADR-0021-instance-and-integration-erp.md) (holds SP stock and instances), [ADR-0023](ADR-0023-machine-readable-type-registry.md) (how the SP registry is consumed)
+- **Related:** [ADR-0017](ADR-0017-component-document-and-instance-identification.md) (the identity axis this adds a second root to; its document layers and E-number rules), [ADR-0018](ADR-0018-cabinet-power-distribution-and-consumption-metering.md) (the cabinet parts and the spec-over-SKU pattern of its energy meter), [ADR-0014](ADR-0014-sensor-node-taxonomy-and-module-decomposition.md) (actuator and sensor boards are E-modules), [ADR-0031](ADR-0031-actuator-node-taxonomy.md) (actuator classes whose devices are purchased parts), [ADR-0021](ADR-0021-instance-and-integration-erp-as-the-pre-cloud-system-of-record.md) (holds SP stock and instances), [ADR-0023](ADR-0023-machine-readable-type-registry.md) (how the SP registry is consumed)
 
 ## Context
 
