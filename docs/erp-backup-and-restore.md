@@ -34,11 +34,17 @@ The writers produce the stamp on `CP` and `CC` and the superseded form on `QP`, 
 
 ## ADR-0026 dec 2
 
-The manifest records the serial counter's high-water mark per module and version. Verification prints it, and restore compares it before anything is written (dec 8).
+The manifest records the serial counter's high-water mark per tenant, then per module and version. Verification prints it, and restore compares it before anything is written (dec 8). A counter without `tenant_id` is recorded under the operator UUID.
+
+| Manifest `format` | `serial_counters` |
+|---|---|
+| 1 | `{counter: last_serial}`, read as the manifest's `operator_uuid` |
+| 2 | `{tenant: {counter: last_serial}}` |
 
 | Code | Role |
 |---|---|
-| `erp/app/backup.py::_counter_state` | Reads `last_serial` per counter from `foundation.serial_counter` |
+| `erp/app/backup.py::_counter_state` | Reads `last_serial` per tenant and counter from `foundation.serial_counter` |
+| `erp/app/backup.py::archived_counters` | Reads either manifest format as counters per tenant |
 | `erp/app/backup.py::verify` | Reports the archived counters |
 
 ## ADR-0026 dec 3
@@ -87,13 +93,13 @@ The script writes one encrypted archive into the output directory and prunes old
 
 ## ADR-0026 dec 8
 
-Before any write, `restore` compares the live counters with the archived ones. A counter the live store has advanced beyond the archive stops the restore with the list of counters; `--force` proceeds after the operator has reconciled. A restore into another database (`--into`) skips the comparison.
+Before any write, `restore` compares the live counters with the archived ones, per tenant. A counter the live store has advanced beyond the archive stops the restore with the list of tenants and counters; `--force` proceeds after the operator has reconciled. A restore into another database (`--into`) skips the comparison. After the dump is replayed, counters without `tenant_id` get the operator UUID.
 
 | Code | Role |
 |---|---|
-| `erp/app/backup.py::counters_ahead` | Counters where the live store is ahead, including counters the archive lacks |
-| `erp/app/backup.py::restore` | Refuses unless `--force` |
-| `erp/tests/test_backup.py` | Asserts the ahead, unknown and behind cases |
+| `erp/app/backup.py::counters_ahead` | Counters per tenant where the live store is ahead, including counters the archive lacks |
+| `erp/app/backup.py::restore` | Refuses unless `--force`; sets the tenant on restored counters without one |
+| `erp/tests/test_backup.py` | Asserts the ahead, unknown, behind, per-tenant and format-1 cases |
 
 ## ADR-0026 dec 9
 

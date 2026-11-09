@@ -31,7 +31,7 @@ Collection names carry the `[F]`/`[D]` split as a prefix: `foundation.*` is the 
 
 ## ADR-0021 dec 4
 
-Machines are registered by their operator-assigned `GBOX_NNNN`. Serials are allocated by one atomic increment on a counter per module and version, which also creates the instance rows. An instance row holds the identifier fields and status, and no type meaning.
+Machines are registered by their operator-assigned `GBOX_NNNN`. Serials are allocated by one atomic increment on a counter per tenant, module and version, which also creates the instance rows. An instance row holds the identifier fields and status, and no type meaning.
 
 | Code | Role |
 |---|---|
@@ -39,7 +39,7 @@ Machines are registered by their operator-assigned `GBOX_NNNN`. Serials are allo
 | `erp/app/models/identifiers.py::counter_id` | The counter key `Exxxx-VVVVVV` |
 | `erp/app/models/foundation.py::ModuleInstance` | The E-instance record |
 | `erp/app/api/routes.py::register_machine` | Upserts a machine by identifier |
-| `erp/app/db.py::ensure_indexes` | `uq_instance_full_id`: tenant, module, version, serial unique |
+| `erp/app/db.py::ensure_indexes` | `uq_instance_full_id`: tenant, module, version, serial unique; `uq_counter`: tenant, counter unique |
 | `erp/tests/test_serials.py` | Gap-free, per-version and concurrent allocation |
 
 ## ADR-0021 dec 5
@@ -157,13 +157,18 @@ One application container over MongoDB. Integration history is validity-stamped 
 
 ## ADR-0021 dec 16
 
-Every `[F]` model defaults `tenant_id` to the configured operator UUID, and every `[F]` write sets it. The instance uniqueness index includes the tenant. Nothing routes, partitions or isolates by tenant. `SerialCounter` carries no `tenant_id`.
+Every `[F]` model defaults `tenant_id` to the configured operator UUID, and every `[F]` write sets it. The instance and serial-counter uniqueness indexes include the tenant, and the allocator reads and increments a counter by tenant and counter key. Nothing routes, partitions or isolates by tenant.
+
+A counter written without `tenant_id` gets the operator UUID at every ERP start, before `uq_counter` is created, and after every `restore`. The migration sets only `tenant_id` on counters where it is missing or null; `last_serial` is never written, and a second run changes nothing. Until it has run, the allocator does not match such a counter and its upsert fails on the duplicate `_id`, so the sequence is never restarted.
 
 | Code | Role |
 |---|---|
 | `erp/app/config.py::Settings.operator_uuid` | The single tenant's identifier |
 | `erp/app/models/foundation.py` | `tenant_id` on the `[F]` models |
-| `erp/app/db.py::ensure_indexes` | `uq_instance_full_id` keyed on the tenant |
+| `erp/app/db.py::ensure_indexes` | `uq_instance_full_id` and `uq_counter` keyed on the tenant |
+| `erp/app/db.py::migrate_counter_tenant` | Sets the operator UUID on counters without a tenant |
+| `erp/app/main.py::lifespan` | Runs `ensure_indexes` at start against a real Mongo |
+| `erp/tests/test_serials.py` | Counter tenant, legacy migration, idempotence, index |
 
 ## ADR-0021 dec 17
 

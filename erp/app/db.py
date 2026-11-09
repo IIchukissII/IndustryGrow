@@ -17,6 +17,8 @@ from motor.motor_asyncio import (
 )
 from pymongo import ASCENDING, IndexModel
 
+from app.config import settings
+
 # [F] foundational collections — migrate to IndustryFlow production_unit (stage 11).
 FOUNDATION = {
     "machine": "foundation.machine",
@@ -68,9 +70,38 @@ class Database:
             close()
 
 
+async def migrate_counter_tenant(db: AsyncIOMotorDatabase) -> int:
+    """Set ``tenant_id`` on serial counters that lack it (ADR-0021 d16).
+
+    Writes only ``tenant_id``, and only where it is missing or null, so
+    ``last_serial`` is never touched and a second run changes nothing. Returns
+    the number of counters changed.
+    """
+    result = await db[FOUNDATION["serial_counter"]].update_many(
+        {"tenant_id": None}, {"$set": {"tenant_id": settings.operator_uuid}}
+    )
+    return result.modified_count
+
+
 async def ensure_indexes(database: Database) -> None:
     """Create the invariants the ADR requires, expressed as Mongo indexes."""
     db = database.db
+
+    # Counters written before the counter carried the tenant get it before the
+    # tenant-keyed index exists and before the allocator, which matches on the
+    # tenant, can reach them.
+    await migrate_counter_tenant(db)
+
+    # One gap-free sequence per tenant, module and version (ADR-0021 d4, d16).
+    await db[FOUNDATION["serial_counter"]].create_indexes(
+        [
+            IndexModel(
+                [("tenant_id", ASCENDING), ("_id", ASCENDING)],
+                unique=True,
+                name="uq_counter",
+            )
+        ]
+    )
 
     # Full identity is unique per tenant (ADR-0017 d1; serial unique per module+version).
     await db[FOUNDATION["module_instance"]].create_indexes(

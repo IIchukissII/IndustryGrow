@@ -70,6 +70,7 @@ class SerialCounter(_Base):
     """Gap-free serial sequence, one per module + version (ADR-0021 d4)."""
 
     counter_id: str = Field(alias="_id")  # "E0002-020100"
+    tenant_id: str = Field(default_factory=_tenant)
     last_serial: int = 0
 
 
