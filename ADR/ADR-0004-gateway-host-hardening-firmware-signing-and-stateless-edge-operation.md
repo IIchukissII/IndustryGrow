@@ -33,7 +33,7 @@ The gateway is a stateless edge: a replaceable bridge whose persistent state is 
 11. **System logging is the host's standard journal, persistent and size-limited.** It is operator-debugging infrastructure, not forensic infrastructure, and no custom logging pipeline is added.
 12. **CAN node firmware is signed at release by a dedicated firmware-signing key, separate from every identity key.** The key is held offline and used only at release events; its custody is ADR-0024 decision 14.
 13. **The gateway distributes firmware over the Cyphal file transfer service, from artifacts it holds on disk for the current and previous release.** Firmware writes are infrequent; where the artifacts come from and which one is served are ADR-0029 decisions 14–17.
-14. **Each node verifies the signature of an image delivered over the bus before it becomes bootable.** The verification public key is built into the node bootloader and flashed with it; an image without a valid signature is refused (ADR-0029 decision 6). An image written over SWD falls under decision 15's physical access.
+14. **Each node verifies the signature of an image delivered over the bus before it becomes bootable.** The verification public key is built into the node bootloader and flashed with it; an image without a valid signature is refused (ADR-0029 decision 6). An image written over SWD is not checked: physical access already implies operator presence (decision 17).
 15. **The bootloader is replaced only over SWD, with physical access to the node.** It is never an update target over the bus (ADR-0029 decision 10), so a remote attacker cannot substitute it.
 16. **Firmware update events reach IndustryFlow as typed events on the telemetry upload path.** Each records gateway identity, target Node-ID, firmware version, hash, the node-reported verification result and a timestamp.
 17. **The in-cabinet CAN domain is trusted: no per-node authentication and no payload encryption.** Anyone with physical access to the bus wires can spoof or inject, and physical access already implies operator presence.
@@ -80,6 +80,7 @@ The gateway is a stateless edge: a replaceable bridge whose persistent state is 
 
 **Negative**
 
+- A node application image written over SWD boots without a signature check.
 - An outage spanning a gateway reboot loses the in-memory buffer, narrowed where ADR-0020's persistent buffer is fitted.
 - IndustryFlow must provide immutable audit storage, per-gateway chain validation and forensic queries before the audit trail exists.
 - The verification key is fixed in the bootloader, so replacing the firmware-signing key means re-flashing every bootloader over SWD (ADR-0024 decision 14).
