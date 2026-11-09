@@ -88,41 +88,74 @@ def _strip_md(value: str) -> str:
     return value.replace("`", "").replace("**", "").strip()
 
 
+_SEPARATOR_CELL = re.compile(r"^:?-+:?$")
+_TRACKED_CELL = re.compile(r"^(yes|no)\b")
+
+
+def _tables(lines: list[str]) -> list[list[list[str]]]:
+    """The tables of a section's own body, each as rows of cells.
+
+    The body ends at the next heading of any level, so a `###` subsection's
+    tables are mentions (ADR-0023 d3). Separator rows are dropped; the first row
+    of each table is its header.
+    """
+    tables: list[list[list[str]]] = []
+    current: list[list[str]] | None = None
+    for line in lines:
+        if line.startswith("#"):
+            break
+        if not line.lstrip().startswith("|"):
+            current = None
+            continue
+        cells = _cells(line)
+        if all(_SEPARATOR_CELL.match(c) for c in cells):
+            continue
+        if current is None:
+            current = []
+            tables.append(current)
+        current.append(cells)
+    return tables
+
+
+def _entry_rows(sections: dict[str, list[str]], heading: str) -> list[list[str]]:
+    """The data rows of a registry section's table: the first table, header excluded."""
+    for key, lines in sections.items():
+        if key.startswith(heading):
+            tables = _tables(lines)
+            return tables[0][1:] if tables else []
+    return []
+
+
 def parse(text: str) -> Catalog:
+    """The two registry tables into rows; a row that is not an entry is skipped.
+
+    Skipping keeps a consumer reading; ``check`` reports every skipped row.
+    """
     sections = _sections(text)
     modules: list[Module] = []
     parts: list[Part] = []
 
-    for heading, lines in sections.items():
-        is_modules = heading.startswith(_MODULES_HEADING)
-        is_parts = heading.startswith(_PARTS_HEADING)
-        if not (is_modules or is_parts):
-            continue
-        for line in lines:
-            if not line.lstrip().startswith("|"):
-                continue
-            cells = _cells(line)
-            if len(cells) < 4:
-                continue
-            if is_modules and (m := _E_CELL.match(cells[0])):
-                modules.append(
-                    Module(
-                        e_number=m.group(1),
-                        designation=_strip_md(cells[1]),
-                        discipline=_strip_md(cells[2]),
-                        notes=_strip_md(cells[3]),
-                    )
+    for cells in _entry_rows(sections, _MODULES_HEADING):
+        if len(cells) == len(_MODULE_COLUMNS) and (m := _E_CELL.match(cells[0])):
+            modules.append(
+                Module(
+                    e_number=m.group(1),
+                    designation=_strip_md(cells[1]),
+                    discipline=_strip_md(cells[2]),
+                    notes=_strip_md(cells[3]),
                 )
-            elif is_parts and (m := _SP_CELL.match(cells[0])):
-                parts.append(
-                    Part(
-                        sp_number=m.group(1),
-                        role=_strip_md(cells[1]),
-                        # "yes (vendor serial / gateway identity)" | "no"
-                        instance_tracked=_strip_md(cells[2]).lower().startswith("yes"),
-                        notes=_strip_md(cells[3]),
-                    )
+            )
+    for cells in _entry_rows(sections, _PARTS_HEADING):
+        if len(cells) == len(_PART_COLUMNS) and (m := _SP_CELL.match(cells[0])):
+            parts.append(
+                Part(
+                    sp_number=m.group(1),
+                    role=_strip_md(cells[1]),
+                    # "yes (vendor serial / gateway identity)" | "no"
+                    instance_tracked=_strip_md(cells[2]).startswith("yes"),
+                    notes=_strip_md(cells[3]),
                 )
+            )
 
     return Catalog(modules=tuple(modules), parts=tuple(parts))
 
@@ -158,18 +191,46 @@ _PART_COLUMNS = ("SP-number", "Role / generic spec (vendor-free)", "Instance-tra
 
 
 def _check_header(sections: dict[str, list[str]], heading: str, expected: tuple[str, ...]) -> str:
-    """The first table row of a section must be the canonical column header."""
+    """A section's body holds one table, and its first row is the canonical header."""
     for key, lines in sections.items():
         if not key.startswith(heading):
             continue
-        for line in lines:
-            if line.lstrip().startswith("|"):
-                found = tuple(_strip_md(c) for c in _cells(line))
-                if found != expected:
-                    return f"{heading}: column header is {found!r}, expected {expected!r}"
-                return ""
-        return f"{heading}: section has no table"
+        tables = _tables(lines)
+        if not tables:
+            return f"{heading}: section has no table"
+        if len(tables) > 1:
+            return f"{heading}: section holds {len(tables)} tables, expected one"
+        found = tuple(_strip_md(c) for c in tables[0][0])
+        if found != expected:
+            return f"{heading}: column header is {found!r}, expected {expected!r}"
+        return ""
     return f"{heading}: section missing"
+
+
+def _check_rows(
+    sections: dict[str, list[str]],
+    heading: str,
+    columns: tuple[str, ...],
+    cell: re.Pattern[str],
+) -> list[str]:
+    """Every data row is an entry: the column count, a bare backticked identifier in
+    column 1 and, on the SP table, `Instance-tracked?` beginning `yes` or `no`."""
+    problems = []
+    for cells in _entry_rows(sections, heading):
+        first = cells[0]
+        if len(cells) != len(columns):
+            problems.append(
+                f"{heading}: row {first!r} has {len(cells)} cells, expected {len(columns)}"
+            )
+            continue
+        if not cell.match(first):
+            problems.append(f"{heading}: first cell {first!r} is not a bare backticked identifier")
+            continue
+        if columns == _PART_COLUMNS and not _TRACKED_CELL.match(_strip_md(cells[2])):
+            problems.append(
+                f"{heading}: {first} {columns[2]} is {cells[2]!r}, expected to begin yes or no"
+            )
+    return problems
 
 
 def check(path: Path | None = None) -> list[str]:
@@ -188,6 +249,8 @@ def check(path: Path | None = None) -> list[str]:
         )
         if p
     ]
+    problems += _check_rows(sections, _MODULES_HEADING, _MODULE_COLUMNS, _E_CELL)
+    problems += _check_rows(sections, _PARTS_HEADING, _PART_COLUMNS, _SP_CELL)
 
     cat = parse(text)
     if not cat.modules:
