@@ -665,7 +665,7 @@ async def bind_machine_provisioning(
     db: AsyncIOMotorDatabase = Depends(get_db),
     _role: str = Depends(require_provisioning),
 ):
-    """Bind a machine to its ATECC608 certificate (ADR-0022 d12).
+    """Bind a machine to its gateway certificate (ADR-0022 d12).
 
     Separate from the E-instance route because a gateway has no
     `Exxxx-VVVVVV-NNNNNN` serial — it is SP0004 identified as a machine, and

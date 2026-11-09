@@ -50,7 +50,8 @@ class MachineProvisionRequest(BaseModel):
 
     Not ProvisionRequest with a different key: a machine binding carries the two
     facts that identify the *unit* (the SP0004 vendor serial and the ATECC die
-    serial) alongside the certificate metadata, and it carries no ``pr_object_key``
+    serial, absent for a software key, ADR-0007 d11) alongside the certificate
+    metadata, and it carries no ``pr_object_key``
     — whether a machine gets a lifecycle document blob at all is deferred (d12).
 
     Upserted, latest-wins: gateway certificates are short-lived and auto-renewed

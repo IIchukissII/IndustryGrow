@@ -6,7 +6,7 @@
   ``token -> role`` from config. Interim, shaped toward a stage-11 JWT claim.
   With no token configured the token routes answer 503.
 - Gateway machines: **mTLS** (decision 2). The TLS-terminating proxy validates
-  the ATECC-anchored client certificate against the operator root CA and forwards
+  the gateway client certificate against the operator root CA and forwards
   its verdict and the certificate's subject DN; the app believes those headers
   only from a configured proxy address and derives ``GBOX_NNNN`` from the DN
   itself. Identity comes from the cert, never a request parameter or body.
