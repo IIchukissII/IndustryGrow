@@ -143,7 +143,7 @@ The `-PR` binding route requires the `provisioning` or `operator` role. A `-PR` 
 | `erp/app/api/routes.py::ALLOWED_DOC_TYPES` | The upload allowlist |
 | `erp/app/api/routes.py::upload_document` | Stamps `-CP` and `-CC`, sequences on collision |
 | `erp/app/services/docs.py::expiring` | `-CC` rows by validity |
-| `erp/app/api/routes.py::bind_provisioning` | `-PR` binding, `provisioning` role |
+| `erp/app/api/routes.py::bind_provisioning` | `-PR` binding, `provisioning` or `operator` role |
 | `erp/app/api/deps.py::PR_READ_ROLES` | `operator` and `provisioning` |
 | `erp/app/api/routes.py::_require_doc_access` | 403 on a `-PR` row for any other role |
 | `erp/app/api/routes.py::document_content` | Reads an indexed blob; `-PR` restricted |
