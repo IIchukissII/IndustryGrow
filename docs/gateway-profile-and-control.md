@@ -9,7 +9,16 @@ The manual of [ADR-0015](../ADR/ADR-0015-gateway-profile-caching-and-local-contr
 
 ## ADR-0015 dec 1, 13-15
 
-The profile pull is the gateway's only inbound path for behaviour. The ERP stores profile versions and records which is active; it has no deploy or push function and no route that commands an actuator. The gateway has no listening service and no remote-execution path. `node_command.py` is an operator tool run on the gateway itself; it sends `ExecuteCommand` to a node over the bus.
+The profile pull is the gateway's only inbound path for behaviour. The ERP stores profile versions and records which is active; it has no deploy or push function and no route that commands an actuator. The gateway has no listening service and no remote-execution path. `node_command.py` is an operator tool run on the gateway itself; it sends `ExecuteCommand` to a node over the bus, only for the IDs in its allowlist, per node type as GetInfo names it. Any other ID is refused before anything is sent. No vendor command on any node drives an actuator output or demand.
+
+| Class | Commands | Sent |
+|---|---|---|
+| Calibration trim commit | M01 3, U3 temperature offset (ADR-0028 dec 4) | Always |
+| Report-only diagnostics | M02 1, 2; M04 1, 2, 3; M05 2, 3; A01 1, 2 | Always |
+| Bench operations that change what a node measures or publishes | M01 1, 2, 4, 5, 6, 7; M05 1 | Only with `--bench` |
+| Begin-software-update, 65533 | Sent by `firmware_client.py`, which serves the file (ADR-0029 dec 5) | Never |
+| Restart, 65535 | Sent by `provision_node_id.py --restart` | Never |
+| Any other ID, or a node type not in the table | none | Never |
 
 | Code | Role |
 |---|---|
@@ -17,6 +26,9 @@ The profile pull is the gateway's only inbound path for behaviour. The ERP store
 | `erp/app/services/profiles.py` | Versioned profile store and active record, no push |
 | `erp/app/api/routes.py::gateway_pull_active_profile` | The gateway route; serves, commands nothing |
 | `gateway/node_command.py` | Local bus command tool, not a remote channel |
+| `gateway/node_command.py::COMMANDS` | The allowlist, with each command's source |
+| `gateway/node_command.py::authorise` | Refuses a command outside the allowlist |
+| `gateway/tests/test_node_command.py` | Allowed and refused commands; the table against the firmware's `CMD_*` IDs |
 
 ## ADR-0015 dec 2
 
