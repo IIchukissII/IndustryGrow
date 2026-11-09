@@ -82,5 +82,4 @@ The ERP is a relying party, never an authority (ADR-0024 decision 13), and holds
 ## References
 
 - ADR-0001, ADR-0004, ADR-0007, ADR-0015, ADR-0020, ADR-0021, ADR-0022, ADR-0024; ADR-0009 (future: profile schema, contribution workflow, registry).
-- `signing/README.md` — the signing runbook, key handling and signature encoding.
 - [docs/profile-signing.md](../docs/profile-signing.md): the manual of this record (decisions 1–12).

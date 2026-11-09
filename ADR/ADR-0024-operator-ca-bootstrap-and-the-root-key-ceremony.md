@@ -82,7 +82,7 @@ A ceremony too heavy for a one-person deployment is skipped, and a skipped cerem
 ## References
 
 - ADR-0001, ADR-0004, ADR-0007, ADR-0015, ADR-0017, ADR-0020, ADR-0021, ADR-0022, ADR-0029.
-- `pki/README.md` — the ceremony runbook and the lifetime values.
+- The ceremony runbook, linked from the manual — the lifetime values.
 - [docs/operator-ca-ceremony.md](../docs/operator-ca-ceremony.md): the manual of this record (decisions 1–14).
 - `figures/adr0024-ceremony.svg` — the ceremony sequence.
 - RFC 5280 (X.509 / PKIX): path validation, basic constraints, key usage.

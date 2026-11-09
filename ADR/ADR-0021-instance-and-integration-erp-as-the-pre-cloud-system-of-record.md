@@ -120,5 +120,4 @@ The integration end-state is core plus layer: IndustryFlow is the independent mu
 
 - ADR-0022 — the API over these entities; ADR-0026 — backup and restore.
 - [docs/erp-system-of-record.md](../docs/erp-system-of-record.md): the manual of this record (decisions 1–18).
-- `erp/README.md` — collections, store engine, and the boundaries as enforced.
 - `GLOSSARY.md` — `[F]` / `[D]` scope tags.

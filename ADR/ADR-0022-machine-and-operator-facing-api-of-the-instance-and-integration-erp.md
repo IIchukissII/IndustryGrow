@@ -134,4 +134,3 @@ A boundary that exists only as a missing route is undocumented, not enforced. Th
 ## References
 
 - [docs/erp-api.md](../docs/erp-api.md): the manual of this record (decisions 1–14).
-- `erp/deploy/README.md` — mTLS overlay and operator tokens.
