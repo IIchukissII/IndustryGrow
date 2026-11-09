@@ -165,18 +165,20 @@ The warehouse is an S3-compatible bucket with a flat keyspace. The repository's 
 
 `store/` also holds EDA library files that carry no identifier; the key parser returns them with no root, and a footprint library is uploaded under a key that contains its directory name.
 
-`store_sync --prune` deletes every warehouse object absent from `store/` and `spec/`, lifecycle objects and their archive keys included.
+`store_sync --prune` deletes a warehouse object absent from `store/` and `spec/` only when its key reads as type-layer content: an `E` or `SP` root followed by a layer letter or a status token. A lifecycle key, its archive keys and every other key are kept.
 
 | Code | Role |
 |---|---|
 | `erp/app/services/warehouse.py::Warehouse` | The bucket client |
 | `erp/app/services/warehouse.py::Warehouse.list_prefix` | Server-side prefix listing |
 | `erp/app/store_sync.py::sync` | Uploads `store/` and `spec/` by file name; optional prune |
+| `erp/app/store_sync.py::_prunable` | Admits a key to prune only when it reads as type-layer content |
 | `erp/app/models/identifiers.py::parse_store_key` | Reads a type-layer key into its fields; unrecognised keys keep no root |
 | `erp/app/models/identifiers.py::StoreKey` | Parsed fields with `prefix` and `tail` |
 | `erp/app/api/routes.py::list_store_documents` | Repository documents with parsed keys |
 | `erp/tests/test_store_sync.py::test_sync_uploads_by_identifier_key` | Key equals file name |
 | `erp/tests/test_identifiers.py::test_store_key_reports_what_it_cannot_read` | An unidentified key returns no root |
+| `erp/tests/test_store_sync.py::test_prune_never_deletes_lifecycle_or_unread_objects` | Prune keeps lifecycle, archive and unread keys |
 
 ## ADR-0017 dec 16
 
