@@ -95,8 +95,8 @@ The bus must be deterministic, because some loops are safety-relevant and must n
 
 ## References
 
-- `spec/E0001-R-specification.md` — carrier parts, pin assignment, layer count.
-- `REGISTRY.md` — the core-board purchased part and its snapshot.
+- Carrier specification E0001-R — carrier parts, pin assignment, layer count.
+- The type registry (ADR-0023) — the core-board purchased part and its snapshot.
 - `gateway/README.md`, `gateway/busload.py` — gateway runbook, bus-load accounting.
 - WeAct STM32F4 64-pin core board: https://github.com/WeActStudio/WeActStudio.STM32F4_64Pin_CoreBoard
 - Cyphal specification; libcanard, Pycyphal, Nunavut (OpenCyphal).
