@@ -157,9 +157,9 @@ One application container over MongoDB. Integration history is validity-stamped 
 
 ## ADR-0021 dec 16
 
-Every `[F]` model defaults `tenant_id` to the configured operator UUID, and every `[F]` write sets it. The instance and serial-counter uniqueness indexes include the tenant, and the allocator reads and increments a counter by tenant and counter key. Nothing routes, partitions or isolates by tenant.
+Every `[F]` model defaults `tenant_id` to the configured operator UUID, and every `[F]` write sets it. The instance uniqueness index includes the tenant; the allocator matches a counter by its id and writes the tenant when it creates one. Nothing routes, partitions or isolates by tenant.
 
-A counter written without `tenant_id` gets the operator UUID at every ERP start and after every `restore`. The sequence stays one per module and version: the counter id is `_id`. The migration sets only `tenant_id` on counters where it is missing or null; `last_serial` is never written, and a second run changes nothing. Until it has run, the allocator does not match such a counter and its upsert fails on the duplicate `_id`, so the sequence is never restarted.
+A counter written without `tenant_id` gets the operator UUID at every ERP start and after every `restore`. The sequence stays one per module and version: the counter id is `_id`. The migration sets only `tenant_id` on counters where it is missing or null; `last_serial` is never written, and a second run changes nothing. The allocator matches on the counter id alone, so a counter without a tenant still continues its sequence.
 
 | Code | Role |
 |---|---|
@@ -168,7 +168,7 @@ A counter written without `tenant_id` gets the operator UUID at every ERP start 
 | `erp/app/db.py::ensure_indexes` | `uq_instance_full_id` keyed on the tenant; the counter migration |
 | `erp/app/db.py::migrate_counter_tenant` | Sets the operator UUID on counters without a tenant |
 | `erp/app/main.py::lifespan` | Runs `ensure_indexes` at start against a real Mongo |
-| `erp/tests/test_serials.py` | Counter tenant, legacy migration, idempotence, index |
+| `erp/tests/test_serials.py` | Counter tenant, legacy migration, idempotence |
 
 ## ADR-0021 dec 17
 

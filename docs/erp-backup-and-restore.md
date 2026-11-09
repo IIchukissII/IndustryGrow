@@ -53,11 +53,12 @@ The manifest records the serial counter's high-water mark per module and version
 
 ## ADR-0026 dec 4
 
-`restore` writes every archived object to the warehouse, then replays the dump. A failure after the object pass leaves the objects in place; a second run puts them again and finishes the index.
+`restore` writes every archived object to the warehouse, then replays the dump. A failure after the object pass leaves the objects in place; a second run puts them again and finishes the index. After the replay it sets the operator UUID on any restored counter without a tenant (ADR-0021 dec 16), which changes no counter value.
 
 | Code | Role |
 |---|---|
 | `erp/app/backup.py::restore` | Blobs first, then `mongorestore --drop` |
+| `erp/app/db.py::migrate_counter_tenant` | Sets the tenant on restored counters without one |
 
 ## ADR-0026 dec 5
 

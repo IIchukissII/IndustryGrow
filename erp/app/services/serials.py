@@ -38,8 +38,8 @@ async def allocate(
 
     cid = counter_id(e_number, version)  # validates the module/version grammar
     counter = await db[FOUNDATION["serial_counter"]].find_one_and_update(
-        {"_id": cid, "tenant_id": settings.operator_uuid},
-        {"$inc": {"last_serial": quantity}},
+        {"_id": cid},
+        {"$inc": {"last_serial": quantity}, "$setOnInsert": {"tenant_id": settings.operator_uuid}},
         upsert=True,
         return_document=ReturnDocument.AFTER,
     )
@@ -67,7 +67,5 @@ async def allocate(
 
 async def peek(db: AsyncIOMotorDatabase, e_number: str, version: str) -> int:
     """The last serial issued for (e_number, version); 0 if none yet."""
-    doc = await db[FOUNDATION["serial_counter"]].find_one(
-        {"_id": counter_id(e_number, version), "tenant_id": settings.operator_uuid}
-    )
+    doc = await db[FOUNDATION["serial_counter"]].find_one({"_id": counter_id(e_number, version)})
     return doc["last_serial"] if doc else 0
