@@ -18,7 +18,7 @@ them up is the most expensive mistake available here.
 
 | Key | Says | Lives | Used |
 |-----|------|-------|------|
-| **Operator CA root** (`pki/`, ADR-0024) | *who a unit is* | offline, two encrypted copies, separate locations | approximately once, to sign one intermediate |
+| **Operator CA root** (`pki/README.md`, ADR-0024) | *who a unit is* | offline, two encrypted copies, separate locations | approximately once, to sign one intermediate |
 | **Firmware-signing key** (ADR-0004 d12) | *what code runs on a node* | offline | at firmware release events |
 | **Profile-signing key** (here, ADR-0025) | *what a cabinet is instructed to do* | operator workstation, encrypted | every time a setpoint changes |
 

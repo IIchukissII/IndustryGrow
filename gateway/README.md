@@ -74,7 +74,7 @@ service user exists.
 **The CN is the machine identifier verbatim.** `erp/app/services/mtls.py` derives
 `GBOX_NNNN` from the certificate's subject DN, so a CN that is not an ADR-0017
 machine identifier authenticates and is then refused. This convention is fixed
-here and in `erp/deploy/mtls/`, not in an ADR.
+here and in [`erp/deploy/mtls/README.md`](../erp/deploy/mtls/README.md), not in an ADR.
 
 ## 3. Sign them
 

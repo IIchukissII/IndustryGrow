@@ -61,10 +61,11 @@ A Cyphal/CAN node. Application protocol and wire vocabulary are fixed elsewhere.
 
 ## Layout
 
-The **carrier `E0001` is the parent**: `common/carrier/` owns the bus, LEDs, MCU socket and node
-identity shared by every node. A **node `nodes/<type>/` is a child**: it carries a module class ID
-and adds its sensor or actuator personality. M03 becomes a sibling `nodes/`, adding one line to
-`nodes/registry.c`.
+The **carrier `E0001` is the parent**: `common/carrier/e0001.c`, `common/carrier/identity.c` and
+`common/carrier/atecc608.c` own the bus, LEDs, MCU socket and node identity shared by every node. A
+**node is a child**: its `module_id.h` carries a module class ID and its `sensors.c` adds the sensor
+or actuator personality (`nodes/m01_climate/module_id.h`, `nodes/m01_climate/sensors.c`). M03
+becomes a sibling node, adding one line to `nodes/registry.c`.
 
 ```
 firmware/

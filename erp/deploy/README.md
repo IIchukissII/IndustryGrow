@@ -34,7 +34,7 @@ interesting failures here are the silent ones.
 ## 0. Before you start
 
 You need, on the deployment host: Docker with the compose plugin, and a checkout
-of this repository. You need, from elsewhere: the operator CA (`pki/`, ADR-0024),
+of this repository. You need, from elsewhere: the operator CA (`pki/README.md`, ADR-0024),
 because the gateway channel is certificate-verified and the CA is not stood up
 here — the ERP is a relying party, never an authority (ADR-0024 d13).
 
