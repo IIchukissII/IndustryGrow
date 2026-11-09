@@ -106,5 +106,8 @@ The IndustryFlow SAN-URI leaf has no code.
 | `gateway/provision_identity.py::SoftwareSigner.check_host_protected` | Refuses a key file others can access or its group can write |
 | `gateway/provision_identity.py::cmd_binding` | Writes a production binding with `provenance: software`; `--fixture` marks a test key with a `fixture` field |
 | `erp/app/api/routes.py::bind_machine_provisioning` | Records the binding's `provenance`; refuses a binding with a `fixture` field |
+| `erp/app/api/schemas.py::MachineProvisionRequest` | Refuses `provenance: atecc` without an ATECC serial and `software` with one |
+
+That the key was generated on the gateway and never copied is held by the procedure, not checked: the tool generates it in place, never overwrites it and copies it nowhere, and a key file copied in is indistinguishable from one generated there.
 
 Links: [pki/README.md](../pki/README.md), [gateway/README.md](../gateway/README.md), [erp/deploy/mtls/README.md](../erp/deploy/mtls/README.md).

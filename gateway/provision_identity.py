@@ -335,11 +335,11 @@ class SoftwareSigner(Signer):
             os.fchown(fd, -1, key_path.parent.stat().st_gid)
             os.fchmod(fd, 0o640)
             os.write(fd, pem)
-        except PermissionError as exc:
+        except OSError as exc:
             os.close(fd)
             key_path.unlink()
             raise ProvisioningError(
-                f"cannot give {key_path} the group of {key_path.parent}: {exc}"
+                f"cannot write {key_path} with the group of {key_path.parent}: {exc}"
             ) from exc
         os.close(fd)
         return cls(key_path)

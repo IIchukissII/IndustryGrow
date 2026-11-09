@@ -788,12 +788,30 @@ def test_a_software_key_binding_is_a_production_identity(client):
     assert r.status_code == 200, r.text
 
 
+def test_a_binding_never_asserts_hardware_that_is_not_fitted(client):
+    for body in (
+        _machine_binding(provenance="atecc", atecc_serial=None),
+        _machine_binding(provenance="software"),  # carries an ATECC serial
+    ):
+        r = client.post("/api/v1/machines/GBOX_0001/provisioning", json=body, headers=AUTH)
+        assert r.status_code == 422
+
+
+def test_an_empty_fixture_marker_is_still_refused(client):
+    r = client.post(
+        "/api/v1/machines/GBOX_0001/provisioning",
+        json=_machine_binding(atecc_serial=None, provenance="software", fixture=""),
+        headers=AUTH,
+    )
+    assert r.status_code == 422
+
+
 def test_a_binding_marked_as_a_test_key_is_refused(client):
     # provision_identity.py --fixture marks a test key; it is never a provisioned
     # unit (ADR-0007 d11), so the ERP does not record it as one.
     r = client.post(
         "/api/v1/machines/GBOX_0001/provisioning",
-        json=_machine_binding(provenance="software", fixture="test key"),
+        json=_machine_binding(atecc_serial=None, provenance="software", fixture="test key"),
         headers=AUTH,
     )
     assert r.status_code == 422

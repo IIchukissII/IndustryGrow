@@ -682,7 +682,7 @@ async def bind_machine_provisioning(
             status.HTTP_422_UNPROCESSABLE_ENTITY,
             f"{gbox} is not an ADR-0017 machine identifier (GBOX_NNNN)",
         )
-    if body.fixture:
+    if body.fixture is not None:
         raise HTTPException(
             status.HTTP_422_UNPROCESSABLE_ENTITY,
             "a binding marked as a test key is never a provisioned unit (ADR-0007 d11)",

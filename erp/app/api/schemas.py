@@ -9,7 +9,7 @@ import re
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.models import identifiers
 
@@ -66,6 +66,16 @@ class MachineProvisionRequest(BaseModel):
     provenance: Literal["atecc", "software"] | None = None
     # Set by provision_identity.py --fixture on a test key; refused (d11).
     fixture: str | None = None
+
+    @model_validator(mode="after")
+    def _provenance_matches_the_serial(self) -> MachineProvisionRequest:
+        # A binding never asserts hardware that is not fitted (ADR-0007 d11).
+        if self.provenance == "atecc" and not self.atecc_serial:
+            raise ValueError("provenance atecc needs the ATECC serial")
+        if self.provenance == "software" and self.atecc_serial:
+            raise ValueError("a software key has no ATECC serial")
+        return self
+
     public_key_fingerprint: str
     cert_serial: str
     cert_not_before: datetime
