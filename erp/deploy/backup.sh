@@ -76,8 +76,14 @@ DUMP_IN_ERP="$REMOTE_DIR/index.archive"
 # Straight from the mongo container into the erp container, never onto this host:
 # the dump is the whole system of record in the clear, and it is encrypted only at
 # the end of this script (ADR-0026 d7).
+# The database name is the erp container's setting; the mongo container does not
+# carry ERP_MONGO_DB.
+DB=$("${COMPOSE[@]}" exec -T erp python -c 'from app.config import settings; print(settings.mongo_db)' | tr -d '\r') \
+  || die "could not read the ERP's database name"
+[ -n "$DB" ] || die "the ERP reports no database name"
 "${COMPOSE[@]}" exec -T mongo sh -c \
-  'mongodump --uri="mongodb://$MONGO_INITDB_ROOT_USERNAME:$MONGO_INITDB_ROOT_PASSWORD@localhost:27017/?authSource=admin" --db="${ERP_MONGO_DB:-industrygrow_erp}" --archive --quiet' \
+  'mongodump --uri="mongodb://$MONGO_INITDB_ROOT_USERNAME:$MONGO_INITDB_ROOT_PASSWORD@localhost:27017/?authSource=admin" --db="$1" --archive --quiet' \
+  sh "$DB" \
   | "${COMPOSE[@]}" exec -T erp sh -c "cat > $DUMP_IN_ERP" \
   || die "could not take the index dump through the mongo service"
 "${COMPOSE[@]}" exec -T erp test -s "$DUMP_IN_ERP" || die "the index dump is empty"
