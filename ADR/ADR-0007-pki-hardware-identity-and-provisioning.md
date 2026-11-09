@@ -89,10 +89,8 @@ The two relying parties of a gateway read its identity from different certificat
 ## References
 
 - ADR-0001, ADR-0002, ADR-0004, ADR-0017, ADR-0019, ADR-0021, ADR-0022, ADR-0024; ADR-IF-0007 (IndustryFlow).
-- `pki/README.md` — operator CA procedure and certificate lifetimes.
-- `gateway/README.md` — gateway key generation and certificate installation.
+- The operator CA runbook, linked from the manual — certificate lifetimes.
 - Store document SP0004-M-atecc-provisioning — secure-element provisioning for a gateway that carries one.
-- `erp/deploy/mtls/README.md` — the ERP's CN-based identity extraction.
 - [docs/gateway-identity-and-provisioning.md](../docs/gateway-identity-and-provisioning.md): the manual of this record (decisions 1–11).
 - Store document E0001-000003-D-pinmap — carrier pin map: the node secure element.
 - RFC 5280 (X.509 / PKIX); RFC 8446 (TLS 1.3).

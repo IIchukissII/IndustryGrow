@@ -85,4 +85,4 @@ The operator CA and profile-signing key have their own ceremony-based custody (A
 ## References
 
 - [docs/erp-backup-and-restore.md](../docs/erp-backup-and-restore.md): the manual of this record (decisions 1–10).
-- [erp/deploy/README.md](../erp/deploy/README.md) — retention, cadence, rehearsal and custody values.
+- The ERP deployment runbook, linked from the manual — retention, cadence, rehearsal and custody values.

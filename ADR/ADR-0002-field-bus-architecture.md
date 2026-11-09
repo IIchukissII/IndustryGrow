@@ -97,7 +97,6 @@ The bus must be deterministic, because some loops are safety-relevant and must n
 
 - Carrier specification E0001-R — carrier parts, pin assignment, layer count.
 - The type registry (ADR-0023) — the core-board purchased part and its snapshot.
-- `gateway/README.md` — gateway runbook.
 - [docs/field-bus-architecture.md](../docs/field-bus-architecture.md): the manual of this record (decisions 1–12).
 - WeAct STM32F4 64-pin core board: https://github.com/WeActStudio/WeActStudio.STM32F4_64Pin_CoreBoard
 - Cyphal specification; libcanard, Pycyphal, Nunavut (OpenCyphal).
