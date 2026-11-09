@@ -133,7 +133,7 @@ The layer letters are a fixed set in the grammar; a store key's layer is read fr
 
 The ERP accepts exactly the five lifecycle suffixes and refuses type-layer uploads. `-QP`, `-QR` and `-PR` take the bare key. `-CP` and `-CC` take `-YYYYMMDDThhmmss`, the day from `doc_date` when given and the time from the upload, then `-n` while the key is occupied. The grammar still reads a day-only stamp. `-CC` validity is indexed and queried for expiry.
 
-The `-PR` binding route requires the `provisioning` role. No role is named for engineering or quality: a `-PR` blob is read with any token role, `readonly` included.
+The `-PR` binding route requires the `provisioning` or `operator` role. A `-PR` blob, its archives included, is read only with the `operator` or `provisioning` role; the URL, read-through and PDF routes refuse `readonly` with 403. The other suffixes are read with any role.
 
 | Code | Role |
 |---|---|
@@ -144,9 +144,14 @@ The `-PR` binding route requires the `provisioning` role. No role is named for e
 | `erp/app/api/routes.py::upload_document` | Stamps `-CP` and `-CC`, sequences on collision |
 | `erp/app/services/docs.py::expiring` | `-CC` rows by validity |
 | `erp/app/api/routes.py::bind_provisioning` | `-PR` binding, `provisioning` role |
-| `erp/app/api/routes.py::document_content` | Reads an indexed blob with any role |
+| `erp/app/api/deps.py::PR_READ_ROLES` | `operator` and `provisioning` |
+| `erp/app/api/routes.py::_require_doc_access` | 403 on a `-PR` row for any other role |
+| `erp/app/api/routes.py::document_content` | Reads an indexed blob; `-PR` restricted |
+| `erp/app/api/routes.py::document_url` | Presigns an indexed blob; `-PR` restricted |
+| `erp/app/api/routes.py::instance_document_pdf` | Renders an indexed blob; `-PR` restricted |
 | `erp/tests/test_api.py::test_document_allowlist_rejects_type_layer` | Type-layer upload refused |
 | `erp/tests/test_api.py::test_two_calibrations_on_one_day_do_not_overwrite` | Two same-day calibrations keep two keys |
+| `erp/tests/test_api.py::test_a_pr_document_is_read_by_operator_and_provisioning_only` | `readonly` refused on `-PR`, admitted on `-QP` |
 
 ## ADR-0017 dec 13
 

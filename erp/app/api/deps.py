@@ -82,6 +82,9 @@ require_write = require_role(*_WRITE_ROLES)
 # Provisioning-station-only (serial<->ATECC binding).
 require_provisioning = require_role("provisioning", "operator")
 
+# Roles that may read a `-PR` blob, the private side of identity (ADR-0017 d12).
+PR_READ_ROLES = frozenset({"operator", "provisioning"})
+
 
 async def gateway_identity(
     request: Request,

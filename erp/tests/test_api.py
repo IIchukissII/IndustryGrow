@@ -1162,3 +1162,48 @@ def test_every_markdown_document_in_the_store_renders(caplog):
             assert blob.startswith(b"%PDF-"), doc.name
     fallbacks = [r for r in caplog.records if r.name == "app.services.reports"]
     assert not fallbacks, f"fell back to plain text: {[r.getMessage() for r in fallbacks]}"
+
+
+@pytest.mark.parametrize("route", ["url", "content", "pdf"])
+def test_a_pr_document_is_read_by_operator_and_provisioning_only(client, monkeypatch, route):
+    """ADR-0017 d12: `-PR` is restricted; `readonly` reads every other suffix."""
+    monkeypatch.setattr(
+        settings,
+        "api_tokens",
+        {"op": "operator", "pv": "provisioning", "ro": "readonly"},
+    )
+
+    def as_role(token: str) -> dict:
+        return {"Authorization": f"Bearer {token}"}
+
+    inst = _one_instance_as(client, as_role("op"))
+    for doc_type in ("PR", "PR", "QP"):  # the second PR archives the first
+        r = client.post(
+            f"/api/v1/instances/{inst}/documents",
+            data={"doc_type": doc_type},
+            files={"file": ("f.md", b"# record", "text/markdown")},
+            headers=as_role("op"),
+        )
+        assert r.status_code == 200, r.text
+    listed = client.get(f"/api/v1/instances/{inst}/documents", headers=as_role("ro")).json()
+    pr_keys = [d["object_key"] for d in listed if d["doc_type"] == "PR"]
+    assert len(pr_keys) == 2 and any("-superseded-" in k for k in pr_keys)
+
+    def get(key: str, token: str) -> int:
+        url = f"/api/v1/instances/{inst}/documents/{key}/{route}"
+        return client.get(url, headers=as_role(token)).status_code
+
+    for key in pr_keys:
+        assert get(key, "ro") == 403
+        assert get(key, "op") == 200
+        assert get(key, "pv") == 200
+    assert get(f"{inst}-QP", "ro") == 200
+
+
+def _one_instance_as(client, headers: dict) -> str:
+    client.post(
+        "/api/v1/instances",
+        json={"e_number": "E0002", "version": "020100", "quantity": 1},
+        headers=headers,
+    )
+    return "E0002-020100-000001"
