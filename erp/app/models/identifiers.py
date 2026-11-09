@@ -43,7 +43,7 @@ LIFECYCLE_SUFFIXES = frozenset({"QP", "QR", "CP", "CC", "PR"})
 # ADR-0022 d7), then what the writers append. `upload_document` stamps CP and CC
 # (`-YYYYMMDDThhmmss`, ADR-0017 d11; keys written before the time component carry
 # the day alone) and adds `-n` on collision; `docs.record_doc` archives a reissued
-# QP, QR or PR under `-superseded-YYYYMMDDThhmmss`, with `-n` on collision. The
+# QP, QR or PR under `-superseded-YYYYMMDDThhmmss`, with `-n` on collision (d22). The
 # tail is accepted after any suffix: a selection that admits one form too many
 # copies an object, one that admits too few loses it. Every such object exists
 # only in the warehouse, so anything that selects lifecycle objects selects them
