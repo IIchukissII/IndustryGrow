@@ -7,7 +7,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 The manual of [ADR-0004](../ADR/ADR-0004-gateway-host-hardening-firmware-signing-and-stateless-edge-operation.md): the provisioning script, host configuration, service units, telemetry stamps and release signing that realise the gateway's security posture.
 
-`gateway/provision.sh::main` runs every step below in order; each installs one file from `gateway/files/` and enables its service.
+`gateway/provision.sh::main` runs every step below in order; each installs one file of the provisioning bundle and enables its service.
 
 ## ADR-0004 dec 1
 

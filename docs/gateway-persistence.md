@@ -40,7 +40,7 @@ The store runs in WAL mode with `synchronous=NORMAL` and commits in batches by r
 
 ## ADR-0020 dec 4
 
-Not yet realised. The consumer has one recording rate; no survey mode, campaign bound or export exists in `gateway/`.
+Not yet realised. The consumer has one recording rate; no survey mode, campaign bound or export exists in the gateway code.
 
 ## ADR-0020 dec 5
 
