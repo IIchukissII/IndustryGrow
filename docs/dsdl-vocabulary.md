@@ -69,7 +69,7 @@ The Node-ID is the `uavcan.node.id` register, persisted in the carrier store; re
 
 ## ADR-0005 dec 7
 
-The default subject-IDs are compiled into each personality in the unregulated range; the gateway restates the map. No `uavcan.pub.<name>.id` register exists: a subject-ID cannot be reassigned without reflashing.
+The default subject-IDs are compiled into each personality in the unregulated range; the gateway restates the map. The register interface is not yet realised: no `uavcan.pub.<name>.id` register exists, so a subject-ID cannot be reassigned without reflashing.
 
 | Code | Role |
 |---|---|
@@ -106,7 +106,7 @@ Each personality probes at boot and on a fixed period, and gates each publicatio
 
 ## ADR-0005 dec 10
 
-Generated sources land in the build tree and the gateway's install directory; `.gitignore` excludes the build trees. The node build finds any `nnvg` on the path and pins no Nunavut version; the gateway's Nunavut arrives as a dependency of the exactly pinned `pycyphal`.
+Generated sources land in the build tree and the gateway's install directory; `.gitignore` excludes the build trees. The Nunavut pin is not yet realised: the node build finds any `nnvg` on the path, and the gateway's Nunavut arrives as a dependency of the exactly pinned `pycyphal`.
 
 | Code | Role |
 |---|---|
@@ -119,7 +119,7 @@ Generated sources land in the build tree and the gateway's install directory; `.
 
 ## ADR-0005 dec 11
 
-M04 publishes one summary record and serves the interval frame as a file. No gateway code subscribes to the summary or reads the frame.
+M04 publishes one summary record and serves the interval frame as a file. The gateway side is not yet realised: no gateway code subscribes to the summary or reads the frame.
 
 | Code | Role |
 |---|---|

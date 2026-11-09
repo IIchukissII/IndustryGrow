@@ -83,6 +83,7 @@ A trim describes the module, while the ADR-0027 store describes the carrier (ADR
 | Open question | Settled by |
 |---|---|
 | The commissioning tool's interface and transport | An operational specification (ADR-0030, service-tool specification) |
+| The read-back comparison before a trim write (decision 6), the `-CC` instance and validity check before a restore (decision 7), and the step sequencing and refusals (decision 9) | The commissioning tool, built with the interface of the row above |
 | Where a device-versus-record divergence is detected and reported: node diagnostic channel or gateway | Maintainers, with the first divergence-detection implementation |
 
 ## References
