@@ -384,14 +384,21 @@ async def restore(archive: Path, *, force: bool = False, database_name: str | No
     finally:
         restored.close()
 
-    log("restored. Verify the live store before trusting it:")
-    log("  python -m app.backup check-live")
+    into = f" --into {database_name}" if database_name else ""
+    log(f"restored. Verify {target_db} before trusting it:")
+    log(f"  python -m app.backup check-live{into}")
     return 0
 
 
-async def check_live() -> int:
-    """ADR-0026 d9 against the running store: does every recorded key resolve?"""
-    database = Database(settings.mongo_uri, settings.mongo_db, mock=settings.mongo_mock)
+async def check_live(database_name: str | None = None) -> int:
+    """ADR-0026 d9 against a store: does every recorded key resolve?
+
+    `database_name` is the database `restore --into` wrote, for the rehearsal of
+    d10; None is the configured one. Keys resolve against the configured
+    warehouse bucket, the same one `restore` writes its objects into.
+    """
+    target_db = database_name or settings.mongo_db
+    database = Database(settings.mongo_uri, target_db, mock=settings.mongo_mock)
     warehouse = Warehouse()
     dangling = []
     checked = 0
@@ -403,7 +410,7 @@ async def check_live() -> int:
         if not await warehouse.exists(key):
             dangling.append(key)
 
-    log(f"checked {checked} indexed object key(s)")
+    log(f"checked {checked} indexed object key(s) in {target_db}")
     if dangling:
         log(f"  FAIL  {len(dangling)} do not resolve in the warehouse: {dangling[:5]}")
         log("        ADR-0021 d7 requires that a recorded key always resolves.")
@@ -451,7 +458,13 @@ def build_parser() -> argparse.ArgumentParser:
         "a throwaway database has no hardware behind it",
     )
 
-    sub.add_parser("check-live", help="verify every recorded key resolves in the warehouse")
+    p = sub.add_parser("check-live", help="verify every recorded key resolves in the warehouse")
+    p.add_argument(
+        "--into",
+        metavar="DB",
+        help="check this database instead of the configured one: the database a rehearsal "
+        "restored with restore --into (ADR-0026 d10)",
+    )
     return parser
 
 
@@ -472,7 +485,7 @@ def main(argv: list[str] | None = None) -> int:
                 restore(Path(args.archive), force=args.force, database_name=args.into)
             )
         elif args.command == "check-live":
-            return asyncio.run(check_live())
+            return asyncio.run(check_live(args.into))
     except BackupError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
