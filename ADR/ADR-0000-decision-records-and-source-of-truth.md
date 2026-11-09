@@ -8,8 +8,6 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Status:** Accepted
 - **Date:** 2026-06-12; changed 2026-10-19
 - **Parent:** — (root; governs the form of every other ADR)
-- **Canon:** [IIchukissII/CANON](https://github.com/IIchukissII/CANON), which this record
-  refines for this repository
 - **Related:** [ADR-0001](ADR-0001-industrygrow-framing.md) (origin of the IndustryFlow core / IndustryGrow layer split that decision 8 names)
 
 ## Context
@@ -69,6 +67,7 @@ The standard for the record itself is M. Nygard, "Documenting Architecture Decis
 
 ## References
 
+- [IIchukissII/CANON](https://github.com/IIchukissII/CANON) — the canon this record refines for this repository (canon decs 7, 8, 10, 18).
 - ADR-0001 — origin of the core/layer split decision 8 expresses.
 - `GLOSSARY.md` — binds the `ADR-` / `ADR-IF-` tokens to decision 8.
 - M. Nygard, "Documenting Architecture Decisions" (2011).
