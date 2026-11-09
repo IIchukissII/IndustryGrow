@@ -53,6 +53,16 @@ command -v gpg >/dev/null 2>&1 \
 
 mkdir -p "$OUT"
 
+# Every plaintext this script creates is removed on every exit, success or `die`:
+# the index dump and the archive in the container, and the archive copied out to
+# this host. Only the encrypted file outlives the run (ADR-0026 d7).
+PLAIN=""
+cleanup() {
+  "${COMPOSE[@]}" exec -T erp rm -rf "$REMOTE_DIR" >/dev/null 2>&1 || true
+  if [ -n "$PLAIN" ] && [ -e "$PLAIN" ]; then shred -u "$PLAIN" 2>/dev/null || rm -f "$PLAIN"; fi
+}
+trap cleanup EXIT
+
 # --- capture, inside the container where mongodump and the credentials live ----
 printf '[backup] capturing (index first, blobs second — ADR-0026 d3)\n'
 "${COMPOSE[@]}" exec -T erp mkdir -p "$REMOTE_DIR"
