@@ -7,8 +7,8 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 - **Status:** Accepted
 - **Date:** 2026-09-08; changed 2026-10-19
-- **Parent:** [ADR-0001](ADR-0001-industrygrow-framing.md)
-- **Related:** [ADR-0003](ADR-0003-strawberry-day-neutral-profile.md) (setpoints, VPD band, CO₂ as a variant), [ADR-0015](ADR-0015-gateway-profile-and-control-loops.md) (cascaded control and demand form, hardware interlocks), [ADR-0016](ADR-0016-empirical-survey-and-state-space-modeling.md) (condensation in the apparatus subspace; actuator cycling as disturbance), [ADR-0017](ADR-0017-component-document-and-instance-identification.md) (identification at commit), [ADR-0018](ADR-0018-power-distribution-and-rail-monitoring.md) (rails and sections), [ADR-0019](ADR-0019-purchased-part-%28SP%29-identification.md) (single-parent parts on the parent's root), [ADR-0031](ADR-0031-actuator-node-taxonomy.md) (`A01-CLIMATE` class, element commands, signed demand, safe output, publication rule)
+- **Parent:** [ADR-0001](ADR-0001-industrygrow-as-an-open-core-cultivation-platform-on-industryflow.md)
+- **Related:** [ADR-0003](ADR-0003-strawberry-day-neutral-reference-cultivation-profile.md) (setpoints, VPD band, CO₂ as a variant), [ADR-0015](ADR-0015-gateway-profile-caching-and-local-control-loops.md) (cascaded control and demand form, hardware interlocks), [ADR-0016](ADR-0016-empirical-survey-state-space-modeling-and-sensor-density-management.md) (condensation in the apparatus subspace; actuator cycling as disturbance), [ADR-0017](ADR-0017-component-document-and-instance-identification.md) (identification at commit), [ADR-0018](ADR-0018-cabinet-power-distribution-and-consumption-metering.md) (rails and sections), [ADR-0019](ADR-0019-purchased-part-sp-identification.md) (single-parent parts on the parent's root), [ADR-0031](ADR-0031-actuator-node-taxonomy.md) (`A01-CLIMATE` class, element commands, signed demand, safe output, publication rule)
 
 ## Context
 

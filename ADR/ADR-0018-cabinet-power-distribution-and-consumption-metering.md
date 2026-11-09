@@ -7,8 +7,8 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 - **Status:** Proposed
 - **Date:** 2026-06-03; changed 2026-10-19
-- **Parent:** [ADR-0001](ADR-0001-industrygrow-framing.md)
-- **Related:** [ADR-0002](ADR-0002-field-bus-architecture.md) (per-node regulation and linear bus this board feeds), [ADR-0014](ADR-0014-sensor-node-taxonomy.md) (M05-SAFETY, the module class this board realises), [ADR-0015](ADR-0015-gateway-profile-and-control-loops.md) (actuator commands and the hardware interlock rule), [ADR-0017](ADR-0017-component-document-and-instance-identification.md) (E-module identification of the board), [ADR-0031](ADR-0031-actuator-node-taxonomy.md) (actuator switching, isolation and interlocks)
+- **Parent:** [ADR-0001](ADR-0001-industrygrow-as-an-open-core-cultivation-platform-on-industryflow.md)
+- **Related:** [ADR-0002](ADR-0002-field-bus-architecture.md) (per-node regulation and linear bus this board feeds), [ADR-0014](ADR-0014-sensor-node-taxonomy-and-module-decomposition.md) (M05-SAFETY, the module class this board realises), [ADR-0015](ADR-0015-gateway-profile-caching-and-local-control-loops.md) (actuator commands and the hardware interlock rule), [ADR-0017](ADR-0017-component-document-and-instance-identification.md) (E-module identification of the board), [ADR-0031](ADR-0031-actuator-node-taxonomy.md) (actuator switching, isolation and interlocks)
 
 ## Context
 

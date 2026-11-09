@@ -7,8 +7,8 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 - **Status:** Proposed
 - **Date:** 2026-05-17; changed 2026-10-19
-- **Parent:** [ADR-0001](ADR-0001-industrygrow-framing.md)
-- **Related:** [ADR-0014](ADR-0014-sensor-node-taxonomy.md) (sensor classes multiplied by instance, which decision 8 moves between deployments; condensate input decision 20 reads), [ADR-0015](ADR-0015-gateway-profile-and-control-loops.md) (single mutation channel decision 6 uses; gateway control loops decision 4 extends), [ADR-0020](ADR-0020-gateway-persistence-model.md) (local store the survey phase requires), [ADR-0033](ADR-0033-canopy-imaging-channel.md) (imaging channel that observes leaf area)
+- **Parent:** [ADR-0001](ADR-0001-industrygrow-as-an-open-core-cultivation-platform-on-industryflow.md)
+- **Related:** [ADR-0014](ADR-0014-sensor-node-taxonomy-and-module-decomposition.md) (sensor classes multiplied by instance, which decision 8 moves between deployments; condensate input decision 20 reads), [ADR-0015](ADR-0015-gateway-profile-caching-and-local-control-loops.md) (single mutation channel decision 6 uses; gateway control loops decision 4 extends), [ADR-0020](ADR-0020-gateway-persistence-model.md) (local store the survey phase requires), [ADR-0033](ADR-0033-canopy-imaging-channel.md) (imaging channel that observes leaf area)
 
 ## Context
 

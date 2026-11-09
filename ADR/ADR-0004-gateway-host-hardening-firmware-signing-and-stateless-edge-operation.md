@@ -7,8 +7,8 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 - **Status:** Accepted
 - **Date:** 2026-05-16; changed 2026-10-19
-- **Parent:** [ADR-0001](ADR-0001-industrygrow-framing.md)
-- **Related:** [ADR-0002](ADR-0002-field-bus-architecture.md) (places the security boundary at the gateway; the bus time base decision 18 reads), [ADR-0005](ADR-0005-dsdl-foundation.md) (the wire types decision 18 stamps), [ADR-0007](ADR-0007-pki-and-secure-element-identity.md) (who the gateway is; this record is how it behaves), [ADR-0015](ADR-0015-gateway-profile-and-control-loops.md) (the profile pull and the photoperiod decision 19 names), [ADR-0020](ADR-0020-gateway-persistence-model.md) (the local store that bounds decisions 8–9), [ADR-0022](ADR-0022-instance-integration-erp-api.md) (the ERP endpoint decision 19 adds to egress), [ADR-0024](ADR-0024-operator-ca-bootstrap-and-key-ceremony.md) (custody of the firmware-signing key), [ADR-0029](ADR-0029-node-firmware-update-and-bootloader.md) (the node update path that realises decisions 12–16)
+- **Parent:** [ADR-0001](ADR-0001-industrygrow-as-an-open-core-cultivation-platform-on-industryflow.md)
+- **Related:** [ADR-0002](ADR-0002-field-bus-architecture.md) (places the security boundary at the gateway; the bus time base decision 18 reads), [ADR-0005](ADR-0005-dsdl-foundation.md) (the wire types decision 18 stamps), [ADR-0007](ADR-0007-pki-hardware-identity-and-provisioning.md) (who the gateway is; this record is how it behaves), [ADR-0015](ADR-0015-gateway-profile-caching-and-local-control-loops.md) (the profile pull and the photoperiod decision 19 names), [ADR-0020](ADR-0020-gateway-persistence-model.md) (the local store that bounds decisions 8–9), [ADR-0022](ADR-0022-machine-and-operator-facing-api-of-the-instance-and-integration-erp.md) (the ERP endpoint decision 19 adds to egress), [ADR-0024](ADR-0024-operator-ca-bootstrap-and-the-root-key-ceremony.md) (custody of the firmware-signing key), [ADR-0029](ADR-0029-node-firmware-update-and-bootloader.md) (the node update path that realises decisions 12–16)
 
 ## Context
 

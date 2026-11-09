@@ -7,7 +7,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 - **Status:** Accepted
 - **Date:** 2026-05-16; changed 2026-10-19
-- **Related:** [ADR-0002](ADR-0002-field-bus-architecture.md) (realises decision 8), [ADR-0003](ADR-0003-strawberry-day-neutral-profile.md) (the seed profile of decision 5), [ADR-0006](ADR-0006-cabinet-decomposition-and-hydroponic-topology.md) (cabinet form for decision 6), [ADR-0021](ADR-0021-instance-and-integration-erp.md) (core-plus-layer integration of decision 7)
+- **Related:** [ADR-0002](ADR-0002-field-bus-architecture.md) (realises decision 8), [ADR-0003](ADR-0003-strawberry-day-neutral-reference-cultivation-profile.md) (the seed profile of decision 5), [ADR-0006](ADR-0006-cabinet-decomposition-and-hydroponic-topology.md) (cabinet form for decision 6), [ADR-0021](ADR-0021-instance-and-integration-erp-as-the-pre-cloud-system-of-record.md) (core-plus-layer integration of decision 7)
 
 ## Context
 

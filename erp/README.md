@@ -6,7 +6,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 # IndustryGrow — Instance & Integration ERP
 
 The **pre-cloud system of record** for the instance/integration layer
-([ADR-0021](../ADR/ADR-0021-instance-and-integration-erp.md)). A compact,
+([ADR-0021](../ADR/ADR-0021-instance-and-integration-erp-as-the-pre-cloud-system-of-record.md)). A compact,
 self-hostable, single-container application: the queryable **metadata layer** over
 the flat object-store **warehouse**.
 

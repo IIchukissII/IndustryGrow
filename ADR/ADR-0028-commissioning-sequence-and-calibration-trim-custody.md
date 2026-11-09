@@ -8,7 +8,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Status:** Accepted
 - **Date:** 2026-08-28; changed 2026-10-19
 - **Parent:** [ADR-0017](ADR-0017-component-document-and-instance-identification.md)
-- **Related:** [ADR-0027](ADR-0027-node-identity-model.md) (Node-ID store and provisioning write; this realizes its provisioning tool), [ADR-0014](ADR-0014-sensor-node-taxonomy.md) (decision 6: the module EEPROM and its reserved address block), [ADR-0021](ADR-0021-instance-and-integration-erp.md) (decision 7: the lifecycle-document index records are filed to), [ADR-0029](ADR-0029-node-firmware-update-and-bootloader.md) (an update is not a commissioning event and preserves trims and Node-ID), [ADR-0030](ADR-0030-local-operator-and-service-interface.md) (the service tool that executes the protocol steps), [ADR-0007](ADR-0007-pki-and-secure-element-identity.md) (secure-element scope)
+- **Related:** [ADR-0027](ADR-0027-node-identity-model.md) (Node-ID store and provisioning write; this realizes its provisioning tool), [ADR-0014](ADR-0014-sensor-node-taxonomy-and-module-decomposition.md) (decision 6: the module EEPROM and its reserved address block), [ADR-0021](ADR-0021-instance-and-integration-erp-as-the-pre-cloud-system-of-record.md) (decision 7: the lifecycle-document index records are filed to), [ADR-0029](ADR-0029-node-firmware-update-and-bootloader.md) (an update is not a commissioning event and preserves trims and Node-ID), [ADR-0030](ADR-0030-local-operator-and-service-interface.md) (the service tool that executes the protocol steps), [ADR-0007](ADR-0007-pki-hardware-identity-and-provisioning.md) (secure-element scope)
 
 ## Context
 
