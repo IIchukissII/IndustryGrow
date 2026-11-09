@@ -4,6 +4,7 @@
 
 - Human / provisioning tooling: a **scoped operator token** (decision 3),
   ``token -> role`` from config. Interim, shaped toward a stage-11 JWT claim.
+  With no token configured the token routes answer 503.
 - Gateway machines: **mTLS** (decision 2). The TLS-terminating proxy validates
   the ATECC-anchored client certificate against the operator root CA and forwards
   its verdict and the certificate's subject DN; the app believes those headers
@@ -42,11 +43,19 @@ def get_warehouse(request: Request) -> Warehouse:
 
 
 def _token_role(authorization: str | None, x_operator_token: str | None) -> str | None:
+    roles = settings.token_roles()
+    if not roles:
+        # No token configured: the token channel does not exist on this
+        # deployment, the answer the gateway routes give with no trusted proxy.
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            "no operator tokens configured (ERP_API_TOKENS)",
+        )
     token = None
     if authorization and authorization.lower().startswith("bearer "):
         token = authorization[7:].strip()
     token = token or x_operator_token
-    return settings.api_tokens.get(token) if token else None
+    return roles.get(token) if token else None
 
 
 def require_role(*allowed: str) -> Callable[..., Coroutine[Any, Any, str]]:

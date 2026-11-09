@@ -35,15 +35,19 @@ A reverse proxy terminates TLS, verifies the client certificate against the oper
 
 ## ADR-0022 dec 3
 
-`Authorization: Bearer <token>` or `X-Operator-Token` maps a token to a role from configuration. Roles are `provisioning`, `operator` and `readonly`; write routes require `operator` or `provisioning`, reads accept all three. With no tokens configured the app accepts one development token.
+`Authorization: Bearer <token>` or `X-Operator-Token` maps a token to a role from configuration. Roles are `provisioning`, `operator` and `readonly`; write routes require `operator` or `provisioning`, reads accept all three. The map has no default: with no tokens configured every token route answers 503. `ERP_DEV_TOKEN=1` admits one development token with role `operator`, only while no tokens are configured; the test suite sets it.
 
 | Code | Role |
 |---|---|
-| `erp/app/config.py::Settings.api_tokens` | Token-to-role map |
+| `erp/app/config.py::Settings.api_tokens` | Token-to-role map, empty by default |
+| `erp/app/config.py::Settings.token_roles` | The map in force; the development token only by opt-in |
+| `erp/app/api/deps.py::_token_role` | 503 when no token is configured |
 | `erp/app/api/deps.py::require_role` | Token lookup and role check |
 | `erp/app/api/deps.py::require_read` | Any role |
 | `erp/app/api/deps.py::require_write` | `operator` or `provisioning` |
 | `erp/app/api/deps.py::require_provisioning` | Serial allocation and bindings |
+| `erp/tests/test_api.py::test_no_tokens_and_no_opt_in_refuses` | No tokens, no opt-in: 503 |
+| `erp/tests/test_api.py::test_configured_tokens_refuse_the_dev_token` | Configured tokens disable the development token |
 
 ## ADR-0022 dec 4
 

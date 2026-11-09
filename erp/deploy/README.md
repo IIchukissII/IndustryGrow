@@ -68,6 +68,11 @@ a default password would be worse than no default because it would work.
 > data volume. Adding credentials to a deployment that has already started once
 > without them does nothing — you have to destroy the volume and start over.
 
+`ERP_API_TOKENS` has **no default** either (ADR-0022 d3). Without it the app
+starts and every token-authenticated route, the console's API included, answers
+**503**. Set one
+token per caller, each with its role.
+
 ---
 
 ## 2. Certificates
@@ -203,6 +208,7 @@ identity, signed profile, atomic apply. Nothing short of it does.
 | Symptom | Usually |
 |---------|---------|
 | Gateway routes return **503** | `ERP_GATEWAY_TRUSTED_PROXIES` does not contain the proxy's address on the compose network. The app checks the transport peer, not a header (ADR-0022 d2); fail-closed is the intended default |
+| Console and token routes return **503** | `ERP_API_TOKENS` is not set; there is no built-in token |
 | Gateway routes return **401/403** | The certificate verified but its CN is not a `GBOX_NNNN` machine identifier |
 | Gateway cannot verify *the server* | The proxy is serving the bare leaf instead of `server-chain.crt` |
 | Every gateway certificate is rejected | `ssl_verify_depth` too low — the chain is root → issuing CA → leaf, so depth 2 is required, not incidental |

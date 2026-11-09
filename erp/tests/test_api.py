@@ -37,6 +37,49 @@ def test_auth_required(client):
     )
 
 
+def test_no_tokens_and_no_opt_in_refuses(client, monkeypatch):
+    """ADR-0022 d3: no built-in secret. With no ERP_API_TOKENS and no
+    ERP_DEV_TOKEN the token routes answer 503, the dev token included."""
+    monkeypatch.setattr(settings, "dev_token", False)
+    assert client.get("/api/v1/instances", headers=AUTH).status_code == 503
+    assert client.get("/api/v1/instances").status_code == 503
+
+
+def test_dev_token_opt_in_admits_the_dev_token(client):
+    # conftest sets dev_token=True with no tokens configured.
+    assert client.get("/api/v1/instances", headers=AUTH).status_code == 200
+    assert client.get("/api/v1/meta", headers=AUTH).json()["role"] == "operator"
+
+
+def test_configured_tokens_refuse_the_dev_token(client, monkeypatch):
+    monkeypatch.setattr(settings, "api_tokens", {"op-secret": "operator"})
+    assert client.get("/api/v1/instances", headers=AUTH).status_code == 401
+    assert (
+        client.get("/api/v1/instances", headers={"Authorization": "Bearer op-secret"}).status_code
+        == 200
+    )
+
+
+@pytest.mark.parametrize("raw", ["", "  "])
+def test_empty_api_tokens_env_parses_as_none(monkeypatch, raw):
+    from app.config import Settings
+
+    monkeypatch.setenv("ERP_API_TOKENS", raw)
+    monkeypatch.delenv("ERP_DEV_TOKEN", raising=False)
+    parsed = Settings(_env_file=None)
+    assert parsed.api_tokens == {}
+    assert parsed.token_roles() == {}
+
+
+def test_api_tokens_env_parses_json(monkeypatch):
+    from app.config import Settings
+
+    monkeypatch.setenv("ERP_API_TOKENS", '{"t1":"operator","t2":"readonly"}')
+    monkeypatch.setenv("ERP_DEV_TOKEN", "1")
+    parsed = Settings(_env_file=None)
+    assert parsed.token_roles() == {"t1": "operator", "t2": "readonly"}
+
+
 def test_allocate_is_authoritative_and_gap_free(client):
     r = client.post(
         "/api/v1/instances",

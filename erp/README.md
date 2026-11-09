@@ -161,6 +161,9 @@ The JSON API is served at `/api/v1` (OpenAPI at `/docs`). Two caller classes:
   nginx config, the header contract, and a throwaway CA to exercise it.
 - **Operators / tooling → scoped token.** `Authorization: Bearer <token>`; `ERP_API_TOKENS`
   maps token → role (`operator` / `provisioning` / `readonly`). Interim, → JWT at stage 11.
+  **Fail-closed:** `ERP_API_TOKENS` is empty by default and the token routes then answer
+  503. `ERP_DEV_TOKEN=1` admits `dev-operator-token` (role `operator`) while
+  `ERP_API_TOKENS` is empty — development and tests only.
 
 Deliberate absences (ADR-0022): **no profile deploy/push** (record-only; gateway pulls),
 no telemetry intake, no type-meaning/SKU writes, and document upload is **allowlisted** to
@@ -184,8 +187,8 @@ never been built says so at `/` instead of 404ing; `ERP_CONSOLE_DIR` points else
 (the container builds the bundle itself and sets it to `/srv/console`).
 
 Paste an operator token into the sidebar field — it starts empty, and the console reads as
-*not signed in* until one is stored. A checkout that has set no `ERP_API_TOKENS` serves
-`dev-operator-token`. The console covers
+*not signed in* until one is stored. A local checkout run with `ERP_DEV_TOKEN=1` and no
+`ERP_API_TOKENS` takes `dev-operator-token`. The console covers
 the whole ADR-0022 surface: overview, integration (install/replace/remove by depth),
 instances and serial allocation, an instance page (documents, provisioning, history),
 deployment profiles, and SP stock.

@@ -88,10 +88,8 @@ services:
     # Everything in .env reaches the app, so a setting can be configured without
     # also being mapped below. The explicit `environment:` entries still win.
     #
-    # Not `ERP_API_TOKENS: ${ERP_API_TOKENS:-}`: pydantic-settings raises on an
-    # empty value for a dict field, so a mapping with an empty fallback breaks
-    # every deployment that does not set it. With env_file, absent is absent and
-    # app/config.py's own default applies.
+    # ERP_API_TOKENS comes from here: with none set the token routes answer 503
+    # (ADR-0022 d3). An empty value parses as none, not as an error.
     #
     # This does put the Mongo credentials in the container's environment. They
     # are already there inside ERP_MONGO_URI below, so it grants nothing new.

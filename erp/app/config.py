@@ -9,10 +9,16 @@ Single-tenant in operation: one operator UUID, applied as a constant to every
 
 from __future__ import annotations
 
+import json
 from functools import lru_cache
+from typing import Annotated, Any
 
-from pydantic import Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field, field_validator
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
+
+# The development operator token. Public in this repository; admitted only under
+# ERP_DEV_TOKEN=1 with no ERP_API_TOKENS configured.
+DEV_TOKEN = "dev-operator-token"
 
 
 class Settings(BaseSettings):
@@ -65,9 +71,18 @@ class Settings(BaseSettings):
 
     # API — scoped operator tokens (ADR-0022 d3): token -> role, one of
     # {operator, provisioning, readonly}. Interim, shaped toward stage-11 JWT.
-    # Override via ERP_API_TOKENS='{"<token>":"operator"}'. Gateway callers use
+    # Set via ERP_API_TOKENS='{"<token>":"operator"}'. Gateway callers use
     # mTLS (ADR-0022 d2), not tokens.
-    api_tokens: dict[str, str] = Field(default={"dev-operator-token": "operator"})
+    #
+    # Empty by default, and that default is fail-closed: with no tokens the token
+    # routes answer 503, as the gateway routes do with no trusted proxy. NoDecode
+    # and _parse_api_tokens make an empty ERP_API_TOKENS mean "none" instead of
+    # the error pydantic-settings raises for an empty dict field.
+    api_tokens: Annotated[dict[str, str], NoDecode] = Field(default={})
+
+    # Dev/test only — ERP_DEV_TOKEN=1 admits DEV_TOKEN as an operator token while
+    # ERP_API_TOKENS is empty. Off by default; configured tokens disable it.
+    dev_token: bool = False
 
     # Gateway mTLS channel (ADR-0022 d2). TLS terminates in a reverse proxy that
     # verifies the client chain against the operator root and forwards the result
@@ -96,6 +111,21 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"
     port: int = 8021
     reload: bool = False
+
+    @field_validator("api_tokens", mode="before")
+    @classmethod
+    def _parse_api_tokens(cls, value: Any) -> Any:
+        if isinstance(value, str):
+            return json.loads(value) if value.strip() else {}
+        return value
+
+    def token_roles(self) -> dict[str, str]:
+        """The token -> role map in force; empty means the token routes refuse."""
+        if self.api_tokens:
+            return self.api_tokens
+        if self.dev_token:
+            return {DEV_TOKEN: "operator"}
+        return {}
 
 
 @lru_cache

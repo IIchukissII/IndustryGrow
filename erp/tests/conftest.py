@@ -7,6 +7,16 @@ from __future__ import annotations
 import pytest
 from mongomock_motor import AsyncMongoMockClient
 
+from app.config import settings
+
+
+@pytest.fixture(autouse=True)
+def dev_token(monkeypatch):
+    """The suite opts in to the development token (ERP_DEV_TOKEN=1), whatever
+    the environment or an erp/.env configures."""
+    monkeypatch.setattr(settings, "api_tokens", {})
+    monkeypatch.setattr(settings, "dev_token", True)
+
 
 @pytest.fixture
 def db():
