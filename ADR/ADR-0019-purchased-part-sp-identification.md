@@ -68,6 +68,7 @@ The vendor part is swappable; the characteristic it must meet is the durable com
 
 ## References
 
+- [docs/purchased-part-identification.md](../docs/purchased-part-identification.md): the manual of this record (decisions 1–9).
 - The type registry (ADR-0023) — the SP numbers and the live SP documents.
 - ADR-0017 — the identity axis and document layers.
 - ADR-0018 — the energy-meter spec-over-SKU pattern.

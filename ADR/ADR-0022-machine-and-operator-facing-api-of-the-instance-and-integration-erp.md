@@ -132,7 +132,5 @@ A boundary that exists only as a missing route is undocumented, not enforced. Th
 
 ## References
 
-- `erp/app/api/routes.py`, `erp/app/api/schemas.py` — routes and response shapes.
-- `erp/app/services/mtls.py` — identity derivation behind the terminating proxy.
-- `erp/app/models/identifiers.py` — the grammar parser of decision 13.
+- [docs/erp-api.md](../docs/erp-api.md): the manual of this record (decisions 1–14).
 - `erp/deploy/README.md` — mTLS overlay and operator tokens.
