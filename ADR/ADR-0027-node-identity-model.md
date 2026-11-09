@@ -80,5 +80,5 @@ The store must reach the carriers in service, whose only class-identity transpor
 ## References
 
 - ADR-0005, ADR-0014, ADR-0007, ADR-0029.
-- `spec/E0001-R-specification.md` — the store per carrier revision and its I²C address.
+- Carrier specification E0001-R — the store per carrier revision and its I²C address.
 - Node firmware carrier identity module — the record layout and sector.

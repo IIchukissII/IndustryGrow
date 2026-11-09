@@ -84,6 +84,6 @@ ADR-0014 groups sensor classes by the medium a module serves. At deployment scal
 
 ## References
 
-- `spec/E0011-R-specification.md` — `A01-CLIMATE`.
+- Module specification E0011-R — `A01-CLIMATE`.
 - `firmware/dsdl/industryflow/greenhouse/actuator/` — `Demand`, `ElementState`, `InterlockState`.
-- `REGISTRY.md` — `E0011`, `E0012`.
+- The type registry (ADR-0023) — `E0011`, `E0012`.

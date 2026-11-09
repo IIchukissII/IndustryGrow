@@ -91,7 +91,7 @@ The two relying parties of a gateway read its identity from different certificat
 - ADR-0001, ADR-0002, ADR-0004, ADR-0017, ADR-0019, ADR-0021, ADR-0022, ADR-0024; ADR-IF-0007 (IndustryFlow).
 - `pki/README.md` — operator CA procedure and certificate lifetimes.
 - `gateway/README.md` — gateway key generation and certificate installation.
-- `store/SP0004-M-atecc-provisioning.md`, `gateway/provision_identity.py` — secure-element provisioning for a gateway that carries one.
+- Store document SP0004-M-atecc-provisioning, `gateway/provision_identity.py` — secure-element provisioning for a gateway that carries one.
 - `erp/app/services/mtls.py`, `erp/deploy/mtls/` — the ERP's CN-based identity extraction.
-- `store/E0001-000003-D-pinmap.md` — carrier pin map: the node secure element.
+- Store document E0001-000003-D-pinmap — carrier pin map: the node secure element.
 - RFC 5280 (X.509 / PKIX); RFC 8446 (TLS 1.3).

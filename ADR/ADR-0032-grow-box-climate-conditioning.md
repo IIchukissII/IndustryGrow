@@ -97,8 +97,8 @@ The product is built in series, so a per-unit refrigerant charge, evacuation or 
 
 ## References
 
-- `spec/E0011-R-specification.md` — `A01-CLIMATE` actuator module, loads, open items.
-- `spec/E0012-R-specification.md` — tempering unit and the duct bore.
+- Module specification E0011-R — `A01-CLIMATE` actuator module, loads, open items.
+- Module specification E0012-R — tempering unit and the duct bore.
 - Incropera, DeWitt, Bergman & Lavine — *Fundamentals of Heat and Mass Transfer*, 7th ed.
 - ISO 6946 — thermal resistance and transmittance of building components.
 - Alduchov & Eskridge (1996), *J. Appl. Meteorol.* 35(4) 601–609 — Magnus saturation vapour pressure.

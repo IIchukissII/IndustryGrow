@@ -133,7 +133,7 @@ Identity has two orthogonal axes that never fuse. The **identity axis** — what
 
 ## References
 
-- `REGISTRY.md` — the concrete identifiers, withdrawals and packages.
+- The type registry (ADR-0023) — the concrete identifiers, withdrawals and packages.
 - `GLOSSARY.md` — the identification terms.
 - ADR-0021, ADR-0022 — the instance-layer host and the identifier parser.
 - ADR-0019 — the `SP` root.

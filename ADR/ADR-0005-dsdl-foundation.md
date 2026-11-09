@@ -82,5 +82,5 @@ The record decides the shape of the vocabulary: root namespace, reuse versus min
 
 - `firmware/dsdl/` — project DSDL tree; `firmware/third_party/public_regulated_data_types` — pinned standard set.
 - `firmware/cmake/dsdl.cmake` — build-time generation.
-- `spec/E0005-R-specification.md` — M04 cadence, payload and frame layout.
+- Module specification E0005-R — M04 cadence, payload and frame layout.
 - Cyphal specification and DSDL reference; Nunavut; libcanard; Pycyphal.
