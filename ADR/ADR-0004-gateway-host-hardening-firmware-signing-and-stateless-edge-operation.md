@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0004 — Gateway host hardening, firmware signing and stateless-edge operation
 
 - **Status:** Accepted
-- **Date:** 2026-05-16; changed 2026-10-19
+- **Date:** 2026-05-16; changed 2026-11-09
 - **Parent:** [ADR-0001](ADR-0001-industrygrow-as-an-open-core-cultivation-platform-on-industryflow.md)
 - **Related:** [ADR-0002](ADR-0002-field-bus-architecture.md) (places the security boundary at the gateway; the bus time base decision 18 reads), [ADR-0005](ADR-0005-dsdl-foundation.md) (the wire types decision 18 stamps), [ADR-0007](ADR-0007-pki-hardware-identity-and-provisioning.md) (who the gateway is; this record is how it behaves), [ADR-0015](ADR-0015-gateway-profile-caching-and-local-control-loops.md) (the profile pull and the photoperiod decision 19 names), [ADR-0020](ADR-0020-gateway-persistence-model.md) (the local store that bounds decisions 8–9), [ADR-0022](ADR-0022-machine-and-operator-facing-api-of-the-instance-and-integration-erp.md) (the ERP endpoint decision 19 adds to egress), [ADR-0024](ADR-0024-operator-ca-bootstrap-and-the-root-key-ceremony.md) (custody of the firmware-signing key), [ADR-0029](ADR-0029-node-firmware-update-and-bootloader.md) (the node update path that realises decisions 12–16)
 
@@ -22,7 +22,7 @@ The gateway is a stateless edge: a replaceable bridge whose persistent state is 
 
 1. **The gateway authenticates to IndustryFlow by mTLS.** The PKI behind it is ADR-0007's.
 2. **SSH is disabled by default, key-only when enabled, and root login is refused permanently.** Disabled-by-default removes an attack surface for the cost of re-enabling it per operation; when this binds is decision 19.
-3. **fail2ban guards SSH and any exposed service with strict, escalating thresholds, except for loopback and the management LAN.** A persisted escalating ban on the operator's own workstation presents as dead hardware; against a key-only sshd (decision 2) credential brute force from the management LAN is not the threat bought off. The exempt set is derived from the management interfaces' attached subnets at provisioning.
+3. **fail2ban guards SSH and any exposed service with strict, escalating thresholds, except for loopback, the management LAN and the sources the operator declares at provisioning.** A persisted escalating ban on the operator's own workstation presents as dead hardware; against a key-only sshd (decision 2) credential brute force from the management LAN is not the threat bought off. The exempt set is the management interfaces' attached subnets, derived at provisioning, plus the declared sources.
 4. **Security updates install unattended, with the automatic reboot inside the photoperiod-off window.** When this binds is decision 19.
 5. **The firewall admits no inbound traffic except SSH on the LAN-facing management interfaces, and restricts egress to named platform endpoints.** SSH is accepted on the whole set of management interfaces, plus the live default-route interface, so the operator is not locked out when the box is reached over another NIC; CAN interfaces are excluded. There is no general internet access from the gateway; the endpoints and when the restriction binds are decision 19.
 6. **No service exposes data on the site LAN.** A local debug interface binds to loopback only and is reached by SSH port-forwarding.
@@ -33,7 +33,7 @@ The gateway is a stateless edge: a replaceable bridge whose persistent state is 
 11. **System logging is the host's standard journal, persistent and size-limited.** It is operator-debugging infrastructure, not forensic infrastructure, and no custom logging pipeline is added.
 12. **CAN node firmware is signed at release by a dedicated firmware-signing key, separate from every identity key.** The key is held offline and used only at release events; its custody is ADR-0024 decision 14.
 13. **The gateway distributes firmware over the Cyphal file transfer service, from artifacts it holds on disk for the current and previous release.** Firmware writes are infrequent; where the artifacts come from and which one is served are ADR-0029 decisions 14–17.
-14. **Each node verifies the signature before an image becomes bootable.** The verification public key is built into the node bootloader and flashed with it; an image without a valid signature is refused (ADR-0029 decision 6).
+14. **Each node verifies the signature of an image delivered over the bus before it becomes bootable.** The verification public key is built into the node bootloader and flashed with it; an image without a valid signature is refused (ADR-0029 decision 6). An image written over SWD is not checked: physical access already implies operator presence (decision 17).
 15. **The bootloader is replaced only over SWD, with physical access to the node.** It is never an update target over the bus (ADR-0029 decision 10), so a remote attacker cannot substitute it.
 16. **Firmware update events reach IndustryFlow as typed events on the telemetry upload path.** Each records gateway identity, target Node-ID, firmware version, hash, the node-reported verification result and a timestamp.
 17. **The in-cabinet CAN domain is trusted: no per-node authentication and no payload encryption.** Anyone with physical access to the bus wires can spoof or inject, and physical access already implies operator presence.
@@ -54,12 +54,14 @@ The gateway is a stateless edge: a replaceable bridge whose persistent state is 
 |---|---|---|
 | 2 | SSH always on with key authentication | Disabling it by default removes an attack surface for a small operational cost |
 | 3 | Strict thresholds for every source, the management LAN included | A few mistyped key attempts ban the operator's workstation for hours across reboots, indistinguishable from dead hardware, and buy nothing against a key-only sshd |
+| 3 | Exempt only the subnets derived at provisioning | Misses an operator workstation behind a routed hop, which decision 5 admits to SSH over the default-route interface |
 | 5 | SSH bound to the one interface that carried the default route at provisioning | Locks the operator out when the box is later reached over another management NIC |
 | 5 | Egress to IndustryFlow only | The gateway pulls profiles and firmware from the operator ERP, a second named endpoint |
 | 6 | Inbound services on the LAN (debug dashboard, local Grafana) | Turns the gateway into a server and adds attack surface and state; loopback binding plus port-forwarding gives the same access |
 | 8 | Local tamper-evident hash-chained audit log of every frame and upload, with 30–90 day retention and rotation | A compromised gateway already streams false data live, so local tamper-evidence adds no protection; forensics belong where the record is queryable. An endurance-rich medium does not change this (ADR-0020 decision 9) |
 | 9 | Guaranteed crash-safe persistent local buffer | A guarantee turns a failed gateway into a data-recovery exercise, against replaceability; a best-effort persistent buffer is ADR-0020's |
 | 12 | Unsigned firmware updates, trusting the gateway | Gateway compromise becomes compromise of every node; signing moves the trust boundary to an offline key |
+| 14 | Verify the signature again at every boot | An SWD writer can replace the bootloader that holds the key (decision 15), so a boot-time check adds nothing against physical access |
 | 15 | Bootloader signed by a separate, stronger, rarely-rotated key | Nothing on the node verifies a bootloader; SWD-only replacement makes physical access the control |
 | 17 | Per-node authentication or payload encryption on CAN | A signature consumes most of an 8-byte classic-CAN payload; the cost is disproportionate to a physical-access threat |
 | 18 | Substitute `t_rx` for an unsynchronized node's `t_acq` | The acquisition-to-receipt difference then reads zero permanently |
@@ -78,6 +80,7 @@ The gateway is a stateless edge: a replaceable bridge whose persistent state is 
 
 **Negative**
 
+- A node application image written over SWD boots without a signature check.
 - An outage spanning a gateway reboot loses the in-memory buffer, narrowed where ADR-0020's persistent buffer is fitted.
 - IndustryFlow must provide immutable audit storage, per-gateway chain validation and forensic queries before the audit trail exists.
 - The verification key is fixed in the bootloader, so replacing the firmware-signing key means re-flashing every bootloader over SWD (ADR-0024 decision 14).
