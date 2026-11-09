@@ -149,6 +149,56 @@ def test_document_upload_writes_the_blob_then_indexes_its_key(client, warehouse)
     assert [d["object_key"] for d in listed] == [key]
 
 
+def test_allocated_identifiers_arrive_read_into_fields(client):
+    """ADR-0022 d13: every issued identifier carries its parts."""
+    r = client.post(
+        "/api/v1/instances",
+        json={"e_number": "E0002", "version": "020100", "quantity": 2},
+        headers=AUTH,
+    ).json()
+    assert [i["instance_id"] for i in r["instances"]] == r["serials"]
+    first = r["instances"][0]
+    assert (first["e_number"], first["version"], first["serial"]) == (
+        "E0002",
+        "020100",
+        "000001",
+    )
+    assert first["version_label"] == "v2.1.0"
+    assert r["instances"][1]["serial"] == "000002"
+
+
+def test_a_lifecycle_document_key_arrives_read_into_fields(client):
+    """ADR-0022 d13: upload and list return the key's parts, suffix and stamp."""
+    inst = _one_instance(client)
+    qp = client.post(
+        f"/api/v1/instances/{inst}/documents",
+        data={"doc_type": "QP"},
+        files={"file": ("qp.md", b"plan", "text/markdown")},
+        headers=AUTH,
+    ).json()
+    assert (qp["e_number"], qp["version"], qp["serial"]) == ("E0002", "020100", "000001")
+    assert qp["version_label"] == "v2.1.0"
+    assert qp["suffix"] == "QP" and qp["stamp"] is None
+
+    cp = client.post(
+        f"/api/v1/instances/{inst}/documents",
+        data={"doc_type": "CP", "doc_date": "2026-11-09"},
+        files={"file": ("cp.csv", b"points", "text/csv")},
+        headers=AUTH,
+    ).json()
+    assert cp["suffix"] == "CP"
+    assert cp["stamp"].startswith("20261109T") and cp["object_key"].endswith(cp["stamp"])
+
+    listed = client.get(f"/api/v1/instances/{inst}/documents", headers=AUTH).json()
+    by_suffix = {d["suffix"]: d for d in listed}
+    assert set(by_suffix) == {"QP", "CP"}
+    assert by_suffix["CP"]["stamp"] == cp["stamp"]
+    assert all(
+        (d["e_number"], d["version_label"], d["serial"]) == ("E0002", "v2.1.0", "000001")
+        for d in listed
+    )
+
+
 def test_reissuing_a_qp_archives_the_first_issue(client, warehouse):
     # ADR-0017 d11 gives QP one key per instance, so a second issue is the same
     # key. Observed 2026-08-24: the put replaced the blob and the first issue's

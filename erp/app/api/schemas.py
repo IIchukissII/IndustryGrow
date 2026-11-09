@@ -148,11 +148,6 @@ class SPStockRequest(BaseModel):
 # ---- responses ------------------------------------------------------------
 
 
-class AllocateResponse(BaseModel):
-    serials: list[str]
-    next_serial: int
-
-
 class InstanceOut(BaseModel):
     instance_id: str
     e_number: str
@@ -164,6 +159,13 @@ class InstanceOut(BaseModel):
     # speaks the grammar (ADR-0022 d13) and a caller should never have to know
     # where the field boundaries fall.
     version_label: str | None = None
+
+
+class AllocateResponse(BaseModel):
+    serials: list[str]
+    next_serial: int
+    # Each issued identifier read into its fields (ADR-0022 d13), in `serials` order.
+    instances: list[InstanceOut] = []
 
 
 class IntegrationOut(BaseModel):
@@ -200,6 +202,15 @@ class LifecycleDocOut(BaseModel):
     object_key: str
     valid_until: datetime | None = None
     status: str
+
+    # The key read into its fields (ADR-0022 d13; ADR-0017 d11, d15): the
+    # instance's parts, the suffix, and the stamp CP and CC carry.
+    e_number: str | None = None
+    version: str | None = None
+    version_label: str | None = None
+    serial: str | None = None
+    suffix: str | None = None
+    stamp: str | None = None
 
 
 class StoreDocOut(BaseModel):

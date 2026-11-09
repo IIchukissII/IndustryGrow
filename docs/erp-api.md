@@ -139,16 +139,20 @@ Not yet realised.
 
 ## ADR-0022 dec 13
 
-Responses carry the parsed fields beside the identifier: module, version, decoded version label and serial for an instance; depth levels and label for a position; root, version, layer and slug for a repository document; version for a firmware release. `LifecycleDocOut` and `AllocateResponse` return identifiers without their parts.
+Responses carry the parsed fields beside the identifier: module, version, decoded version label and serial for an instance; depth levels and label for a position; root, version, layer and slug for a repository document; version for a firmware release; for a lifecycle document the instance's fields plus suffix and stamp; for an allocation each issued instance with its fields.
 
 | Code | Role |
 |---|---|
 | `erp/app/models/identifiers.py` | The one grammar parser |
 | `erp/app/api/routes.py::_instance_out` | Instance fields |
+| `erp/app/api/routes.py::_instance_parts` | Instance fields from an identifier |
+| `erp/app/api/routes.py::_lifecycle_doc_out` | Lifecycle key fields |
 | `erp/app/api/routes.py::_integration_out` | Both axes as fields |
 | `erp/app/api/routes.py::_store_doc` | Document key fields |
 | `erp/app/api/routes.py::_firmware_intent_out` | Release version fields |
 | `erp/tests/test_api.py::test_both_axes_arrive_read_into_fields` | Depth and version decoded |
+| `erp/tests/test_api.py::test_allocated_identifiers_arrive_read_into_fields` | Allocation fields |
+| `erp/tests/test_api.py::test_a_lifecycle_document_key_arrives_read_into_fields` | Upload and list fields |
 
 ## ADR-0022 dec 14
 
