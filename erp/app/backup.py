@@ -47,17 +47,18 @@ from typing import Any
 
 from app.config import settings
 from app.db import DOMAIN, FOUNDATION, Database
+from app.models.identifiers import LIFECYCLE_SUFFIXES as LIFECYCLE_SUFFIX_CODES
+from app.models.identifiers import is_lifecycle_key
 from app.services.warehouse import Warehouse
 
 # ADR-0026 d1's allowlist. Collections first — everything the ERP owns and nothing
 # it merely references.
 BACKED_UP_COLLECTIONS = sorted({*FOUNDATION.values(), *DOMAIN.values()})
 
-# Object prefixes that are NOT reconstructible from the repository. Lifecycle
-# documents are keyed `<instance>-<suffix>` (ADR-0017 d15; ADR-0022 d7's
-# allowlist), so they are recognised by suffix rather than by a folder — the
-# keyspace is flat.
-LIFECYCLE_SUFFIXES = ("-QP", "-QR", "-CP", "-CC", "-PR")
+# The objects that are NOT reconstructible from the repository are the lifecycle
+# documents. The keyspace is flat, so they are recognised by the lifecycle-key
+# grammar (`app.models.identifiers`), not by a folder.
+LIFECYCLE_SUFFIXES = tuple(f"-{s}" for s in sorted(LIFECYCLE_SUFFIX_CODES))
 
 MANIFEST_NAME = "manifest.json"
 DUMP_NAME = "mongo.archive"
@@ -81,16 +82,14 @@ def is_backed_up_object(key: str) -> bool:
     """True for warehouse objects that exist nowhere else (ADR-0026 d1).
 
     The `store/` mirror is excluded: it is repository content, and `store_sync`
-    puts it back. Recognised by the ADR-0022 d7 lifecycle suffixes, because the
-    warehouse keyspace is flat and a key *is* the identifier (ADR-0017 d15) —
-    there is no directory to filter on.
+    puts it back. Recognised by the lifecycle-key grammar, because the warehouse
+    keyspace is flat and a key *is* the identifier (ADR-0017 d15) — there is no
+    directory to filter on. Selecting by the writers' grammar rather than a suffix
+    test of its own is what keeps a stamped calibration key or a superseded issue
+    in the archive: a narrower test leaves them out, and `save` then refuses on
+    the indexed keys it did not copy.
     """
-    stem = key.rsplit("/", 1)[-1]
-    if any(stem.endswith(s) for s in LIFECYCLE_SUFFIXES):
-        return True
-    # Recalibration keys carry a date: `<instance>-CC-YYYYMMDD`.
-    parts = stem.rsplit("-", 2)
-    return len(parts) == 3 and f"-{parts[1]}" == "-CC" and parts[2].isdigit()
+    return is_lifecycle_key(key.rsplit("/", 1)[-1])
 
 
 # ---------------------------------------------------------------------------

@@ -49,9 +49,21 @@ def test_lifecycle_documents_are_backed_up():
 
 
 def test_dated_recalibration_keys_are_backed_up():
-    # A recalibration must not overwrite its predecessor, so the CC key carries a
-    # date (ADR-0022 d7). The suffix match has to see through that.
+    # A recalibration must not overwrite its predecessor, so CP and CC keys carry
+    # a stamp (ADR-0017 d11). Keys written before the time component carry the
+    # day alone; both forms are live in a warehouse.
     assert is_backed_up_object("E0002-020100-000001-CC-20260722")
+    assert is_backed_up_object("E0002-020100-000001-CC-20260722T120000")
+    assert is_backed_up_object("E0002-020100-000001-CP-20260722T120000")
+
+
+def test_sequenced_and_superseded_keys_are_backed_up():
+    # `-n` separates two uploads in one second; a reissue archives the previous
+    # issue under `-superseded-<stamp>`. Both are uploaded blobs that exist
+    # nowhere else (ADR-0026 d1).
+    assert is_backed_up_object("E0002-020100-000001-CP-20260722T120000-2")
+    assert is_backed_up_object("E0002-020100-000001-QP-superseded-20260824T101500")
+    assert is_backed_up_object("E0002-020100-000001-QP-superseded-20260824T101500-2")
 
 
 def test_the_repository_mirror_is_not_backed_up():
@@ -72,6 +84,8 @@ def test_a_key_that_merely_contains_a_suffix_is_not_matched():
     # both. The suffix is a terminal, so it is matched as one.
     assert not is_backed_up_object("E0002-020100-000001-CPU")
     assert not is_backed_up_object("E0002-020100-000001-PRELIM")
+    assert not is_backed_up_object("E0002-020100-000001-CC-notes")
+    assert not is_backed_up_object("E0002-020100-QP")
 
 
 def test_every_owned_collection_is_in_the_allowlist():
