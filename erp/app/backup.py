@@ -46,7 +46,7 @@ from pathlib import Path
 from typing import Any
 
 from app.config import settings
-from app.db import DOMAIN, FOUNDATION, Database
+from app.db import DOMAIN, FOUNDATION, Database, migrate_counter_tenant
 from app.models.identifiers import LIFECYCLE_SUFFIXES as LIFECYCLE_SUFFIX_CODES
 from app.models.identifiers import is_lifecycle_key
 from app.services.warehouse import Warehouse
@@ -375,6 +375,14 @@ async def restore(archive: Path, *, force: bool = False, database_name: str | No
                 f"mongorestore failed: {done.stderr.decode(errors='replace').strip()}\n"
                 "       The objects are restored and the index is not — re-run to finish."
             )
+
+    # A counter restored from an archive taken before the counter carried the
+    # tenant gets it here, as it would at the next ERP start (ADR-0021 d16).
+    restored = Database(settings.mongo_uri, target_db, mock=settings.mongo_mock)
+    try:
+        await migrate_counter_tenant(restored.db)
+    finally:
+        restored.close()
 
     log("restored. Verify the live store before trusting it:")
     log("  python -m app.backup check-live")

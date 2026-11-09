@@ -95,7 +95,9 @@ def test_document_upload_reaches_the_real_warehouse(monkeypatch):
     with TestClient(create_app()) as client:
         asyncio.run(
             client.app.state.db.db[FOUNDATION["serial_counter"]].update_one(
-                {"_id": "E0002-020100"}, {"$set": {"last_serial": 999_000}}, upsert=True
+                {"_id": "E0002-020100", "tenant_id": settings.operator_uuid},
+                {"$set": {"last_serial": 999_000}},
+                upsert=True,
             )
         )
         allocated = client.post(

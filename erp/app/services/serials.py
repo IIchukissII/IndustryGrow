@@ -39,7 +39,7 @@ async def allocate(
     cid = counter_id(e_number, version)  # validates the module/version grammar
     counter = await db[FOUNDATION["serial_counter"]].find_one_and_update(
         {"_id": cid},
-        {"$inc": {"last_serial": quantity}},
+        {"$inc": {"last_serial": quantity}, "$setOnInsert": {"tenant_id": settings.operator_uuid}},
         upsert=True,
         return_document=ReturnDocument.AFTER,
     )
