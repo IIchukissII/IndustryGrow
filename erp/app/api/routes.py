@@ -32,6 +32,7 @@ from app.api.deps import (
 from app.config import settings
 from app.db import DOMAIN, FOUNDATION
 from app.models import identifiers
+from app.models.foundation import InstanceStatus
 from app.services import docs, firmware, integration, profiles, registry, reports
 from app.services import serials as serials_svc
 from app.services.integration import PositionOccupiedError
@@ -178,7 +179,9 @@ async def allocate_serials(
         serials=issued,
         next_serial=last + 1,
         instances=[
-            schemas.InstanceOut(instance_id=i, status="in-inventory", **_instance_parts(i))
+            schemas.InstanceOut(
+                instance_id=i, status=InstanceStatus.IN_INVENTORY, **_instance_parts(i)
+            )
             for i in issued
         ],
     )
