@@ -74,7 +74,7 @@ criteria: [`project/ROADMAP.md`](project/ROADMAP.md), 14 dependency-ordered stag
 | Path | Contents | Records |
 |---|---|---|
 | [`ADR/`](ADR/) | Architecture decision records — the source of truth — plus [`GLOSSARY.md`](ADR/GLOSSARY.md) | ADR-0000 |
-| [`docs/`](docs/) | Decision manuals: how each ADR is realised and the code that realises it | — |
+| [`docs/`](docs/) | Decision manuals: how an ADR is realised and the code that realises it | — |
 | [`REGISTRY.md`](REGISTRY.md) | E-number / SP-number identifier map, machine-readable | ADR-0017, ADR-0019, ADR-0023 |
 | [`store/`](store/) | Hardware design sources, fab packages and firmware release artifacts, flat, keyed by identifier | ADR-0017 |
 | [`spec/`](spec/) | Module specifications — M01, M02, M05, M06, M07. M03 and M04 not yet written | ADR-0014 |
