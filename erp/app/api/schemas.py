@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import re
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -61,6 +62,10 @@ class MachineProvisionRequest(BaseModel):
 
     vendor_serial: str
     atecc_serial: str | None = None
+    # "atecc" (ADR-0007 d1) or "software" (d11); absent from older tools.
+    provenance: Literal["atecc", "software"] | None = None
+    # Set by provision_identity.py --fixture on a test key; refused (d11).
+    fixture: str | None = None
     public_key_fingerprint: str
     cert_serial: str
     cert_not_before: datetime

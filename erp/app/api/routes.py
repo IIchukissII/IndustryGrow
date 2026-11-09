@@ -682,6 +682,11 @@ async def bind_machine_provisioning(
             status.HTTP_422_UNPROCESSABLE_ENTITY,
             f"{gbox} is not an ADR-0017 machine identifier (GBOX_NNNN)",
         )
+    if body.fixture:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "a binding marked as a test key is never a provisioned unit (ADR-0007 d11)",
+        )
     await db[FOUNDATION["machine_identity"]].update_one(
         {"_id": gbox},
         {
@@ -690,6 +695,7 @@ async def bind_machine_provisioning(
                 "machine_id": gbox,
                 "vendor_serial": body.vendor_serial,
                 "atecc_serial": body.atecc_serial,
+                "provenance": body.provenance,
                 "public_key_fingerprint": body.public_key_fingerprint,
                 "cert_serial": body.cert_serial,
                 "cert_not_before": body.cert_not_before,

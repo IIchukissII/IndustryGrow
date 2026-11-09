@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # Gateway ATECC608 identity provisioning — `SP0004-M-atecc-provisioning`
 
 - **Type:** Manual, document layer **M** (ADR-0017 d9). Carries the ATECC608 values.
-- **Subject:** the gateway Raspberry Pi's on-board **ATECC608B** secure element =
+- **Subject:** the **ATECC608B** secure element of a gateway Raspberry Pi that has one =
   part of **SP0004** (REGISTRY.md; ADR-0019 d2 — SP0004 is the one SP part with
   per-instance identity, its ATECC-bound certificate). Node-carrier (E0001)
   provisioning is a separate concern (ADR-0007 d5, not built).
@@ -29,7 +29,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
   before it ran on a box.
 
   What *is* exercised is everything downstream of the chip's signature
-  (`erp/tests/test_gateway_provisioning.py`, against the §5 software fallback): the
+  (`erp/tests/test_gateway_provisioning.py`, against a §5 software key): the
   CSR the tool assembles verifies and is signed by `pki/sign-csr.sh`, the resulting
   leaf authenticates through the ERP's mTLS identity extraction, renewal
   re-certifies the same key, and the refusals in §6/§8 hold. So the unvalidated
@@ -185,28 +185,21 @@ rejects any other CN and issues `clientAuth` (ADR-0007 d10b; the field choice
 is the deployment's, not an ADR's). The operator name may ride the subject `O=` for
 estate consistency (`pki/` bootstrap `--operator`), but the ERP reads only the CN.
 
-### Software-ATECC fallback (CI / laptop only)
+### Gateway without a secure element (software key)
 
-Where no chip is present, stand in a **software** P-256 key so the CSR→sign→install
-→renew flow can be exercised end to end. Every subcommand takes `--software-key`,
-which generates the key if it is absent and otherwise reuses it:
-
-```bash
-./provision_identity.py csr --gbox GBOX_0001 --software-key /tmp/gbox0001.key \
-                            --out GBOX_0001.csr
-```
-
-Equivalently by hand, which is what the tool's fallback signer wraps:
+A gateway with no secure element holds a software P-256 key as its real identity
+(ADR-0007 d11). Every subcommand takes `--software-key`; with no path it is
+`/etc/industrygrow/pki/gateway.key`, generated on the gateway if absent (mode 0640,
+the `pki` directory's group), never overwritten and never copied off it:
 
 ```bash
-openssl ecparam -name prime256v1 -genkey -noout -out /tmp/gbox0001.key
-openssl req -new -key /tmp/gbox0001.key -subj '/CN=GBOX_0001' -out GBOX_0001.csr
+sudo ./provision_identity.py csr --gbox GBOX_0001 --software-key --out GBOX_0001.csr
 ```
 
-This is a **fixture**, exactly like `erp/deploy/mtls/make-test-ca.sh` — the key is
-exportable and on disk, which is the whole property the ATECC exists to prevent. It
-proves the pipeline, never a real unit. Do not let a software-key CSR reach a
-production binding.
+The loss against the ATECC is non-exportability against root on the gateway, so the
+host hardening of ADR-0004 carries the identity (ADR-0007 d11). A software key made
+anywhere else — a laptop, CI — is a test key: its binding is written only with
+`--fixture`, which marks it, and it is never a provisioned unit.
 
 ---
 
@@ -257,8 +250,8 @@ curl --cert /etc/industrygrow/pki/gateway-chain.crt \
      https://erp.local:8443/api/v1/machines/GBOX_0001/provisioning
 ```
 
-It refuses to emit one for a software key at all — a binding asserts a hardware
-anchor an exportable key does not have. It uses the **same
+For a software key the binding records `provenance: software` and no ATECC serial; a
+host key file others can read, or its group can write, is refused. It uses the **same
 certificate-metadata inputs ADR-0022 d5 names** — public-key fingerprint, cert
 serial, validity, never a private key — referenced here rather than restated
 (ADR-0000 d3).
@@ -321,10 +314,9 @@ ADR-0021 dec 17 alternatives record why a synthetic serial was rejected.
 - [`../pki/README.md`](../pki/README.md) — the operator CA that *signs* the CSR this
   tool produces. The `what`/`why` split: that runbook owns CA custody and lifetimes;
   this one owns the on-chip keygen and the CSR.
-- [`../erp/deploy/mtls/make-test-ca.sh`](../erp/deploy/mtls/README.md) and the §5
-  software-key fallback — **throwaway fixtures** for exercising the flow on a laptop,
-  not a provisioning procedure. Unencrypted, exportable keys; never a production
-  binding.
+- [`../erp/deploy/mtls/make-test-ca.sh`](../erp/deploy/mtls/README.md) and a
+  `--fixture` software key — **throwaway fixtures** for exercising the flow on a
+  laptop, not a provisioning procedure; never a production binding.
 
 ## References
 
