@@ -296,19 +296,20 @@ if __name__ == "__main__":
 
 
 # --- type-layer document kinds (ADR-0017 d9 document layers) -----------------
+# Labels are the expansions of ADR-0017's code legend (dec 1), word for word.
 # The layer letter in `<identifier>-<layer>-<slug>` says what a document IS, and
 # the registry is where that vocabulary lives — so the mapping sits here beside
 # the parser rather than in the API or the console (ADR-0023 d6: the registry
 # holds meaning, the design system holds appearance).
 _DOC_LAYERS = {
-    "D": "design",
-    "F": "firmware",
-    "S": "schematic",
-    "L": "bill of materials",
-    "P": "procedure",
-    "M": "manual",
-    "I": "instruction",
-    "R": "specification",
+    "S": "Schema",
+    "D": "Drawing",
+    "L": "List / BOM",
+    "P": "Protocol",
+    "M": "Manual",
+    "I": "Interface",
+    "F": "Firmware",
+    "R": "Requirements",
 }
 
 
@@ -322,9 +323,9 @@ def store_doc_kind(key: StoreKey) -> str:
 
     The layer letter is read *positionally* (``parse_store_key``) rather than
     hunted for anywhere in the name: `D` in the slot after the version is the
-    design layer, and `D` further along is a word in a slug. Falls back to the
+    Drawing layer, and `D` further along is a word in a slug. Falls back to the
     file extension rather than guessing — an object that carries no layer letter
-    is still a real document an operator may want, and calling it "design"
+    is still a real document an operator may want, and calling it "Drawing"
     because that is the commonest layer would be worse than calling it what it
     plainly is.
     """

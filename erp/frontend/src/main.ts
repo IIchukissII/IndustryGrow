@@ -1073,12 +1073,13 @@ const size = (n: number) =>
 
 // The layer letter says what a document is ABOUT; the extension says whether the
 // reader can render it. A design-layer pinmap is still markdown.
+// Layer kinds are ADR-0017's code-legend labels, as the API returns them.
 const READABLE_KINDS = new Set([
-  "manual",
+  "Manual",
+  "Protocol",
+  "Interface",
+  "Requirements",
   "document",
-  "procedure",
-  "instruction",
-  "specification",
   "table",
 ]);
 const readable = (d: StoreDoc) =>

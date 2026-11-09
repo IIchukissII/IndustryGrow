@@ -114,9 +114,7 @@ Serials are issued only by the ERP's atomic counter. The provisioning binding st
 
 ## ADR-0017 dec 9
 
-The layer letters are a fixed set in the grammar; a store key's layer is read from the segment after the version. A label for each letter comes from a table in the registry module.
-
-That table labels `P` "procedure" and `I` "instruction", where this decision names them Protocol and Interface; it labels `D` "design" and `S` "schematic".
+The layer letters are a fixed set in the grammar; a store key's layer is read from the segment after the version. The label of each letter is its expansion in the code legend of decision 1, held in a table in the registry module and checked against the legend by a test. The console reads the labels from the API.
 
 | Code | Role |
 |---|---|
@@ -124,6 +122,7 @@ That table labels `P` "procedure" and `I` "instruction", where this decision nam
 | `erp/app/models/identifiers.py::parse_store_key` | Reads the layer by position |
 | `erp/app/services/registry.py::_DOC_LAYERS` | Layer letter to label |
 | `erp/app/services/registry.py::layer_label` | The label of one letter |
+| `erp/tests/test_registry.py::test_layer_labels_are_the_code_legend` | Labels equal the code legend |
 | `erp/tests/test_identifiers.py::test_store_key_fields_are_read_by_position_not_by_search` | `D` after the version is a layer, later a slug word |
 
 ## ADR-0017 dec 10, 11, 12

@@ -338,8 +338,8 @@ def test_the_repository_documents_are_listed_by_what_they_are(client):
     docs = client.get("/api/v1/store-documents", headers=AUTH).json()
     by_key = {d["object_key"]: d for d in docs}
     assert "SP0004-M-gateway-bringup.md" in by_key
-    assert by_key["SP0004-M-gateway-bringup.md"]["kind"] == "manual"
-    assert by_key["E0007-000001-S.pdf"]["kind"] == "schematic"
+    assert by_key["SP0004-M-gateway-bringup.md"]["kind"] == "Manual"
+    assert by_key["E0007-000001-S.pdf"]["kind"] == "Schema"
     assert all(d["size_bytes"] > 0 for d in docs)
 
 
@@ -376,7 +376,7 @@ def test_a_listed_document_carries_its_key_read_into_fields(client):
     # withdrawn v0.0.1 set (d16, d17) and its version is the codebase's.
     boot = by_key["E0001-000001-F-boot.hex"]
     assert boot["status"] is None
-    assert boot["layer_label"] == "firmware"
+    assert boot["layer_label"] == "Firmware"
     assert (boot["version"], boot["slug"]) == ("000001", "boot")
     # Three images share one firmware version: bootloader plus one application
     # image per A/B slot (ADR-0029 d1). They are variants of one F root.

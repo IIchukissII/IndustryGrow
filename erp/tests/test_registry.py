@@ -9,6 +9,8 @@ passing while the actual registry rotted.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -159,3 +161,15 @@ def test_check_rejects_a_second_table_in_a_registry_section(tmp_path):
     rows = _GOOD_E + "\nprose\n\n| `E0002` | Sensor | electrical | — |\n"
     path.write_text(_registry(rows, _GOOD_SP))
     assert any("2 tables" in p for p in registry.check(path))
+
+
+def test_layer_labels_are_the_code_legend():
+    """`layer_label` is a copy of ADR-0017's code legend (dec 1), checked against it."""
+    adr = next((Path(__file__).parents[2] / "ADR").glob("ADR-0017-*.md"))
+    legend = {}
+    for line in adr.read_text(encoding="utf-8").splitlines():
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) == 4 and cells[2] == "document layer":
+            legend[cells[0].strip("`")] = cells[1].split(" (")[0]
+    assert set(legend) == set("SDLPMIFR")
+    assert {letter: registry.layer_label(letter) for letter in legend} == legend
