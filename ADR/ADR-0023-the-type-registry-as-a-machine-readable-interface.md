@@ -71,5 +71,5 @@ A consumer that reads the registry directly makes it an interface, and an interf
 ## References
 
 - The type registry itself — its entries and its form notice.
-- ERP registry service — the parser, the catalog and the conformance check.
 - ADR-0017, ADR-0019, ADR-0021, ADR-0022.
+- [docs/type-registry.md](../docs/type-registry.md): the manual of this record (decisions 1–7).
