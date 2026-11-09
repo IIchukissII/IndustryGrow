@@ -8,7 +8,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Status:** Proposed
 - **Date:** 2026-05-16; changed 2026-10-19
 - **Parent:** [ADR-0001](ADR-0001-industrygrow-as-an-open-core-cultivation-platform-on-industryflow.md)
-- **Related:** [ADR-0006](ADR-0006-cabinet-decomposition-and-hydroponic-topology.md) (hydroponic topology and loop count for decisions 14–17), ADR-0009 (profile schema and registry this instance anticipates), [ADR-0014](ADR-0014-sensor-node-taxonomy.md) (sensing that enforces these targets), [ADR-0015](ADR-0015-gateway-profile-and-control-loops.md) (the gateway that executes the profile), [ADR-0016](ADR-0016-empirical-survey-state-space-modeling-and-sensor-density-management.md) (biological and apparatus subspaces), [ADR-0032](ADR-0032-grow-box-climate-conditioning.md) (climate apparatus that holds decisions 6–8)
+- **Related:** [ADR-0006](ADR-0006-cabinet-decomposition-and-hydroponic-topology.md) (hydroponic topology and loop count for decisions 14–17), ADR-0009 (profile schema and registry this instance anticipates), [ADR-0014](ADR-0014-sensor-node-taxonomy-and-module-decomposition.md) (sensing that enforces these targets), [ADR-0015](ADR-0015-gateway-profile-caching-and-local-control-loops.md) (the gateway that executes the profile), [ADR-0016](ADR-0016-empirical-survey-state-space-modeling-and-sensor-density-management.md) (biological and apparatus subspaces), [ADR-0032](ADR-0032-grow-box-climate-conditioning.md) (climate apparatus that holds decisions 6–8)
 
 ## Context
 

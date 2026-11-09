@@ -8,7 +8,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Status:** Accepted
 - **Date:** 2026-08-23; changed 2026-10-19
 - **Parent:** [ADR-0001](ADR-0001-industrygrow-as-an-open-core-cultivation-platform-on-industryflow.md)
-- **Related:** [ADR-0003](ADR-0003-strawberry-day-neutral-reference-cultivation-profile.md) (decisions 14–17 drive the topology and loop count; decision 14's topology is settled here), [ADR-0014](ADR-0014-sensor-node-taxonomy.md) (decision 4's M03 entry changes with decisions 5, 7 and 8), [ADR-0015](ADR-0015-gateway-profile-and-control-loops.md) (software-mediated leak and pump response, decision 16), [ADR-0016](ADR-0016-empirical-survey-state-space-modeling-and-sensor-density-management.md) (solution temperature in the apparatus subspace), [ADR-0017](ADR-0017-component-document-and-instance-identification.md) (E-number at design commit), [ADR-0018](ADR-0018-power-distribution-and-rail-monitoring.md) (the distribution volume and the M05 leak lead)
+- **Related:** [ADR-0003](ADR-0003-strawberry-day-neutral-reference-cultivation-profile.md) (decisions 14–17 drive the topology and loop count; decision 14's topology is settled here), [ADR-0014](ADR-0014-sensor-node-taxonomy-and-module-decomposition.md) (decision 4's M03 entry changes with decisions 5, 7 and 8), [ADR-0015](ADR-0015-gateway-profile-caching-and-local-control-loops.md) (software-mediated leak and pump response, decision 16), [ADR-0016](ADR-0016-empirical-survey-state-space-modeling-and-sensor-density-management.md) (solution temperature in the apparatus subspace), [ADR-0017](ADR-0017-component-document-and-instance-identification.md) (E-number at design commit), [ADR-0018](ADR-0018-power-distribution-and-rail-monitoring.md) (the distribution volume and the M05 leak lead)
 
 ## Context
 
