@@ -32,6 +32,7 @@ from app.api.deps import (
 from app.config import settings
 from app.db import DOMAIN, FOUNDATION
 from app.models import identifiers
+from app.models.foundation import InstanceStatus
 from app.services import docs, firmware, integration, profiles, registry, reports
 from app.services import serials as serials_svc
 from app.services.integration import PositionOccupiedError
@@ -56,6 +57,31 @@ def _version_label(code: str | None) -> str | None:
         return str(identifiers.decode_version(code))
     except ValueError:
         return None
+
+
+def _instance_parts(instance_id: str) -> dict[str, str | None]:
+    """An instance identifier read into its fields, or {} when it is not one."""
+    try:
+        parts: dict[str, str | None] = dict(identifiers.parse_instance(instance_id))
+    except ValueError:
+        return {}
+    parts["version_label"] = _version_label(parts["version"])
+    return parts
+
+
+def _lifecycle_doc_out(d: dict) -> schemas.LifecycleDocOut:
+    """A lifecycle index row with its key read into fields (ADR-0022 d13)."""
+    m = identifiers.LIFECYCLE_KEY_RE.match(d["object_key"])
+    return schemas.LifecycleDocOut(
+        instance_full_id=d["instance_full_id"],
+        doc_type=d["doc_type"],
+        object_key=d["object_key"],
+        valid_until=d.get("valid_until"),
+        status=d.get("status", "valid"),
+        **_instance_parts(d["instance_full_id"]),
+        suffix=m["suffix"] if m else None,
+        stamp=m["stamp"] if m else None,
+    )
 
 
 def _instance_out(doc: dict) -> schemas.InstanceOut:
@@ -84,10 +110,7 @@ def _integration_out(rec: dict) -> schemas.IntegrationOut:
     except ValueError:
         levels = None
 
-    try:
-        parts = identifiers.parse_instance(rec["instance_id"])
-    except ValueError:
-        parts = {}
+    parts = _instance_parts(rec["instance_id"])
 
     return schemas.IntegrationOut(
         machine_id=rec["machine_id"],
@@ -100,7 +123,7 @@ def _integration_out(rec: dict) -> schemas.IntegrationOut:
         depth_label=".".join(f"{n:02d}" for n in levels) if levels else None,
         e_number=parts.get("e_number"),
         version=parts.get("version"),
-        version_label=_version_label(parts.get("version")),
+        version_label=parts.get("version_label"),
         serial=parts.get("serial"),
     )
 
@@ -152,7 +175,16 @@ async def allocate_serials(
     """Allocate gap-free serials (ADR-0022 d4). Serials are server-issued."""
     issued = await serials_svc.allocate(db, body.e_number, body.version, body.quantity)
     last = await serials_svc.peek(db, body.e_number, body.version)
-    return schemas.AllocateResponse(serials=issued, next_serial=last + 1)
+    return schemas.AllocateResponse(
+        serials=issued,
+        next_serial=last + 1,
+        instances=[
+            schemas.InstanceOut(
+                instance_id=i, status=InstanceStatus.IN_INVENTORY, **_instance_parts(i)
+            )
+            for i in issued
+        ],
+    )
 
 
 @router.get("/instances", response_model=list[schemas.InstanceOut], tags=["instances"])
@@ -340,13 +372,7 @@ async def upload_document(
         valid_until=valid_until_dt,
         doc_date=doc_date_dt,
     )
-    return schemas.LifecycleDocOut(
-        instance_full_id=instance_id,
-        doc_type=doc_type,
-        object_key=rec["object_key"],
-        valid_until=rec.get("valid_until"),
-        status=rec.get("status", "valid"),
-    )
+    return _lifecycle_doc_out({**rec, "instance_full_id": instance_id, "doc_type": doc_type})
 
 
 @router.get(
@@ -361,16 +387,7 @@ async def list_instance_documents(
 ):
     """The indexed lifecycle documents for one instance — metadata plus the
     warehouse key. The blobs stay in the object store (ADR-0022 d7)."""
-    return [
-        schemas.LifecycleDocOut(
-            instance_full_id=d["instance_full_id"],
-            doc_type=d["doc_type"],
-            object_key=d["object_key"],
-            valid_until=d.get("valid_until"),
-            status=d.get("status", "valid"),
-        )
-        for d in await docs.docs_for(db, instance_id)
-    ]
+    return [_lifecycle_doc_out(d) for d in await docs.docs_for(db, instance_id)]
 
 
 # ============================ machines / integration ========================
@@ -1293,13 +1310,4 @@ async def calibration_expiring(
     db: AsyncIOMotorDatabase = Depends(get_db),
     _role: str = Depends(require_read),
 ):
-    return [
-        schemas.LifecycleDocOut(
-            instance_full_id=c["instance_full_id"],
-            doc_type=c["doc_type"],
-            object_key=c["object_key"],
-            valid_until=c.get("valid_until"),
-            status=c.get("status", "valid"),
-        )
-        for c in await docs.expiring(db, within_days=days)
-    ]
+    return [_lifecycle_doc_out(c) for c in await docs.expiring(db, within_days=days)]
