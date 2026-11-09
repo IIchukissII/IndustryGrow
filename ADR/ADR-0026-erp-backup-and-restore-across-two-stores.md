@@ -83,6 +83,5 @@ The operator CA and profile-signing key have their own ceremony-based custody (A
 
 ## References
 
-- `erp/app/backup.py` — save, verify and restore; the counter refusal.
-- `erp/deploy/backup.sh` — encryption under the operator passphrase.
-- `erp/deploy/README.md` — retention, cadence, rehearsal and custody values.
+- [docs/erp-backup-and-restore.md](../docs/erp-backup-and-restore.md): the manual of this record (decisions 1–10).
+- [erp/deploy/README.md](../erp/deploy/README.md) — retention, cadence, rehearsal and custody values.
