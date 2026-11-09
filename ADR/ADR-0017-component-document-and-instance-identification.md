@@ -143,3 +143,4 @@ Identity has two orthogonal axes that never fuse. The **identity axis** — what
 - `GLOSSARY.md` — the identification terms.
 - ADR-0021, ADR-0022 — the instance-layer host and the identifier parser.
 - ADR-0019 — the `SP` root.
+- [docs/component-and-instance-identification.md](../docs/component-and-instance-identification.md): the manual of this record (decisions 1–22).
