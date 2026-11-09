@@ -67,6 +67,7 @@ The standard for the record itself is M. Nygard, "Documenting Architecture Decis
 
 ## References
 
+- [IIchukissII/CANON](https://github.com/IIchukissII/CANON) — the canon this record refines for this repository (canon dec 18): decisions 1 and 4 refine canon dec 1, decisions 2 and 3 canon dec 7, decision 5 canon dec 8, decision 10 canon dec 10.
 - ADR-0001 — origin of the core/layer split decision 8 expresses.
 - `GLOSSARY.md` — binds the `ADR-` / `ADR-IF-` tokens to decision 8.
 - M. Nygard, "Documenting Architecture Decisions" (2011).
