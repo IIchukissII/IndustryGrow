@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # ADR-0022 — Machine- and operator-facing API of the instance-and-integration ERP
 
 - **Status:** Accepted
-- **Date:** 2026-07-21; changed 2026-10-19
+- **Date:** 2026-07-21; changed 2026-11-09
 - **Parent:** [ADR-0021](ADR-0021-instance-and-integration-erp-as-the-pre-cloud-system-of-record.md)
 - **Related:** [ADR-0004](ADR-0004-gateway-host-hardening-firmware-signing-and-stateless-edge-operation.md) (platform-side audit and the stage-11 auth model), [ADR-0007](ADR-0007-pki-hardware-identity-and-provisioning.md) (operator PKI the gateway channel authenticates against), [ADR-0015](ADR-0015-gateway-profile-caching-and-local-control-loops.md) (single mutation channel the profile routes preserve), [ADR-0016](ADR-0016-empirical-survey-state-space-modeling-and-sensor-density-management.md) (profile as one artifact), [ADR-0017](ADR-0017-component-document-and-instance-identification.md) (identifier grammar parsed here; lifecycle suffixes), [ADR-0019](ADR-0019-purchased-part-sp-identification.md) (SP identity and type-layer document kinds), [ADR-0020](ADR-0020-gateway-persistence-model.md) (operational buffer that stays on the gateway), [ADR-0023](ADR-0023-the-type-registry-as-a-machine-readable-interface.md) (type registry served read-through), [ADR-0025](ADR-0025-deployment-profile-signing-and-gateway-verification.md) (signed profiles the pull carries), [ADR-0026](ADR-0026-erp-backup-and-restore-across-two-stores.md) (backup that inverts decision 7's write order), [ADR-0029](ADR-0029-node-firmware-update-and-bootloader.md) (firmware path decision 14 serves), ADR-IF-0001 (planned `production_unit` API the `[F]` operations align to)
 
@@ -27,7 +27,7 @@ A boundary that exists only as a missing route is undocumented, not enforced. Th
 ### Authentication
 
 2. **Gateways authenticate by mTLS against the operator's trust root, and the machine identity is derived from the verified certificate, never from a request parameter.** No bearer token is issued to or accepted from a gateway. Single tenancy removes per-tenant routing, not certificate validation.
-3. **Human and provisioning-tooling callers authenticate with an operator token scoped per role, as an interim stage-11 migration target.** Role scoping (provisioning station, operator, read-only) attributes who allocated a serial or recorded an activation, and the subject and role are shaped to map onto a future JWT claim. A single static secret shared across callers is rejected.
+3. **Human and provisioning-tooling callers authenticate with an operator token scoped per role, as an interim stage-11 migration target.** Role scoping (provisioning station, operator, read-only) attributes who allocated a serial or recorded an activation, and the subject and role are shaped to map onto a future JWT claim. A single static secret shared across callers is rejected. With no token configured the token routes refuse; the public development token is admitted only by explicit opt-in and never beside configured tokens.
 
 ### Serial allocation
 
@@ -88,6 +88,7 @@ A boundary that exists only as a missing route is undocumented, not enforced. Th
 | 1 | Limit type-layer reads to the repository's released-artifact directory | Specifications are repository-owned documents in the same keyspace (ADR-0017) |
 | 2 | One shared static bearer token for all callers, gateways included | Fuses machine and human auth, loses the gateway identity the deployment record depends on, and is copyable |
 | 2 | Defer gateway mTLS; use a token now and migrate later | The PKI exists; deferring costs a migration at stage 11 for no gain |
+| 3 | A built-in default token | A credential public in the repository becomes live wherever the configuration is forgotten |
 | 4 | Accept client-supplied serials | Cannot be guaranteed gap-free and forfeits the allocation authority |
 | 7 | Accept any document for an instance, with a blocklist | New type-level kinds would silently route through the ERP as the type layer grows |
 | 7 | Return only a key or time-limited URL, and require a CORS policy on the bucket | A deployment's bucket credentials may not grant that policy; a read-through duplicates nothing |
