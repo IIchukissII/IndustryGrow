@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # Profile signing — the operator's third key
 
-A gateway will not apply a cultivation profile it cannot verify ([ADR-0015](../docs/gateway-profile-and-control.md#adr-0015-dec-7)).
+A gateway will not apply a cultivation profile it cannot verify ([ADR-0015](../docs/gateway-profile-and-control.md)).
 This directory holds the key that makes a profile verifiable, and the tool that
 uses it. **ADR-0025** is the decision record; this file is the runbook, and holds
 the values ADR-0025 deliberately does not (ADR-0000).
@@ -13,17 +13,17 @@ the values ADR-0025 deliberately does not (ADR-0000).
 ## The three keys, and why they are three
 
 An operator running IndustryGrow ends up holding three independent signing
-authorities. They are separate on purpose ([ADR-0025](../docs/profile-signing.md#adr-0025-dec-4); [ADR-0007](../docs/gateway-identity-and-provisioning.md#adr-0007-dec-8)), and mixing
+authorities. They are separate on purpose ([ADR-0025](../docs/profile-signing.md); [ADR-0007](../docs/gateway-identity-and-provisioning.md)), and mixing
 them up is the most expensive mistake available here.
 
 | Key | Says | Lives | Used |
 |-----|------|-------|------|
 | **Operator CA root** (`pki/README.md`, ADR-0024) | *who a unit is* | offline, two encrypted copies, separate locations | approximately once, to sign one intermediate |
-| **Firmware-signing key** ([ADR-0004](../docs/gateway-host-hardening.md#adr-0004-dec-12)) | *what code runs on a node* | offline | at firmware release events |
+| **Firmware-signing key** ([ADR-0004](../docs/gateway-host-hardening.md)) | *what code runs on a node* | offline | at firmware release events |
 | **Profile-signing key** (here, ADR-0025) | *what a cabinet is instructed to do* | operator workstation, encrypted | every time a setpoint changes |
 
 The custody here is deliberately lighter than the CA root's, and that is a
-decision rather than an oversight ([ADR-0025](../docs/profile-signing.md#adr-0025-dec-5)): this key is used constantly, and
+decision rather than an oversight ([ADR-0025](../docs/profile-signing.md)): this key is used constantly, and
 a ceremony per setpoint edit is a ceremony operators route around. Encrypted at
 rest on a host you control is the baseline. A hardware token or a dedicated
 offline machine is better and nothing stops you.
@@ -38,9 +38,9 @@ and note that ADR-0025 leaves the compromise-response procedure deferred.
 
 | Thing | Value | Why here |
 |-------|-------|----------|
-| Curve | **NIST P-256** | [ADR-0025](../docs/profile-signing.md#adr-0025-dec-9) / [ADR-0007](../docs/gateway-identity-and-provisioning.md#adr-0007-dec-1) — the project's one asymmetric family |
-| Digest | **SHA-256** | [ADR-0025](../docs/profile-signing.md#adr-0025-dec-9) |
-| Key encryption | **AES-256-CBC**, passphrase | [ADR-0025](../docs/profile-signing.md#adr-0025-dec-5)'s "encrypted at rest" made concrete |
+| Curve | **NIST P-256** | [ADR-0025](../docs/profile-signing.md) / [ADR-0007](../docs/gateway-identity-and-provisioning.md) — the project's one asymmetric family |
+| Digest | **SHA-256** | [ADR-0025](../docs/profile-signing.md) |
+| Key encryption | **AES-256-CBC**, passphrase | [ADR-0025](../docs/profile-signing.md)'s "encrypted at rest" made concrete |
 | Signature form | base64 of DER ECDSA-Sig-Value, detached | ADR-0025 leaves the encoding to implementation |
 | Key file | `profile-signing.key` (0600) | |
 | Public half | `profile-verify.pub` (0644) | provisioned to each gateway |
@@ -63,12 +63,12 @@ ssh gbox 'sudo install -m 0644 /tmp/profile-verify.pub /etc/industrygrow/pki/'
 
 Until a gateway has this file it applies nothing at all — the client is
 fail-closed, because the alternative to "no key" is not "skip the check"
-([ADR-0025](../docs/profile-signing.md#adr-0025-dec-10)).
+([ADR-0025](../docs/profile-signing.md)).
 
 ## Signing a profile
 
 A profile document must name the cabinet it is for and its own version, because
-one signature binds content, addressee, and version together ([ADR-0025](../docs/profile-signing.md#adr-0025-dec-7)):
+one signature binds content, addressee, and version together ([ADR-0025](../docs/profile-signing.md)):
 
 ```json
 {
@@ -86,11 +86,11 @@ one signature binds content, addressee, and version together ([ADR-0025](../docs
 ```
 
 Then store both in the ERP and record the version active. The ERP will refuse to
-activate a version with no signature ([ADR-0025](../docs/profile-signing.md#adr-0025-dec-11)).
+activate a version with no signature ([ADR-0025](../docs/profile-signing.md)).
 
 **Do not reformat the document after signing.** Not `jq .`, not an editor that
 trims trailing whitespace, not a pipeline that re-serialises JSON. The signature
-covers the bytes ([ADR-0025](../docs/profile-signing.md#adr-0025-dec-6)), so a change no human would call a change still
+covers the bytes ([ADR-0025](../docs/profile-signing.md)), so a change no human would call a change still
 breaks it — and it breaks at the cabinet, which will keep running its previous
 profile and log a verification failure. `sign_profile.py verify` is the pre-flight
 for exactly this:
@@ -105,12 +105,12 @@ for exactly this:
 Two consequences worth knowing before you plan a rollout:
 
 - **One signature per cabinet.** A profile signed for `GBOX_0001` is inert at
-  `GBOX_0002` ([ADR-0025](../docs/profile-signing.md#adr-0025-dec-7)). Rolling one cultivation programme out to nine
+  `GBOX_0002` ([ADR-0025](../docs/profile-signing.md)). Rolling one cultivation programme out to nine
   cabinets means nine documents and nine signatures. That is the cost of a stolen
   artifact not being a fleet-wide event.
 - **Versions only go up.** A gateway refuses a version that is not greater than
   the one it runs, because a signature never expires and a replayed old artifact
-  is otherwise indistinguishable from a current one ([ADR-0025](../docs/profile-signing.md#adr-0025-dec-8)). **A rollback is
+  is otherwise indistinguishable from a current one ([ADR-0025](../docs/profile-signing.md)). **A rollback is
   a new, higher version carrying the earlier content** — never the old artifact
   re-activated. The version's leading integer is what gets compared, so `v42` →
   `v43` orders and `latest` is refused rather than guessed at.
@@ -124,4 +124,4 @@ Two consequences worth knowing before you plan a rollout:
   vouches for *what* it is told to do.
 - The community profile registry. Template profiles are signed by their authors
   under a scheme ADR-0009 still owes us; templates never reach a gateway directly
-  ([ADR-0025](../docs/profile-signing.md#adr-0025-dec-1)). This key signs deployment instances only.
+  ([ADR-0025](../docs/profile-signing.md)). This key signs deployment instances only.

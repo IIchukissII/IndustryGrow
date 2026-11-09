@@ -18,9 +18,9 @@ before a CA exists, and the gateway cannot pull before the channel verifies it.
 ## What the gateway's identity is
 
 A node's key is generated inside its ATECC608 and never leaves the part
-([ADR-0007](../docs/gateway-identity-and-provisioning.md#adr-0007-dec-1)). **A gateway's is not**: the reference gateway is a stock
+([ADR-0007](../docs/gateway-identity-and-provisioning.md)). **A gateway's is not**: the reference gateway is a stock
 single-board computer bought as SP0004 and carries no secure element, so its key
-is generated on the gateway and protected by the host ([ADR-0007](../docs/gateway-identity-and-provisioning.md#adr-0007-dec-11)).
+is generated on the gateway and protected by the host ([ADR-0007](../docs/gateway-identity-and-provisioning.md)).
 
 **Root on the gateway is the private key.** The host hardening of ADR-0004 is
 therefore load-bearing for identity, not only for availability, and a stolen
@@ -34,7 +34,7 @@ revokes it.
 Run the ceremony in `pki/README.md`. It is not part of this procedure because it
 is not per-gateway: every gateway and the ERP itself chain to the same root.
 
-**It must run on a machine that is offline at generation time** ([ADR-0024](../docs/operator-ca-ceremony.md#adr-0024-dec-5)), so
+**It must run on a machine that is offline at generation time** ([ADR-0024](../docs/operator-ca-ceremony.md)), so
 it cannot be scripted from a networked host. Generate the passphrase in 1Password
 (`IndustryGrow/operator-ca`) *before* going offline and type it at the prompt —
 `op run` resolves over the network and is for issuance only.
@@ -97,7 +97,7 @@ The gateway needs three files in `/etc/industrygrow/pki/`:
 | `gateway.key` | already there from step 2; never copied |
 | `operator-root.crt` | the anchor the ERP's server certificate is checked against |
 
-**Serve and present chains, not bare leaves.** With the two-tier CA ([ADR-0024](../docs/operator-ca-ceremony.md#adr-0024-dec-1))
+**Serve and present chains, not bare leaves.** With the two-tier CA ([ADR-0024](../docs/operator-ca-ceremony.md))
 a peer anchored on the root cannot build a path from a leaf alone. The symptom is
 the *other* end failing to verify.
 
@@ -129,7 +129,7 @@ front of the gateway routes and removes the app's published port. Set
 `ERP_GATEWAY_TRUSTED_PROXIES` to the proxy's address as seen on the wire. Empty
 is the default and is fail-closed: gateway routes answer 503, because a forwarded
 header from an unidentified proxy is indistinguishable from a forged one
-([ADR-0022](../docs/erp-api.md#adr-0022-dec-2)).
+([ADR-0022](../docs/erp-api.md)).
 
 ## 7. Verify, in this order
 
@@ -160,7 +160,7 @@ the leaf.
 `provision.sh` installs `industrygrow-firmware.timer` and starts it when
 `IGROW_ERP_URL` is set. From there the loop is unattended: an operator selects a
 release for the machine in the console, and the next pass brings the nodes onto
-it ([ADR-0029](../docs/node-firmware-update.md#adr-0029-dec-16)).
+it ([ADR-0029](../docs/node-firmware-update.md)).
 
 ```bash
 systemctl list-timers industrygrow-firmware.timer --no-pager
@@ -177,10 +177,10 @@ A pass ending `no firmware release intended for this machine` is a failed unit a
 the correct state before anyone has selected one — nothing reaches a node until
 they do. A node reported `unidentified` is running an image this gateway does not
 hold, and is left alone until an operator resolves it by SWD or by making that
-release available ([ADR-0029](../docs/node-firmware-update.md#adr-0029-dec-17)).
+release available ([ADR-0029](../docs/node-firmware-update.md)).
 
 ## What this does not give you
 
 The ERP never learns what a node is running. `firmware_client.py once --dry-run`
-is the only thing that answers it, because the answer is on the bus ([ADR-0029](../docs/node-firmware-update.md#adr-0029-dec-15);
-[ADR-0022](../docs/erp-api.md#adr-0022-dec-9)). A console that showed "firmware up to date" would be inventing it.
+is the only thing that answers it, because the answer is on the bus ([ADR-0029](../docs/node-firmware-update.md);
+[ADR-0022](../docs/erp-api.md)). A console that showed "firmware up to date" would be inventing it.

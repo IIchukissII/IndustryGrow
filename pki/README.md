@@ -9,7 +9,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 shape of this CA and why. This file is the *procedure* and the *numbers* — the
 `what` to that record's `why`, per [ADR-0000](../ADR/ADR-0000-decision-records-and-the-single-source-of-truth-discipline.md).
 
-[ADR-0007](../docs/gateway-identity-and-provisioning.md#adr-0007-dec-3) roots
+[ADR-0007](../docs/gateway-identity-and-provisioning.md) roots
 trust **per operator**: there is no IndustryGrow root CA, and nobody can issue
 into your deployment but you. That independence is the point, and the price of it
 is this procedure.
@@ -17,22 +17,21 @@ is this procedure.
 ## The chain
 
 ```
-  operator root            offline, encrypted, on removable media  (d1, d5, d6)
-        │                  signs certificate authorities only      (d2)
+  operator root            offline, encrypted, on removable media
+        │                  signs certificate authorities only
         ▼
-  issuing CA               on the ERP host; CA:TRUE, pathlen:0     (d1, d2)
+  issuing CA               on the ERP host; CA:TRUE, pathlen:0
         │
         ├──► gateway leaf  CN = GBOX_NNNN, clientAuth              (clientAuth: ADR-0022)
         └──► ERP leaf      SAN required, serverAuth
 ```
 
-The gateway leaf's `clientAuth` and cert-derived identity are [ADR-0022](../docs/erp-api.md#adr-0022-dec-2);
+The gateway leaf's `clientAuth` and cert-derived identity are [ADR-0022](../docs/erp-api.md);
 that the identity rides the **CN** specifically is pinned by the deployment, not the
-ADR — see [`erp/deploy/mtls/README.md`](../erp/deploy/mtls/README.md) (ADR-0007
-decision 10b keeps `GBOX_NNNN` stable across that CN and, at stage 11, IndustryFlow's
+ADR — see [`erp/deploy/mtls/README.md`](../erp/deploy/mtls/README.md) (ADR-0007 keeps `GBOX_NNNN` stable across that CN and, at stage 11, IndustryFlow's
 SAN device segment).
 
-Gateways and the ERP's proxy anchor on the **root** (d3). The intermediate travels
+Gateways and the ERP's proxy anchor on the **root**. The intermediate travels
 in the chain each peer presents. That is why replacing the intermediate touches no
 deployed unit, and replacing the root touches every one of them.
 
@@ -42,9 +41,9 @@ deployed unit, and replacing the root touches every one of them.
 |------|----------|---------|
 | operator root | 3650 days (10 y) | rotation only — see below |
 | issuing CA | 1095 days (3 y) | at ~2 y, from the offline root |
-| gateway / ERP leaf | 90 days | routinely, per [ADR-0007](../docs/gateway-identity-and-provisioning.md#adr-0007-dec-7) |
+| gateway / ERP leaf | 90 days | routinely, per [ADR-0007](../docs/gateway-identity-and-provisioning.md) |
 
-These are the values; the *decision* is decision 8's relation — root ≫ intermediate
+These are the values; the *decision* is ADR-0024's relation — root ≫ intermediate
 ≫ leaf, each issuer outliving what it issues plus a renewal margin. `sign-csr.sh`
 and `issue-intermediate.sh` enforce it and refuse to mis-issue, so shortening a tier
 without renewing the one above it fails at issuance rather than months later at a
@@ -55,7 +54,7 @@ handshake.
 You need: `bash`, `openssl` (3.x), removable media ×2, and somewhere to write down
 a passphrase that is not those media.
 
-**Do step 1 and 2 on a machine that is offline** (d5). Nothing downstream can tell
+**Do step 1 and 2 on a machine that is offline**. Nothing downstream can tell
 whether you did, and no later check will catch it — that is exactly why it is a
 ceremony rather than a build step.
 
@@ -96,7 +95,7 @@ Asks for the root passphrase, then a new one for the issuing key. Produces
 `ca/issuing-ca.key` and `ca/issuing-ca.crt`, and verifies the chain before
 reporting success.
 
-**This is the only thing the root ever signs** (d2). After it, the root is not
+**This is the only thing the root ever signs**. After it, the root is not
 needed again until you renew the intermediate or rotate the root.
 
 ## Step 3 — custody (this is the step that matters)
@@ -121,10 +120,10 @@ manager is that: **1Password vault `IndustryGrow`, item `operator-ca`**, fields
 Generate it there **before** going offline, and type it at the prompt during the
 ceremony. Do not reach for `op run` at this step — it resolves references over
 the network, and this is the one procedure that must run on a machine that is
-offline at generation time (decision 5). `pki/.env.op.tpl` exists for *issuance*,
+offline at generation time (ADR-0024). `pki/.env.op.tpl` exists for *issuance*,
 which is online by design, and says so.
 
-Then, per decision 6:
+Then, per ADR-0024:
 
 - the two media go in **two different physical places** — co-located copies share
   a fire;
@@ -136,13 +135,13 @@ Nothing in the tooling can verify any of this. If the second copy is in the same
 drawer, you have one copy with extra steps.
 
 **Losing every copy, or someone else gaining one, means re-provisioning every unit
-in the estate** (d11). [ADR-0007](../docs/gateway-identity-and-provisioning.md#adr-0007-dec-7) deliberately provides no revocation path
+in the estate**. [ADR-0007](../docs/gateway-identity-and-provisioning.md) deliberately provides no revocation path
 that would soften that.
 
 ### If you would rather use a hardware token
 
 A PIV token holding a non-exportable root key is stronger custody and is a fully
-supported choice, not a future migration (d7). It is not the default because it
+supported choice, not a future migration. It is not the default because it
 would make a hardware purchase a precondition for a self-hosted build, and add a
 PKCS#11 dependency to the one procedure that must run on a bare offline machine.
 
@@ -155,7 +154,7 @@ certificates either way.
 ## Routine issuance
 
 Move `ca/issuing-ca.*` to the host that will issue (not the offline machine, and
-not inside the ERP container — d13). Leave the root key behind; `sign-csr.sh`
+not inside the ERP container). Leave the root key behind; `sign-csr.sh`
 refuses to run beside it.
 
 ```bash
@@ -191,24 +190,24 @@ mv ca/issuing-ca.key ca/issuing-ca.key.old
 ```
 
 Nothing is redistributed. Gateways anchor on the root, so they neither notice nor
-need to (d9). Re-issue leaves as they expire; keep the old intermediate until the
+need to. Re-issue leaves as they expire; keep the old intermediate until the
 last certificate it signed has rolled over.
 
 ## Rotating the root
 
-Rare, planned, and it touches every unit (d10).
+Rare, planned, and it touches every unit.
 
 1. Bootstrap a **new** root on the offline machine, into a separate directory.
 2. Issue a new intermediate under it.
 3. Distribute the new root into the trust set of **every gateway *and* the ERP's
-   proxy** — both are relying parties (d3), and updating only one breaks the
+   proxy** — both are relying parties, and updating only one breaks the
    channel in one direction. During the overlap each trusts *both* roots; both are
-   yours, so [ADR-0007](../docs/gateway-identity-and-provisioning.md#adr-0007-dec-3)'s "the root of its own operator and no other" still holds.
+   yours, so [ADR-0007](../docs/gateway-identity-and-provisioning.md)'s "the root of its own operator and no other" still holds.
 4. Only once every unit is confirmed on the new anchor: stop issuing from the old
    root and retire it.
 
 Distribution is the **provisioning path** — the same hands-on route by which a unit
-got its identity — deliberately not the profile channel ([ADR-0024](../docs/operator-ca-ceremony.md#adr-0024-dec-10) alternatives). A
+got its identity — deliberately not the profile channel ([ADR-0024](../docs/operator-ca-ceremony.md) alternatives). A
 gateway that stays offline across the whole window is stranded and needs
 re-provisioning by hand.
 
@@ -221,17 +220,17 @@ intermediate, re-provision the estate.
 ## What this does not do
 
 - **Generate device keys.** A gateway's key is generated on the gateway, on its
-  ATECC608 where one is fitted ([ADR-0007](../docs/gateway-identity-and-provisioning.md#adr-0007-dec-1)) and as a software key otherwise
-  ([ADR-0007](../docs/gateway-identity-and-provisioning.md#adr-0007-dec-11)), and never leaves it. Producing that CSR is the gateway
+  ATECC608 where one is fitted ([ADR-0007](../docs/gateway-identity-and-provisioning.md)) and as a software key otherwise
+  ([ADR-0007](../docs/gateway-identity-and-provisioning.md)), and never leaves it. Producing that CSR is the gateway
   provisioning tool's job.
 - **Write the `-PR` provisioning record.** The serial ↔ certificate binding of
-  [ADR-0017](../docs/component-and-instance-identification.md#adr-0017-dec-10-11-12) has no schema yet; this CA supplies the chain it will
+  [ADR-0017](../docs/component-and-instance-identification.md) has no schema yet; this CA supplies the chain it will
   reference.
-- **Issue node provenance certificates.** [ADR-0007](../docs/gateway-identity-and-provisioning.md#adr-0007-dec-5) permits them and they
-  are long-lived, which sits awkwardly with decision 8's containment rule; open
+- **Issue node provenance certificates.** [ADR-0007](../docs/gateway-identity-and-provisioning.md) permits them and they
+  are long-lived, which sits awkwardly with ADR-0024's containment rule; open
   until node provisioning exists.
 - **Automate renewal.** At fleet scale an ACME issuer would take the intermediate's
-  place without the root or any trust anchor changing ([ADR-0024](../docs/operator-ca-ceremony.md#adr-0024-dec-1) alternatives).
+  place without the root or any trust anchor changing ([ADR-0024](../docs/operator-ca-ceremony.md) alternatives).
 
 ## Not to be confused with
 

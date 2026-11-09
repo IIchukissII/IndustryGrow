@@ -8,8 +8,8 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 Firmware for the IndustryGrow Cyphal/CAN sensor nodes. One codebase, one carrier (`E0001`), one
 MCU (STM32F405RGT6 on a WeAct STM32F4 64-Pin Core Board, ADR-0002). **One application
 image** per carrier revision holds every module personality; the module class ID selects among
-them at boot ([ADR-0017](../docs/component-and-instance-identification.md#adr-0017-dec-16)). A node carries two components: a bootloader at the reset vector and that
-application in one of two slots ([ADR-0029](../docs/node-firmware-update.md#adr-0029-dec-1)). Sources are `AGPL-3.0-or-later` ([ADR-0002](../docs/field-bus-architecture.md#adr-0002-dec-5)); this document is
+them at boot ([ADR-0017](../docs/component-and-instance-identification.md)). A node carries two components: a bootloader at the reset vector and that
+application in one of two slots ([ADR-0029](../docs/node-firmware-update.md)). Sources are `AGPL-3.0-or-later` ([ADR-0002](../docs/field-bus-architecture.md)); this document is
 `CC-BY-SA-4.0`.
 
 ## State
@@ -26,26 +26,26 @@ application in one of two slots ([ADR-0029](../docs/node-firmware-update.md#adr-
 | U3 temperature offset | Implemented as vendor command 3; applied per instance `-CC` (ADR-0028) |
 | Boot chain (ADR-0029) | Verified on hardware 2026-08-29: hand-over, fallback, update-state write |
 | Firmware download over CAN | Built — the bootloader is a Cyphal node and a `uavcan.file.Read` client |
-| Image signing ([ADR-0029](../docs/node-firmware-update.md#adr-0029-dec-6)) | Built — needs a key given to the build; an unsigned image is refused |
+| Image signing ([ADR-0029](../docs/node-firmware-update.md)) | Built — needs a key given to the build; an unsigned image is refused |
 | Released `store/E0001-000001-F-*` | All four personalities; **unsigned** — flashes over SWD, refused over the bus. Rebuild with `tools/release.sh --key` before any over-the-air use |
-| Subject-ID registers ([ADR-0005](../docs/dsdl-vocabulary.md#adr-0005-dec-7)) | Not implemented — defaults are compiled in |
+| Subject-ID registers ([ADR-0005](../docs/dsdl-vocabulary.md)) | Not implemented — defaults are compiled in |
 | SCD41 forced recalibration | Not implemented (M01 spec O-5) |
 
 ## What the firmware is
 
 A Cyphal/CAN node. Application protocol and wire vocabulary are fixed elsewhere.
 
-- **Bus** — classic CAN, 500 kbit/s, linear; Node-ID provisioned per instance ([ADR-0002](../docs/field-bus-architecture.md#adr-0002-dec-8),
-  [ADR-0005](../docs/dsdl-vocabulary.md#adr-0005-dec-6), ADR-0027).
+- **Bus** — classic CAN, 500 kbit/s, linear; Node-ID provisioned per instance ([ADR-0002](../docs/field-bus-architecture.md),
+  [ADR-0005](../docs/dsdl-vocabulary.md), ADR-0027).
 - **Vocabulary** — DSDL: the OpenCyphal standard `uavcan.*` set plus project
   `industryflow.greenhouse.*` types (ADR-0005). Physical quantities ride `uavcan.si.sample.*`;
-  accumulated S0 energy is joule ([ADR-0005](../docs/dsdl-vocabulary.md#adr-0005-dec-3)); door and leak are minimal `safety` status
+  accumulated S0 energy is joule ([ADR-0005](../docs/dsdl-vocabulary.md)); door and leak are minimal `safety` status
   types with no command field (M05 is sense-only, ADR-0018).
-- **Identity** — three values from three sources, none standing in for another ([ADR-0027](../docs/node-identity.md#adr-0027-dec-9)).
+- **Identity** — three values from three sources, none standing in for another ([ADR-0027](../docs/node-identity.md)).
   Module *class* at boot from the ID straps on `E0001-000003`, from byte 0 of the module EEPROM on
-  `E0001-000100` ([ADR-0014](../docs/sensor-node-taxonomy.md#adr-0014-dec-6)). Cyphal `unique_id` from the
-  ATECC608 serial, STM32 factory UID as fallback ([ADR-0027](../docs/node-identity.md#adr-0027-dec-8)). *Node-ID* from the store
-  below. Role and zone are gateway-side tags, not firmware ([ADR-0014](../docs/sensor-node-taxonomy.md#adr-0014-dec-7)).
+  `E0001-000100` ([ADR-0014](../docs/sensor-node-taxonomy.md)). Cyphal `unique_id` from the
+  ATECC608 serial, STM32 factory UID as fallback ([ADR-0027](../docs/node-identity.md)). *Node-ID* from the store
+  below. Role and zone are gateway-side tags, not firmware ([ADR-0014](../docs/sensor-node-taxonomy.md)).
 
 ## Toolchain
 
@@ -53,7 +53,7 @@ A Cyphal/CAN node. Application protocol and wire vocabulary are fixed elsewhere.
 |---|---|
 | Cyphal transport | [libcanard](https://github.com/OpenCyphal/libcanard) (MIT) |
 | Allocator | [o1heap](https://github.com/pavel-kirienko/o1heap) (MIT) |
-| DSDL → C | [Nunavut](https://github.com/OpenCyphal/nunavut), pinned via pip, run at build time; generated code not vendored ([ADR-0005](../docs/dsdl-vocabulary.md#adr-0005-dec-10)) |
+| DSDL → C | [Nunavut](https://github.com/OpenCyphal/nunavut), pinned via pip, run at build time; generated code not vendored ([ADR-0005](../docs/dsdl-vocabulary.md)) |
 | Standard types | [public_regulated_data_types](https://github.com/OpenCyphal/public_regulated_data_types), pinned |
 | MCU peripherals | CMSIS device headers + register-level init; no vendored HAL tree |
 | Compiler / build | `arm-none-eabi-gcc` + CMake |
@@ -120,11 +120,11 @@ Pin assignments are not repeated here; `store/E0001-000003-D-pinmap.md` is the B
 
 ## Identity resolution
 
-A strap value no personality claims is **unidentified**, never a guessed class ([ADR-0014](../docs/sensor-node-taxonomy.md#adr-0014-dec-6)).
+A strap value no personality claims is **unidentified**, never a guessed class ([ADR-0014](../docs/sensor-node-taxonomy.md)).
 The node still brings up the Cyphal skeleton and enumerates as
 `org.industrygrow.node.unidentified`, publishing no subjects.
 
-`127` means one thing: no Node-ID provisioned ([ADR-0027](../docs/node-identity.md#adr-0027-dec-6-10)). An unidentified but provisioned node
+`127` means one thing: no Node-ID provisioned ([ADR-0027](../docs/node-identity.md)). An unidentified but provisioned node
 keeps its Node-ID and reports the unresolved personality through `GetInfo` and its health.
 Publishing requires both a provisioned identity and a resolved personality.
 
@@ -132,7 +132,7 @@ Publishing requires both a provisioned identity and a resolved personality.
 
 On `E0001-000003` the store is the last flash sector (`0x080E0000`, sector 11), reserved by the
 linker script and outside the application region. On `E0001-000100` it is the carrier EEPROM `U4`
-at `0x57` on the header I²C, word address 0 ([ADR-0027](../docs/node-identity.md#adr-0027-dec-2-11), E0001 spec `F8`); the flash sector is
+at `0x57` on the header I²C, word address 0 ([ADR-0027](../docs/node-identity.md), E0001 spec `F8`); the flash sector is
 not read there. A record is magic, version, Node-ID and CRC; an absent or interrupted record, or a
 `U4` that does not answer, reads as unprovisioned.
 
@@ -144,10 +144,10 @@ not read there. A record is magic, version, Node-ID and CRC; an absent or interr
 
 An out-of-range value or a write failure leaves the register reading what the store holds, which is
 how a rejected write is visible. While a committed value differs from the running one, the node
-repeats a `uavcan.diagnostic.Record` naming it ([ADR-0027](../docs/node-identity.md#adr-0027-dec-5)).
+repeats a `uavcan.diagnostic.Record` naming it ([ADR-0027](../docs/node-identity.md)).
 
 **A flashing tool must not mass-erase.** Writing an image erases only the sectors it covers, and
-the store is not one of them ([ADR-0027](../docs/node-identity.md#adr-0027-dec-4), [ADR-0029](../docs/node-firmware-update.md#adr-0029-dec-1)). A mass erase de-provisions every node it
+the store is not one of them ([ADR-0027](../docs/node-identity.md), [ADR-0029](../docs/node-firmware-update.md)). A mass erase de-provisions every node it
 touches on `E0001-000003`; on `E0001-000100` the identity stays with the carrier's `U4`.
 
 On `E0001-000003` the commit blocks for the sector erase — of the order of a second, interrupts
@@ -190,9 +190,9 @@ coefficients the node does not have until they are written (M02 spec 6.2, O-52).
 
 M04 publishes statistics, not the field: the 768-pixel frame is served over `uavcan.file.Read` at
 `/plant/frame.bin`, one interval frame per minute, and the record announces it through `frame_seq`
-and `frame_available` ([ADR-0005](../docs/dsdl-vocabulary.md#adr-0005-dec-11)). Its flat-field trim arrives the other way, over
+and `frame_available` ([ADR-0005](../docs/dsdl-vocabulary.md)). Its flat-field trim arrives the other way, over
 `uavcan.file.Write` at `/plant/flatfield.bin`, and is committed to the module's own EEPROM bound to
-the imager's device ID ([ADR-0028](../docs/commissioning-and-trim-custody.md#adr-0028-dec-2-10)).
+the imager's device ID ([ADR-0028](../docs/commissioning-and-trim-custody.md)).
 
 | ID | A01 subject | Source | Type |
 |----|-------------|--------|------|
@@ -208,11 +208,11 @@ A temperature publishes only once its DS18B20 ROM code is written to `a01.ow.rom
 (U1–U4, `natural64[4]`); vendor command 1 lists the codes the boot search found. `E6` neither
 subscribes nor publishes until `a01.valve` marks the valve fitted (A01 spec `F12`). The other
 commissioning registers are `a01.drive`, `a01.thermal`, `a01.fan` and `a01.e1.heat_ph`,
-defaulting to the specification's values. **None persists across power-up** ([ADR-0005](../docs/dsdl-vocabulary.md#adr-0005-dec-7)).
+defaulting to the specification's values. **None persists across power-up** ([ADR-0005](../docs/dsdl-vocabulary.md)).
 
 Only 4112–4114 are admissible for VPD and the climate control loop. 4118–4121 are the secondary
 sources of M01 spec §4; 4120 and 4121 are valid for an instance once its `-CC` is filed (O-45,
-[ADR-0028](../docs/commissioning-and-trim-custody.md#adr-0028-dec-9)).
+[ADR-0028](../docs/commissioning-and-trim-custody.md)).
 
 ## Build
 
@@ -247,12 +247,12 @@ which file was flashed; which slot an application image is for is a link address
 | `igrow-<slot>.img` | — | the same bytes unaddressed: what a signature covers and what the gateway serves |
 
 `tools/mkimage.py` writes the header (`common/platform/image.h`); the flash map it addresses is
-[ADR-0029](../docs/node-firmware-update.md#adr-0029-dec-1), stated in C by `common/platform/partition.h`.
+[ADR-0029](../docs/node-firmware-update.md), stated in C by `common/platform/partition.h`.
 
 ### Signing keys
 
 An image is accepted over the bus only if it carries a signature from the key the bootloader was
-built with ([ADR-0029](../docs/node-firmware-update.md#adr-0029-dec-6)). Neither half of that key lives in this repository — custody is the key
+built with ([ADR-0029](../docs/node-firmware-update.md)). Neither half of that key lives in this repository — custody is the key
 ceremony's (ADR-0024) — so both are build inputs:
 
 ```sh
@@ -316,7 +316,7 @@ store/E0001-000001-F-src.zip     # source snapshot of firmware/ at HEAD
 ```
 
 Filed under `E0001` — the carrier whose one codebase every node runs, so firmware identity follows
-the carrier, not the module ([ADR-0017](../docs/component-and-instance-identification.md#adr-0017-dec-16)). One `F` object per firmware version covers every
+the carrier, not the module ([ADR-0017](../docs/component-and-instance-identification.md)). One `F` object per firmware version covers every
 node type. Refreshed in place at the same `F` version while unverified against hardware; `F` bumps
 on a released change. `firmware/build*/` stays git-ignored.
 
@@ -326,7 +326,7 @@ on a released change. `firmware/build*/` stays git-ignored.
 - ADR-0005 — DSDL foundation: vocabulary, joule energy, node skeleton, port-IDs.
 - ADR-0014 — sensor-node taxonomy: module straps, presence probing, gateway tagging.
 - ADR-0007 — PKI and hardware identity: the ATECC608 as identity anchor.
-- ADR-0017 — document layers; d16 roots firmware on the carrier.
+- ADR-0017 — document layers; firmware roots on the carrier.
 - ADR-0029 — node firmware update and bootloader: the flash partition, A/B slots and image header.
 - ADR-0018 — M05 sense-only; door/leak report-only; S0 energy.
 - ADR-0027 — node identity model: the Node-ID store, its survival and `127`.
