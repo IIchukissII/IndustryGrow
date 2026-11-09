@@ -16,8 +16,10 @@ What that pins down:
     a rare path, and
   * a certificate issued from the tool's CSR authenticates through the same
     ``mtls.gbox_from_dn`` the ERP derives caller identity with, and
+  * a software key on the gateway reaches a production binding (ADR-0007 d11)
+    and a test key is marked as a fixture, and
   * the refusals hold: no bare leaf installed, no anchor that is not the root, no
-    production binding from a software key, no config write without consent.
+    config write without consent.
 
 Not covered: anything above the signer. There is no ATECC608 and no
 cryptoauthlib here, so ``AteccSigner`` and the irreversible lock sequence are
@@ -86,7 +88,7 @@ def run(*args: str) -> subprocess.CompletedProcess:
 
 @pytest.fixture
 def signer(tmp_path):
-    """The manual §5 software fallback, standing in for slot 0.
+    """The software key (ADR-0007 d11), standing in for slot 0.
 
     It exposes exactly what the chip does — a 64-byte X||Y public key and a
     64-byte R||S signature over a caller-supplied digest — so build_csr is the
@@ -549,7 +551,7 @@ def test_the_binding_carries_the_stable_anchors_and_no_secret(provisioned, tmp_p
     # ISO-8601, not openssl's "Jul 26 11:20:02 2026 GMT" — the API takes a datetime.
     assert record["cert_not_after"].startswith("20")
     assert "T" in record["cert_not_after"]
-    assert "fixture" in record  # a software key says so in the record itself
+    assert "fixture" in record  # a test key says so in the record itself
     # Public material only (ADR-0007 d6): nothing key-shaped can be in here.
     assert "PRIVATE KEY" not in out.read_text()
 
@@ -576,37 +578,18 @@ def test_the_binding_file_is_what_the_erp_route_accepts(provisioned, tmp_path):
                 str(provisioned["leaf"]),
                 "--out",
                 str(out),
-                "--fixture",
             ]
         )
         == 0
     )
-    parsed = MachineProvisionRequest.model_validate(json.loads(out.read_text()))
+    record = json.loads(out.read_text())
+    # A software key on the gateway is a production identity (ADR-0007 d11).
+    assert record["provenance"] == "software"
+    assert "fixture" not in record
+    assert record["atecc_serial"] is None
+    parsed = MachineProvisionRequest.model_validate(record)
     assert parsed.vendor_serial == "SP0004-SN-000123"
     assert parsed.cert_not_after > parsed.cert_not_before
-
-
-def test_a_software_key_cannot_reach_a_production_binding(provisioned, tmp_path, capsys):
-    # Manual §5. A binding asserts a hardware anchor; recording an exportable
-    # file key as one makes the binding a claim about a property it lacks.
-    assert (
-        tool.main(
-            [
-                "binding",
-                "--gbox",
-                "GBOX_0001",
-                "--vendor-serial",
-                "SN1",
-                "--software-key",
-                str(provisioned["key"]),
-                "--out",
-                str(tmp_path / "b.json"),
-            ]
-        )
-        == 2
-    )
-    assert "refusing to write a binding for a software key" in capsys.readouterr().err
-    assert not (tmp_path / "b.json").exists()
 
 
 def test_the_binding_refuses_a_certificate_for_another_machine(provisioned, tmp_path, capsys):

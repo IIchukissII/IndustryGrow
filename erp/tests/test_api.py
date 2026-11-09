@@ -777,6 +777,50 @@ def test_a_machine_carries_its_own_provisioning_binding(client):
     assert channel["identity"]["public_key_fingerprint"] == "A" * 64
 
 
+def test_a_software_key_binding_is_a_production_identity(client):
+    # ADR-0007 d11: a gateway without a secure element holds a software key as
+    # its real identity; the binding says so and carries no ATECC serial.
+    r = client.post(
+        "/api/v1/machines/GBOX_0001/provisioning",
+        json=_machine_binding(atecc_serial=None, provenance="software"),
+        headers=AUTH,
+    )
+    assert r.status_code == 200, r.text
+
+
+def test_a_binding_never_asserts_hardware_that_is_not_fitted(client):
+    for body in (
+        _machine_binding(provenance="atecc", atecc_serial=None),
+        _machine_binding(provenance="software"),  # carries an ATECC serial
+    ):
+        r = client.post("/api/v1/machines/GBOX_0001/provisioning", json=body, headers=AUTH)
+        assert r.status_code == 422
+
+
+def test_an_empty_fixture_marker_is_still_refused(client):
+    r = client.post(
+        "/api/v1/machines/GBOX_0001/provisioning",
+        json=_machine_binding(atecc_serial=None, provenance="software", fixture=""),
+        headers=AUTH,
+    )
+    assert r.status_code == 422
+
+
+def test_a_binding_marked_as_a_test_key_is_refused(client):
+    # provision_identity.py --fixture marks a test key; it is never a provisioned
+    # unit (ADR-0007 d11), so the ERP does not record it as one.
+    r = client.post(
+        "/api/v1/machines/GBOX_0001/provisioning",
+        json=_machine_binding(atecc_serial=None, provenance="software", fixture="test key"),
+        headers=AUTH,
+    )
+    assert r.status_code == 422
+    assert (
+        client.get("/api/v1/machines/GBOX_0001/gateway-channel", headers=AUTH).json()["identity"]
+        is None
+    )
+
+
 def test_the_binding_is_upserted_so_renewal_replaces_it(client):
     # Certificates are short-lived and auto-renewed (ADR-0007 d7), so this route
     # is called again on re-certification. It must not accumulate: what a

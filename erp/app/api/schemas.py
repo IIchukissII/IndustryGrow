@@ -7,8 +7,9 @@ from __future__ import annotations
 
 import re
 from datetime import datetime
+from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.models import identifiers
 
@@ -50,7 +51,8 @@ class MachineProvisionRequest(BaseModel):
 
     Not ProvisionRequest with a different key: a machine binding carries the two
     facts that identify the *unit* (the SP0004 vendor serial and the ATECC die
-    serial) alongside the certificate metadata, and it carries no ``pr_object_key``
+    serial, absent for a software key, ADR-0007 d11) alongside the certificate
+    metadata, and it carries no ``pr_object_key``
     — whether a machine gets a lifecycle document blob at all is deferred (d12).
 
     Upserted, latest-wins: gateway certificates are short-lived and auto-renewed
@@ -60,6 +62,20 @@ class MachineProvisionRequest(BaseModel):
 
     vendor_serial: str
     atecc_serial: str | None = None
+    # "atecc" (ADR-0007 d1) or "software" (d11); absent from older tools.
+    provenance: Literal["atecc", "software"] | None = None
+    # Set by provision_identity.py --fixture on a test key; refused (d11).
+    fixture: str | None = None
+
+    @model_validator(mode="after")
+    def _provenance_matches_the_serial(self) -> MachineProvisionRequest:
+        # A binding never asserts hardware that is not fitted (ADR-0007 d11).
+        if self.provenance == "atecc" and not self.atecc_serial:
+            raise ValueError("provenance atecc needs the ATECC serial")
+        if self.provenance == "software" and self.atecc_serial:
+            raise ValueError("a software key has no ATECC serial")
+        return self
+
     public_key_fingerprint: str
     cert_serial: str
     cert_not_before: datetime

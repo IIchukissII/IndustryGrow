@@ -12,9 +12,10 @@
 # not be present.
 #
 # This signs a CSR; it does not generate keys. That is the point: a gateway's key
-# is generated on its ATECC608 and never leaves it (ADR-0007 d1), so the only
-# thing that can travel to the CA is a CSR. Producing the ATECC CSR is the
-# gateway provisioning tool's job, not this script's.
+# is generated on the gateway, on its ATECC608 where one is fitted (ADR-0007 d1)
+# and as a software key otherwise (ADR-0007 d11), and never leaves it, so the
+# only thing that travels to the CA is a CSR. Producing that CSR is the gateway
+# provisioning tool's job, not this script's.
 #
 # Profiles (see openssl.cnf):
 #   gateway   clientAuth. CN must be the ADR-0017 machine identifier verbatim —

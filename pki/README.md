@@ -160,8 +160,9 @@ not inside the ERP container — d13). Leave the root key behind; `sign-csr.sh`
 refuses to run beside it.
 
 ```bash
-# a gateway. The CSR comes from the unit — its key is generated on the ATECC608
-# and never leaves it (ADR-0007 d1), so a CSR is the only thing that can travel.
+# a gateway. The CSR comes from the unit — its key is generated on its ATECC608
+# where one is fitted (ADR-0007 d1), otherwise as a software key on the gateway
+# (ADR-0007 d11), and never leaves it, so a CSR is the only thing that travels.
 ./sign-csr.sh --dir ./ca --csr GBOX_0001.csr --profile gateway
 
 # the ERP's own certificate
@@ -220,8 +221,10 @@ intermediate, re-provision the estate.
 
 ## What this does not do
 
-- **Generate device keys.** A gateway's key is born on its ATECC608 and cannot
-  leave it. Producing that CSR is the gateway provisioning tool's job.
+- **Generate device keys.** A gateway's key is generated on the gateway, on its
+  ATECC608 where one is fitted (ADR-0007 d1) and as a software key otherwise
+  (ADR-0007 d11), and never leaves it. Producing that CSR is the gateway
+  provisioning tool's job.
 - **Write the `-PR` provisioning record.** The serial ↔ certificate binding of
   ADR-0017 decision 12 has no schema yet; this CA supplies the chain it will
   reference.

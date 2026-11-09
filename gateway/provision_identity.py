@@ -1,13 +1,20 @@
 #!/usr/bin/env python3
 # SPDX-FileCopyrightText: 2026 The IndustryGrow contributors
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Gateway ATECC608 identity provisioning — the tool `SP0004-M-atecc-provisioning` specifies.
+"""Gateway identity provisioning — the tool `SP0004-M-atecc-provisioning` specifies.
 
-Turns a blank TrustCUSTOM ATECC608B into a gateway identity: an on-chip P-256
-keypair in slot 0 whose private half never leaves the die (ADR-0007 d1), a CSR
-carrying `CN=GBOX_NNNN` signed *by that slot*, and the public anchors the
+The gateway's P-256 identity key has one of two origins:
+
+  * an ATECC608B, where one is fitted: a blank TrustCUSTOM part becomes an
+    on-chip keypair in slot 0 whose private half never leaves the die
+    (ADR-0007 d1);
+  * otherwise a software key generated on the gateway into
+    `/etc/industrygrow/pki/gateway.key`, mode 0640, group of the `pki` directory
+    (`0750 root:gateway`), and never copied off it (ADR-0007 d11).
+
+Either key signs a CSR carrying `CN=GBOX_NNNN` and yields the public anchors the
 provisioning binding is recorded from (`store/SP0004-M-atecc-provisioning.md` §8).
-The CSR is the only thing that can travel to the operator CA, which is why
+The CSR is the only thing that travels to the operator CA, which is why
 `pki/sign-csr.sh` signs a request it did not generate.
 
     provision_identity.py detect
@@ -18,10 +25,12 @@ The CSR is the only thing that can travel to the operator CA, which is why
     provision_identity.py binding --gbox GBOX_0001 --vendor-serial SN123 \
                                   --cert GBOX_0001.crt --out GBOX_0001-binding.json
 
-Every subcommand takes `--software-key PATH` instead of touching a chip. That is
-the manual's §5 fallback: an exportable key on disk, which is the exact property
-the ATECC exists to prevent, so it proves the pipeline and never a real unit.
-`binding` refuses to emit a production record from one.
+`--software-key [PATH]` selects the software key instead of a chip (default
+`/etc/industrygrow/pki/gateway.key`); the tool generates it if absent and never
+overwrites it. A software key is a production identity: `binding` records it
+with `provenance: software` and refuses a key file others can read or its group
+can write. `binding --fixture` marks a test key (CI, laptops) with a `fixture`
+field, so it is never recorded as a provisioned unit.
 
 VALIDATION POSTURE — read this before provisioning a part you care about. The
 ATECC code path has never run against hardware: there is no ATECC608 and no
@@ -41,6 +50,7 @@ import argparse
 import base64
 import hashlib
 import json
+import os
 import re
 import shutil
 import struct
@@ -66,11 +76,17 @@ KEY_CONFIG_0 = 0x0033  # Private=1, PubInfo=1, KeyType=4 (P-256), Lockable=1
 
 CONFIG_ZONE_SIZE = 128
 
-# Where a provisioned identity lands on the gateway. provision.sh owns
-# /etc/industrygrow (0750 root:gateway); the chain is world-readable inside it
-# because it is public material. Note what is absent: no private key file. There
-# is nothing to protect on disk, which is the point of the part being on the BOM.
+# Where a provisioned identity lands on the gateway. provision.sh creates this
+# directory 0750 root:gateway; the chain is world-readable inside it because it
+# is public material. With an ATECC there is no private key file; without one the
+# software key lives here, beside the chain, where profile_client.py loads it.
 DEFAULT_INSTALL_DIR = Path("/etc/industrygrow/pki")
+DEFAULT_SOFTWARE_KEY = DEFAULT_INSTALL_DIR / "gateway.key"
+
+# Permission bits a production software key may not carry: group write and any
+# access by others (ADR-0007 d11, host access control). Group read stays, because
+# the services that use the identity run as User=gateway.
+SOFTWARE_KEY_FORBIDDEN_MODE = 0o027
 
 
 class ProvisioningError(Exception):
@@ -139,7 +155,7 @@ def der_signature(raw: bytes) -> bytes:
 def raw_signature(der: bytes) -> bytes:
     """The inverse of der_signature: DER Ecdsa-Sig-Value back to 64-byte R||S.
 
-    Only the software fallback needs this — openssl hands back DER where the chip
+    Only the software key needs this — openssl hands back DER where the chip
     hands back R||S. Keeping the signer contract at R||S means the conversion the
     *hardware* depends on is the one under test.
     """
@@ -232,7 +248,7 @@ def build_csr(signer: Signer, common_name: str, organization: str | None = None)
     )
 
     # The chip signs a digest, never a message — so the digest is computed here
-    # and atcab_sign is handed 32 bytes. The software fallback signs the same 32
+    # and atcab_sign is handed 32 bytes. The software key signs the same 32
     # bytes rather than re-hashing, so both backends see an identical interface.
     digest = hashlib.sha256(request_info).digest()
     signature = der_signature(signer.sign_digest(digest))
@@ -253,16 +269,15 @@ def build_csr(signer: Signer, common_name: str, organization: str | None = None)
 #
 # The seam. Both expose the chip's contract — a public key as 64-byte X||Y and a
 # signature as 64-byte R||S over a caller-supplied digest — so build_csr above is
-# the same code in the field and in CI, and only the thing holding the key
-# differs. Same shape as the ERP's FakeWarehouse: the fake exists to make the
-# real path testable, not to substitute for it.
+# the same code for both key origins (ADR-0007 d1, d11) and in CI, and only the
+# thing holding the key differs.
 # ---------------------------------------------------------------------------
 
 
 class Signer:
     """Something holding the gateway's P-256 identity key."""
 
-    provenance: str  # "atecc" or "software"; the binding refuses the latter
+    provenance: str  # "atecc" (ADR-0007 d1) or "software" (ADR-0007 d11)
 
     def public_key(self) -> bytes:
         raise NotImplementedError
@@ -287,12 +302,12 @@ def _openssl(*args: str, stdin: bytes | None = None) -> bytes:
 
 
 class SoftwareSigner(Signer):
-    """A P-256 key in a file — the manual §5 fallback, for CI and laptops.
+    """A P-256 key in a file — the gateway identity where no secure element is fitted.
 
-    A fixture in the same sense as erp/deploy/mtls/make-test-ca.sh: it exercises
-    CSR to issuance to install to renewal without a chip, and it is not a
-    provisioning procedure. The key is exportable and on disk, which is precisely
-    what the ATECC prevents.
+    ADR-0007 d11: generated on the gateway, protected by host access control and
+    never copied off it. Root on the gateway can read it, so the ADR-0004 host
+    hardening is load-bearing for identity. The same class stands in for slot 0
+    in tests; `binding --fixture` marks such a key.
     """
 
     provenance = "software"
@@ -304,17 +319,45 @@ class SoftwareSigner(Signer):
 
     @classmethod
     def generate(cls, key_path: Path) -> SoftwareSigner:
+        """Generate the key where it lives; never overwrite one.
+
+        The file is created 0600 before the key is written, then takes the group
+        of its directory and mode 0640, so it is never readable by others.
+        """
         key_path = Path(key_path)
         key_path.parent.mkdir(parents=True, exist_ok=True)
-        _openssl("ecparam", "-name", "prime256v1", "-genkey", "-noout", "-out", str(key_path))
-        key_path.chmod(0o600)
+        pem = _openssl("ecparam", "-name", "prime256v1", "-genkey", "-noout")
+        try:
+            fd = os.open(key_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        except FileExistsError as exc:
+            raise ProvisioningError(f"{key_path} exists; a key is never regenerated") from exc
+        try:
+            os.fchown(fd, -1, key_path.parent.stat().st_gid)
+            os.fchmod(fd, 0o640)
+            os.write(fd, pem)
+        except OSError as exc:
+            os.close(fd)
+            key_path.unlink()
+            raise ProvisioningError(
+                f"cannot write {key_path} with the group of {key_path.parent}: {exc}"
+            ) from exc
+        os.close(fd)
         return cls(key_path)
+
+    def check_host_protected(self) -> None:
+        """Refuse a key file others can access or its group can write (ADR-0007 d11)."""
+        mode = self.key_path.stat().st_mode & 0o777
+        if mode & SOFTWARE_KEY_FORBIDDEN_MODE:
+            raise ProvisioningError(
+                f"{self.key_path} is mode {mode:04o}. A software identity key is at most\n"
+                "       0640, group gateway (ADR-0007 d11); fix the mode before binding it."
+            )
 
     def public_key(self) -> bytes:
         spki = _openssl("ec", "-in", str(self.key_path), "-pubout", "-outform", "DER")
         # A P-256 SPKI is a fixed 26-byte header then 0x04 || X || Y.
         if len(spki) != 91 or spki[26] != 0x04:
-            raise ProvisioningError("not a P-256 public key — the fallback key is the wrong curve")
+            raise ProvisioningError("not a P-256 public key — the software key is the wrong curve")
         return spki[27:]
 
     def sign_digest(self, digest: bytes) -> bytes:
@@ -335,7 +378,7 @@ class AteccSigner(Signer):
     package (a ctypes wrapper over libcryptoauth), which is not in
     gateway/requirements.txt because a gateway without a provisioned chip has no
     use for it; install it in the venv on the provisioning pass. Imported lazily
-    so the software fallback works on a machine that has neither.
+    so the software key works on a machine that has neither.
     """
 
     provenance = "atecc"
@@ -353,8 +396,7 @@ class AteccSigner(Signer):
                 raise ProvisioningError(
                     "cryptoauthlib is not installed. Either install it for the ATECC path\n"
                     "       (pip install cryptoauthlib, plus libcryptoauth on the host), or pass\n"
-                    "       --software-key to exercise the flow without a chip (a fixture, not a\n"
-                    "       provisioning run)."
+                    "       --software-key for the on-gateway software key (ADR-0007 d11)."
                 ) from exc
             cfg = cal.cfg_ateccx08a_i2c_default()
             cfg.devtype = cal.get_device_type_id(self.devtype)
@@ -516,7 +558,7 @@ def _signer_from(args: argparse.Namespace) -> Signer:
         path = Path(args.software_key)
         if not path.exists():
             print(
-                f"generating a software fallback key at {path} (a fixture, not an identity)",
+                f"generating the software identity key at {path} (ADR-0007 d11)",
                 file=sys.stderr,
             )
             return SoftwareSigner.generate(path)
@@ -563,7 +605,7 @@ def cmd_keygen(args: argparse.Namespace) -> int:
     if getattr(args, "software_key", None):
         raise ProvisioningError(
             "keygen is the on-chip sequence; there is nothing to configure or lock in a\n"
-            "       software fixture. `csr --software-key PATH` generates the key it needs."
+            "       software key. `csr --software-key PATH` generates the key it needs."
         )
 
     signer = AteccSigner(bus=args.bus, address=args.address)
@@ -778,8 +820,9 @@ def cmd_install(args: argparse.Namespace) -> int:
         print(f"installed trust anchor {anchor_target}")
 
     print(
-        f"not installed: a private key. It is in slot {IDENTITY_SLOT} of the ATECC and "
-        "nowhere else\n(ADR-0007 d1) — there is no key file on this host to protect."
+        f"not installed: a private key. It is in slot {IDENTITY_SLOT} of the ATECC "
+        "(ADR-0007 d1)\nor, without one, already in "
+        f"{install_dir / DEFAULT_SOFTWARE_KEY.name} (ADR-0007 d11); it is never copied."
     )
     expiry = _cert_field(chain_path, "-enddate").removeprefix("notAfter=")
     print(f"expires {expiry} — renew with `csr` over the same key, which never changes")
@@ -813,18 +856,15 @@ def cmd_binding(args: argparse.Namespace) -> int:
     gateway's machine-scoped binding reuses ADR-0022 d5's route or needs its own
     is not settled in any ADR. Naming the inputs is not deciding the record.
     """
+    if args.fixture and not getattr(args, "software_key", None):
+        raise ProvisioningError("--fixture marks a test software key; an ATECC key is never one")
     signer = _signer_from(args)
     public_key = signer.public_key()
 
-    if signer.provenance != "atecc" and not args.fixture:
-        # Manual §5: "Do not let a software-key CSR reach a production binding."
-        # An exportable key recorded as a hardware anchor makes the whole binding
-        # a claim about a property the key does not have.
-        raise ProvisioningError(
-            "refusing to write a binding for a software key. The binding asserts a hardware\n"
-            "       anchor (ADR-0007 d1/d6) that an exportable file key does not have. Pass\n"
-            "       --fixture to mark the output as a pipeline exercise, never a real unit."
-        )
+    # A software key is a production identity (ADR-0007 d11) while the host
+    # protects it; a fixture is exempt and is marked in the record.
+    if signer.provenance == "software" and not args.fixture:
+        signer.check_host_protected()
 
     # Shaped as the ERP's machine-binding request body (ADR-0022 d12), so
     # this file is submittable as-is rather than hand-translated:
@@ -855,8 +895,8 @@ def cmd_binding(args: argparse.Namespace) -> int:
         record["issuer"] = _cert_field(cert, "-issuer", "-nameopt", "RFC2253").removeprefix(
             "issuer="
         )
-    if signer.provenance != "atecc":
-        record["fixture"] = "software key — exercises the pipeline, not a provisioned unit"
+    if args.fixture:
+        record["fixture"] = "test key — exercises the pipeline, not a provisioned unit"
 
     # ensure_ascii=False so the record reads as written; it is handed to a person
     # before it is handed to the ERP.
@@ -896,15 +936,17 @@ def _add_software_arg(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--software-key",
         metavar="PATH",
-        help="use a P-256 key file instead of a chip, generating it if absent. The manual "
-        "§5 fallback: a fixture for CI and laptops, never a provisioned unit.",
+        nargs="?",
+        const=str(DEFAULT_SOFTWARE_KEY),
+        help="use the on-gateway software key instead of a chip (ADR-0007 d11), "
+        f"generating it if absent; default {DEFAULT_SOFTWARE_KEY}",
     )
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="provision_identity.py",
-        description="Gateway ATECC608 identity provisioning "
+        description="Gateway identity provisioning, ATECC608 or software key "
         "(store/SP0004-M-atecc-provisioning.md).",
     )
     sub = parser.add_subparsers(dest="command", required=True)
@@ -945,7 +987,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--out", metavar="PATH", help="write the public anchors as JSON")
     p.set_defaults(func=cmd_keygen)
 
-    p = sub.add_parser("csr", help="build a CSR signed by slot 0 (manual §5; also §9 renewal)")
+    p = sub.add_parser(
+        "csr", help="build a CSR signed by the identity key (manual §5; also §9 renewal)"
+    )
     _add_chip_args(p)
     _add_software_arg(p)
     p.add_argument("--gbox", required=True, help="the machine identifier, e.g. GBOX_0001")
@@ -985,7 +1029,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--fixture",
         action="store_true",
-        help="permit a software key, marking the output as a pipeline exercise",
+        help="mark a test software key in the record; never a provisioned unit",
     )
     p.add_argument("--out", metavar="PATH")
     p.set_defaults(func=cmd_binding)
