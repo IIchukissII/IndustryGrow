@@ -39,11 +39,13 @@ DEPTH_RE = re.compile(rf"^{DEPTH}$")
 DOCUMENT_LAYERS = frozenset("SDLPMIFR")
 LIFECYCLE_SUFFIXES = frozenset({"QP", "QR", "CP", "CC", "PR"})
 
-# A lifecycle object key (ADR-0017 d11/d15; ADR-0022 d7): an instance identifier
-# and a suffix, then what the writers append. The upload route stamps CP and CC
-# (`-YYYYMMDDThhmmss`; keys written before that carry the day alone) and adds `-n`
-# on collision; a reissue archives the previous issue under
-# `-superseded-YYYYMMDDThhmmss`, with `-n` on collision. Every such object exists
+# A lifecycle object key: an instance identifier and a suffix (ADR-0017 d15;
+# ADR-0022 d7), then what the writers append. `upload_document` stamps CP and CC
+# (`-YYYYMMDDThhmmss`, ADR-0017 d11; keys written before the time component carry
+# the day alone) and adds `-n` on collision; `docs.record_doc` archives a reissued
+# QP, QR or PR under `-superseded-YYYYMMDDThhmmss`, with `-n` on collision. The
+# tail is accepted after any suffix: a selection that admits one form too many
+# copies an object, one that admits too few loses it. Every such object exists
 # only in the warehouse, so anything that selects lifecycle objects selects them
 # by this grammar and not by a suffix test of its own.
 LIFECYCLE_KEY_RE = re.compile(

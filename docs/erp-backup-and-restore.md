@@ -25,9 +25,12 @@ The backup covers every ERP collection and the warehouse objects whose key is a 
 | Key form | Selected |
 |---|---|
 | `<instance>-QP`, `-QR`, `-CP`, `-CC`, `-PR` | yes |
-| `<instance>-CP-` or `-CC-` with `YYYYMMDD` or `YYYYMMDDThhmmss`, optionally `-n` | yes |
-| `<instance>-<suffix>-superseded-YYYYMMDDThhmmss`, optionally `-n` | yes |
+| the same, then a `YYYYMMDD` or `YYYYMMDDThhmmss` stamp, then `-n` | yes, after any suffix |
+| the same, then `-superseded-YYYYMMDDThhmmss`, then `-n` | yes, after any suffix |
+| a key whose root is not an instance identifier | no |
 | any other key | no |
+
+The writers produce the stamp on `CP` and `CC` and the superseded form on `QP`, `QR` and `PR`; the grammar accepts either tail after any suffix.
 
 ## ADR-0026 dec 2
 
