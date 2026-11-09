@@ -99,8 +99,7 @@ P1 excludes in-place rewrite of the running image, P2 puts partition boundaries 
 
 ## References
 
-- `firmware/common/platform/partition.h`, `firmware/common/platform/image.h` — partition and header layout.
-- `firmware/boot/` — the bootloader; `gateway/firmware_client.py` — decisions 14–17 at the gateway.
+- [docs/node-firmware-update.md](../docs/node-firmware-update.md): the manual of this record (decisions 1–17).
 - Store document E0001-000003-D-pinmap — CAN, SPI and SWD pins on the carrier.
 - ST RM0090 Table 5, *Flash module organization*; section *Erase and program operations*.
 - ST AN2606 Table 50, *STM32F40xxx/41xxx configuration in system memory boot mode*.
