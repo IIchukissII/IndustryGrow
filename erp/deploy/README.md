@@ -270,52 +270,78 @@ content — `store_sync` restores it), the operator CA and the profile-signing k
 (their own custody, ADR-0024 d5–7 and ADR-0025 d5), the gateway (stateless; its
 `active-profile.json` is a re-pullable cache), and `REGISTRY.md` (git).
 
+### Restoring: `deploy/restore.sh`
+
+Run from `erp/` on the deployment host. The `erp` image carries no `mongorestore`;
+the script replays the index in the `mongo` container.
+
+| Step | Where | What |
+|---|---|---|
+| 1 | host | Decrypts a `.gpg` archive with `--pass-file` to a temp file; a `.tar.gz` is used as is |
+| 2 | `erp` | `python -m app.backup restore --objects-only`: verifies the archive, applies the bucket rule, refuses a live restore over an advanced counter, puts the objects |
+| 3 | `mongo` | `mongorestore --archive --drop` with `--nsFrom`/`--nsTo` from `python -m app.backup namespaces`; the dump streams from the `erp` container |
+| 4 | `erp` | `python -m app.backup finish`: sets the counter tenant, then runs `check-live` |
+
+Every exit removes the decrypted temp file and the archive copy in the `erp`
+container. A failed step stops the script; re-running it repeats the object pass and
+finishes the index (ADR-0026 d4).
+
+| Option | Meaning |
+|---|---|
+| `--archive <file>` | `erp-….tar.gz.gpg` or `erp-….tar.gz` |
+| `--pass-file <file>` | the passphrase file; required for `.gpg` |
+| `--into <db>` | a throwaway database for a rehearsal; not the configured `ERP_MONGO_DB` |
+| `--bucket <name>` | the rehearsal bucket; required with `--into`, refused when it is the configured `ERP_WAREHOUSE_BUCKET`, or another bucket without `--into` |
+| `--force` | proceed over an advanced serial counter, after reconciliation |
+
 ### Rehearsing a restore
 
 Do this on a schedule, not when you need it:
 
 ```bash
-gpg --decrypt --passphrase-file ~/.igrow-backup-pass \
-    -o /tmp/rehearsal.tar.gz /var/backups/industrygrow/erp-….tar.gz.gpg
-
-docker compose exec -T erp python -m app.backup verify  --archive /tmp/rehearsal.tar.gz
-docker compose exec -T -e ERP_WAREHOUSE_BUCKET=industrygrow-rehearsal erp \
-    python -m app.backup restore --archive /tmp/rehearsal.tar.gz --into industrygrow_rehearsal
-docker compose exec -T -e ERP_WAREHOUSE_BUCKET=industrygrow-rehearsal erp \
-    python -m app.backup check-live --into industrygrow_rehearsal
+cd erp
+./deploy/restore.sh --archive /var/backups/industrygrow/erp-….tar.gz.gpg \
+                    --pass-file ~/.igrow-backup-pass \
+                    --into industrygrow_rehearsal --bucket industrygrow-rehearsal
 ```
 
-`--into` restores the index to a throwaway database, which also skips the
-serial-counter check below — a rehearsal database has no hardware behind it.
+`--into` skips the serial-counter check — a rehearsal database has no hardware
+behind it. The objects go into the `--bucket` bucket; the live bucket is refused,
+because a put overwrites in place and a QP, QR or PR re-issued since the backup
+would lose its current content. `restore` creates the bucket if it is missing;
+credentials scoped to one bucket cannot, and the rehearsal bucket is then created
+beforehand in the object store. The bucket is reached with the configured warehouse
+endpoint and credentials.
 
-`--into` does not redirect the objects. `restore` puts every archived object into
-the bucket `ERP_WAREHOUSE_BUCKET` names, and `check-live` resolves keys against
-the same bucket. Without the override that is the live bucket, and the put
-overwrites in place: a QP, QR or PR re-issued since the backup loses its current
-content to the archived one. `ERP_WAREHOUSE_BUCKET` set to a rehearsal bucket on
-both commands keeps the rehearsal off the live bucket. `restore` creates the
-bucket if it is missing; credentials scoped to one bucket cannot, and the
-rehearsal bucket is then created beforehand in the object store.
+The rehearsal passes when `finish` reports that every `object_key` in the throwaway
+database's `foundation.lifecycle_doc` resolves in the rehearsal bucket (ADR-0026
+d9). To repeat the check:
 
-`check-live --into` passes when every `object_key` in the throwaway database's
-`foundation.lifecycle_doc` resolves in that bucket (ADR-0026 d9). Drop the
-database and empty the bucket afterwards.
+```bash
+docker compose exec -T erp python -m app.backup check-live \
+    --into industrygrow_rehearsal --bucket industrygrow-rehearsal
+```
+
+Drop the database and empty the bucket afterwards.
 
 ### Restoring for real
 
 ```bash
-docker compose exec -T erp python -m app.backup restore --archive /tmp/erp-….tar.gz
-docker compose exec -T erp python -m app.backup check-live
+cd erp
+./deploy/restore.sh --archive /var/backups/industrygrow/erp-….tar.gz.gpg \
+                    --pass-file ~/.igrow-backup-pass
 ```
 
-Blobs go back first, then the index (ADR-0026 d4), so no moment exists where the
-index references an object that is not there. `check-live` confirms it afterwards.
+It writes into the configured database and the configured bucket. Blobs go back
+first, then the index (ADR-0026 d4), so no moment exists where the index references
+an object that is not there. `finish` runs `check-live` and the script fails when
+it does not pass.
 
 **It may refuse, and that refusal is the point.** If the live store has allocated
 serials the archive does not know about, restoring re-arms those numbers for
-re-issue. The tool stops and prints which counters are ahead. Before passing
-`--force`, establish **which of those serials reached hardware** — the ERP cannot
-tell you, and nothing afterwards can detect the mistake.
+re-issue. The tool stops before any write and prints which counters are ahead.
+Before passing `--force`, establish **which of those serials reached hardware** —
+the ERP cannot tell you, and nothing afterwards can detect the mistake.
 
 ### If a backup fails to verify
 

@@ -24,8 +24,9 @@ from app.config import settings
 
 
 class Warehouse:
-    def __init__(self) -> None:
-        self._bucket = settings.warehouse_bucket
+    def __init__(self, bucket: str | None = None) -> None:
+        # `bucket` overrides the configured one for a restore rehearsal (ADR-0026 d10).
+        self._bucket = bucket or settings.warehouse_bucket
         self._client = boto3.client(
             "s3",
             endpoint_url=settings.warehouse_endpoint,
