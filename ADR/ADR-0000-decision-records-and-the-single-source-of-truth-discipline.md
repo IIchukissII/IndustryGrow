@@ -8,7 +8,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 - **Status:** Accepted
 - **Date:** 2026-06-12; changed 2026-10-19
 - **Parent:** — (root; governs the form of every other ADR)
-- **Related:** [ADR-0001](ADR-0001-industrygrow-framing.md) (origin of the IndustryFlow core / IndustryGrow layer split that decision 8 names)
+- **Related:** [ADR-0001](ADR-0001-industrygrow-as-an-open-core-cultivation-platform-on-industryflow.md) (origin of the IndustryFlow core / IndustryGrow layer split that decision 8 names)
 
 ## Context
 

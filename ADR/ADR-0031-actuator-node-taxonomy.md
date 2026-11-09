@@ -7,8 +7,8 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 - **Status:** Accepted
 - **Date:** 2026-09-07; changed 2026-10-19
-- **Parent:** [ADR-0001](ADR-0001-industrygrow-framing.md)
-- **Related:** [ADR-0014](ADR-0014-sensor-node-taxonomy.md) (sensor partition mirrored here; header contract and class-ID space), [ADR-0015](ADR-0015-gateway-profile-and-control-loops.md) (cascaded control, demand form, interlock independence), [ADR-0016](ADR-0016-empirical-survey-and-state-space-modeling.md) (identification needs unconfounded inputs), [ADR-0017](ADR-0017-component-document-and-instance-identification.md) (identifiers assigned at commit), [ADR-0018](ADR-0018-power-distribution-and-rail-monitoring.md) (switching at the actuator, energy metering, the over-temperature trip, M05 sense-only), [ADR-0005](ADR-0005-dsdl-foundation.md) (wire types for demand and actuator state), [ADR-0028](ADR-0028-commissioning-sequence-and-trim-custody.md) (custody of node-local constants), [ADR-0032](ADR-0032-grow-box-climate-conditioning.md) (how A01-CLIMATE conditions the air)
+- **Parent:** [ADR-0001](ADR-0001-industrygrow-as-an-open-core-cultivation-platform-on-industryflow.md)
+- **Related:** [ADR-0014](ADR-0014-sensor-node-taxonomy.md) (sensor partition mirrored here; header contract and class-ID space), [ADR-0015](ADR-0015-gateway-profile-and-control-loops.md) (cascaded control, demand form, interlock independence), [ADR-0016](ADR-0016-empirical-survey-state-space-modeling-and-sensor-density-management.md) (identification needs unconfounded inputs), [ADR-0017](ADR-0017-component-document-and-instance-identification.md) (identifiers assigned at commit), [ADR-0018](ADR-0018-power-distribution-and-rail-monitoring.md) (switching at the actuator, energy metering, the over-temperature trip, M05 sense-only), [ADR-0005](ADR-0005-dsdl-foundation.md) (wire types for demand and actuator state), [ADR-0028](ADR-0028-commissioning-sequence-and-trim-custody.md) (custody of node-local constants), [ADR-0032](ADR-0032-grow-box-climate-conditioning.md) (how A01-CLIMATE conditions the air)
 
 ## Context
 

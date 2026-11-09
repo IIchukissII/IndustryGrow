@@ -7,8 +7,8 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 - **Status:** Accepted
 - **Date:** 2026-05-16; changed 2026-10-19
-- **Parent:** [ADR-0001](ADR-0001-industrygrow-framing.md)
-- **Related:** [ADR-0002](ADR-0002-field-bus-architecture.md) (carrier and core board every node is built from), [ADR-0003](ADR-0003-strawberry-day-neutral-profile.md) (the quantities the profile requires measured), [ADR-0016](ADR-0016-empirical-survey-and-state-space-modeling.md) (soft sensors, apparatus subspace, survey density), [ADR-0017](ADR-0017-component-document-and-instance-identification.md) (E-numbers, per-carrier firmware, instance identity), [ADR-0018](ADR-0018-power-distribution-and-rail-monitoring.md) (M05 realised as the cabinet distribution and monitoring board), [ADR-0019](ADR-0019-purchased-part-%28SP%29-identification.md) (SP numbers for purchased wind instruments), [ADR-0027](ADR-0027-node-identity-model.md) (carrier Node-ID store inside the reserved identification block), [ADR-0031](ADR-0031-actuator-node-taxonomy.md) (actuator classes in the same class-ID space)
+- **Parent:** [ADR-0001](ADR-0001-industrygrow-as-an-open-core-cultivation-platform-on-industryflow.md)
+- **Related:** [ADR-0002](ADR-0002-field-bus-architecture.md) (carrier and core board every node is built from), [ADR-0003](ADR-0003-strawberry-day-neutral-reference-cultivation-profile.md) (the quantities the profile requires measured), [ADR-0016](ADR-0016-empirical-survey-state-space-modeling-and-sensor-density-management.md) (soft sensors, apparatus subspace, survey density), [ADR-0017](ADR-0017-component-document-and-instance-identification.md) (E-numbers, per-carrier firmware, instance identity), [ADR-0018](ADR-0018-power-distribution-and-rail-monitoring.md) (M05 realised as the cabinet distribution and monitoring board), [ADR-0019](ADR-0019-purchased-part-%28SP%29-identification.md) (SP numbers for purchased wind instruments), [ADR-0027](ADR-0027-node-identity-model.md) (carrier Node-ID store inside the reserved identification block), [ADR-0031](ADR-0031-actuator-node-taxonomy.md) (actuator classes in the same class-ID space)
 
 ## Context
 
