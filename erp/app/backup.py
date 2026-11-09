@@ -97,31 +97,16 @@ def is_backed_up_object(key: str) -> bool:
 # ---------------------------------------------------------------------------
 
 
-async def _counter_state(db) -> dict[str, dict[str, int]]:
-    """The serial allocator's high-water mark per tenant, then per (module, version).
+async def _counter_state(db) -> dict[str, int]:
+    """The serial allocator's high-water mark per (module, version).
 
     Recorded in the manifest so `restore` can compare it against the live store
     without parsing the dump — this is the value ADR-0026 d8 refuses to roll back
-    silently. A counter without a tenant counts as the operator's, the tenant
-    `migrate_counter_tenant` gives it, so it is never left out of the comparison.
+    silently.
     """
-    counters: dict[str, dict[str, int]] = {}
+    counters: dict[str, int] = {}
     async for doc in db[FOUNDATION["serial_counter"]].find({}):
-        tenant = str(doc.get("tenant_id") or settings.operator_uuid)
-        counters.setdefault(tenant, {})[str(doc.get("_id"))] = int(doc.get("last_serial", 0))
-    return counters
-
-
-def archived_counters(manifest: dict[str, Any]) -> dict[str, dict[str, int]]:
-    """The manifest's counters per tenant.
-
-    A format-1 manifest holds one flat map of counter to value, taken while the
-    store had one tenant; it belongs to the manifest's operator.
-    """
-    counters = manifest.get("serial_counters", {}) or {}
-    if manifest.get("format", 1) < 2:
-        tenant = str(manifest.get("operator_uuid") or settings.operator_uuid)
-        return {tenant: dict(counters)} if counters else {}
+        counters[str(doc.get("_id"))] = int(doc.get("last_serial", 0))
     return counters
 
 
@@ -220,7 +205,7 @@ async def save(
             )
 
         manifest = {
-            "format": 2,
+            "format": 1,
             "taken_at": index_taken.isoformat(),
             "database": settings.mongo_db,
             "operator_uuid": settings.operator_uuid,
@@ -297,7 +282,7 @@ def verify(archive: Path) -> int:
         f"  {len(manifest.get('objects', []))} objects, "
         f"{len(manifest.get('collections', []))} collections"
     )
-    counters = archived_counters(manifest)
+    counters = manifest.get("serial_counters", {})
     log(f"  serial counters: {counters or 'none allocated yet'}")
 
     for p in problems:
@@ -308,27 +293,22 @@ def verify(archive: Path) -> int:
     return 0
 
 
-async def _live_counters() -> dict[str, dict[str, int]]:
+async def _live_counters() -> dict[str, int]:
     database = Database(settings.mongo_uri, settings.mongo_db, mock=settings.mongo_mock)
     return await _counter_state(database.db)
 
 
-def counters_ahead(
-    live: dict[str, dict[str, int]], archived: dict[str, dict[str, int]]
-) -> dict[tuple[str, str], tuple[int, int]]:
+def counters_ahead(live: dict[str, int], archived: dict[str, int]) -> dict[str, tuple[int, int]]:
     """Counters where the live store has issued serials the archive does not know.
 
-    This is ADR-0026 d8's test, per tenant and counter. Restoring over these
-    re-arms numbers that may already be stamped on hardware, and nothing
-    afterwards can detect it.
+    This is ADR-0026 d8's test. Restoring over these re-arms numbers that may
+    already be stamped on hardware, and nothing afterwards can detect it.
     """
-    ahead: dict[tuple[str, str], tuple[int, int]] = {}
-    for tenant, counters in live.items():
-        known = archived.get(tenant, {})
-        for key, value in counters.items():
-            if value > known.get(key, 0):
-                ahead[(tenant, key)] = (value, known.get(key, 0))
-    return ahead
+    return {
+        key: (value, archived.get(key, 0))
+        for key, value in live.items()
+        if value > archived.get(key, 0)
+    }
 
 
 async def restore(archive: Path, *, force: bool = False, database_name: str | None = None) -> int:
@@ -341,11 +321,10 @@ async def restore(archive: Path, *, force: bool = False, database_name: str | No
 
     # --- d8: the refusal ---------------------------------------------------
     if database_name is None:
-        ahead = counters_ahead(await _live_counters(), archived_counters(manifest))
+        ahead = counters_ahead(await _live_counters(), manifest.get("serial_counters", {}))
         if ahead and not force:
             lines = "\n".join(
-                f"         {tenant} {k}: live {live}, archive {arch}"
-                for (tenant, k), (live, arch) in ahead.items()
+                f"         {k}: live {live}, archive {arch}" for k, (live, arch) in ahead.items()
             )
             raise BackupError(
                 "the live store has allocated serials this archive does not know about:\n"
@@ -397,8 +376,8 @@ async def restore(archive: Path, *, force: bool = False, database_name: str | No
                 "       The objects are restored and the index is not — re-run to finish."
             )
 
-    # A format-1 archive carries counters without a tenant; give them the
-    # operator's so the tenant-keyed allocator finds them (ADR-0021 d16).
+    # A counter restored from an archive taken before the counter carried the
+    # tenant gets it here, as it would at the next ERP start (ADR-0021 d16).
     restored = Database(settings.mongo_uri, target_db, mock=settings.mongo_mock)
     try:
         await migrate_counter_tenant(restored.db)

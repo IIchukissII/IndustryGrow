@@ -30,14 +30,11 @@ from app.backup import (
     BACKED_UP_COLLECTIONS,
     LIFECYCLE_SUFFIXES,
     _counter_state,
-    archived_counters,
     counters_ahead,
     is_backed_up_object,
     read_manifest,
     verify,
 )
-from app.config import settings
-from app.db import FOUNDATION
 
 # ---------------------------------------------------------------------------
 # The allowlist (ADR-0026 d1)
@@ -106,34 +103,25 @@ def test_every_owned_collection_is_in_the_allowlist():
 # The serial-counter refusal (ADR-0026 d8)
 # ---------------------------------------------------------------------------
 
-T = settings.operator_uuid
-
 
 def test_a_live_counter_ahead_of_the_archive_is_detected():
     # Serials were issued after the backup. Restoring re-arms them, and if parts
     # were built they now share an identity with whatever gets issued next.
-    ahead = counters_ahead({T: {"E0002-020100": 7}}, {T: {"E0002-020100": 4}})
-    assert ahead == {(T, "E0002-020100"): (7, 4)}
+    ahead = counters_ahead({"E0002-020100": 7}, {"E0002-020100": 4})
+    assert ahead == {"E0002-020100": (7, 4)}
 
 
 def test_a_counter_the_archive_has_never_seen_counts_as_ahead():
     # A module first allocated after the backup point. The archive has no entry, so
     # a naive comparison would miss it entirely — treated as 0, which it is.
-    assert counters_ahead({T: {"E0006-010000": 3}}, {}) == {(T, "E0006-010000"): (3, 0)}
-
-
-def test_counters_compare_per_tenant():
-    # The same module + version under another tenant is another sequence.
-    live = {T: {"E0002-020100": 4}, "other": {"E0002-020100": 2}}
-    archived = {T: {"E0002-020100": 4}, "other": {"E0002-020100": 1}}
-    assert counters_ahead(live, archived) == {("other", "E0002-020100"): (2, 1)}
+    assert counters_ahead({"E0006-010000": 3}, {}) == {"E0006-010000": (3, 0)}
 
 
 def test_matching_or_behind_counters_do_not_block():
-    assert counters_ahead({T: {"E0002-020100": 4}}, {T: {"E0002-020100": 4}}) == {}
+    assert counters_ahead({"E0002-020100": 4}, {"E0002-020100": 4}) == {}
     # Archive ahead of live is the normal case after a fresh restore; not a hazard,
     # because rolling *forwards* never re-issues a number.
-    assert counters_ahead({T: {"E0002-020100": 2}}, {T: {"E0002-020100": 9}}) == {}
+    assert counters_ahead({"E0002-020100": 2}, {"E0002-020100": 9}) == {}
 
 
 async def test_the_counter_state_is_read_from_real_allocations(db):
@@ -143,21 +131,7 @@ async def test_the_counter_state_is_read_from_real_allocations(db):
 
     await serials.allocate(db, "E0002", "020100", 3)
     await serials.allocate(db, "E0006", "010000", 1)
-    assert await _counter_state(db) == {T: {"E0002-020100": 3, "E0006-010000": 1}}
-
-
-async def test_a_counter_without_tenant_is_read_as_the_operators(db):
-    # A legacy counter left out of the state would read as 0 and disarm d8.
-    await db[FOUNDATION["serial_counter"]].insert_one({"_id": "E0002-020100", "last_serial": 5})
-    assert await _counter_state(db) == {T: {"E0002-020100": 5}}
-
-
-def test_a_format_1_manifest_belongs_to_its_operator():
-    flat = {"format": 1, "operator_uuid": "op-a", "serial_counters": {"E0002-020100": 4}}
-    assert archived_counters(flat) == {"op-a": {"E0002-020100": 4}}
-    assert archived_counters({"format": 1, "serial_counters": {}}) == {}
-    nested = {"format": 2, "serial_counters": {"op-a": {"E0002-020100": 4}}}
-    assert archived_counters(nested) == {"op-a": {"E0002-020100": 4}}
+    assert await _counter_state(db) == {"E0002-020100": 3, "E0006-010000": 1}
 
 
 # ---------------------------------------------------------------------------

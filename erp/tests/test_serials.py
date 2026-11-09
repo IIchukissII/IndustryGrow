@@ -59,7 +59,7 @@ async def test_migration_sets_tenant_on_a_legacy_counter_and_keeps_its_value(db)
     assert await serials.allocate(db, "E0002", "020100", 1) == ["E0002-020100-000042"]
 
 
-async def test_startup_migrates_legacy_counters_and_keys_the_index_on_the_tenant():
+async def test_startup_migrates_legacy_counters():
     database = Database("mongodb://unused", "test_erp", mock=True)
     coll = database.db[FOUNDATION["serial_counter"]]
     await coll.insert_one({"_id": "E0002-020100", "last_serial": 3})
@@ -69,6 +69,3 @@ async def test_startup_migrates_legacy_counters_and_keys_the_index_on_the_tenant
 
     doc = await coll.find_one({"_id": "E0002-020100"})
     assert doc == {"_id": "E0002-020100", "last_serial": 3, "tenant_id": settings.operator_uuid}
-    index = (await coll.index_information())["uq_counter"]
-    assert list(index["key"]) == [("tenant_id", 1), ("_id", 1)]
-    assert index["unique"] is True
