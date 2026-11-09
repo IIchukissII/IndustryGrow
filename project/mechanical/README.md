@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # Mechanical development sources
 
 Mechanical design sources under iteration, outside the document store and carrying no
-identifier (ADR-0032 d8, ADR-0017 d5).
+identifier (ADR-0032, [ADR-0017](../../docs/component-and-instance-identification.md)).
 
 | | |
 |---|---|

@@ -23,7 +23,7 @@ drift. `app/subjects.c` holds only the subject-ID to type binding, mirroring
 
 ## Targets
 
-One codebase, one `F` root, two build variants (ADR-0017 d16). `-DIGROW_BOARD=`
+One codebase, one `F` root, two build variants ([ADR-0017](../docs/component-and-instance-identification.md)). `-DIGROW_BOARD=`
 selects the MCU, the startup file, the BSP, the panel size and the core supply;
 `Core/Inc/eval_board.h` is the only file that knows which.
 
@@ -113,7 +113,7 @@ material as text on the ST-LINK virtual COM port at 115200 8N1.
 
 ## Bus parameters
 
-Fixed by ADR-0002 d8 and not configurable here.
+Fixed by [ADR-0002](../docs/field-bus-architecture.md) and not configurable here.
 
 | Parameter | Value |
 |---|---|
